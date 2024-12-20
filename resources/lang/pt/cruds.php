@@ -223,7 +223,7 @@ return [
             'payment_status_helper'                     => ' ',
             'amount_paid'                               => 'Montante Pago',
             'amount_paid_helper'                        => ' ',
-            'inicial'                                   => 'Inicial',
+            'inicial'                                   => 'Fotos da viatura na aquisição',
             'inicial_helper'                            => ' ',
             'carrier'                                   => 'Transportadora',
             'carrier_helper'                            => ' ',
