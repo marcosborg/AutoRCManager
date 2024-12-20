@@ -82,16 +82,25 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('pickup-states', 'PickupStateController');
 
     // Acquisition
-    Route::delete('acquisitions/destroy', 'AcquisitionController@massDestroy')->name('acquisitions.massDestroy');
-    Route::resource('acquisitions', 'AcquisitionController');
+    Route::prefix('acquisitions')->group(function() {
+        Route::get('/', 'AcquisitionController@index')->name('acquisitions.index');
+        Route::get('create', 'AcquisitionController@create')->name('acquisitions.create');
+    });
+    
 
     // Expedition
-    Route::delete('expeditions/destroy', 'ExpeditionController@massDestroy')->name('expeditions.massDestroy');
-    Route::resource('expeditions', 'ExpeditionController');
+    Route::prefix('expeditions')->group(function() {
+        Route::get('/', 'ExpeditionController@index')->name('expeditions.index');
+        Route::get('create', 'ExpeditionController@create')->name('expeditions.create');
+    });
+    
 
     // Sales
-    Route::delete('sales/destroy', 'SalesController@massDestroy')->name('sales.massDestroy');
-    Route::resource('sales', 'SalesController');
+    Route::prefix('sales')->group(function() {
+        Route::get('/', 'SalesController@index')->name('sales.index');
+        Route::get('create', 'SalesController@create')->name('sales.create');
+    });
+    
 
     Route::get('system-calendar', 'SystemCalendarController@index')->name('systemCalendar');
     Route::get('global-search', 'GlobalSearchController@search')->name('globalSearch');
