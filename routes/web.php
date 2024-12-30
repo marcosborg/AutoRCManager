@@ -100,6 +100,18 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
         Route::get('/', 'SalesController@index')->name('sales.index');
         Route::get('create', 'SalesController@create')->name('sales.create');
     });
+
+    // Repair
+    Route::delete('repairs/destroy', 'RepairController@massDestroy')->name('repairs.massDestroy');
+    Route::post('repairs/parse-csv-import', 'RepairController@parseCsvImport')->name('repairs.parseCsvImport');
+    Route::post('repairs/process-csv-import', 'RepairController@processCsvImport')->name('repairs.processCsvImport');
+    Route::resource('repairs', 'RepairController');
+
+    // Repair States
+    Route::delete('repair-states/destroy', 'RepairStatesController@massDestroy')->name('repair-states.massDestroy');
+    Route::post('repair-states/parse-csv-import', 'RepairStatesController@parseCsvImport')->name('repair-states.parseCsvImport');
+    Route::post('repair-states/process-csv-import', 'RepairStatesController@processCsvImport')->name('repair-states.processCsvImport');
+    Route::resource('repair-states', 'RepairStatesController');
     
 
     Route::get('system-calendar', 'SystemCalendarController@index')->name('systemCalendar');

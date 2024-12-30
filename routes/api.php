@@ -34,4 +34,10 @@ Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', '
 
     // Pickup State
     Route::apiResource('pickup-states', 'PickupStateApiController');
+
+    // Repair
+    Route::apiResource('repairs', 'RepairApiController');
+
+    // Repair States
+    Route::apiResource('repair-states', 'RepairStatesApiController');
 });

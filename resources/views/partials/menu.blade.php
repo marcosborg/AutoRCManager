@@ -136,6 +136,17 @@
                                 </a>
                             </li>
                         @endcan
+                        @can('repair_state_access')
+                            <li class="{{ request()->is("admin/repair-states") || request()->is("admin/repair-states/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.repair-states.index") }}">
+                                    <i class="fa-fw fas fa-screwdriver">
+
+                                    </i>
+                                    <span>{{ trans('cruds.repairState.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
                     </ul>
                 </li>
             @endcan
@@ -190,6 +201,17 @@
 
                         </i>
                         <span>{{ trans('cruds.sale.title') }}</span>
+
+                    </a>
+                </li>
+            @endcan
+            @can('repair_access')
+                <li class="{{ request()->is("admin/repairs") || request()->is("admin/repairs/*") ? "active" : "" }}">
+                    <a href="{{ route("admin.repairs.index") }}">
+                        <i class="fa-fw fas fa-screwdriver">
+
+                        </i>
+                        <span>{{ trans('cruds.repair.title') }}</span>
 
                     </a>
                 </li>
