@@ -100,7 +100,7 @@ class RepairController extends Controller
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $vehicles = Vehicle::pluck('license', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $repair->load('vehicle.brand');
 
         $users = User::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
@@ -108,7 +108,7 @@ class RepairController extends Controller
 
         $repair->load('vehicle', 'user', 'repair_state');
 
-        return view('admin.repairs.edit', compact('repair', 'repair_states', 'users', 'vehicles'));
+        return view('admin.repairs.edit', compact('repair', 'repair_states', 'users'));
     }
 
     public function update(UpdateRepairRequest $request, Repair $repair)

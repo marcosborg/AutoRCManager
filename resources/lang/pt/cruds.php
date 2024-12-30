@@ -163,7 +163,7 @@ return [
             'model_helper'                              => ' ',
             'year'                                      => 'Ano',
             'year_helper'                               => ' ',
-            'vehicle_identification_number_vin'         => 'Número de Identificação do Veículo (VIN)',
+            'vehicle_identification_number_vin'         => 'VIN',
             'vehicle_identification_number_vin_helper'  => ' ',
             'license_date'                              => 'Data da Matrícula',
             'license_date_helper'                       => ' ',
