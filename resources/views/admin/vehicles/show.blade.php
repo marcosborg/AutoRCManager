@@ -59,6 +59,14 @@
                                 </tr>
                                 <tr>
                                     <th>
+                                        {{ trans('cruds.vehicle.fields.transmission') }}
+                                    </th>
+                                    <td>
+                                        {{ App\Models\Vehicle::TRANSMISSION_SELECT[$vehicle->transmission] ?? '' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
                                         {{ trans('cruds.vehicle.fields.year') }}
                                     </th>
                                     <td>

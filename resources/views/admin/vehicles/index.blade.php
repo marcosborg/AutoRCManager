@@ -40,9 +40,6 @@
                                     {{ trans('cruds.vehicle.fields.model') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.vehicle_identification_number_vin') }}
-                                </th>
-                                <th>
                                     {{ trans('cruds.vehicle.fields.seller_client') }}
                                 </th>
                                 <th>
@@ -110,14 +107,6 @@
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
                                         @foreach($supliers as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($payment_statuses as $key => $item)
                                             <option value="{{ $item->name }}">{{ $item->name }}</option>
                                         @endforeach
                                     </select>
@@ -208,7 +197,6 @@
 { data: 'license', name: 'license' },
 { data: 'brand_name', name: 'brand.name' },
 { data: 'model', name: 'model' },
-{ data: 'vehicle_identification_number_vin', name: 'vehicle_identification_number_vin' },
 { data: 'seller_client_name', name: 'seller_client.name' },
 { data: 'buyer_client_name', name: 'buyer_client.name' },
 { data: 'suplier_name', name: 'suplier.name' },

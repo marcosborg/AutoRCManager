@@ -64,9 +64,6 @@ class VehicleController extends Controller
             $table->editColumn('model', function ($row) {
                 return $row->model ? $row->model : '';
             });
-            $table->editColumn('vehicle_identification_number_vin', function ($row) {
-                return $row->vehicle_identification_number_vin ? $row->vehicle_identification_number_vin : '';
-            });
             $table->addColumn('seller_client_name', function ($row) {
                 return $row->seller_client ? $row->seller_client->name : '';
             });

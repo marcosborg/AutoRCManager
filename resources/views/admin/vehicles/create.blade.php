@@ -57,6 +57,21 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
+                                <div class="form-group {{ $errors->has('transmission') ? 'has-error' : '' }}">
+                                    <label>{{ trans('cruds.vehicle.fields.transmission') }}</label>
+                                    <select class="form-control" name="transmission" id="transmission">
+                                        <option value disabled {{ old('transmission', null) === null ? 'selected' : '' }}>{{ trans('global.pleaseSelect') }}</option>
+                                        @foreach(App\Models\Vehicle::TRANSMISSION_SELECT as $key => $label)
+                                            <option value="{{ $key }}" {{ old('transmission', '') === (string) $key ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if($errors->has('transmission'))
+                                        <span class="help-block" role="alert">{{ $errors->first('transmission') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.transmission_helper') }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('year') ? 'has-error' : '' }}">
                                     <label for="year">{{ trans('cruds.vehicle.fields.year') }}</label>
                                     <input class="form-control" type="number" name="year" id="year" value="{{ old('year', '') }}" step="1">
@@ -67,13 +82,13 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('vehicle_identification_number_vin') ? 'has-error' : '' }}">
-                                    <label for="vehicle_identification_number_vin">{{ trans('cruds.vehicle.fields.vehicle_identification_number_vin') }}</label>
-                                    <input class="form-control" type="text" name="vehicle_identification_number_vin" id="vehicle_identification_number_vin" value="{{ old('vehicle_identification_number_vin', '') }}">
-                                    @if($errors->has('vehicle_identification_number_vin'))
-                                        <span class="help-block" role="alert">{{ $errors->first('vehicle_identification_number_vin') }}</span>
+                                <div class="form-group {{ $errors->has('month') ? 'has-error' : '' }}">
+                                    <label for="month">{{ trans('cruds.vehicle.fields.month') }}</label>
+                                    <input class="form-control" type="text" name="month" id="month" value="{{ old('month', '') }}">
+                                    @if($errors->has('month'))
+                                        <span class="help-block" role="alert">{{ $errors->first('month') }}</span>
                                     @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.vehicle_identification_number_vin_helper') }}</span>
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.month_helper') }}</span>
                                 </div>
                             </div>
                             <div class="col-md-3">

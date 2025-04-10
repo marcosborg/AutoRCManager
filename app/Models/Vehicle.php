@@ -17,6 +17,11 @@ class Vehicle extends Model implements HasMedia
 
     public $table = 'vehicles';
 
+    public const TRANSMISSION_SELECT = [
+        'manual'    => 'Manual',
+        'automatic' => 'Automáticas',
+    ];
+
     protected $appends = [
         'documents',
         'photos',
@@ -45,8 +50,9 @@ class Vehicle extends Model implements HasMedia
         'brand_id',
         'model',
         'version',
+        'transmission',
         'year',
-        'vehicle_identification_number_vin',
+        'month',
         'license_date',
         'color',
         'fuel',
