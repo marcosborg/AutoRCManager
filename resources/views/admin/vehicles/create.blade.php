@@ -23,6 +23,16 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
+                                <div class="form-group {{ $errors->has('foreign_license') ? 'has-error' : '' }}">
+                                    <label for="foreign_license">{{ trans('cruds.vehicle.fields.foreign_license') }}</label>
+                                    <input class="form-control" type="text" name="foreign_license" id="foreign_license" value="{{ old('foreign_license', '') }}">
+                                    @if($errors->has('foreign_license'))
+                                        <span class="help-block" role="alert">{{ $errors->first('foreign_license') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.foreign_license_helper') }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('brand') ? 'has-error' : '' }}">
                                     <label for="brand_id">{{ trans('cruds.vehicle.fields.brand') }}</label>
                                     <select class="form-control select2" name="brand_id" id="brand_id">
@@ -139,36 +149,6 @@
                                         <span class="help-block" role="alert">{{ $errors->first('inspec_b') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.inspec_b_helper') }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('seller_client') ? 'has-error' : '' }}">
-                                    <label for="seller_client_id">{{ trans('cruds.vehicle.fields.seller_client') }}</label>
-                                    <select class="form-control select2" name="seller_client_id" id="seller_client_id">
-                                        @foreach($seller_clients as $id => $entry)
-                                            <option value="{{ $id }}" {{ old('seller_client_id') == $id ? 'selected' : '' }}>{{ $entry }}</option>
-                                        @endforeach
-                                    </select>
-                                    @if($errors->has('seller_client'))
-                                        <span class="help-block" role="alert">{{ $errors->first('seller_client') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.seller_client_helper') }}</span>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('buyer_client') ? 'has-error' : '' }}">
-                                    <label for="buyer_client_id">{{ trans('cruds.vehicle.fields.buyer_client') }}</label>
-                                    <select class="form-control select2" name="buyer_client_id" id="buyer_client_id">
-                                        @foreach($buyer_clients as $id => $entry)
-                                            <option value="{{ $id }}" {{ old('buyer_client_id') == $id ? 'selected' : '' }}>{{ $entry }}</option>
-                                        @endforeach
-                                    </select>
-                                    @if($errors->has('buyer_client'))
-                                        <span class="help-block" role="alert">{{ $errors->first('buyer_client') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.buyer_client_helper') }}</span>
                                 </div>
                             </div>
                         </div>

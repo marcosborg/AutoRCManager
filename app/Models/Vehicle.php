@@ -47,6 +47,7 @@ class Vehicle extends Model implements HasMedia
 
     protected $fillable = [
         'license',
+        'foreign_license',
         'brand_id',
         'model',
         'version',
@@ -58,8 +59,6 @@ class Vehicle extends Model implements HasMedia
         'fuel',
         'kilometers',
         'inspec_b',
-        'seller_client_id',
-        'buyer_client_id',
         'purchase_and_sale_agreement',
         'copy_of_the_citizen_card',
         'tax_identification_card',

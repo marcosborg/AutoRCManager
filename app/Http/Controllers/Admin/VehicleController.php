@@ -30,7 +30,7 @@ class VehicleController extends Controller
         abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ($request->ajax()) {
-            $query = Vehicle::with(['brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client'])->select(sprintf('%s.*', (new Vehicle)->table));
+            $query = Vehicle::with(['brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client'])->select(sprintf('%s.*', (new Vehicle)->table));
             $table = Datatables::of($query);
 
             $table->addColumn('placeholder', '&nbsp;');
@@ -63,13 +63,6 @@ class VehicleController extends Controller
 
             $table->editColumn('model', function ($row) {
                 return $row->model ? $row->model : '';
-            });
-            $table->addColumn('seller_client_name', function ($row) {
-                return $row->seller_client ? $row->seller_client->name : '';
-            });
-
-            $table->addColumn('buyer_client_name', function ($row) {
-                return $row->buyer_client ? $row->buyer_client->name : '';
             });
 
             $table->addColumn('suplier_name', function ($row) {
@@ -113,10 +106,6 @@ class VehicleController extends Controller
 
         $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $seller_clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
-        $buyer_clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
         $supliers = Suplier::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $payment_statuses = PaymentStatus::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
@@ -127,7 +116,7 @@ class VehicleController extends Controller
 
         $clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        return view('admin.vehicles.create', compact('brands', 'buyer_clients', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'seller_clients', 'supliers'));
+        return view('admin.vehicles.create', compact('brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers'));
     }
 
     public function store(StoreVehicleRequest $request)
@@ -171,10 +160,6 @@ class VehicleController extends Controller
 
         $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $seller_clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
-        $buyer_clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
         $supliers = Suplier::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $payment_statuses = PaymentStatus::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
@@ -187,7 +172,7 @@ class VehicleController extends Controller
 
         $vehicle->load('brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client');
 
-        return view('admin.vehicles.edit', compact('brands', 'buyer_clients', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'seller_clients', 'supliers', 'vehicle'));
+        return view('admin.vehicles.edit', compact('brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers', 'vehicle'));
     }
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle)

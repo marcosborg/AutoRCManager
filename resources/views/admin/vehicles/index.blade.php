@@ -40,12 +40,6 @@
                                     {{ trans('cruds.vehicle.fields.model') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.seller_client') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.buyer_client') }}
-                                </th>
-                                <th>
                                     {{ trans('cruds.vehicle.fields.suplier') }}
                                 </th>
                                 <th>
@@ -86,22 +80,6 @@
                                 </td>
                                 <td>
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($clients as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($clients as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
                                 </td>
                                 <td>
                                     <select class="search">
@@ -197,8 +175,6 @@
 { data: 'license', name: 'license' },
 { data: 'brand_name', name: 'brand.name' },
 { data: 'model', name: 'model' },
-{ data: 'seller_client_name', name: 'seller_client.name' },
-{ data: 'buyer_client_name', name: 'buyer_client.name' },
 { data: 'suplier_name', name: 'suplier.name' },
 { data: 'payment_status_name', name: 'payment_status.name' },
 { data: 'carrier_name', name: 'carrier.name' },

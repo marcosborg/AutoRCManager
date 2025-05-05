@@ -287,6 +287,8 @@ return [
             'local_helper'                              => ' ',
             'client_amount_paid'                        => 'Montante Pago pelo Cliente',
             'client_amount_paid_helper'                 => ' ',
+            'foreign_license'                           => 'Matricula estrangeira',
+            'foreign_license_helper'                    => ' ',
         ],
     ],
     'suplier' => [

@@ -21,6 +21,10 @@ class StoreVehicleRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'foreign_license' => [
+                'string',
+                'nullable',
+            ],
             'model' => [
                 'string',
                 'nullable',
