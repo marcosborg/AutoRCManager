@@ -172,28 +172,6 @@
                     </a>
                 </li>
             @endcan
-            @can('acquisition_access')
-                <li class="{{ request()->is("admin/acquisitions") || request()->is("admin/acquisitions/*") ? "active" : "" }}">
-                    <a href="{{ route("admin.acquisitions.index") }}">
-                        <i class="fa-fw fas fa-file-invoice-dollar">
-
-                        </i>
-                        <span>{{ trans('cruds.acquisition.title') }}</span>
-
-                    </a>
-                </li>
-            @endcan
-            @can('expedition_access')
-                <li class="{{ request()->is("admin/expeditions") || request()->is("admin/expeditions/*") ? "active" : "" }}">
-                    <a href="{{ route("admin.expeditions.index") }}">
-                        <i class="fa-fw fas fa-truck-loading">
-
-                        </i>
-                        <span>{{ trans('cruds.expedition.title') }}</span>
-
-                    </a>
-                </li>
-            @endcan
             @can('sale_access')
                 <li class="{{ request()->is("admin/sales") || request()->is("admin/sales/*") ? "active" : "" }}">
                     <a href="{{ route("admin.sales.index") }}">

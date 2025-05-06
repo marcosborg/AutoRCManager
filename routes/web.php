@@ -80,21 +80,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('pickup-states/parse-csv-import', 'PickupStateController@parseCsvImport')->name('pickup-states.parseCsvImport');
     Route::post('pickup-states/process-csv-import', 'PickupStateController@processCsvImport')->name('pickup-states.processCsvImport');
     Route::resource('pickup-states', 'PickupStateController');
-
-    // Acquisition
-    Route::prefix('acquisitions')->group(function() {
-        Route::get('/', 'AcquisitionController@index')->name('acquisitions.index');
-        Route::get('create', 'AcquisitionController@create')->name('acquisitions.create');
-    });
     
-
-    // Expedition
-    Route::prefix('expeditions')->group(function() {
-        Route::get('/', 'ExpeditionController@index')->name('expeditions.index');
-        Route::get('create', 'ExpeditionController@create')->name('expeditions.create');
-    });
-    
-
     // Sales
     Route::prefix('sales')->group(function() {
         Route::get('/', 'SalesController@index')->name('sales.index');

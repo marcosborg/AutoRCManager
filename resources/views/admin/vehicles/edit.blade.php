@@ -30,7 +30,7 @@
                                     @if($errors->has('foreign_license'))
                                         <span class="help-block" role="alert">{{ $errors->first('foreign_license') }}</span>
                                     @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.foreign_license_helper') }}</span>
+                                <span class="help-block">{{ trans('cruds.vehicle.fields.foreign_license_helper') }}</span>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -408,7 +408,7 @@
                                     <label for="carrier_id">{{ trans('cruds.vehicle.fields.carrier') }}</label>
                                     <select class="form-control select2" name="carrier_id" id="carrier_id">
                                         @foreach($carriers as $id => $entry)
-                                        option value="{{ $id }}" {{ (old('carrier_id') ? old('carrier_id') : $vehicle->carrier->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                        <option value="{{ $id }}" {{ (old('carrier_id') ? old('carrier_id') : $vehicle->carrier->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
                                         @endforeach
                                     </select>
                                     @if($errors->has('carrier'))
@@ -652,6 +652,16 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('styles')
+<style>
+    .dz-details {
+    display: none !important;
+}
+
+</style>
+
 @endsection
 
 @section('scripts')
@@ -987,6 +997,8 @@ Dropzone.options.documentsDropzone = {
   }
 });
 </script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
 
 <script>
     var uploadedPhotosMap = {}
@@ -1022,11 +1034,26 @@ Dropzone.options.photosDropzone = {
 @if(isset($vehicle) && $vehicle->photos)
       var files = {!! json_encode($vehicle->photos) !!}
           for (var i in files) {
-          var file = files[i]
+          var file = files[i];
+
           this.options.addedfile.call(this, file)
           this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
           file.previewElement.classList.add('dz-complete')
           $('form').append('<input type="hidden" name="photos[]" value="' + file.file_name + '">')
+          const img = file.previewElement.querySelector("img");
+if (img) {
+    img.style.cursor = "pointer";
+    
+    // cria o <a> e insere antes da img
+    const a = document.createElement('a');
+    a.href = file.original_url;
+    a.setAttribute('data-lightbox', 'gallery');
+    
+    img.parentNode.insertBefore(a, img);
+    a.appendChild(img);
+}
+
+
         }
 @endif
     },
