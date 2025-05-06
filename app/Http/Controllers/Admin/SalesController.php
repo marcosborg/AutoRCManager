@@ -11,6 +11,7 @@ use App\Http\Requests\UpdateVehicleRequest;
 use App\Models\Brand;
 use App\Models\Carrier;
 use App\Models\Client;
+use App\Models\GeneralState;
 use App\Models\PaymentStatus;
 use App\Models\PickupState;
 use App\Models\Suplier;
@@ -28,10 +29,10 @@ class SalesController extends Controller
 
     public function index(Request $request)
     {
-        abort_if(Gate::denies('sale_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ($request->ajax()) {
-            $query = Vehicle::with(['brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client'])->select(sprintf('%s.*', (new Vehicle)->table));
+            $query = Vehicle::with(['general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client'])->select(sprintf('%s.*', (new Vehicle)->table));
             $table = Datatables::of($query);
 
             $table->addColumn('placeholder', '&nbsp;');
@@ -52,11 +53,15 @@ class SalesController extends Controller
                 ));
             });
 
-            $table->editColumn('id', function ($row) {
-                return $row->id ? $row->id : '';
+            $table->addColumn('general_state_name', function ($row) {
+                return $row->general_state ? $row->general_state->name : '';
             });
+
             $table->editColumn('license', function ($row) {
                 return $row->license ? $row->license : '';
+            });
+            $table->editColumn('foreign_license', function ($row) {
+                return $row->foreign_license ? $row->foreign_license : '';
             });
             $table->addColumn('brand_name', function ($row) {
                 return $row->brand ? $row->brand->name : '';
@@ -65,73 +70,51 @@ class SalesController extends Controller
             $table->editColumn('model', function ($row) {
                 return $row->model ? $row->model : '';
             });
-            $table->editColumn('vehicle_identification_number_vin', function ($row) {
-                return $row->vehicle_identification_number_vin ? $row->vehicle_identification_number_vin : '';
+            $table->editColumn('month', function ($row) {
+                return $row->month ? $row->month : '';
             });
-            $table->addColumn('seller_client_name', function ($row) {
-                return $row->seller_client ? $row->seller_client->name : '';
+            $table->editColumn('fuel', function ($row) {
+                return $row->fuel ? $row->fuel : '';
             });
-
-            $table->addColumn('buyer_client_name', function ($row) {
-                return $row->buyer_client ? $row->buyer_client->name : '';
+            $table->editColumn('inspec_b', function ($row) {
+                return $row->inspec_b ? $row->inspec_b : '';
             });
-
             $table->addColumn('suplier_name', function ($row) {
                 return $row->suplier ? $row->suplier->name : '';
             });
 
-            $table->addColumn('payment_status_name', function ($row) {
-                return $row->payment_status ? $row->payment_status->name : '';
+            $table->editColumn('pvp', function ($row) {
+                return $row->pvp ? $row->pvp : '';
             });
-
-            $table->addColumn('carrier_name', function ($row) {
-                return $row->carrier ? $row->carrier->name : '';
-            });
-
-            $table->addColumn('pickup_state_name', function ($row) {
-                return $row->pickup_state ? $row->pickup_state->name : '';
-            });
-
             $table->addColumn('client_name', function ($row) {
                 return $row->client ? $row->client->name : '';
             });
 
-            $table->rawColumns(['actions', 'placeholder', 'brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client']);
+            $table->editColumn('chekin_documents', function ($row) {
+                return $row->chekin_documents ? $row->chekin_documents : '';
+            });
+
+            $table->editColumn('key', function ($row) {
+                return $row->key ? $row->key : '';
+            });
+            $table->editColumn('manuals', function ($row) {
+                return $row->manuals ? $row->manuals : '';
+            });
+
+            $table->rawColumns(['actions', 'placeholder', 'general_state', 'brand', 'suplier', 'client']);
 
             return $table->make(true);
         }
 
+        $general_states   = GeneralState::get();
         $brands           = Brand::get();
-        $clients          = Client::get();
         $supliers         = Suplier::get();
         $payment_statuses = PaymentStatus::get();
         $carriers         = Carrier::get();
         $pickup_states    = PickupState::get();
+        $clients          = Client::get();
 
-        return view('admin.sales.index', compact('brands', 'clients', 'supliers', 'payment_statuses', 'carriers', 'pickup_states'));
-    }
-
-    public function create()
-    {
-        abort_if(Gate::denies('vehicle_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-
-        $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
-        $seller_clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
-        $buyer_clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
-        $supliers = Suplier::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
-        $payment_statuses = PaymentStatus::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
-        $carriers = Carrier::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
-        $pickup_states = PickupState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
-        $clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
-        return view('admin.sales.create', compact('brands', 'buyer_clients', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'seller_clients', 'supliers'));
+        return view('admin.sales.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients'));
     }
 
 }

@@ -4,7 +4,7 @@
     @can('vehicle_create')
         <div style="margin-bottom: 10px;" class="row">
             <div class="col-lg-12">
-                <a class="btn btn-success" href="{{ route('admin.sales.create') }}">
+                <a class="btn btn-success" href="{{ route('admin.vehicles.create') }}">
                     {{ trans('global.add') }} {{ trans('cruds.vehicle.title_singular') }}
                 </a>
                 <button class="btn btn-warning" data-toggle="modal" data-target="#csvImportModal">
@@ -28,10 +28,7 @@
 
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.id') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.license') }}
+                                    {{ trans('cruds.vehicle.fields.general_state') }}
                                 </th>
                                 <th>
                                     {{ trans('cruds.vehicle.fields.brand') }}
@@ -40,28 +37,31 @@
                                     {{ trans('cruds.vehicle.fields.model') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.vehicle_identification_number_vin') }}
+                                    {{ trans('cruds.vehicle.fields.version') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.seller_client') }}
+                                    {{ trans('cruds.vehicle.fields.license') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.buyer_client') }}
+                                    {{ trans('cruds.vehicle.fields.year') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.suplier') }}
+                                    {{ trans('cruds.vehicle.fields.month') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.payment_status') }}
+                                    {{ trans('cruds.vehicle.fields.fuel') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.carrier') }}
+                                    {{ trans('cruds.vehicle.fields.color') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.pickup_state') }}
+                                    {{ trans('cruds.vehicle.fields.kilometers') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.client') }}
+                                    {{ trans('cruds.vehicle.fields.inspec_b') }}
+                                </th>
+                                <th>
+                                    {{ trans('cruds.vehicle.fields.pvp') }}
                                 </th>
                                 <th>
                                     &nbsp;
@@ -71,10 +71,12 @@
                                 <td>
                                 </td>
                                 <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
+                                    <select class="search">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        @foreach($general_states as $key => $item)
+                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </td>
                                 <td>
                                     <select class="search">
@@ -91,60 +93,28 @@
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($clients as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($clients as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($supliers as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($payment_statuses as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($carriers as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($pickup_states as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($clients as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
+                                </td>
+                                <td>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
                                 </td>
@@ -204,18 +174,18 @@
     ajax: "{{ route('admin.vehicles.index') }}",
     columns: [
       { data: 'placeholder', name: 'placeholder' },
-{ data: 'id', name: 'id' },
-{ data: 'license', name: 'license' },
+{ data: 'general_state_name', name: 'general_state.name' },
 { data: 'brand_name', name: 'brand.name' },
 { data: 'model', name: 'model' },
-{ data: 'vehicle_identification_number_vin', name: 'vehicle_identification_number_vin' },
-{ data: 'seller_client_name', name: 'seller_client.name' },
-{ data: 'buyer_client_name', name: 'buyer_client.name' },
-{ data: 'suplier_name', name: 'suplier.name' },
-{ data: 'payment_status_name', name: 'payment_status.name' },
-{ data: 'carrier_name', name: 'carrier.name' },
-{ data: 'pickup_state_name', name: 'pickup_state.name' },
-{ data: 'client_name', name: 'client.name' },
+{ data: 'version', name: 'version' },
+{ data: 'license', name: 'license' },
+{ data: 'year', name: 'year' },
+{ data: 'month', name: 'month' },
+{ data: 'fuel', name: 'fuel' },
+{ data: 'color', name: 'color' },
+{ data: 'kilometers', name: 'kilometers' },
+{ data: 'inspec_b', name: 'inspec_b' },
+{ data: 'pvp', name: 'pvp' },
 { data: 'actions', name: '{{ trans('global.actions') }}' }
     ],
     orderCellsTop: true,
@@ -252,4 +222,21 @@ table.on('column-visibility.dt', function(e, settings, column, state) {
 });
 
 </script>
+@endsection
+@section('styles')
+@parent
+<style>
+    td {
+    padding: 5px!important;
+    margin: 0!important;
+}
+
+input.search {
+    width: 100px!important;
+}
+
+select.search {
+    width: 100px!important;
+}
+</style>
 @endsection
