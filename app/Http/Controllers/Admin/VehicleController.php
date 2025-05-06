@@ -52,15 +52,15 @@ class VehicleController extends Controller
                 ));
             });
 
-            $table->editColumn('id', function ($row) {
-                return $row->id ? $row->id : '';
-            });
-
             $table->addColumn('general_state_name', function ($row) {
                 return $row->general_state ? $row->general_state->name : '';
             });
+
             $table->editColumn('license', function ($row) {
                 return $row->license ? $row->license : '';
+            });
+            $table->editColumn('foreign_license', function ($row) {
+                return $row->foreign_license ? $row->foreign_license : '';
             });
             $table->addColumn('brand_name', function ($row) {
                 return $row->brand ? $row->brand->name : '';
@@ -69,7 +69,12 @@ class VehicleController extends Controller
             $table->editColumn('model', function ($row) {
                 return $row->model ? $row->model : '';
             });
-
+            $table->editColumn('month', function ($row) {
+                return $row->month ? $row->month : '';
+            });
+            $table->editColumn('fuel', function ($row) {
+                return $row->fuel ? $row->fuel : '';
+            });
             $table->addColumn('suplier_name', function ($row) {
                 return $row->suplier ? $row->suplier->name : '';
             });
@@ -90,20 +95,31 @@ class VehicleController extends Controller
                 return $row->client ? $row->client->name : '';
             });
 
-            $table->rawColumns(['actions', 'placeholder', 'general_state', 'brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client']);
+            $table->editColumn('chekin_documents', function ($row) {
+                return $row->chekin_documents ? $row->chekin_documents : '';
+            });
+
+            $table->editColumn('key', function ($row) {
+                return $row->key ? $row->key : '';
+            });
+            $table->editColumn('manuals', function ($row) {
+                return $row->manuals ? $row->manuals : '';
+            });
+
+            $table->rawColumns(['actions', 'placeholder', 'general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client']);
 
             return $table->make(true);
         }
 
         $general_states   = GeneralState::get();
         $brands           = Brand::get();
-        $clients          = Client::get();
         $supliers         = Suplier::get();
         $payment_statuses = PaymentStatus::get();
         $carriers         = Carrier::get();
         $pickup_states    = PickupState::get();
+        $clients          = Client::get();
 
-        return view('admin.vehicles.index', compact('general_states', 'brands', 'clients', 'supliers', 'payment_statuses', 'carriers', 'pickup_states'));
+        return view('admin.vehicles.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients'));
     }
 
     public function create()

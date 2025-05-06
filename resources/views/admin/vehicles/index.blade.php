@@ -28,19 +28,25 @@
 
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.id') }}
-                                </th>
-                                <th>
                                     {{ trans('cruds.vehicle.fields.general_state') }}
                                 </th>
                                 <th>
                                     {{ trans('cruds.vehicle.fields.license') }}
                                 </th>
                                 <th>
+                                    {{ trans('cruds.vehicle.fields.foreign_license') }}
+                                </th>
+                                <th>
                                     {{ trans('cruds.vehicle.fields.brand') }}
                                 </th>
                                 <th>
                                     {{ trans('cruds.vehicle.fields.model') }}
+                                </th>
+                                <th>
+                                    {{ trans('cruds.vehicle.fields.month') }}
+                                </th>
+                                <th>
+                                    {{ trans('cruds.vehicle.fields.fuel') }}
                                 </th>
                                 <th>
                                     {{ trans('cruds.vehicle.fields.suplier') }}
@@ -58,14 +64,23 @@
                                     {{ trans('cruds.vehicle.fields.client') }}
                                 </th>
                                 <th>
+                                    {{ trans('cruds.vehicle.fields.chekin_documents') }}
+                                </th>
+                                <th>
+                                    {{ trans('cruds.vehicle.fields.sale_date') }}
+                                </th>
+                                <th>
+                                    {{ trans('cruds.vehicle.fields.key') }}
+                                </th>
+                                <th>
+                                    {{ trans('cruds.vehicle.fields.manuals') }}
+                                </th>
+                                <th>
                                     &nbsp;
                                 </th>
                             </tr>
                             <tr>
                                 <td>
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
                                     <select class="search">
@@ -74,6 +89,9 @@
                                             <option value="{{ $item->name }}">{{ $item->name }}</option>
                                         @endforeach
                                     </select>
+                                </td>
+                                <td>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
@@ -93,9 +111,20 @@
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
+                                </td>
+                                <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
                                         @foreach($supliers as $key => $item)
+                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td>
+                                    <select class="search">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        @foreach($payment_statuses as $key => $item)
                                             <option value="{{ $item->name }}">{{ $item->name }}</option>
                                         @endforeach
                                     </select>
@@ -123,6 +152,17 @@
                                             <option value="{{ $item->name }}">{{ $item->name }}</option>
                                         @endforeach
                                     </select>
+                                </td>
+                                <td>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
+                                </td>
+                                <td>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
                                 </td>
@@ -182,16 +222,22 @@
     ajax: "{{ route('admin.vehicles.index') }}",
     columns: [
       { data: 'placeholder', name: 'placeholder' },
-{ data: 'id', name: 'id' },
 { data: 'general_state_name', name: 'general_state.name' },
 { data: 'license', name: 'license' },
+{ data: 'foreign_license', name: 'foreign_license' },
 { data: 'brand_name', name: 'brand.name' },
 { data: 'model', name: 'model' },
+{ data: 'month', name: 'month' },
+{ data: 'fuel', name: 'fuel' },
 { data: 'suplier_name', name: 'suplier.name' },
 { data: 'payment_status_name', name: 'payment_status.name' },
 { data: 'carrier_name', name: 'carrier.name' },
 { data: 'pickup_state_name', name: 'pickup_state.name' },
 { data: 'client_name', name: 'client.name' },
+{ data: 'chekin_documents', name: 'chekin_documents' },
+{ data: 'sale_date', name: 'sale_date' },
+{ data: 'key', name: 'key' },
+{ data: 'manuals', name: 'manuals' },
 { data: 'actions', name: '{{ trans('global.actions') }}' }
     ],
     orderCellsTop: true,
@@ -228,4 +274,21 @@ table.on('column-visibility.dt', function(e, settings, column, state) {
 });
 
 </script>
+@endsection
+@section('styles')
+@parent
+<style>
+    td {
+    padding: 5px!important;
+    margin: 0!important;
+}
+
+input.search {
+    width: 100px!important;
+}
+
+select.search {
+    width: 100px!important;
+}
+</style>
 @endsection
