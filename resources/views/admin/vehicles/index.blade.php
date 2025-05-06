@@ -49,16 +49,13 @@
                                     {{ trans('cruds.vehicle.fields.fuel') }}
                                 </th>
                                 <th>
+                                    {{ trans('cruds.vehicle.fields.inspec_b') }}
+                                </th>
+                                <th>
                                     {{ trans('cruds.vehicle.fields.suplier') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.payment_status') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.carrier') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.pickup_state') }}
+                                    {{ trans('cruds.vehicle.fields.pvp') }}
                                 </th>
                                 <th>
                                     {{ trans('cruds.vehicle.fields.client') }}
@@ -114,6 +111,9 @@
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
+                                </td>
+                                <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
                                         @foreach($supliers as $key => $item)
@@ -122,28 +122,7 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($payment_statuses as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($carriers as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($pickup_states as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
                                     <select class="search">
@@ -229,10 +208,9 @@
 { data: 'model', name: 'model' },
 { data: 'month', name: 'month' },
 { data: 'fuel', name: 'fuel' },
+{ data: 'inspec_b', name: 'inspec_b' },
 { data: 'suplier_name', name: 'suplier.name' },
-{ data: 'payment_status_name', name: 'payment_status.name' },
-{ data: 'carrier_name', name: 'carrier.name' },
-{ data: 'pickup_state_name', name: 'pickup_state.name' },
+{ data: 'pvp', name: 'pvp' },
 { data: 'client_name', name: 'client.name' },
 { data: 'chekin_documents', name: 'chekin_documents' },
 { data: 'sale_date', name: 'sale_date' },

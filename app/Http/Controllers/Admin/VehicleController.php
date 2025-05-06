@@ -75,22 +75,16 @@ class VehicleController extends Controller
             $table->editColumn('fuel', function ($row) {
                 return $row->fuel ? $row->fuel : '';
             });
+            $table->editColumn('inspec_b', function ($row) {
+                return $row->inspec_b ? $row->inspec_b : '';
+            });
             $table->addColumn('suplier_name', function ($row) {
                 return $row->suplier ? $row->suplier->name : '';
             });
 
-            $table->addColumn('payment_status_name', function ($row) {
-                return $row->payment_status ? $row->payment_status->name : '';
+            $table->editColumn('pvp', function ($row) {
+                return $row->pvp ? $row->pvp : '';
             });
-
-            $table->addColumn('carrier_name', function ($row) {
-                return $row->carrier ? $row->carrier->name : '';
-            });
-
-            $table->addColumn('pickup_state_name', function ($row) {
-                return $row->pickup_state ? $row->pickup_state->name : '';
-            });
-
             $table->addColumn('client_name', function ($row) {
                 return $row->client ? $row->client->name : '';
             });
@@ -106,7 +100,7 @@ class VehicleController extends Controller
                 return $row->manuals ? $row->manuals : '';
             });
 
-            $table->rawColumns(['actions', 'placeholder', 'general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client']);
+            $table->rawColumns(['actions', 'placeholder', 'general_state', 'brand', 'suplier', 'client']);
 
             return $table->make(true);
         }
