@@ -275,7 +275,7 @@ return [
             'first_key_helper'                          => ' ',
             'scuts'                                     => 'SCUTs',
             'scuts_helper'                              => ' ',
-            'key'                                       => 'Chave',
+            'key'                                       => 'Chave suplente',
             'key_helper'                                => ' ',
             'manuals'                                   => 'Manuais',
             'manuals_helper'                            => ' ',

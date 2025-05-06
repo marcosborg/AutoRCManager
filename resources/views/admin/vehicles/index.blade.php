@@ -52,10 +52,10 @@
                                     {{ trans('cruds.vehicle.fields.inspec_b') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.suplier') }}
+                                    {{ trans('cruds.vehicle.fields.pvp') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.pvp') }}
+                                    {{ trans('cruds.vehicle.fields.suplier') }}
                                 </th>
                                 <th>
                                     {{ trans('cruds.vehicle.fields.client') }}
@@ -111,15 +111,15 @@
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
                                         @foreach($supliers as $key => $item)
                                             <option value="{{ $item->name }}">{{ $item->name }}</option>
                                         @endforeach
                                     </select>
+                                </td>
+                                <td>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
@@ -210,8 +210,8 @@
 { data: 'month', name: 'month' },
 { data: 'fuel', name: 'fuel' },
 { data: 'inspec_b', name: 'inspec_b' },
-{ data: 'suplier_name', name: 'suplier.name' },
 { data: 'pvp', name: 'pvp' },
+{ data: 'suplier_name', name: 'suplier.name' },
 { data: 'client_name', name: 'client.name' },
 { data: 'chekin_documents', name: 'chekin_documents' },
 { data: 'sale_date', name: 'sale_date' },
