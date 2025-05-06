@@ -147,6 +147,17 @@
                                 </a>
                             </li>
                         @endcan
+                        @can('general_state_access')
+                            <li class="{{ request()->is("admin/general-states") || request()->is("admin/general-states/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.general-states.index") }}">
+                                    <i class="fa-fw fas fa-tasks">
+
+                                    </i>
+                                    <span>{{ trans('cruds.generalState.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
                     </ul>
                 </li>
             @endcan

@@ -98,7 +98,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repair-states/parse-csv-import', 'RepairStatesController@parseCsvImport')->name('repair-states.parseCsvImport');
     Route::post('repair-states/process-csv-import', 'RepairStatesController@processCsvImport')->name('repair-states.processCsvImport');
     Route::resource('repair-states', 'RepairStatesController');
-    
+
+    // General State
+    Route::delete('general-states/destroy', 'GeneralStateController@massDestroy')->name('general-states.massDestroy');
+    Route::resource('general-states', 'GeneralStateController');
 
     Route::get('system-calendar', 'SystemCalendarController@index')->name('systemCalendar');
     Route::get('global-search', 'GlobalSearchController@search')->name('globalSearch');
