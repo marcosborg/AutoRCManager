@@ -289,6 +289,8 @@ return [
             'client_amount_paid_helper'                 => ' ',
             'foreign_license'                           => 'Matricula estrangeira',
             'foreign_license_helper'                    => ' ',
+            'general_state'                             => 'Estado geral',
+            'general_state_helper'                      => ' ',
         ],
     ],
     'suplier' => [

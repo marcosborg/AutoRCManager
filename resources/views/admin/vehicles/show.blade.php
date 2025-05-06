@@ -27,10 +27,26 @@
                                 </tr>
                                 <tr>
                                     <th>
+                                        {{ trans('cruds.vehicle.fields.general_state') }}
+                                    </th>
+                                    <td>
+                                        {{ $vehicle->general_state->name ?? '' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
                                         {{ trans('cruds.vehicle.fields.license') }}
                                     </th>
                                     <td>
                                         {{ $vehicle->license }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        {{ trans('cruds.vehicle.fields.foreign_license') }}
+                                    </th>
+                                    <td>
+                                        {{ $vehicle->foreign_license }}
                                     </td>
                                 </tr>
                                 <tr>
@@ -75,10 +91,10 @@
                                 </tr>
                                 <tr>
                                     <th>
-                                        {{ trans('cruds.vehicle.fields.vehicle_identification_number_vin') }}
+                                        {{ trans('cruds.vehicle.fields.month') }}
                                     </th>
                                     <td>
-                                        {{ $vehicle->vehicle_identification_number_vin }}
+                                        {{ $vehicle->month }}
                                     </td>
                                 </tr>
                                 <tr>
@@ -119,22 +135,6 @@
                                     </th>
                                     <td>
                                         {{ $vehicle->inspec_b }}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>
-                                        {{ trans('cruds.vehicle.fields.seller_client') }}
-                                    </th>
-                                    <td>
-                                        {{ $vehicle->seller_client->name ?? '' }}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>
-                                        {{ trans('cruds.vehicle.fields.buyer_client') }}
-                                    </th>
-                                    <td>
-                                        {{ $vehicle->buyer_client->name ?? '' }}
                                     </td>
                                 </tr>
                                 <tr>

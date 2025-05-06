@@ -17,6 +17,10 @@ class UpdateVehicleRequest extends FormRequest
     public function rules()
     {
         return [
+            'general_state_id' => [
+                'required',
+                'integer',
+            ],
             'license' => [
                 'string',
                 'nullable',

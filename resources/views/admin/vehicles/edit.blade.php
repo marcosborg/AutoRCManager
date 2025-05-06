@@ -14,6 +14,20 @@
                         @csrf
                         <div class="row">
                             <div class="col-md-3">
+                                <div class="form-group {{ $errors->has('general_state') ? 'has-error' : '' }}">
+                                    <label class="required" for="general_state_id">{{ trans('cruds.vehicle.fields.general_state') }}</label>
+                                    <select class="form-control select2" name="general_state_id" id="general_state_id" required>
+                                        @foreach($general_states as $id => $entry)
+                                        <option value="{{ $id }}" {{ (old('general_state_id') ? old('general_state_id') : $vehicle->general_state->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if($errors->has('general_state'))
+                                    <span class="help-block" role="alert">{{ $errors->first('general_state') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.general_state_helper') }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('license') ? 'has-error' : '' }}">
                                     <label for="license">{{ trans('cruds.vehicle.fields.license') }}</label>
                                     <input class="form-control" type="text" name="license" id="license" value="{{ old('license', $vehicle->license) }}">

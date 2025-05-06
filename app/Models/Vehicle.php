@@ -46,6 +46,7 @@ class Vehicle extends Model implements HasMedia
     ];
 
     protected $fillable = [
+        'general_state_id',
         'license',
         'foreign_license',
         'brand_id',
@@ -115,6 +116,11 @@ class Vehicle extends Model implements HasMedia
     {
         $this->addMediaConversion('thumb')->fit('crop', 50, 50);
         $this->addMediaConversion('preview')->fit('crop', 120, 120);
+    }
+
+    public function general_state()
+    {
+        return $this->belongsTo(GeneralState::class, 'general_state_id');
     }
 
     public function brand()

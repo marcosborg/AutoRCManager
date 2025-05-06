@@ -31,6 +31,9 @@
                                     {{ trans('cruds.vehicle.fields.id') }}
                                 </th>
                                 <th>
+                                    {{ trans('cruds.vehicle.fields.general_state') }}
+                                </th>
+                                <th>
                                     {{ trans('cruds.vehicle.fields.license') }}
                                 </th>
                                 <th>
@@ -63,6 +66,14 @@
                                 </td>
                                 <td>
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
+                                </td>
+                                <td>
+                                    <select class="search">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        @foreach($general_states as $key => $item)
+                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </td>
                                 <td>
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
@@ -172,6 +183,7 @@
     columns: [
       { data: 'placeholder', name: 'placeholder' },
 { data: 'id', name: 'id' },
+{ data: 'general_state_name', name: 'general_state.name' },
 { data: 'license', name: 'license' },
 { data: 'brand_name', name: 'brand.name' },
 { data: 'model', name: 'model' },

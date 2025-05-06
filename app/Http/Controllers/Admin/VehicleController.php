@@ -15,6 +15,7 @@ use App\Models\PaymentStatus;
 use App\Models\PickupState;
 use App\Models\Suplier;
 use App\Models\Vehicle;
+use App\Models\GeneralState;
 use Gate;
 use Illuminate\Http\Request;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -30,7 +31,7 @@ class VehicleController extends Controller
         abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ($request->ajax()) {
-            $query = Vehicle::with(['brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client'])->select(sprintf('%s.*', (new Vehicle)->table));
+            $query = Vehicle::with(['general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client'])->select(sprintf('%s.*', (new Vehicle)->table));
             $table = Datatables::of($query);
 
             $table->addColumn('placeholder', '&nbsp;');
@@ -53,6 +54,10 @@ class VehicleController extends Controller
 
             $table->editColumn('id', function ($row) {
                 return $row->id ? $row->id : '';
+            });
+
+            $table->addColumn('general_state_name', function ($row) {
+                return $row->general_state ? $row->general_state->name : '';
             });
             $table->editColumn('license', function ($row) {
                 return $row->license ? $row->license : '';
@@ -85,11 +90,12 @@ class VehicleController extends Controller
                 return $row->client ? $row->client->name : '';
             });
 
-            $table->rawColumns(['actions', 'placeholder', 'brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client']);
+            $table->rawColumns(['actions', 'placeholder', 'general_state', 'brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client']);
 
             return $table->make(true);
         }
 
+        $general_states   = GeneralState::get();
         $brands           = Brand::get();
         $clients          = Client::get();
         $supliers         = Suplier::get();
@@ -97,12 +103,14 @@ class VehicleController extends Controller
         $carriers         = Carrier::get();
         $pickup_states    = PickupState::get();
 
-        return view('admin.vehicles.index', compact('brands', 'clients', 'supliers', 'payment_statuses', 'carriers', 'pickup_states'));
+        return view('admin.vehicles.index', compact('general_states', 'brands', 'clients', 'supliers', 'payment_statuses', 'carriers', 'pickup_states'));
     }
 
     public function create()
     {
         abort_if(Gate::denies('vehicle_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $general_states = GeneralState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
@@ -116,7 +124,7 @@ class VehicleController extends Controller
 
         $clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        return view('admin.vehicles.create', compact('brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers'));
+        return view('admin.vehicles.create', compact('general_states', 'brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers'));
     }
 
     public function store(StoreVehicleRequest $request)
@@ -158,6 +166,8 @@ class VehicleController extends Controller
     {
         abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        $general_states = GeneralState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+
         $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $supliers = Suplier::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
@@ -172,7 +182,7 @@ class VehicleController extends Controller
 
         $vehicle->load('brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client');
 
-        return view('admin.vehicles.edit', compact('brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers', 'vehicle'));
+        return view('admin.vehicles.edit', compact('general_states', 'brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers', 'vehicle'));
     }
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle)
@@ -270,7 +280,7 @@ class VehicleController extends Controller
     {
         abort_if(Gate::denies('vehicle_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $vehicle->load('brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client');
+        $vehicle->load('general_state', 'brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client');
 
         return view('admin.vehicles.show', compact('vehicle'));
     }
