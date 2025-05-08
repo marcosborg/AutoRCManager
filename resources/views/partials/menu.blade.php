@@ -205,6 +205,87 @@
                     </a>
                 </li>
             @endcan
+            @can('account_access')
+                <li class="treeview">
+                    <a href="#">
+                        <i class="fa-fw fas fa-euro-sign">
+
+                        </i>
+                        <span>{{ trans('cruds.account.title') }}</span>
+                        <span class="pull-right-container"><i class="fa fa-fw fa-angle-left pull-right"></i></span>
+                    </a>
+                    <ul class="treeview-menu">
+                        @can('account_operation_access')
+                            <li class="{{ request()->is("admin/account-operations") || request()->is("admin/account-operations/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.account-operations.index") }}">
+                                    <i class="fa-fw fas fa-plus">
+
+                                    </i>
+                                    <span>{{ trans('cruds.accountOperation.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
+                        @can('account_value_access')
+                            <li class="{{ request()->is("admin/account-values") || request()->is("admin/account-values/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.account-values.index") }}">
+                                    <i class="fa-fw fas fa-euro-sign">
+
+                                    </i>
+                                    <span>{{ trans('cruds.accountValue.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
+                        @can('account_configuration_access')
+                            <li class="treeview">
+                                <a href="#">
+                                    <i class="fa-fw fas fa-cogs">
+
+                                    </i>
+                                    <span>{{ trans('cruds.accountConfiguration.title') }}</span>
+                                    <span class="pull-right-container"><i class="fa fa-fw fa-angle-left pull-right"></i></span>
+                                </a>
+                                <ul class="treeview-menu">
+                                    @can('account_department_access')
+                                        <li class="{{ request()->is("admin/account-departments") || request()->is("admin/account-departments/*") ? "active" : "" }}">
+                                            <a href="{{ route("admin.account-departments.index") }}">
+                                                <i class="fa-fw far fa-building">
+
+                                                </i>
+                                                <span>{{ trans('cruds.accountDepartment.title') }}</span>
+
+                                            </a>
+                                        </li>
+                                    @endcan
+                                    @can('account_category_access')
+                                        <li class="{{ request()->is("admin/account-categories") || request()->is("admin/account-categories/*") ? "active" : "" }}">
+                                            <a href="{{ route("admin.account-categories.index") }}">
+                                                <i class="fa-fw fas fa-th-large">
+
+                                                </i>
+                                                <span>{{ trans('cruds.accountCategory.title') }}</span>
+
+                                            </a>
+                                        </li>
+                                    @endcan
+                                    @can('account_item_access')
+                                        <li class="{{ request()->is("admin/account-items") || request()->is("admin/account-items/*") ? "active" : "" }}">
+                                            <a href="{{ route("admin.account-items.index") }}">
+                                                <i class="fa-fw far fa-square">
+
+                                                </i>
+                                                <span>{{ trans('cruds.accountItem.title') }}</span>
+
+                                            </a>
+                                        </li>
+                                    @endcan
+                                </ul>
+                            </li>
+                        @endcan
+                    </ul>
+                </li>
+            @endcan
             <li class="{{ request()->is("admin/system-calendar") || request()->is("admin/system-calendar/*") ? "active" : "" }}">
                 <a href="{{ route("admin.systemCalendar") }}">
                     <i class="fas fa-fw fa-calendar">

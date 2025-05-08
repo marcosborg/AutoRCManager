@@ -103,6 +103,26 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('general-states/destroy', 'GeneralStateController@massDestroy')->name('general-states.massDestroy');
     Route::resource('general-states', 'GeneralStateController');
 
+    // Account Department
+    Route::delete('account-departments/destroy', 'AccountDepartmentController@massDestroy')->name('account-departments.massDestroy');
+    Route::resource('account-departments', 'AccountDepartmentController');
+
+    // Account Category
+    Route::delete('account-categories/destroy', 'AccountCategoryController@massDestroy')->name('account-categories.massDestroy');
+    Route::resource('account-categories', 'AccountCategoryController');
+
+    // Account Item
+    Route::delete('account-items/destroy', 'AccountItemController@massDestroy')->name('account-items.massDestroy');
+    Route::resource('account-items', 'AccountItemController');
+
+    // Account Value
+    Route::delete('account-values/destroy', 'AccountValueController@massDestroy')->name('account-values.massDestroy');
+    Route::resource('account-values', 'AccountValueController');
+
+    // Account Operation
+    Route::delete('account-operations/destroy', 'AccountOperationController@massDestroy')->name('account-operations.massDestroy');
+    Route::resource('account-operations', 'AccountOperationController');
+    
     Route::get('system-calendar', 'SystemCalendarController@index')->name('systemCalendar');
     Route::get('global-search', 'GlobalSearchController@search')->name('globalSearch');
     Route::get('messenger', 'MessengerController@index')->name('messenger.index');
