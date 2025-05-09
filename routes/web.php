@@ -91,6 +91,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('repairs/destroy', 'RepairController@massDestroy')->name('repairs.massDestroy');
     Route::post('repairs/parse-csv-import', 'RepairController@parseCsvImport')->name('repairs.parseCsvImport');
     Route::post('repairs/process-csv-import', 'RepairController@processCsvImport')->name('repairs.processCsvImport');
+    Route::post('repairs/media', 'RepairController@storeMedia')->name('repairs.storeMedia');
+    Route::post('repairs/ckmedia', 'RepairController@storeCKEditorImages')->name('repairs.storeCKEditorImages');
     Route::resource('repairs', 'RepairController');
 
     // Repair States

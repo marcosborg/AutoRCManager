@@ -12,122 +12,67 @@
                     <form method="POST" action="{{ route("admin.repairs.update", [$repair->id]) }}" enctype="multipart/form-data">
                         @method('PUT')
                         @csrf
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="license">{{ trans('cruds.vehicle.fields.license') }}</label>
-                                    <input class="form-control" type="text" disabled value="{{ old('license', $repair->vehicle->license) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>{{ trans('cruds.vehicle.fields.brand') }}</label>
-                                    <input type="text" disabled class="form-control" value={{ $repair->vehicle->brand->name }}>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="model">{{ trans('cruds.vehicle.fields.model') }}</label>
-                                    <input class="form-control" type="text" disabled value="{{ old('model', $repair->vehicle->model) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="version">{{ trans('cruds.vehicle.fields.version') }}</label>
-                                    <input class="form-control" type="text" disabled value="{{ old('version', $repair->vehicle->version) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="year">{{ trans('cruds.vehicle.fields.year') }}</label>
-                                    <input class="form-control" disabled type="number" value="{{ old('year', $repair->vehicle->year) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="vehicle_identification_number_vin">{{ trans('cruds.vehicle.fields.vehicle_identification_number_vin') }}</label>
-                                    <input class="form-control" type="text" disabled value="{{ old('vehicle_identification_number_vin', $repair->vehicle->vehicle_identification_number_vin) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="license_date">{{ trans('cruds.vehicle.fields.license_date') }}</label>
-                                    <input class="form-control date" type="text" disabled value="{{ old('license_date', $repair->vehicle->license_date) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="color">{{ trans('cruds.vehicle.fields.color') }}</label>
-                                    <input class="form-control" type="text" disabled value="{{ old('color', $repair->vehicle->color) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="fuel">{{ trans('cruds.vehicle.fields.fuel') }}</label>
-                                    <input class="form-control" type="text" disabled value="{{ old('fuel', $repair->vehicle->fuel) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="kilometers">{{ trans('cruds.vehicle.fields.kilometers') }}</label>
-                                    <input class="form-control" type="number" disabled value="{{ old('kilometers', $repair->vehicle->kilometers) }}" step="1">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="inspec_b">{{ trans('cruds.vehicle.fields.inspec_b') }}</label>
-                                    <input class="form-control" type="text" disabled value="{{ old('inspec_b', $repair->vehicle->inspec_b) }}">
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group {{ $errors->has('vehicle') ? 'has-error' : '' }}">
+                                            <label class="required" for="vehicle_id">{{ trans('cruds.repair.fields.vehicle') }}</label>
+                                            <select class="form-control select2" name="vehicle_id" id="vehicle_id" required>
+                                                @foreach($vehicles as $id => $entry)
+                                                <option value="{{ $id }}" {{ (old('vehicle_id') ? old('vehicle_id') : $repair->vehicle->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                                @endforeach
+                                            </select>
+                                            @if($errors->has('vehicle'))
+                                            <span class="help-block" role="alert">{{ $errors->first('vehicle') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.vehicle_helper') }}</span>
+                                        </div>
+                                        <div class="form-group {{ $errors->has('user') ? 'has-error' : '' }}">
+                                            <label class="required" for="user_id">{{ trans('cruds.repair.fields.user') }}</label>
+                                            <select class="form-control select2" name="user_id" id="user_id" required>
+                                                @foreach($users as $id => $entry)
+                                                <option value="{{ $id }}" {{ (old('user_id') ? old('user_id') : $repair->user->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                                @endforeach
+                                            </select>
+                                            @if($errors->has('user'))
+                                            <span class="help-block" role="alert">{{ $errors->first('user') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.user_helper') }}</span>
+                                        </div>
+                                        <div class="form-group {{ $errors->has('kilometers') ? 'has-error' : '' }}">
+                                            <label for="kilometers">{{ trans('cruds.repair.fields.kilometers') }}</label>
+                                            <input class="form-control" type="number" name="kilometers" id="kilometers" value="{{ old('kilometers', $repair->kilometers) }}" step="1">
+                                            @if($errors->has('kilometers'))
+                                            <span class="help-block" role="alert">{{ $errors->first('kilometers') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.kilometers_helper') }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group {{ $errors->has('obs_1') ? 'has-error' : '' }}">
+                                            <label for="obs_1">{{ trans('cruds.repair.fields.obs_1') }}</label>
+                                            <textarea class="form-control" name="obs_1" id="obs_1">{{ old('obs_1', $repair->obs_1) }}</textarea>
+                                            @if($errors->has('obs_1'))
+                                            <span class="help-block" role="alert">{{ $errors->first('obs_1') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.obs_1_helper') }}</span>
+                                        </div>
+                                        <div class="form-group {{ $errors->has('checkin') ? 'has-error' : '' }}">
+                                            <label for="checkin">{{ trans('cruds.repair.fields.checkin') }}</label>
+                                            <div class="needsclick dropzone" id="checkin-dropzone">
+                                            </div>
+                                            @if($errors->has('checkin'))
+                                            <span class="help-block" role="alert">{{ $errors->first('checkin') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.checkin_helper') }}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('user') ? 'has-error' : '' }}">
-                                    <label class="required" for="user_id">{{ trans('cruds.repair.fields.user') }}</label>
-                                    <select class="form-control select2" name="user_id" id="user_id" required>
-                                        @foreach($users as $id => $entry)
-                                        <option value="{{ $id }}" {{ (old('user_id') ? old('user_id') : $repair->user->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
-                                        @endforeach
-                                    </select>
-                                    @if($errors->has('user'))
-                                    <span class="help-block" role="alert">{{ $errors->first('user') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.repair.fields.user_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('kilometers') ? 'has-error' : '' }}">
-                                    <label for="kilometers">{{ trans('cruds.repair.fields.kilometers') }}</label>
-                                    <input class="form-control" type="number" name="kilometers" id="kilometers" value="{{ old('kilometers', $repair->kilometers) }}" step="1">
-                                    @if($errors->has('kilometers'))
-                                    <span class="help-block" role="alert">{{ $errors->first('kilometers') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.repair.fields.kilometers_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('repair_state') ? 'has-error' : '' }}">
-                                    <label for="repair_state_id">{{ trans('cruds.repair.fields.repair_state') }}</label>
-                                    <select class="form-control select2" name="repair_state_id" id="repair_state_id">
-                                        @foreach($repair_states as $id => $entry)
-                                        <option value="{{ $id }}" {{ (old('repair_state_id') ? old('repair_state_id') : $repair->repair_state->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
-                                        @endforeach
-                                    </select>
-                                    @if($errors->has('repair_state'))
-                                    <span class="help-block" role="alert">{{ $errors->first('repair_state') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.repair.fields.repair_state_helper') }}</span>
-                                </div>
-                            </div>
-                            <div class="col-md-9">
-                                <div class="form-group {{ $errors->has('obs_1') ? 'has-error' : '' }}">
-                                    <label for="obs_1">{{ trans('cruds.repair.fields.obs_1') }}</label>
-                                    <textarea class="form-control" name="obs_1" id="obs_1">{{ old('obs_1', $repair->obs_1) }}</textarea>
-                                    @if($errors->has('obs_1'))
-                                    <span class="help-block" role="alert">{{ $errors->first('obs_1') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.repair.fields.obs_1_helper') }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('front_windshield') ? 'has-error' : '' }}">
@@ -142,6 +87,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.front_windshield_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('front_windshield_text') ? 'has-error' : '' }}">
+                                            <label for="front_windshield_text">{{ trans('cruds.repair.fields.front_windshield_text') }}</label>
                                             <input class="form-control" type="text" name="front_windshield_text" id="front_windshield_text" value="{{ old('front_windshield_text', $repair->front_windshield_text) }}">
                                             @if($errors->has('front_windshield_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('front_windshield_text') }}</span>
@@ -150,6 +96,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('front_lights') ? 'has-error' : '' }}">
@@ -164,6 +112,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.front_lights_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('front_lights_text') ? 'has-error' : '' }}">
+                                            <label for="front_lights_text">{{ trans('cruds.repair.fields.front_lights_text') }}</label>
                                             <input class="form-control" type="text" name="front_lights_text" id="front_lights_text" value="{{ old('front_lights_text', $repair->front_lights_text) }}">
                                             @if($errors->has('front_lights_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('front_lights_text') }}</span>
@@ -172,6 +121,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('rear_lights') ? 'has-error' : '' }}">
@@ -186,6 +137,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.rear_lights_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('rear_lights_text') ? 'has-error' : '' }}">
+                                            <label for="rear_lights_text">{{ trans('cruds.repair.fields.rear_lights_text') }}</label>
                                             <input class="form-control" type="text" name="rear_lights_text" id="rear_lights_text" value="{{ old('rear_lights_text', $repair->rear_lights_text) }}">
                                             @if($errors->has('rear_lights_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('rear_lights_text') }}</span>
@@ -194,6 +146,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('horn_functionality') ? 'has-error' : '' }}">
@@ -208,6 +162,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.horn_functionality_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('horn_functionality_text') ? 'has-error' : '' }}">
+                                            <label for="horn_functionality_text">{{ trans('cruds.repair.fields.horn_functionality_text') }}</label>
                                             <input class="form-control" type="text" name="horn_functionality_text" id="horn_functionality_text" value="{{ old('horn_functionality_text', $repair->horn_functionality_text) }}">
                                             @if($errors->has('horn_functionality_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('horn_functionality_text') }}</span>
@@ -216,6 +171,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('wiper_blades_water_level') ? 'has-error' : '' }}">
@@ -230,6 +187,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.wiper_blades_water_level_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('wiper_blades_water_level_text') ? 'has-error' : '' }}">
+                                            <label for="wiper_blades_water_level_text">{{ trans('cruds.repair.fields.wiper_blades_water_level_text') }}</label>
                                             <input class="form-control" type="text" name="wiper_blades_water_level_text" id="wiper_blades_water_level_text" value="{{ old('wiper_blades_water_level_text', $repair->wiper_blades_water_level_text) }}">
                                             @if($errors->has('wiper_blades_water_level_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('wiper_blades_water_level_text') }}</span>
@@ -238,6 +196,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('brake_clutch_oil_level') ? 'has-error' : '' }}">
@@ -252,6 +212,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.brake_clutch_oil_level_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('brake_clutch_oil_level_text') ? 'has-error' : '' }}">
+                                            <label for="brake_clutch_oil_level_text">{{ trans('cruds.repair.fields.brake_clutch_oil_level_text') }}</label>
                                             <input class="form-control" type="text" name="brake_clutch_oil_level_text" id="brake_clutch_oil_level_text" value="{{ old('brake_clutch_oil_level_text', $repair->brake_clutch_oil_level_text) }}">
                                             @if($errors->has('brake_clutch_oil_level_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('brake_clutch_oil_level_text') }}</span>
@@ -260,6 +221,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('electrical_systems') ? 'has-error' : '' }}">
@@ -274,6 +237,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.electrical_systems_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('electrical_systems_text') ? 'has-error' : '' }}">
+                                            <label for="electrical_systems_text">{{ trans('cruds.repair.fields.electrical_systems_text') }}</label>
                                             <input class="form-control" type="text" name="electrical_systems_text" id="electrical_systems_text" value="{{ old('electrical_systems_text', $repair->electrical_systems_text) }}">
                                             @if($errors->has('electrical_systems_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('electrical_systems_text') }}</span>
@@ -282,6 +246,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('engine_coolant_level') ? 'has-error' : '' }}">
@@ -296,6 +262,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.engine_coolant_level_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('engine_coolant_level_text') ? 'has-error' : '' }}">
+                                            <label for="engine_coolant_level_text">{{ trans('cruds.repair.fields.engine_coolant_level_text') }}</label>
                                             <input class="form-control" type="text" name="engine_coolant_level_text" id="engine_coolant_level_text" value="{{ old('engine_coolant_level_text', $repair->engine_coolant_level_text) }}">
                                             @if($errors->has('engine_coolant_level_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('engine_coolant_level_text') }}</span>
@@ -304,6 +271,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('engine_oil_level') ? 'has-error' : '' }}">
@@ -318,6 +287,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.engine_oil_level_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('engine_oil_level_text') ? 'has-error' : '' }}">
+                                            <label for="engine_oil_level_text">{{ trans('cruds.repair.fields.engine_oil_level_text') }}</label>
                                             <input class="form-control" type="text" name="engine_oil_level_text" id="engine_oil_level_text" value="{{ old('engine_oil_level_text', $repair->engine_oil_level_text) }}">
                                             @if($errors->has('engine_oil_level_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('engine_oil_level_text') }}</span>
@@ -326,6 +296,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('filters_air_cabin_oil_fuel') ? 'has-error' : '' }}">
@@ -340,6 +312,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.filters_air_cabin_oil_fuel_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('filters_air_cabin_oil_fuel_text') ? 'has-error' : '' }}">
+                                            <label for="filters_air_cabin_oil_fuel_text">{{ trans('cruds.repair.fields.filters_air_cabin_oil_fuel_text') }}</label>
                                             <input class="form-control" type="text" name="filters_air_cabin_oil_fuel_text" id="filters_air_cabin_oil_fuel_text" value="{{ old('filters_air_cabin_oil_fuel_text', $repair->filters_air_cabin_oil_fuel_text) }}">
                                             @if($errors->has('filters_air_cabin_oil_fuel_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('filters_air_cabin_oil_fuel_text') }}</span>
@@ -348,6 +321,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('check_leaks_engine_gearbox_steering') ? 'has-error' : '' }}">
@@ -362,6 +337,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.check_leaks_engine_gearbox_steering_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('check_leaks_engine_gearbox_steering_text') ? 'has-error' : '' }}">
+                                            <label for="check_leaks_engine_gearbox_steering_text">{{ trans('cruds.repair.fields.check_leaks_engine_gearbox_steering_text') }}</label>
                                             <input class="form-control" type="text" name="check_leaks_engine_gearbox_steering_text" id="check_leaks_engine_gearbox_steering_text" value="{{ old('check_leaks_engine_gearbox_steering_text', $repair->check_leaks_engine_gearbox_steering_text) }}">
                                             @if($errors->has('check_leaks_engine_gearbox_steering_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('check_leaks_engine_gearbox_steering_text') }}</span>
@@ -370,6 +346,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('brake_pads_disks') ? 'has-error' : '' }}">
@@ -384,6 +362,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.brake_pads_disks_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('brake_pads_disks_text') ? 'has-error' : '' }}">
+                                            <label for="brake_pads_disks_text">{{ trans('cruds.repair.fields.brake_pads_disks_text') }}</label>
                                             <input class="form-control" type="text" name="brake_pads_disks_text" id="brake_pads_disks_text" value="{{ old('brake_pads_disks_text', $repair->brake_pads_disks_text) }}">
                                             @if($errors->has('brake_pads_disks_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('brake_pads_disks_text') }}</span>
@@ -392,6 +371,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('shock_absorbers') ? 'has-error' : '' }}">
@@ -406,6 +387,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.shock_absorbers_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('shock_absorbers_text') ? 'has-error' : '' }}">
+                                            <label for="shock_absorbers_text">{{ trans('cruds.repair.fields.shock_absorbers_text') }}</label>
                                             <input class="form-control" type="text" name="shock_absorbers_text" id="shock_absorbers_text" value="{{ old('shock_absorbers_text', $repair->shock_absorbers_text) }}">
                                             @if($errors->has('shock_absorbers_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('shock_absorbers_text') }}</span>
@@ -414,6 +396,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('tire_condition') ? 'has-error' : '' }}">
@@ -428,6 +412,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.tire_condition_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('tire_condition_text') ? 'has-error' : '' }}">
+                                            <label for="tire_condition_text">{{ trans('cruds.repair.fields.tire_condition_text') }}</label>
                                             <input class="form-control" type="text" name="tire_condition_text" id="tire_condition_text" value="{{ old('tire_condition_text', $repair->tire_condition_text) }}">
                                             @if($errors->has('tire_condition_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('tire_condition_text') }}</span>
@@ -436,6 +421,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('battery') ? 'has-error' : '' }}">
@@ -450,6 +437,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.battery_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('battery_text') ? 'has-error' : '' }}">
+                                            <label for="battery_text">{{ trans('cruds.repair.fields.battery_text') }}</label>
                                             <input class="form-control" type="text" name="battery_text" id="battery_text" value="{{ old('battery_text', $repair->battery_text) }}">
                                             @if($errors->has('battery_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('battery_text') }}</span>
@@ -458,6 +446,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('spare_tire_vest_triangle_tools') ? 'has-error' : '' }}">
@@ -472,6 +462,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.spare_tire_vest_triangle_tools_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('spare_tire_vest_triangle_tools_text') ? 'has-error' : '' }}">
+                                            <label for="spare_tire_vest_triangle_tools_text">{{ trans('cruds.repair.fields.spare_tire_vest_triangle_tools_text') }}</label>
                                             <input class="form-control" type="text" name="spare_tire_vest_triangle_tools_text" id="spare_tire_vest_triangle_tools_text" value="{{ old('spare_tire_vest_triangle_tools_text', $repair->spare_tire_vest_triangle_tools_text) }}">
                                             @if($errors->has('spare_tire_vest_triangle_tools_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('spare_tire_vest_triangle_tools_text') }}</span>
@@ -480,6 +471,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('check_clearance') ? 'has-error' : '' }}">
@@ -494,6 +487,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.check_clearance_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('check_clearance_text') ? 'has-error' : '' }}">
+                                            <label for="check_clearance_text">{{ trans('cruds.repair.fields.check_clearance_text') }}</label>
                                             <input class="form-control" type="text" name="check_clearance_text" id="check_clearance_text" value="{{ old('check_clearance_text', $repair->check_clearance_text) }}">
                                             @if($errors->has('check_clearance_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('check_clearance_text') }}</span>
@@ -502,6 +496,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('check_shields') ? 'has-error' : '' }}">
@@ -516,6 +512,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.check_shields_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('check_shields_text') ? 'has-error' : '' }}">
+                                            <label for="check_shields_text">{{ trans('cruds.repair.fields.check_shields_text') }}</label>
                                             <input class="form-control" type="text" name="check_shields_text" id="check_shields_text" value="{{ old('check_shields_text', $repair->check_shields_text) }}">
                                             @if($errors->has('check_shields_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('check_shields_text') }}</span>
@@ -524,6 +521,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('paint_condition') ? 'has-error' : '' }}">
@@ -538,6 +537,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.paint_condition_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('paint_condition_text') ? 'has-error' : '' }}">
+                                            <label for="paint_condition_text">{{ trans('cruds.repair.fields.paint_condition_text') }}</label>
                                             <input class="form-control" type="text" name="paint_condition_text" id="paint_condition_text" value="{{ old('paint_condition_text', $repair->paint_condition_text) }}">
                                             @if($errors->has('paint_condition_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('paint_condition_text') }}</span>
@@ -546,6 +546,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('dents') ? 'has-error' : '' }}">
@@ -560,6 +562,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.dents_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('dents_text') ? 'has-error' : '' }}">
+                                            <label for="dents_text">{{ trans('cruds.repair.fields.dents_text') }}</label>
                                             <input class="form-control" type="text" name="dents_text" id="dents_text" value="{{ old('dents_text', $repair->dents_text) }}">
                                             @if($errors->has('dents_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('dents_text') }}</span>
@@ -568,6 +571,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('diverse_strips') ? 'has-error' : '' }}">
@@ -582,6 +587,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.diverse_strips_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('diverse_strips_text') ? 'has-error' : '' }}">
+                                            <label for="diverse_strips_text">{{ trans('cruds.repair.fields.diverse_strips_text') }}</label>
                                             <input class="form-control" type="text" name="diverse_strips_text" id="diverse_strips_text" value="{{ old('diverse_strips_text', $repair->diverse_strips_text) }}">
                                             @if($errors->has('diverse_strips_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('diverse_strips_text') }}</span>
@@ -590,6 +596,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('diverse_plastics_check_scratches') ? 'has-error' : '' }}">
@@ -604,6 +612,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.diverse_plastics_check_scratches_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('diverse_plastics_check_scratches_text') ? 'has-error' : '' }}">
+                                            <label for="diverse_plastics_check_scratches_text">{{ trans('cruds.repair.fields.diverse_plastics_check_scratches_text') }}</label>
                                             <input class="form-control" type="text" name="diverse_plastics_check_scratches_text" id="diverse_plastics_check_scratches_text" value="{{ old('diverse_plastics_check_scratches_text', $repair->diverse_plastics_check_scratches_text) }}">
                                             @if($errors->has('diverse_plastics_check_scratches_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('diverse_plastics_check_scratches_text') }}</span>
@@ -613,7 +622,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('wheels') ? 'has-error' : '' }}">
@@ -628,6 +637,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.wheels_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('wheels_text') ? 'has-error' : '' }}">
+                                            <label for="wheels_text">{{ trans('cruds.repair.fields.wheels_text') }}</label>
                                             <input class="form-control" type="text" name="wheels_text" id="wheels_text" value="{{ old('wheels_text', $repair->wheels_text) }}">
                                             @if($errors->has('wheels_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('wheels_text') }}</span>
@@ -636,6 +646,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('bolts_paint') ? 'has-error' : '' }}">
@@ -650,6 +662,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.bolts_paint_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('bolts_paint_text') ? 'has-error' : '' }}">
+                                            <label for="bolts_paint_text">{{ trans('cruds.repair.fields.bolts_paint_text') }}</label>
                                             <input class="form-control" type="text" name="bolts_paint_text" id="bolts_paint_text" value="{{ old('bolts_paint_text', $repair->bolts_paint_text) }}">
                                             @if($errors->has('bolts_paint_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('bolts_paint_text') }}</span>
@@ -658,6 +671,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('seat_belts') ? 'has-error' : '' }}">
@@ -672,6 +687,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.seat_belts_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('seat_belts_text') ? 'has-error' : '' }}">
+                                            <label for="seat_belts_text">{{ trans('cruds.repair.fields.seat_belts_text') }}</label>
                                             <input class="form-control" type="text" name="seat_belts_text" id="seat_belts_text" value="{{ old('seat_belts_text', $repair->seat_belts_text) }}">
                                             @if($errors->has('seat_belts_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('seat_belts_text') }}</span>
@@ -680,6 +696,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('radio') ? 'has-error' : '' }}">
@@ -694,6 +712,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.radio_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('radio_text') ? 'has-error' : '' }}">
+                                            <label for="radio_text">{{ trans('cruds.repair.fields.radio_text') }}</label>
                                             <input class="form-control" type="text" name="radio_text" id="radio_text" value="{{ old('radio_text', $repair->radio_text) }}">
                                             @if($errors->has('radio_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('radio_text') }}</span>
@@ -702,6 +721,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('air_conditioning') ? 'has-error' : '' }}">
@@ -716,6 +737,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.air_conditioning_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('air_conditioning_text') ? 'has-error' : '' }}">
+                                            <label for="air_conditioning_text">{{ trans('cruds.repair.fields.air_conditioning_text') }}</label>
                                             <input class="form-control" type="text" name="air_conditioning_text" id="air_conditioning_text" value="{{ old('air_conditioning_text', $repair->air_conditioning_text) }}">
                                             @if($errors->has('air_conditioning_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('air_conditioning_text') }}</span>
@@ -724,6 +746,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('front_rear_window_functionality') ? 'has-error' : '' }}">
@@ -738,6 +762,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.front_rear_window_functionality_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('front_rear_window_functionality_text') ? 'has-error' : '' }}">
+                                            <label for="front_rear_window_functionality_text">{{ trans('cruds.repair.fields.front_rear_window_functionality_text') }}</label>
                                             <input class="form-control" type="text" name="front_rear_window_functionality_text" id="front_rear_window_functionality_text" value="{{ old('front_rear_window_functionality_text', $repair->front_rear_window_functionality_text) }}">
                                             @if($errors->has('front_rear_window_functionality_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('front_rear_window_functionality_text') }}</span>
@@ -746,6 +771,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('seats_upholstery') ? 'has-error' : '' }}">
@@ -760,6 +787,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.seats_upholstery_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('seats_upholstery_text') ? 'has-error' : '' }}">
+                                            <label for="seats_upholstery_text">{{ trans('cruds.repair.fields.seats_upholstery_text') }}</label>
                                             <input class="form-control" type="text" name="seats_upholstery_text" id="seats_upholstery_text" value="{{ old('seats_upholstery_text', $repair->seats_upholstery_text) }}">
                                             @if($errors->has('seats_upholstery_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('seats_upholstery_text') }}</span>
@@ -768,6 +796,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('sun_visors') ? 'has-error' : '' }}">
@@ -782,6 +812,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.sun_visors_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('sun_visors_text') ? 'has-error' : '' }}">
+                                            <label for="sun_visors_text">{{ trans('cruds.repair.fields.sun_visors_text') }}</label>
                                             <input class="form-control" type="text" name="sun_visors_text" id="sun_visors_text" value="{{ old('sun_visors_text', $repair->sun_visors_text) }}">
                                             @if($errors->has('sun_visors_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('sun_visors_text') }}</span>
@@ -790,6 +821,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('carpets') ? 'has-error' : '' }}">
@@ -804,6 +837,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.carpets_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('carpets_text') ? 'has-error' : '' }}">
+                                            <label for="carpets_text">{{ trans('cruds.repair.fields.carpets_text') }}</label>
                                             <input class="form-control" type="text" name="carpets_text" id="carpets_text" value="{{ old('carpets_text', $repair->carpets_text) }}">
                                             @if($errors->has('carpets_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('carpets_text') }}</span>
@@ -812,6 +846,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('trunk_shelf') ? 'has-error' : '' }}">
@@ -826,6 +862,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.trunk_shelf_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('trunk_shelf_text') ? 'has-error' : '' }}">
+                                            <label for="trunk_shelf_text">{{ trans('cruds.repair.fields.trunk_shelf_text') }}</label>
                                             <input class="form-control" type="text" name="trunk_shelf_text" id="trunk_shelf_text" value="{{ old('trunk_shelf_text', $repair->trunk_shelf_text) }}">
                                             @if($errors->has('trunk_shelf_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('trunk_shelf_text') }}</span>
@@ -834,6 +871,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('buttons') ? 'has-error' : '' }}">
@@ -848,6 +887,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.buttons_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('buttons_text') ? 'has-error' : '' }}">
+                                            <label for="buttons_text">{{ trans('cruds.repair.fields.buttons_text') }}</label>
                                             <input class="form-control" type="text" name="buttons_text" id="buttons_text" value="{{ old('buttons_text', $repair->buttons_text) }}">
                                             @if($errors->has('buttons_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('buttons_text') }}</span>
@@ -856,6 +896,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('door_panels') ? 'has-error' : '' }}">
@@ -870,6 +912,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.door_panels_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('door_panels_text') ? 'has-error' : '' }}">
+                                            <label for="door_panels_text">{{ trans('cruds.repair.fields.door_panels_text') }}</label>
                                             <input class="form-control" type="text" name="door_panels_text" id="door_panels_text" value="{{ old('door_panels_text', $repair->door_panels_text) }}">
                                             @if($errors->has('door_panels_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('door_panels_text') }}</span>
@@ -878,6 +921,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('locks') ? 'has-error' : '' }}">
@@ -892,6 +937,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.locks_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('locks_text') ? 'has-error' : '' }}">
+                                            <label for="locks_text">{{ trans('cruds.repair.fields.locks_text') }}</label>
                                             <input class="form-control" type="text" name="locks_text" id="locks_text" value="{{ old('locks_text', $repair->locks_text) }}">
                                             @if($errors->has('locks_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('locks_text') }}</span>
@@ -900,6 +946,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('interior_covers_headlights_taillights') ? 'has-error' : '' }}">
@@ -914,6 +962,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.interior_covers_headlights_taillights_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('interior_covers_headlights_taillights_text') ? 'has-error' : '' }}">
+                                            <label for="interior_covers_headlights_taillights_text">{{ trans('cruds.repair.fields.interior_covers_headlights_taillights_text') }}</label>
                                             <input class="form-control" type="text" name="interior_covers_headlights_taillights_text" id="interior_covers_headlights_taillights_text" value="{{ old('interior_covers_headlights_taillights_text', $repair->interior_covers_headlights_taillights_text) }}">
                                             @if($errors->has('interior_covers_headlights_taillights_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('interior_covers_headlights_taillights_text') }}</span>
@@ -922,6 +971,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('open_close_doors_remote_control_all_functions') ? 'has-error' : '' }}">
@@ -936,6 +987,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.open_close_doors_remote_control_all_functions_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('open_close_doors_remote_control_all_functions_text') ? 'has-error' : '' }}">
+                                            <label for="open_close_doors_remote_control_all_functions_text">{{ trans('cruds.repair.fields.open_close_doors_remote_control_all_functions_text') }}</label>
                                             <input class="form-control" type="text" name="open_close_doors_remote_control_all_functions_text" id="open_close_doors_remote_control_all_functions_text" value="{{ old('open_close_doors_remote_control_all_functions_text', $repair->open_close_doors_remote_control_all_functions_text) }}">
                                             @if($errors->has('open_close_doors_remote_control_all_functions_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('open_close_doors_remote_control_all_functions_text') }}</span>
@@ -944,6 +996,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('turn_on_ac_check_glass') ? 'has-error' : '' }}">
@@ -958,6 +1012,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.turn_on_ac_check_glass_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('turn_on_ac_check_glass_text') ? 'has-error' : '' }}">
+                                            <label for="turn_on_ac_check_glass_text">{{ trans('cruds.repair.fields.turn_on_ac_check_glass_text') }}</label>
                                             <input class="form-control" type="text" name="turn_on_ac_check_glass_text" id="turn_on_ac_check_glass_text" value="{{ old('turn_on_ac_check_glass_text', $repair->turn_on_ac_check_glass_text) }}">
                                             @if($errors->has('turn_on_ac_check_glass_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('turn_on_ac_check_glass_text') }}</span>
@@ -966,6 +1021,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('check_engine_lift_hood') ? 'has-error' : '' }}">
@@ -980,6 +1037,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.check_engine_lift_hood_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('check_engine_lift_hood_text') ? 'has-error' : '' }}">
+                                            <label for="check_engine_lift_hood_text">{{ trans('cruds.repair.fields.check_engine_lift_hood_text') }}</label>
                                             <input class="form-control" type="text" name="check_engine_lift_hood_text" id="check_engine_lift_hood_text" value="{{ old('check_engine_lift_hood_text', $repair->check_engine_lift_hood_text) }}">
                                             @if($errors->has('check_engine_lift_hood_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('check_engine_lift_hood_text') }}</span>
@@ -988,6 +1046,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('connect_vehicle_to_scanner_check_errors') ? 'has-error' : '' }}">
@@ -1002,6 +1062,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.connect_vehicle_to_scanner_check_errors_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('connect_vehicle_to_scanner_check_errors_text') ? 'has-error' : '' }}">
+                                            <label for="connect_vehicle_to_scanner_check_errors_text">{{ trans('cruds.repair.fields.connect_vehicle_to_scanner_check_errors_text') }}</label>
                                             <input class="form-control" type="text" name="connect_vehicle_to_scanner_check_errors_text" id="connect_vehicle_to_scanner_check_errors_text" value="{{ old('connect_vehicle_to_scanner_check_errors_text', $repair->connect_vehicle_to_scanner_check_errors_text) }}">
                                             @if($errors->has('connect_vehicle_to_scanner_check_errors_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('connect_vehicle_to_scanner_check_errors_text') }}</span>
@@ -1010,6 +1071,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('check_chassis_confirm_with_registration') ? 'has-error' : '' }}">
@@ -1024,6 +1087,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.check_chassis_confirm_with_registration_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('check_chassis_confirm_with_registration_text') ? 'has-error' : '' }}">
+                                            <label for="check_chassis_confirm_with_registration_text">{{ trans('cruds.repair.fields.check_chassis_confirm_with_registration_text') }}</label>
                                             <input class="form-control" type="text" name="check_chassis_confirm_with_registration_text" id="check_chassis_confirm_with_registration_text" value="{{ old('check_chassis_confirm_with_registration_text', $repair->check_chassis_confirm_with_registration_text) }}">
                                             @if($errors->has('check_chassis_confirm_with_registration_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('check_chassis_confirm_with_registration_text') }}</span>
@@ -1032,6 +1096,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('manufacturer_plate') ? 'has-error' : '' }}">
@@ -1046,6 +1112,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.manufacturer_plate_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('manufacturer_plate_text') ? 'has-error' : '' }}">
+                                            <label for="manufacturer_plate_text">{{ trans('cruds.repair.fields.manufacturer_plate_text') }}</label>
                                             <input class="form-control" type="text" name="manufacturer_plate_text" id="manufacturer_plate_text" value="{{ old('manufacturer_plate_text', $repair->manufacturer_plate_text) }}">
                                             @if($errors->has('manufacturer_plate_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('manufacturer_plate_text') }}</span>
@@ -1054,6 +1121,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('check_chassis_stickers') ? 'has-error' : '' }}">
@@ -1068,6 +1137,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.check_chassis_stickers_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('check_chassis_stickers_text') ? 'has-error' : '' }}">
+                                            <label for="check_chassis_stickers_text">{{ trans('cruds.repair.fields.check_chassis_stickers_text') }}</label>
                                             <input class="form-control" type="text" name="check_chassis_stickers_text" id="check_chassis_stickers_text" value="{{ old('check_chassis_stickers_text', $repair->check_chassis_stickers_text) }}">
                                             @if($errors->has('check_chassis_stickers_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('check_chassis_stickers_text') }}</span>
@@ -1076,6 +1146,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-body">
                                         <div class="form-group {{ $errors->has('check_gearbox_oil') ? 'has-error' : '' }}">
@@ -1090,6 +1162,7 @@
                                             <span class="help-block">{{ trans('cruds.repair.fields.check_gearbox_oil_helper') }}</span>
                                         </div>
                                         <div class="form-group {{ $errors->has('check_gearbox_oil_text') ? 'has-error' : '' }}">
+                                            <label for="check_gearbox_oil_text">{{ trans('cruds.repair.fields.check_gearbox_oil_text') }}</label>
                                             <input class="form-control" type="text" name="check_gearbox_oil_text" id="check_gearbox_oil_text" value="{{ old('check_gearbox_oil_text', $repair->check_gearbox_oil_text) }}">
                                             @if($errors->has('check_gearbox_oil_text'))
                                             <span class="help-block" role="alert">{{ $errors->first('check_gearbox_oil_text') }}</span>
@@ -1099,41 +1172,67 @@
                                     </div>
                                 </div>
                             </div>
+
                         </div>
-                        <div class="form-group {{ $errors->has('obs_2') ? 'has-error' : '' }}">
-                            <label for="obs_2">{{ trans('cruds.repair.fields.obs_2') }}</label>
-                            <textarea class="form-control" name="obs_2" id="obs_2">{{ old('obs_2', $repair->obs_2) }}</textarea>
-                            @if($errors->has('obs_2'))
-                            <span class="help-block" role="alert">{{ $errors->first('obs_2') }}</span>
-                            @endif
-                            <span class="help-block">{{ trans('cruds.repair.fields.obs_2_helper') }}</span>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group {{ $errors->has('timestamp') ? 'has-error' : '' }}">
-                                    <label for="timestamp">{{ trans('cruds.repair.fields.timestamp') }}</label>
-                                    <input class="form-control datetime" type="text" name="timestamp" id="timestamp" value="{{ old('timestamp', $repair->timestamp) }}">
-                                    @if($errors->has('timestamp'))
-                                    <span class="help-block" role="alert">{{ $errors->first('timestamp') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.repair.fields.timestamp_helper') }}</span>
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group {{ $errors->has('obs_2') ? 'has-error' : '' }}">
+                                            <label for="obs_2">{{ trans('cruds.repair.fields.obs_2') }}</label>
+                                            <textarea class="form-control" name="obs_2" id="obs_2">{{ old('obs_2', $repair->obs_2) }}</textarea>
+                                            @if($errors->has('obs_2'))
+                                            <span class="help-block" role="alert">{{ $errors->first('obs_2') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.obs_2_helper') }}</span>
+                                        </div>
+                                        <div class="form-group {{ $errors->has('checkout') ? 'has-error' : '' }}">
+                                            <label for="checkout">{{ trans('cruds.repair.fields.checkout') }}</label>
+                                            <div class="needsclick dropzone" id="checkout-dropzone">
+                                            </div>
+                                            @if($errors->has('checkout'))
+                                            <span class="help-block" role="alert">{{ $errors->first('checkout') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.checkout_helper') }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group {{ $errors->has('timestamp') ? 'has-error' : '' }}">
+                                            <label for="timestamp">{{ trans('cruds.repair.fields.timestamp') }}</label>
+                                            <input class="form-control datetime" type="text" name="timestamp" id="timestamp" value="{{ old('timestamp', $repair->timestamp) }}">
+                                            @if($errors->has('timestamp'))
+                                            <span class="help-block" role="alert">{{ $errors->first('timestamp') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.timestamp_helper') }}</span>
+                                        </div>
+                                        <div class="form-group {{ $errors->has('name') ? 'has-error' : '' }}">
+                                            <label for="name">{{ trans('cruds.repair.fields.name') }}</label>
+                                            <input class="form-control" type="text" name="name" id="name" value="{{ old('name', $repair->name) }}">
+                                            @if($errors->has('name'))
+                                            <span class="help-block" role="alert">{{ $errors->first('name') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.name_helper') }}</span>
+                                        </div>
+                                        <div class="form-group {{ $errors->has('repair_state') ? 'has-error' : '' }}">
+                                            <label for="repair_state_id">{{ trans('cruds.repair.fields.repair_state') }}</label>
+                                            <select class="form-control select2" name="repair_state_id" id="repair_state_id">
+                                                @foreach($repair_states as $id => $entry)
+                                                <option value="{{ $id }}" {{ (old('repair_state_id') ? old('repair_state_id') : $repair->repair_state->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                                @endforeach
+                                            </select>
+                                            @if($errors->has('repair_state'))
+                                            <span class="help-block" role="alert">{{ $errors->first('repair_state') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.repair_state_helper') }}</span>
+                                        </div>
+                                        <div class="form-group">
+                                            <button class="btn btn-lg btn-danger" type="submit">
+                                                {{ trans('global.save') }}
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group {{ $errors->has('name') ? 'has-error' : '' }}">
-                                    <label for="name">{{ trans('cruds.repair.fields.name') }}</label>
-                                    <input class="form-control" type="text" name="name" id="name" value="{{ old('name', $repair->name) }}">
-                                    @if($errors->has('name'))
-                                    <span class="help-block" role="alert">{{ $errors->first('name') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.repair.fields.name_helper') }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <button class="btn btn-danger" type="submit">
-                                {{ trans('global.save') }}
-                            </button>
                         </div>
                     </form>
                 </div>
@@ -1141,4 +1240,128 @@
         </div>
     </div>
 </div>
+@endsection
+@section('scripts')
+<script>
+    var uploadedCheckinMap = {}
+Dropzone.options.checkinDropzone = {
+    url: '{{ route('admin.repairs.storeMedia') }}',
+    maxFilesize: 2, // MB
+    acceptedFiles: '.jpeg,.jpg,.png,.gif',
+    addRemoveLinks: true,
+    headers: {
+      'X-CSRF-TOKEN': "{{ csrf_token() }}"
+    },
+    params: {
+      size: 2,
+      width: 4096,
+      height: 4096
+    },
+    success: function (file, response) {
+      $('form').append('<input type="hidden" name="checkin[]" value="' + response.name + '">')
+      uploadedCheckinMap[file.name] = response.name
+    },
+    removedfile: function (file) {
+      console.log(file)
+      file.previewElement.remove()
+      var name = ''
+      if (typeof file.file_name !== 'undefined') {
+        name = file.file_name
+      } else {
+        name = uploadedCheckinMap[file.name]
+      }
+      $('form').find('input[name="checkin[]"][value="' + name + '"]').remove()
+    },
+    init: function () {
+@if(isset($repair) && $repair->checkin)
+      var files = {!! json_encode($repair->checkin) !!}
+          for (var i in files) {
+          var file = files[i]
+          this.options.addedfile.call(this, file)
+          this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
+          file.previewElement.classList.add('dz-complete')
+          $('form').append('<input type="hidden" name="checkin[]" value="' + file.file_name + '">')
+        }
+@endif
+    },
+     error: function (file, response) {
+         if ($.type(response) === 'string') {
+             var message = response //dropzone sends it's own error messages in string
+         } else {
+             var message = response.errors.file
+         }
+         file.previewElement.classList.add('dz-error')
+         _ref = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+         _results = []
+         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+             node = _ref[_i]
+             _results.push(node.textContent = message)
+         }
+
+         return _results
+     }
+}
+
+</script>
+<script>
+    var uploadedCheckoutMap = {}
+Dropzone.options.checkoutDropzone = {
+    url: '{{ route('admin.repairs.storeMedia') }}',
+    maxFilesize: 5, // MB
+    acceptedFiles: '.jpeg,.jpg,.png,.gif',
+    addRemoveLinks: true,
+    headers: {
+      'X-CSRF-TOKEN': "{{ csrf_token() }}"
+    },
+    params: {
+      size: 5,
+      width: 4096,
+      height: 4096
+    },
+    success: function (file, response) {
+      $('form').append('<input type="hidden" name="checkout[]" value="' + response.name + '">')
+      uploadedCheckoutMap[file.name] = response.name
+    },
+    removedfile: function (file) {
+      console.log(file)
+      file.previewElement.remove()
+      var name = ''
+      if (typeof file.file_name !== 'undefined') {
+        name = file.file_name
+      } else {
+        name = uploadedCheckoutMap[file.name]
+      }
+      $('form').find('input[name="checkout[]"][value="' + name + '"]').remove()
+    },
+    init: function () {
+@if(isset($repair) && $repair->checkout)
+      var files = {!! json_encode($repair->checkout) !!}
+          for (var i in files) {
+          var file = files[i]
+          this.options.addedfile.call(this, file)
+          this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
+          file.previewElement.classList.add('dz-complete')
+          $('form').append('<input type="hidden" name="checkout[]" value="' + file.file_name + '">')
+        }
+@endif
+    },
+     error: function (file, response) {
+         if ($.type(response) === 'string') {
+             var message = response //dropzone sends it's own error messages in string
+         } else {
+             var message = response.errors.file
+         }
+         file.previewElement.classList.add('dz-error')
+         _ref = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+         _results = []
+         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+             node = _ref[_i]
+             _results.push(node.textContent = message)
+         }
+
+         return _results
+     }
+}
+
+</script>
 @endsection

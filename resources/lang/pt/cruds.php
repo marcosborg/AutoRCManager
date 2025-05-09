@@ -573,6 +573,10 @@ return [
             'name_helper'                                               => 'Escreva o seu nome para confirmar assinatura',
             'repair_state'                                              => 'Estado da reparação',
             'repair_state_helper'                                       => ' ',
+            'checkin'                                                   => 'Checkin',
+            'checkin_helper'                                            => ' ',
+            'checkout'                                                  => 'Checkout',
+            'checkout_helper'                                           => ' ',
         ],
     ],
     'repairState' => [
