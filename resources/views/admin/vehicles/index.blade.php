@@ -70,9 +70,6 @@
                                     {{ trans('cruds.vehicle.fields.key') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.manuals') }}
-                                </th>
-                                <th>
                                     &nbsp;
                                 </th>
                             </tr>
@@ -131,9 +128,6 @@
                                             <option value="{{ $item->name }}">{{ $item->name }}</option>
                                         @endforeach
                                     </select>
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
@@ -216,7 +210,6 @@
 { data: 'chekin_documents', name: 'chekin_documents' },
 { data: 'sale_date', name: 'sale_date' },
 { data: 'key', name: 'key' },
-{ data: 'manuals', name: 'manuals' },
 { data: 'actions', name: '{{ trans('global.actions') }}' }
     ],
     orderCellsTop: true,

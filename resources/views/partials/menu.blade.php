@@ -184,15 +184,18 @@
                 </li>
             @endcan
             @can('sale_access')
+                @foreach (\App\Models\generalState::all() as $key => $generalState)
                 <li class="{{ request()->is("admin/sales") || request()->is("admin/sales/*") ? "active" : "" }}">
-                    <a href="{{ route("admin.sales.index") }}">
-                        <i class="fa-fw fas fa-key">
+                    <a href="/admin/sales/{{ $generalState->id }}">
+                        <i class="fa-fw fas fa-circle">
 
                         </i>
-                        <span>{{ trans('cruds.sale.title') }}</span>
+
+                        <span>{{ $generalState->name }}</span>
 
                     </a>
                 </li>
+                @endforeach
             @endcan
             @can('repair_access')
                 <li class="{{ request()->is("admin/repairs") || request()->is("admin/repairs/*") ? "active" : "" }}">

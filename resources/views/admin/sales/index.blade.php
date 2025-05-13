@@ -28,9 +28,6 @@
 
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicle.fields.general_state') }}
-                                </th>
-                                <th>
                                     {{ trans('cruds.vehicle.fields.brand') }}
                                 </th>
                                 <th>
@@ -69,14 +66,6 @@
                             </tr>
                             <tr>
                                 <td>
-                                </td>
-                                <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($general_states as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
                                 </td>
                                 <td>
                                     <select class="search">
@@ -174,7 +163,6 @@
     ajax: "{{ route('admin.vehicles.index') }}",
     columns: [
       { data: 'placeholder', name: 'placeholder' },
-{ data: 'general_state_name', name: 'general_state.name' },
 { data: 'brand_name', name: 'brand.name' },
 { data: 'model', name: 'model' },
 { data: 'version', name: 'version' },

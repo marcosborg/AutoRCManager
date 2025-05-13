@@ -96,9 +96,6 @@ class VehicleController extends Controller
             $table->editColumn('key', function ($row) {
                 return $row->key ? $row->key : '';
             });
-            $table->editColumn('manuals', function ($row) {
-                return $row->manuals ? $row->manuals : '';
-            });
 
             $table->rawColumns(['actions', 'placeholder', 'general_state', 'brand', 'suplier', 'client']);
 

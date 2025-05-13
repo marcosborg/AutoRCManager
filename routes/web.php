@@ -83,7 +83,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     
     // Sales
     Route::prefix('sales')->group(function() {
-        Route::get('/', 'SalesController@index')->name('sales.index');
+        Route::get('/{general_state_id?}', 'SalesController@index')->name('sales.index');
         Route::get('create', 'SalesController@create')->name('sales.create');
     });
 
