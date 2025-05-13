@@ -11,6 +11,7 @@
                 <div class="panel-body">
                     <form method="POST" action="{{ route("admin.repairs.store") }}" enctype="multipart/form-data">
                         @csrf
+                        
                         <div class="form-group {{ $errors->has('vehicle') ? 'has-error' : '' }}">
                             <label class="required" for="vehicle_id">{{ trans('cruds.repair.fields.vehicle') }}</label>
                             <select class="form-control select2" name="vehicle_id" id="vehicle_id" required>

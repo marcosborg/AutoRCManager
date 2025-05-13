@@ -48,6 +48,7 @@
                                             @endif
                                             <span class="help-block">{{ trans('cruds.repair.fields.kilometers_helper') }}</span>
                                         </div>
+                                        <a href="/repairs/expense/{{ $repair->id }}" class="btn btn-success">Lançar despesas de oficina</a>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group {{ $errors->has('obs_1') ? 'has-error' : '' }}">
