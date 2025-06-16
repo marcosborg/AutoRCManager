@@ -184,7 +184,7 @@
                 </li>
             @endcan
             @can('sale_access')
-                @foreach (\App\Models\generalState::all() as $key => $generalState)
+                @foreach (\App\Models\GeneralState::all() as $key => $generalState)
                 <li class="{{ request()->is("admin/sales") || request()->is("admin/sales/*") ? "active" : "" }}">
                     <a href="/admin/sales/{{ $generalState->id }}">
                         <i class="fa-fw fas fa-circle">
