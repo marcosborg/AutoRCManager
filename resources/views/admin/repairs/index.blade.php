@@ -34,6 +34,12 @@
                                     {{ trans('cruds.repair.fields.vehicle') }}
                                 </th>
                                 <th>
+                                    {{ trans('cruds.vehicle.fields.brand') }}
+                                </th>
+                                <th>
+                                    {{ trans('cruds.vehicle.fields.model') }}
+                                </th>
+                                <th>
                                     {{ trans('cruds.repair.fields.obs_1') }}
                                 </th>
                                 <th>
@@ -61,6 +67,17 @@
                                     </select>
                                 </td>
                                 <td>
+                                    <select class="search">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        @foreach($brands as $key => $item)
+                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td>
+                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
+                                </td>
+                                <td>
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
@@ -81,6 +98,7 @@
                                 </td>
                                 <td>
                                 </td>
+                                <td></td>
                             </tr>
                         </thead>
                     </table>
@@ -139,9 +157,12 @@
       { data: 'placeholder', name: 'placeholder' },
 { data: 'id', name: 'id' },
 { data: 'vehicle_license', name: 'vehicle.license' },
+{ data: 'brand', name: 'vehicle.brand.name' },
+{ data: 'model', name: 'vehicle.model' },
 { data: 'obs_1', name: 'obs_1' },
 { data: 'user_name', name: 'user.name' },
 { data: 'repair_state_name', name: 'repair_state.name' },
+{ data: 'checklist_percentage', name: 'checklist_percentage' },
 { data: 'actions', name: '{{ trans('global.actions') }}' }
     ],
     orderCellsTop: true,

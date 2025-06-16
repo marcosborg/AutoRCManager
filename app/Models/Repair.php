@@ -131,6 +131,61 @@ class Repair extends Model implements HasMedia
         'deleted_at',
     ];
 
+    public function getChecklistPercentageAttribute()
+    {
+        $fields = [
+            'front_windshield',
+            'front_lights',
+            'rear_lights',
+            'horn_functionality',
+            'wiper_blades_water_level',
+            'brake_clutch_oil_level',
+            'electrical_systems',
+            'engine_coolant_level',
+            'engine_oil_level',
+            'filters_air_cabin_oil_fuel',
+            'check_leaks_engine_gearbox_steering',
+            'brake_pads_disks',
+            'shock_absorbers',
+            'tire_condition',
+            'battery',
+            'spare_tire_vest_triangle_tools',
+            'check_clearance',
+            'check_shields',
+            'paint_condition',
+            'dents',
+            'diverse_strips',
+            'diverse_plastics_check_scratches',
+            'wheels',
+            'bolts_paint',
+            'seat_belts',
+            'radio',
+            'air_conditioning',
+            'front_rear_window_functionality',
+            'seats_upholstery',
+            'sun_visors',
+            'carpets',
+            'trunk_shelf',
+            'buttons',
+            'door_panels',
+            'locks',
+            'interior_covers_headlights_taillights',
+            'open_close_doors_remote_control_all_functions',
+            'turn_on_ac_check_glass',
+            'check_engine_lift_hood',
+            'connect_vehicle_to_scanner_check_errors',
+            'check_chassis_confirm_with_registration',
+            'manufacturer_plate',
+            'check_chassis_stickers',
+            'check_gearbox_oil',
+        ];
+
+        $total = count($fields);
+        $checked = collect($fields)->filter(fn($field) => $this->$field)->count();
+
+        return round(($checked / $total) * 100);
+    }
+
     protected function serializeDate(DateTimeInterface $date)
     {
         return $date->format('Y-m-d H:i:s');

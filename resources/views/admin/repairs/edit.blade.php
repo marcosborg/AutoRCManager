@@ -1,6 +1,16 @@
 @extends('layouts.admin')
 @section('content')
 <div class="content">
+<div id="progress-container" style="position: sticky; top: 0; z-index: 999; background: #f8f9fa; padding: 10px;">
+    <div class="progress" style="height: 25px;">
+        <div id="progress-bar" class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+             role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            0%
+        </div>
+    </div>
+</div>
+
+
 
     <div class="row">
         <div class="col-lg-12">
@@ -1365,4 +1375,27 @@ Dropzone.options.checkoutDropzone = {
 }
 
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        const progressBar = document.getElementById('progress-bar');
+
+        function updateProgress() {
+            const total = checkboxes.length;
+            const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const percent = total > 0 ? Math.round((checked / total) * 100) : 0;
+
+            progressBar.style.width = percent + '%';
+            progressBar.setAttribute('aria-valuenow', percent);
+            progressBar.textContent = percent + '%';
+        }
+
+        checkboxes.forEach(cb => cb.addEventListener('change', updateProgress));
+
+        // Atualizar quando a página carregar
+        updateProgress();
+    });
+</script>
+
+
 @endsection

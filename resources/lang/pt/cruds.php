@@ -291,6 +291,10 @@ return [
             'foreign_license_helper'                    => ' ',
             'general_state'                             => 'Estado geral',
             'general_state_helper'                      => ' ',
+            'model'                                     => 'Modelo',
+            'model_helper'                              => ' ',
+            'brand'                                     => 'Marca',
+            'brand_helper'                              => ' ',
         ],
     ],
     'suplier' => [

@@ -12,6 +12,7 @@ use App\Models\Repair;
 use App\Models\RepairState;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Models\Brand;
 use Gate;
 use Illuminate\Http\Request;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -53,6 +54,14 @@ class RepairController extends Controller
             });
             $table->addColumn('vehicle_license', function ($row) {
                 return $row->vehicle ? $row->vehicle->license : '';
+            });
+
+            $table->addColumn('brand', function ($row) {
+                return $row->vehicle && $row->vehicle->brand ? $row->vehicle->brand->name : '';
+            });
+
+            $table->editColumn('model', function ($row) {
+                return $row->vehicle ? (is_string($row->vehicle) ? $row->vehicle : $row->vehicle->model) : '';
             });
 
             $table->editColumn('obs_1', function ($row) {
@@ -362,16 +371,22 @@ class RepairController extends Controller
                 return $row->repair_state ? $row->repair_state->name : '';
             });
 
+            $table->addColumn('checklist_percentage', function ($row) {
+                return $row->checklist_percentage . '%';
+            });
+
+
             $table->rawColumns(['actions', 'placeholder', 'vehicle', 'checkin', 'user', 'front_windshield', 'front_lights', 'rear_lights', 'horn_functionality', 'wiper_blades_water_level', 'brake_clutch_oil_level', 'electrical_systems', 'engine_coolant_level', 'engine_oil_level', 'filters_air_cabin_oil_fuel', 'check_leaks_engine_gearbox_steering', 'brake_pads_disks', 'shock_absorbers', 'tire_condition', 'battery', 'spare_tire_vest_triangle_tools', 'check_clearance', 'check_shields', 'paint_condition', 'dents', 'diverse_strips', 'diverse_plastics_check_scratches', 'wheels', 'bolts_paint', 'seat_belts', 'radio', 'air_conditioning', 'front_rear_window_functionality', 'seats_upholstery', 'sun_visors', 'carpets', 'trunk_shelf', 'buttons', 'door_panels', 'locks', 'interior_covers_headlights_taillights', 'open_close_doors_remote_control_all_functions', 'turn_on_ac_check_glass', 'check_engine_lift_hood', 'connect_vehicle_to_scanner_check_errors', 'check_chassis_confirm_with_registration', 'manufacturer_plate', 'check_chassis_stickers', 'check_gearbox_oil', 'checkout', 'repair_state']);
 
             return $table->make(true);
         }
 
         $vehicles      = Vehicle::get();
+        $brands       = Brand::get();
         $users         = User::get();
         $repair_states = RepairState::get();
 
-        return view('admin.repairs.index', compact('vehicles', 'users', 'repair_states'));
+        return view('admin.repairs.index', compact('vehicles', 'brands', 'users', 'repair_states'));
     }
 
     public function create()
