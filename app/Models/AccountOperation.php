@@ -25,6 +25,7 @@ class AccountOperation extends Model
         'qty',
         'total',
         'balance',
+        'payments',
         'created_at',
         'updated_at',
         'deleted_at',

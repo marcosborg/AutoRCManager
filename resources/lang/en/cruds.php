@@ -715,6 +715,8 @@ return [
             'deleted_at_helper'   => ' ',
             'qty'                 => 'Quantidade',
             'qty_helper'          => ' ',
+            'payments'            => 'Payments',
+            'payments_helper'     => ' ',
         ],
     ],
     'accountConfiguration' => [
