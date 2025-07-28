@@ -117,10 +117,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('account-items/destroy', 'AccountItemController@massDestroy')->name('account-items.massDestroy');
     Route::resource('account-items', 'AccountItemController');
 
-    // Account Value
-    Route::delete('account-values/destroy', 'AccountValueController@massDestroy')->name('account-values.massDestroy');
-    Route::resource('account-values', 'AccountValueController');
-
     // Account Operation
     Route::delete('account-operations/destroy', 'AccountOperationController@massDestroy')->name('account-operations.massDestroy');
     Route::resource('account-operations', 'AccountOperationController');

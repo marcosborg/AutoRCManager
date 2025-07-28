@@ -229,17 +229,6 @@
                                 </a>
                             </li>
                         @endcan
-                        @can('account_value_access')
-                            <li class="{{ request()->is("admin/account-values") || request()->is("admin/account-values/*") ? "active" : "" }}">
-                                <a href="{{ route("admin.account-values.index") }}">
-                                    <i class="fa-fw fas fa-euro-sign">
-
-                                    </i>
-                                    <span>{{ trans('cruds.accountValue.title') }}</span>
-
-                                </a>
-                            </li>
-                        @endcan
                         @can('account_configuration_access')
                             <li class="treeview">
                                 <a href="#">
