@@ -214,14 +214,66 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>New payment</label>
-                                    <input type="date" id="invoice_date" class="form-control" style="margin-bottom: 5px;">
-                                    <input type="number" id="invoice_amount" class="form-control" style="margin-bottom: 5px;">
-                                    <input type="text" id="invoice_obs" class="form-control" style="margin-bottom: 5px;">
-                                    <button type="button" class="btn btn-success btn-sm" onclick="newPayment()">Save</button>
-                                    <input type="hidden" class="form-control" name="amount_paid" id="amount_paid" value="{{ old('amount_paid', $vehicle->amount_paid) }}">
+                                    <label>Payment</label>
+                                    <select class="form-control select2" name="purchase_item" id="purchase_item">
+                                        <option selected disabled>Selecionar opção</option>
+                                        @foreach ($purchase_categories as $purchase_category)
+                                            @foreach ($purchase_category->account_items as $purchase_item)
+                                                <option value="{{ $purchase_item->id }}">{{ $purchase_category->name }} - {{ $purchase_item->name }}</option>
+                                            @endforeach
+                                        @endforeach
+                                    </select>
                                 </div>
-                                <div id="payments_container"></div>
+                                <div class="form-group">
+                                    <label for="purchase_value">Value</label>
+                                    <input type="number" class="form-control" name="purchase_value" id="purchase_value" step="0.01">
+                                </div>
+                                <!-- In your blade input button -->
+                                <button type="button" class="btn btn-success btn-sm" onclick="newPurchasePayment()">Save</button>
+
+                                
+                                <div id="payment-status" style="display:none; margin-top: 10px;"></div>
+
+                                <!-- Display balance below value -->
+                                @php
+                                    $account_operations = $vehicle->acquisition_operations ?? collect();
+                                    $totalPaid = $account_operations->sum('total');
+                                    $purchasePrice = $vehicle->purchase_price ?? 0;
+                                    $balance = $purchasePrice - $totalPaid;
+                                @endphp
+                                <hr>
+                                <div class="form-group">
+                                    <label>Balance</label>
+                                    <input type="text" class="form-control" value="{{ number_format($balance, 2, ',', '.') }} €" readonly>
+                                </div>
+
+                                <!-- Payment history list -->
+                                @if($account_operations->count())
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Item</th>
+                                                <th>Valor</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($account_operations as $op)
+                                                <tr>
+                                                    <td>{{ $op->created_at->format('d/m/Y') }}</td>
+                                                    <td>{{ $op->account_item->name ?? '-' }}</td>
+                                                    <td>{{ number_format($op->total, 2, ',', '.') }} €</td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-xs btn-warning" onclick="editPayment({{ $op->id }}, {{ $op->total }})">Editar</button>
+                                                        <button type="button" class="btn btn-xs btn-danger" onclick="deletePayment({{ $op->id }})">Apagar</button>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                @endif
+
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group {{ $errors->has('inicial') ? 'has-error' : '' }}">
@@ -538,12 +590,62 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.client_helper') }}</span>
                                 </div>
-                                <label>Novo pagamento</label>
-                                <input type="date" id="client_invoice_date" class="form-control" style="margin-bottom: 5px;">
-                                <input type="number" id="client_invoice_amount" class="form-control" style="margin-bottom: 5px;">
-                                <input type="text" id="client_invoice_obs" class="form-control" style="margin-bottom: 5px;">
-                                <button type="button" class="btn btn-success btn-sm" onclick="newClientPayment()">Save</button>
-                                <input type="hidden" class="form-control" name="client_amount_paid" id="client_amount_paid" value="{{ old('client_amount_paid') }}">
+                                <div class="form-group">
+                                    <label>Pagamento Cliente</label>
+                                    <select class="form-control select2" name="client_payment_item" id="client_payment_item">
+                                        <option selected disabled>Selecionar item</option>
+                                        @foreach ($sale_categories as $category)
+                                            @foreach ($category->account_items as $item)
+                                                <option value="{{ $item->id }}">{{ $category->name }} - {{ $item->name }}</option>
+                                            @endforeach
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Valor</label>
+                                    <input type="number" class="form-control" id="client_payment_value" step="0.01">
+                                </div>
+                                <button type="button" class="btn btn-success btn-sm" onclick="newClientPayment()">Registar</button>
+                                <div id="client-payment-status" style="display:none; margin-top: 10px;"></div>
+
+                                @php
+                                $clientOps = $vehicle->client_operations ?? collect();
+                                $paidByClient = $clientOps->sum('total');
+                                $pvp = $vehicle->pvp ?? 0;
+                                $clientBalance = $pvp - $paidByClient;
+                                @endphp
+                                <hr>
+                                <div class="form-group">
+                                    <label>Saldo Cliente</label>
+                                    <input type="text" class="form-control" value="{{ number_format($clientBalance, 2, ',', '.') }} €" readonly>
+                                </div>
+
+                                @if($clientOps->count())
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Item</th>
+                                                <th>Valor</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($clientOps as $op)
+                                                <tr>
+                                                    <td>{{ $op->created_at->format('d/m/Y') }}</td>
+                                                    <td>{{ $op->account_item->name ?? '-' }}</td>
+                                                    <td>{{ number_format($op->total, 2, ',', '.') }} €</td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-xs btn-warning" onclick="editClientPayment({{ $op->id }}, {{ $op->total }})">Editar</button>
+                                                        <button type="button" class="btn btn-xs btn-danger" onclick="deleteClientPayment({{ $op->id }})">Apagar</button>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                @endif
+
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('client_registration') ? 'has-error' : '' }}">
@@ -1113,5 +1215,132 @@ Dropzone.options.withdrawalDocumentsDropzone = {
          return _results
      }
 }
+</script>
+
+<script>
+function newPurchasePayment() {
+    const itemId = document.getElementById('purchase_item').value;
+    const value = parseFloat(document.getElementById('purchase_value').value);
+
+    if (!itemId || isNaN(value)) {
+        showStatus('Por favor, selecione o item e insira o valor.', 'danger');
+        return;
+    }
+
+    fetch(`{{ route('admin.vehicles.account-operations.store', ['vehicle' => $vehicle->id]) }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            account_item_id: itemId,
+            total: value,
+            qty: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showStatus('Pagamento registado com sucesso.', 'success');
+            // Optionally append the new row to the table instead of reloading
+        } else {
+            showStatus('Erro ao registar o pagamento.', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showStatus('Erro de rede. Tente novamente.', 'danger');
+    });
+}
+
+function editPayment(id, value) {
+    const newValue = prompt("Novo valor do pagamento:", value);
+    if (newValue === null) return;
+
+    fetch(`/admin/account-operations/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ total: parseFloat(newValue) })
+    })
+    .then(response => {
+        if (response.ok) {
+            showStatus('Pagamento atualizado com sucesso.', 'success');
+        } else {
+            showStatus('Erro ao atualizar o pagamento.', 'danger');
+        }
+    });
+}
+
+function deletePayment(id) {
+    if (!confirm('Tem certeza que deseja apagar este pagamento?')) return;
+
+    fetch(`/admin/account-operations/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            showStatus('Pagamento apagado com sucesso.', 'success');
+        } else {
+            showStatus('Erro ao apagar o pagamento.', 'danger');
+        }
+    });
+}
+
+function showStatus(message, type) {
+    const status = document.getElementById('payment-status');
+    status.innerText = message;
+    status.className = `alert alert-${type}`;
+    status.style.display = 'block';
+}
+</script>
+<script>
+    function newClientPayment() {
+    const itemId = document.getElementById('client_payment_item').value;
+    const value = parseFloat(document.getElementById('client_payment_value').value);
+
+    if (!itemId || isNaN(value)) {
+        showClientStatus('Selecione o item e insira valor.', 'danger');
+        return;
+    }
+
+    fetch(`{{ route('admin.vehicles.client-payments.store', ['vehicle' => $vehicle->id]) }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            account_item_id: itemId,
+            total: value,
+            qty: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showClientStatus('Pagamento do cliente registado.', 'success');
+        } else {
+            showClientStatus('Erro ao registar.', 'danger');
+        }
+    })
+    .catch(() => {
+        showClientStatus('Erro de rede.', 'danger');
+    });
+}
+
+function showClientStatus(message, type) {
+    const status = document.getElementById('client-payment-status');
+    status.innerText = message;
+    status.className = `alert alert-${type}`;
+    status.style.display = 'block';
+}
+
 </script>
 @endsection

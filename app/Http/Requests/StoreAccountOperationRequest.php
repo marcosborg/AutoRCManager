@@ -34,9 +34,6 @@ class StoreAccountOperationRequest extends FormRequest
             'total' => [
                 'required',
             ],
-            'balance' => [
-                'required',
-            ],
         ];
     }
 }

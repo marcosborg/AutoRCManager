@@ -36,4 +36,9 @@ class AccountCategory extends Model
     {
         return $this->belongsTo(AccountDepartment::class, 'account_department_id');
     }
+
+    public function account_items()
+    {
+        return $this->hasMany(AccountItem::class);
+    }
 }

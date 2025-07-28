@@ -24,8 +24,6 @@ class AccountOperation extends Model
         'account_item_id',
         'qty',
         'total',
-        'balance',
-        'payments',
         'created_at',
         'updated_at',
         'deleted_at',

@@ -34,9 +34,6 @@ class UpdateAccountOperationRequest extends FormRequest
             'total' => [
                 'required',
             ],
-            'balance' => [
-                'required',
-            ],
         ];
     }
 }

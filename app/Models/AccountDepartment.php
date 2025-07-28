@@ -30,4 +30,9 @@ class AccountDepartment extends Model
     {
         return $date->format('Y-m-d H:i:s');
     }
+
+    public function account_categories()
+    {
+        return $this->HasMany(AccountCategory::class);
+    }
 }

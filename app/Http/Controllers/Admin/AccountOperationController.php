@@ -65,9 +65,6 @@ class AccountOperationController extends Controller
             $table->editColumn('total', function ($row) {
                 return $row->total ? $row->total : '';
             });
-            $table->editColumn('balance', function ($row) {
-                return $row->balance ? $row->balance : '';
-            });
 
             $table->rawColumns(['actions', 'placeholder', 'vehicle', 'account_item']);
 

@@ -286,4 +286,25 @@ class Vehicle extends Model implements HasMedia
     {
         $this->attributes['sele_chekout'] = $value ? Carbon::createFromFormat(config('panel.date_format'), $value)->format('Y-m-d') : null;
     }
+
+    public function account_operations()
+    {
+        return $this->hasMany(AccountOperation::class, 'vehicle_id');
+    }
+
+    public function acquisition_operations()
+    {
+        return $this->hasMany(AccountOperation::class, 'vehicle_id')
+            ->whereHas('account_item.account_category', function ($q) {
+                $q->where('account_department_id', 1);
+            });
+    }
+
+    public function client_operations()
+    {
+        return $this->hasMany(AccountOperation::class)
+            ->whereHas('account_item.account_category', function ($q) {
+                $q->where('account_department_id', 3);
+            });
+    }
 }

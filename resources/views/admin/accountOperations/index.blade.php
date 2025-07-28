@@ -45,9 +45,6 @@
                                     {{ trans('cruds.accountOperation.fields.total') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.accountOperation.fields.balance') }}
-                                </th>
-                                <th>
                                     &nbsp;
                                 </th>
                             </tr>
@@ -76,9 +73,6 @@
                                 <td>
                                 </td>
                                 <td>
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
                                 </td>
                                 <td>
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
@@ -151,7 +145,6 @@
 { data: 'account_item.total', name: 'account_item.total' },
 { data: 'qty', name: 'qty' },
 { data: 'total', name: 'total' },
-{ data: 'balance', name: 'balance' },
 { data: 'actions', name: '{{ trans('global.actions') }}' }
     ],
     orderCellsTop: true,

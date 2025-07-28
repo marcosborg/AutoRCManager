@@ -21,6 +21,9 @@ use Illuminate\Http\Request;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\AccountDepartment;
+use App\Models\AccountOperation;
+use App\Models\AccountItem;
 
 class VehicleController extends Controller
 {
@@ -187,9 +190,15 @@ class VehicleController extends Controller
 
         $clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $vehicle->load('brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client');
+        $vehicle->load('brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client', 'acquisition_operations.account_item.account_category', 'client_operations.account_item.account_category');
 
-        return view('admin.vehicles.edit', compact('general_states', 'brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers', 'vehicle'));
+        $account_department = AccountDepartment::find(1)->load('account_categories.account_items');
+        $purchase_categories = $account_department ? $account_department->account_categories : null;
+
+        $sale_department = AccountDepartment::find(3)->load('account_categories.account_items');
+        $sale_categories = $sale_department ? $sale_department->account_categories : null;
+
+        return view('admin.vehicles.edit', compact('purchase_categories', 'sale_categories', 'general_states', 'brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers', 'vehicle'));
     }
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle)
@@ -322,5 +331,43 @@ class VehicleController extends Controller
         $media         = $model->addMediaFromRequest('upload')->toMediaCollection('ck-media');
 
         return response()->json(['id' => $media->id, 'url' => $media->getUrl()], Response::HTTP_CREATED);
+    }
+
+    public function storeAccountOperation(Request $request, Vehicle $vehicle)
+    {
+        $vehicle->account_operations()->create([
+            'account_item_id' => $request->input('account_item_id'),
+            'total' => $request->input('total'),
+            'qty' => $request->input('qty', 1),
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function updateValue(Request $request, AccountOperation $operation)
+    {
+        $operation->update([
+            'total' => $request->input('total')
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function destroyValue(AccountOperation $operation)
+    {
+        $operation->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function storeClientPayment(Request $request, Vehicle $vehicle)
+    {
+        $vehicle->account_operations()->create([
+            'account_item_id' => $request->input('account_item_id'),
+            'total' => $request->input('total'),
+            'qty' => 1,
+        ]);
+
+        return response()->json(['success' => true]);
     }
 }

@@ -52,22 +52,6 @@
                             @endif
                             <span class="help-block">{{ trans('cruds.accountOperation.fields.total_helper') }}</span>
                         </div>
-                        <div class="form-group {{ $errors->has('balance') ? 'has-error' : '' }}">
-                            <label class="required" for="balance">{{ trans('cruds.accountOperation.fields.balance') }}</label>
-                            <input class="form-control" type="number" name="balance" id="balance" value="{{ old('balance', $accountOperation->balance) }}" step="0.01" required>
-                            @if($errors->has('balance'))
-                                <span class="help-block" role="alert">{{ $errors->first('balance') }}</span>
-                            @endif
-                            <span class="help-block">{{ trans('cruds.accountOperation.fields.balance_helper') }}</span>
-                        </div>
-                        <div class="form-group {{ $errors->has('payments') ? 'has-error' : '' }}">
-                            <label for="payments">{{ trans('cruds.accountOperation.fields.payments') }}</label>
-                            <textarea class="form-control" name="payments" id="payments">{{ old('payments', $accountOperation->payments) }}</textarea>
-                            @if($errors->has('payments'))
-                                <span class="help-block" role="alert">{{ $errors->first('payments') }}</span>
-                            @endif
-                            <span class="help-block">{{ trans('cruds.accountOperation.fields.payments_helper') }}</span>
-                        </div>
                         <div class="form-group">
                             <button class="btn btn-danger" type="submit">
                                 {{ trans('global.save') }}
