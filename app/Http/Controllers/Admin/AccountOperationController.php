@@ -119,6 +119,7 @@ class AccountOperationController extends Controller
 
     public function update(UpdateAccountOperationRequest $request, AccountOperation $accountOperation)
     {
+
         $accountOperation->update($request->all());
 
         return redirect()->route('admin.account-operations.index');
