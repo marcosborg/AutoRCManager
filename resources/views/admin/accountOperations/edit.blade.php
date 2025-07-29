@@ -52,6 +52,26 @@
                             @endif
                             <span class="help-block">{{ trans('cruds.accountOperation.fields.total_helper') }}</span>
                         </div>
+                        <div class="form-group {{ $errors->has('payment_method') ? 'has-error' : '' }}">
+                            <label for="payment_method_id">{{ trans('cruds.accountOperation.fields.payment_method') }}</label>
+                            <select class="form-control select2" name="payment_method_id" id="payment_method_id">
+                                @foreach($payment_methods as $id => $entry)
+                                    <option value="{{ $id }}" {{ (old('payment_method_id') ? old('payment_method_id') : $accountOperation->payment_method->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                @endforeach
+                            </select>
+                            @if($errors->has('payment_method'))
+                                <span class="help-block" role="alert">{{ $errors->first('payment_method') }}</span>
+                            @endif
+                            <span class="help-block">{{ trans('cruds.accountOperation.fields.payment_method_helper') }}</span>
+                        </div>
+                        <div class="form-group {{ $errors->has('date') ? 'has-error' : '' }}">
+                            <label for="date">{{ trans('cruds.accountOperation.fields.date') }}</label>
+                            <input class="form-control date" type="text" name="date" id="date" value="{{ old('date', $accountOperation->date) }}">
+                            @if($errors->has('date'))
+                                <span class="help-block" role="alert">{{ $errors->first('date') }}</span>
+                            @endif
+                            <span class="help-block">{{ trans('cruds.accountOperation.fields.date_helper') }}</span>
+                        </div>
                         <div class="form-group">
                             <button class="btn btn-danger" type="submit">
                                 {{ trans('global.save') }}

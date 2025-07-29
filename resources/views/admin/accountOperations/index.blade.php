@@ -45,6 +45,12 @@
                                     {{ trans('cruds.accountOperation.fields.total') }}
                                 </th>
                                 <th>
+                                    {{ trans('cruds.accountOperation.fields.payment_method') }}
+                                </th>
+                                <th>
+                                    {{ trans('cruds.accountOperation.fields.date') }}
+                                </th>
+                                <th>
                                     &nbsp;
                                 </th>
                             </tr>
@@ -79,6 +85,16 @@
                                 </td>
                                 <td>
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
+                                </td>
+                                <td>
+                                    <select class="search">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        @foreach($payment_methods as $key => $item)
+                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td>
                                 </td>
                                 <td>
                                 </td>
@@ -145,6 +161,8 @@
 { data: 'account_item.total', name: 'account_item.total' },
 { data: 'qty', name: 'qty' },
 { data: 'total', name: 'total' },
+{ data: 'payment_method_name', name: 'payment_method.name' },
+{ data: 'date', name: 'date' },
 { data: 'actions', name: '{{ trans('global.actions') }}' }
     ],
     orderCellsTop: true,

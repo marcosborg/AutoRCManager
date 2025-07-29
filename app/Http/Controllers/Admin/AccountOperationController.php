@@ -8,6 +8,7 @@ use App\Http\Requests\StoreAccountOperationRequest;
 use App\Http\Requests\UpdateAccountOperationRequest;
 use App\Models\AccountItem;
 use App\Models\AccountOperation;
+use App\Models\PaymentMethod;
 use App\Models\Vehicle;
 use Gate;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class AccountOperationController extends Controller
         abort_if(Gate::denies('account_operation_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ($request->ajax()) {
-            $query = AccountOperation::with(['vehicle', 'account_item'])->select(sprintf('%s.*', (new AccountOperation)->table));
+            $query = AccountOperation::with(['vehicle', 'account_item', 'payment_method'])->select(sprintf('%s.*', (new AccountOperation)->table));
             $table = Datatables::of($query);
 
             $table->addColumn('placeholder', '&nbsp;');
@@ -65,16 +66,20 @@ class AccountOperationController extends Controller
             $table->editColumn('total', function ($row) {
                 return $row->total ? $row->total : '';
             });
+            $table->addColumn('payment_method_name', function ($row) {
+                return $row->payment_method ? $row->payment_method->name : '';
+            });
 
-            $table->rawColumns(['actions', 'placeholder', 'vehicle', 'account_item']);
+            $table->rawColumns(['actions', 'placeholder', 'vehicle', 'account_item', 'payment_method']);
 
             return $table->make(true);
         }
 
-        $vehicles      = Vehicle::get();
-        $account_items = AccountItem::get();
+        $vehicles        = Vehicle::get();
+        $account_items   = AccountItem::get();
+        $payment_methods = PaymentMethod::get();
 
-        return view('admin.accountOperations.index', compact('vehicles', 'account_items'));
+        return view('admin.accountOperations.index', compact('vehicles', 'account_items', 'payment_methods'));
     }
 
     public function create()
@@ -85,7 +90,9 @@ class AccountOperationController extends Controller
 
         $account_items = AccountItem::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        return view('admin.accountOperations.create', compact('account_items', 'vehicles'));
+        $payment_methods = PaymentMethod::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+
+        return view('admin.accountOperations.create', compact('account_items', 'payment_methods', 'vehicles'));
     }
 
     public function store(StoreAccountOperationRequest $request)
@@ -103,9 +110,11 @@ class AccountOperationController extends Controller
 
         $account_items = AccountItem::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $accountOperation->load('vehicle', 'account_item');
+        $payment_methods = PaymentMethod::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        return view('admin.accountOperations.edit', compact('accountOperation', 'account_items', 'vehicles'));
+        $accountOperation->load('vehicle', 'account_item', 'payment_method');
+
+        return view('admin.accountOperations.edit', compact('accountOperation', 'account_items', 'payment_methods', 'vehicles'));
     }
 
     public function update(UpdateAccountOperationRequest $request, AccountOperation $accountOperation)
@@ -119,7 +128,7 @@ class AccountOperationController extends Controller
     {
         abort_if(Gate::denies('account_operation_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $accountOperation->load('vehicle', 'account_item');
+        $accountOperation->load('vehicle', 'account_item', 'payment_method');
 
         return view('admin.accountOperations.show', compact('accountOperation'));
     }

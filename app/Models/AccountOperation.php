@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,7 @@ class AccountOperation extends Model
     public $table = 'account_operations';
 
     protected $dates = [
+        'date',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -24,6 +26,8 @@ class AccountOperation extends Model
         'account_item_id',
         'qty',
         'total',
+        'payment_method_id',
+        'date',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -42,5 +46,20 @@ class AccountOperation extends Model
     public function account_item()
     {
         return $this->belongsTo(AccountItem::class, 'account_item_id');
+    }
+
+    public function payment_method()
+    {
+        return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
+    }
+
+    public function getDateAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format(config('panel.date_format')) : null;
+    }
+
+    public function setDateAttribute($value)
+    {
+        $this->attributes['date'] = $value ? Carbon::createFromFormat(config('panel.date_format'), $value)->format('Y-m-d') : null;
     }
 }

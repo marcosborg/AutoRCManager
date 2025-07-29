@@ -59,10 +59,18 @@
                                 </tr>
                                 <tr>
                                     <th>
-                                        {{ trans('cruds.accountOperation.fields.balance') }}
+                                        {{ trans('cruds.accountOperation.fields.payment_method') }}
                                     </th>
                                     <td>
-                                        {{ $accountOperation->balance }}
+                                        {{ $accountOperation->payment_method->name ?? '' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        {{ trans('cruds.accountOperation.fields.date') }}
+                                    </th>
+                                    <td>
+                                        {{ $accountOperation->date }}
                                     </td>
                                 </tr>
                             </tbody>

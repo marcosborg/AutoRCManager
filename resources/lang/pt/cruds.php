@@ -699,8 +699,10 @@ return [
             'deleted_at_helper'   => ' ',
             'qty'                 => 'Quantidade',
             'qty_helper'          => ' ',
-            'payments'            => 'Payments',
-            'payments_helper'     => ' ',
+            'payment_method'        => 'Método de pagamento',
+            'payment_method_helper' => ' ',
+            'date'                  => 'Data do pagamento',
+            'date_helper'           => ' ',
         ],
     ],
     'accountConfiguration' => [

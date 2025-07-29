@@ -17,11 +17,11 @@ class StoreAccountOperationRequest extends FormRequest
     public function rules()
     {
         return [
-            'account_item_id' => [
+            'vehicle_id' => [
                 'required',
                 'integer',
             ],
-            'vehicle_id' => [
+            'account_item_id' => [
                 'required',
                 'integer',
             ],
@@ -33,6 +33,10 @@ class StoreAccountOperationRequest extends FormRequest
             ],
             'total' => [
                 'required',
+            ],
+            'date' => [
+                'date_format:' . config('panel.date_format'),
+                'nullable',
             ],
         ];
     }
