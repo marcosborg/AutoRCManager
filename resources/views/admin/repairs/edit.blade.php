@@ -1399,3 +1399,21 @@ Dropzone.options.checkoutDropzone = {
 
 
 @endsection
+@section('styles')
+    <style>
+        #progress-container {
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            background-color: #f8f9fa;
+            padding: 10px;
+        }
+
+        /* Garante que o sticky não seja bloqueado por elementos pai */
+        .wrapper {
+            position: relative;
+            overflow: visible !important;
+        }
+
+    </style>
+@endsection

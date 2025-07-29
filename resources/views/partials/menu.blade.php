@@ -57,6 +57,17 @@
                                 </a>
                             </li>
                         @endcan
+                        @can('audit_log_access')
+                            <li class="{{ request()->is("admin/audit-logs") || request()->is("admin/audit-logs/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.audit-logs.index") }}">
+                                    <i class="fa-fw fas fa-file-alt">
+
+                                    </i>
+                                    <span>{{ trans('cruds.auditLog.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
                     </ul>
                 </li>
             @endcan

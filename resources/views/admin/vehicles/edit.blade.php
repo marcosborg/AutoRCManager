@@ -606,45 +606,7 @@
                                     <input type="number" class="form-control" id="client_payment_value" step="0.01">
                                 </div>
                                 <button type="button" class="btn btn-success btn-sm" onclick="newClientPayment()">Registar</button>
-                                <div id="client-payment-status" style="display:none; margin-top: 10px;"></div>
-
-                                @php
-                                $clientOps = $vehicle->client_operations ?? collect();
-                                $paidByClient = $clientOps->sum('total');
-                                $pvp = $vehicle->pvp ?? 0;
-                                $clientBalance = $pvp - $paidByClient;
-                                @endphp
-                                <hr>
-                                <div class="form-group">
-                                    <label>Saldo Cliente</label>
-                                    <input type="text" class="form-control" value="{{ number_format($clientBalance, 2, ',', '.') }} €" readonly>
-                                </div>
-
-                                @if($clientOps->count())
-                                    <table class="table table-bordered">
-                                        <thead>
-                                            <tr>
-                                                <th>Data</th>
-                                                <th>Item</th>
-                                                <th>Valor</th>
-                                                <th>Ações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($clientOps as $op)
-                                                <tr>
-                                                    <td>{{ $op->created_at->format('d/m/Y') }}</td>
-                                                    <td>{{ $op->account_item->name ?? '-' }}</td>
-                                                    <td>{{ number_format($op->total, 2, ',', '.') }} €</td>
-                                                    <td>
-                                                        <button type="button" class="btn btn-xs btn-warning" onclick="editClientPayment({{ $op->id }}, {{ $op->total }})">Editar</button>
-                                                        <button type="button" class="btn btn-xs btn-danger" onclick="deleteClientPayment({{ $op->id }})">Apagar</button>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                @endif
+                                
 
                             </div>
                             <div class="col-md-3">
@@ -1243,6 +1205,7 @@ function newPurchasePayment() {
     .then(data => {
         if (data.success) {
             showStatus('Pagamento registado com sucesso.', 'success');
+            refreshPayments();
             // Optionally append the new row to the table instead of reloading
         } else {
             showStatus('Erro ao registar o pagamento.', 'danger');
@@ -1266,14 +1229,17 @@ function editPayment(id, value) {
         },
         body: JSON.stringify({ total: parseFloat(newValue) })
     })
-    .then(response => {
-        if (response.ok) {
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
             showStatus('Pagamento atualizado com sucesso.', 'success');
+            refreshPayments(); // 🔁 Atualiza lista e saldo
         } else {
             showStatus('Erro ao atualizar o pagamento.', 'danger');
         }
     });
 }
+
 
 function deletePayment(id) {
     if (!confirm('Tem certeza que deseja apagar este pagamento?')) return;
@@ -1284,9 +1250,11 @@ function deletePayment(id) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
-    .then(response => {
-        if (response.ok) {
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
             showStatus('Pagamento apagado com sucesso.', 'success');
+            refreshPayments(); // 🔁 Atualiza lista e saldo
         } else {
             showStatus('Erro ao apagar o pagamento.', 'danger');
         }
@@ -1299,48 +1267,35 @@ function showStatus(message, type) {
     status.className = `alert alert-${type}`;
     status.style.display = 'block';
 }
-</script>
-<script>
-    function newClientPayment() {
-    const itemId = document.getElementById('client_payment_item').value;
-    const value = parseFloat(document.getElementById('client_payment_value').value);
 
-    if (!itemId || isNaN(value)) {
-        showClientStatus('Selecione o item e insira valor.', 'danger');
-        return;
-    }
+function refreshPayments() {
+    fetch(`{{ route('admin.vehicles.get-payments', ['vehicle' => $vehicle->id]) }}`)
+        .then(response => response.json())
+        .then(data => {
+            // Atualiza a tabela
+            let tbody = '';
+            data.payments.forEach(op => {
+                tbody += `
+                    <tr>
+                        <td>${op.date}</td>
+                        <td>${op.item}</td>
+                        <td>${op.total} €</td>
+                        <td>
+                            <button type="button" class="btn btn-xs btn-warning" onclick="editPayment(${op.id}, ${op.total_raw})">Editar</button>
+                            <button type="button" class="btn btn-xs btn-danger" onclick="deletePayment(${op.id})">Apagar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.querySelector("table.table-bordered tbody").innerHTML = tbody;
 
-    fetch(`{{ route('admin.vehicles.client-payments.store', ['vehicle' => $vehicle->id]) }}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            account_item_id: itemId,
-            total: value,
-            qty: 1
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showClientStatus('Pagamento do cliente registado.', 'success');
-        } else {
-            showClientStatus('Erro ao registar.', 'danger');
-        }
-    })
-    .catch(() => {
-        showClientStatus('Erro de rede.', 'danger');
-    });
+            // Atualiza o saldo
+            document.querySelector("input[readonly][value$='€']").value = `${data.balance} €`;
+        });
 }
 
-function showClientStatus(message, type) {
-    const status = document.getElementById('client-payment-status');
-    status.innerText = message;
-    status.className = `alert alert-${type}`;
-    status.style.display = 'block';
-}
+
 
 </script>
+
 @endsection

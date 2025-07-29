@@ -360,14 +360,26 @@ class VehicleController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function storeClientPayment(Request $request, Vehicle $vehicle)
+    public function getPayments(Vehicle $vehicle)
     {
-        $vehicle->account_operations()->create([
-            'account_item_id' => $request->input('account_item_id'),
-            'total' => $request->input('total'),
-            'qty' => 1,
-        ]);
+        $ops = $vehicle->acquisition_operations()
+            ->with('account_item')
+            ->get();
+        $balance = number_format(($vehicle->purchase_price ?? 0) - $ops->sum('total'), 2, ',', '.');
 
-        return response()->json(['success' => true]);
+        $payments = $ops->map(function ($op) {
+            return [
+                'id' => $op->id,
+                'date' => $op->created_at->format('d/m/Y'),
+                'item' => $op->account_item->name ?? '-',
+                'total' => number_format($op->total, 2, ',', '.'),
+                'total_raw' => $op->total
+            ];
+        });
+
+        return response()->json([
+            'payments' => $payments,
+            'balance' => $balance
+        ]);
     }
 }
