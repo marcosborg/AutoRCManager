@@ -1221,7 +1221,7 @@ function editPayment(id, value) {
     const newValue = prompt("Novo valor do pagamento:", value);
     if (newValue === null) return;
 
-    fetch(`/admin/account-operations/${id}`, {
+    fetch(`/admin/account-operations/update/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',

@@ -33,12 +33,6 @@
                                     {{ trans('cruds.accountOperation.fields.account_item') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.accountItem.fields.type') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.accountItem.fields.total') }}
-                                </th>
-                                <th>
                                     {{ trans('cruds.accountOperation.fields.qty') }}
                                 </th>
                                 <th>
@@ -75,10 +69,6 @@
                                             <option value="{{ $item->name }}">{{ $item->name }}</option>
                                         @endforeach
                                     </select>
-                                </td>
-                                <td>
-                                </td>
-                                <td>
                                 </td>
                                 <td>
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
@@ -157,8 +147,6 @@
 { data: 'id', name: 'id' },
 { data: 'vehicle_license', name: 'vehicle.license' },
 { data: 'account_item_name', name: 'account_item.name' },
-{ data: 'account_item.type', name: 'account_item.type' },
-{ data: 'account_item.total', name: 'account_item.total' },
 { data: 'qty', name: 'qty' },
 { data: 'total', name: 'total' },
 { data: 'payment_method_name', name: 'payment_method.name' },

@@ -54,14 +54,8 @@ class AccountOperationController extends Controller
                 return $row->account_item ? $row->account_item->name : '';
             });
 
-            $table->editColumn('account_item.type', function ($row) {
-                return $row->account_item ? (is_string($row->account_item) ? $row->account_item : $row->account_item->type) : '';
-            });
-            $table->editColumn('account_item.total', function ($row) {
-                return $row->account_item ? (is_string($row->account_item) ? $row->account_item : $row->account_item->total) : '';
-            });
-            $table->editColumn('qty', function ($row) {
-                return $row->qty ? $row->qty : '';
+            $table->editColumn('qrt', function ($row) {
+                return $row->qrt ? $row->qrt : '';
             });
             $table->editColumn('total', function ($row) {
                 return $row->total ? $row->total : '';
@@ -119,7 +113,6 @@ class AccountOperationController extends Controller
 
     public function update(UpdateAccountOperationRequest $request, AccountOperation $accountOperation)
     {
-
         $accountOperation->update($request->all());
 
         return redirect()->route('admin.account-operations.index');
