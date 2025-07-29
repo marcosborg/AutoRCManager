@@ -731,5 +731,21 @@ return [
             'updated_at_helper'   => ' ',
         ],
     ],
+    'paymentMethod' => [
+        'title'          => 'Método de pagamento',
+        'title_singular' => 'Método de pagamento',
+        'fields'         => [
+            'id'                => 'ID',
+            'id_helper'         => ' ',
+            'name'              => 'Name',
+            'name_helper'       => ' ',
+            'created_at'        => 'Created at',
+            'created_at_helper' => ' ',
+            'updated_at'        => 'Updated at',
+            'updated_at_helper' => ' ',
+            'deleted_at'        => 'Deleted at',
+            'deleted_at_helper' => ' ',
+        ],
+    ],
 
 ];

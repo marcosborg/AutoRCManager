@@ -283,6 +283,17 @@
                                             </a>
                                         </li>
                                     @endcan
+                                    @can('payment_method_access')
+                                        <li class="{{ request()->is("admin/payment-methods") || request()->is("admin/payment-methods/*") ? "active" : "" }}">
+                                            <a href="{{ route("admin.payment-methods.index") }}">
+                                                <i class="fa-fw far fa-credit-card">
+
+                                                </i>
+                                                <span>{{ trans('cruds.paymentMethod.title') }}</span>
+
+                                            </a>
+                                        </li>
+                                    @endcan
                                 </ul>
                             </li>
                         @endcan
