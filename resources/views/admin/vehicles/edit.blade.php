@@ -233,9 +233,7 @@
                                     <input type="number" class="form-control" name="purchase_value" id="purchase_value" step="0.01">
                                 </div>
                                 <!-- In your blade input button -->
-                                <button type="button" class="btn btn-success btn-sm" onclick="newPurchasePayment()">Save</button>
-
-                                
+                                <button type="button" class="btn btn-success btn-sm" onclick="newPurchasePayment(1)">Save</button>
                                 <div id="payment-status" style="display:none; margin-top: 10px;"></div>
 
                                 <!-- Display balance below value -->
@@ -248,12 +246,12 @@
                                 <hr>
                                 <div class="form-group">
                                     <label>Balance</label>
-                                    <input type="text" class="form-control" value="{{ number_format($balance, 2, ',', '.') }} €" readonly>
+                                    <input type="text" class="form-control" id="balance-1" value="{{ number_format($balance, 2, ',', '.') }} €" readonly>
                                 </div>
 
                                 <!-- Payment history list -->
-                                @if($account_operations->count())
-                                    <table class="table table-bordered">
+                                
+                                    <table class="table table-bordered" id="table-department-1">
                                         <thead>
                                             <tr>
                                                 <th>Data</th>
@@ -262,6 +260,7 @@
                                                 <th>Ações</th>
                                             </tr>
                                         </thead>
+                                        @if($account_operations->count())
                                         <tbody>
                                             @foreach($account_operations as $op)
                                                 <tr>
@@ -269,14 +268,15 @@
                                                     <td>{{ $op->account_item->name ?? '-' }}</td>
                                                     <td>{{ number_format($op->total, 2, ',', '.') }} €</td>
                                                     <td>
-                                                        <button type="button" class="btn btn-xs btn-warning" onclick="editPayment({{ $op->id }}, {{ $op->total }})">Editar</button>
-                                                        <button type="button" class="btn btn-xs btn-danger" onclick="deletePayment({{ $op->id }})">Apagar</button>
+                                                        <button type="button" class="btn btn-xs btn-warning" onclick="editPayment({{ $op->id }}, {{ $op->total }}, 1)">Editar</button>
+                                                        <button type="button" class="btn btn-xs btn-danger" onclick="deletePayment({{ $op->id }}, 1)">Apagar</button>
                                                     </td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
+                                        @endif
                                     </table>
-                                @endif
+                                
 
                             </div>
                             <div class="col-md-6">
@@ -607,18 +607,61 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="payment_method_id" class="required">Métodos de pagamento</label>
-                                    <select class="form-control select2" name="payment_method_id" id="payment_method_id">
+                                    <select class="form-control select2" name="client_payment_method_id" id="client_payment_method_id">
                                         @foreach($payment_methods as $id => $entry)
                                         <option value="{{ $id }}">{{ $entry }}</option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div class="form-group">
+                                    <label for="purchase_date">Data</label>
+                                    <input type="text" class="form-control date" name="client_date" id="client_date">
+                                </div>
+                                <div class="form-group">
                                     <label>Valor</label>
                                     <input type="number" class="form-control" id="client_payment_value" step="0.01">
                                 </div>
-                                <button type="button" class="btn btn-success btn-sm" onclick="newClientPayment()">Registar</button>
+                                <button type="button" class="btn btn-success btn-sm" onclick="newClientPayment(3)">Registar</button>
+                                <div id="client-status" style="display:none; margin-top: 10px;"></div>
                                 <hr>
+                                <!-- Display balance below value -->
+                                @php
+                                    $client_operations = $vehicle->client_operations;
+                                    $totalPaidClient = $client_operations->sum('total');
+                                    $pvp = $vehicle->pvp ?? 0;
+                                    $balanceClient = $pvp - $totalPaidClient;
+                                @endphp
+                                <div class="form-group">
+                                    <label>Balance</label>
+                                    <input type="text" class="form-control" id="balance-3" value="{{ number_format($balanceClient, 2, ',', '.') }} €" readonly>
+                                </div>
+                                
+                                    <table class="table table-bordered" id="table-department-3">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Item</th>
+                                                <th>Valor</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        @if($vehicle->client_operations->count())
+                                        <tbody>
+                                            @foreach($client_operations as $op)
+                                                <tr>
+                                                    <td>{{ $op->date ? \Carbon\Carbon::parse($op->date)->format('d/m/Y') : $op->created_at->format('d/m/Y') }}</td>
+                                                    <td>{{ $op->account_item->name ?? '-' }}</td>
+                                                    <td>{{ number_format($op->total, 2, ',', '.') }} €</td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-xs btn-warning" onclick="editPayment({{ $op->id }}, {{ $op->total }}, 3)">Editar</button>
+                                                        <button type="button" class="btn btn-xs btn-danger" onclick="deletePayment({{ $op->id }}, 3)">Apagar</button>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                        @endif
+                                    </table>
+                                
                                 <div class="form-group {{ $errors->has('payment_comprovant') ? 'has-error' : '' }}">
                                     <label for="payment_comprovant">{{ trans('cruds.vehicle.fields.payment_comprovant') }}</label>
                                     <div class="needsclick dropzone" id="payment_comprovant-dropzone">
@@ -1011,6 +1054,11 @@ Dropzone.options.invoiceDropzone = {
               var file = files[i]
               this.options.addedfile.call(this, file)
               file.previewElement.classList.add('dz-complete')
+
+              // evento para abrir o ficheiro
+                file.previewElement.onclick = function () {
+                    window.open(file.original_url, '_blank');
+                };
               $('form').append('<input type="hidden" name="invoice[]" value="' + file.file_name + '">')
             }
 @endif
@@ -1072,6 +1120,18 @@ Dropzone.options.inicialDropzone = {
           this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
           file.previewElement.classList.add('dz-complete')
           $('form').append('<input type="hidden" name="inicial[]" value="' + file.file_name + '">')
+          const img = file.previewElement.querySelector("img");
+if (img) {
+    img.style.cursor = "pointer";
+    
+    // cria o <a> e insere antes da img
+    const a = document.createElement('a');
+    a.href = file.original_url;
+    a.setAttribute('data-lightbox', 'gallery');
+    
+    img.parentNode.insertBefore(a, img);
+    a.appendChild(img);
+}
         }
 @endif
     },
@@ -1128,6 +1188,10 @@ Dropzone.options.withdrawalAuthorizationFileDropzone = {
               var file = files[i]
               this.options.addedfile.call(this, file)
               file.previewElement.classList.add('dz-complete')
+              // evento para abrir o ficheiro
+                file.previewElement.onclick = function () {
+                    window.open(file.original_url, '_blank');
+                };
               $('form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + file.file_name + '">')
             }
 @endif
@@ -1184,6 +1248,10 @@ Dropzone.options.withdrawalDocumentsDropzone = {
               var file = files[i]
               this.options.addedfile.call(this, file)
               file.previewElement.classList.add('dz-complete')
+              // evento para abrir o ficheiro
+                file.previewElement.onclick = function () {
+                    window.open(file.original_url, '_blank');
+                };
               $('form').append('<input type="hidden" name="withdrawal_documents[]" value="' + file.file_name + '">')
             }
 @endif
@@ -1208,13 +1276,13 @@ Dropzone.options.withdrawalDocumentsDropzone = {
 </script>
 
 <script>
-function newPurchasePayment() {
+function newPurchasePayment(account_department_id) {
     const itemId = document.getElementById('purchase_item').value;
     const date = document.getElementById('purchase_date').value;
     const value = parseFloat(document.getElementById('purchase_value').value);
 
     if (!itemId || isNaN(value)) {
-        showStatus('Por favor, selecione o item e insira o valor.', 'danger');
+        showStatus('Por favor, selecione o item e insira o valor.', 'danger', account_department_id);
         return;
     }
 
@@ -1225,6 +1293,7 @@ function newPurchasePayment() {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         body: JSON.stringify({
+            account_department_id: account_department_id,
             account_item_id: itemId,
             date: date,
             total: value,
@@ -1234,11 +1303,11 @@ function newPurchasePayment() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showStatus('Pagamento registado com sucesso.', 'success');
-            refreshPayments();
+            showStatus('Pagamento registado com sucesso.', 'success', account_department_id);
+            refreshPayments(data.account_department_id);
             // Optionally append the new row to the table instead of reloading
         } else {
-            showStatus('Erro ao registar o pagamento.', 'danger');
+            showStatus('Erro ao registar o pagamento.', 'danger', account_department_id);
         }
     })
     .catch(error => {
@@ -1247,7 +1316,49 @@ function newPurchasePayment() {
     });
 }
 
-function editPayment(id, value) {
+function newClientPayment(account_department_id) {
+    const itemId = document.getElementById('client_payment_item').value;
+    const payment_method_id = document.getElementById('client_payment_method_id').value;
+    const date = document.getElementById('client_date').value;
+    const value = parseFloat(document.getElementById('client_payment_value').value);
+
+    if (!itemId || isNaN(value)) {
+        showStatus('Por favor, selecione o item e insira o valor.', 'danger', account_department_id);
+        return;
+    }
+
+    fetch(`{{ route('admin.vehicles.account-operations.store', ['vehicle' => $vehicle->id]) }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            account_department_id: account_department_id,
+            account_item_id: itemId,
+            payment_method_id: payment_method_id,
+            date: date,
+            total: value,
+            qty: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showStatus('Pagamento registado com sucesso.', 'success', account_department_id);
+            refreshPayments(data.account_department_id);
+            // Optionally append the new row to the table instead of reloading
+        } else {
+            showStatus('Erro ao registar o pagamento.', 'danger', account_department_id);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showStatus('Erro de rede. Tente novamente.', 'danger', account_department_id);
+    });
+}
+
+function editPayment(id, value, account_department_id) {
     const newValue = prompt("Novo valor do pagamento:", value);
     if (newValue === null) return;
 
@@ -1262,16 +1373,15 @@ function editPayment(id, value) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showStatus('Pagamento atualizado com sucesso.', 'success');
-            refreshPayments(); // 🔁 Atualiza lista e saldo
+            showStatus('Pagamento atualizado com sucesso.', 'success', account_department_id);
+            refreshPayments(account_department_id); // 🔁 Atualiza lista e saldo
         } else {
-            showStatus('Erro ao atualizar o pagamento.', 'danger');
+            showStatus('Erro ao atualizar o pagamento.', 'danger', account_department_id);
         }
     });
 }
 
-
-function deletePayment(id) {
+function deletePayment(id, account_department_id) {
     if (!confirm('Tem certeza que deseja apagar este pagamento?')) return;
 
     fetch(`/admin/account-operations/${id}`, {
@@ -1283,47 +1393,58 @@ function deletePayment(id) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showStatus('Pagamento apagado com sucesso.', 'success');
-            refreshPayments(); // 🔁 Atualiza lista e saldo
+            showStatus('Pagamento apagado com sucesso.', 'success', account_department_id);
+            refreshPayments(account_department_id); // 🔁 Atualiza lista e saldo
         } else {
-            showStatus('Erro ao apagar o pagamento.', 'danger');
+            showStatus('Erro ao apagar o pagamento.', 'danger', account_department_id);
         }
     });
 }
 
-function showStatus(message, type) {
-    const status = document.getElementById('payment-status');
+function showStatus(message, type, account_department_id) {
+    let status;
+    if (account_department_id == 1) {
+        status = document.getElementById('payment-status');
+    } else {
+        status = document.getElementById('client-status');
+    }
+
     status.innerText = message;
     status.className = `alert alert-${type}`;
     status.style.display = 'block';
 }
 
-function refreshPayments() {
-    fetch(`{{ route('admin.vehicles.get-payments', ['vehicle' => $vehicle->id]) }}`)
+function refreshPayments(account_department_id) {
+    fetch('/admin/vehicles/{{ $vehicle->id }}/get-payments/' + account_department_id)
         .then(response => response.json())
         .then(data => {
-            // Atualiza a tabela
-            let tbody = '';
-            data.payments.forEach(op => {
-                tbody += `
-                    <tr>
-                        <td>${op.date}</td>
-                        <td>${op.item}</td>
-                        <td>${op.total} €</td>
-                        <td>
-                            <button type="button" class="btn btn-xs btn-warning" onclick="editPayment(${op.id}, ${op.total_raw})">Editar</button>
-                            <button type="button" class="btn btn-xs btn-danger" onclick="deletePayment(${op.id})">Apagar</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            document.querySelector("table.table-bordered tbody").innerHTML = tbody;
+            // Define os elementos corretos com base no department
+            const tableBody = document.querySelector(`#table-department-${account_department_id} tbody`);
+            const balanceInput = document.getElementById(`balance-${account_department_id}`);
 
-            // Atualiza o saldo
-            document.querySelector("input[readonly][value$='€']").value = `${data.balance} €`;
+            if (tableBody && balanceInput) {
+                // Atualiza a tabela
+                let tbody = '';
+                data.payments.forEach(op => {
+                    tbody += `
+                        <tr>
+                            <td>${op.date}</td>
+                            <td>${op.item}</td>
+                            <td>${op.total} €</td>
+                            <td>
+                                <button type="button" class="btn btn-xs btn-warning" onclick="editPayment(${op.id}, ${op.total_raw}, ${account_department_id})">Editar</button>
+                                <button type="button" class="btn btn-xs btn-danger" onclick="deletePayment(${op.id}, ${account_department_id})">Apagar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tableBody.innerHTML = tbody;
+
+                // Atualiza o saldo
+                balanceInput.value = `${data.balance} €`;
+            }
         });
 }
-
 
 
 </script>
@@ -1361,6 +1482,10 @@ Dropzone.options.paymentComprovantDropzone = {
               var file = files[i]
               this.options.addedfile.call(this, file)
               file.previewElement.classList.add('dz-complete')
+              // evento para abrir o ficheiro
+                file.previewElement.onclick = function () {
+                    window.open(file.original_url, '_blank');
+                };
               $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + file.file_name + '">')
             }
 @endif

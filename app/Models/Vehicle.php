@@ -314,4 +314,12 @@ class Vehicle extends Model implements HasMedia
                 $q->where('account_department_id', 3);
             });
     }
+
+    public function garage_operations()
+    {
+        return $this->hasMany(AccountOperation::class)
+            ->whereHas('account_item.account_category', function ($q) {
+                $q->where('account_department_id', 2);
+            });
+    }
 }

@@ -332,7 +332,10 @@ class VehicleController extends Controller
             'qty' => $request->input('qty', 1),
         ]);
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'account_department_id' => $request->input('account_department_id'),
+        ]);
     }
 
     public function updateValue(Request $request, AccountOperation $operation)
@@ -351,11 +354,24 @@ class VehicleController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function getPayments(Vehicle $vehicle)
+    public function getPayments(Vehicle $vehicle, $account_department_id)
     {
-        $ops = $vehicle->acquisition_operations()
-            ->with('account_item')
-            ->get();
+        if ($account_department_id == 1) {
+            $ops = $vehicle->acquisition_operations()
+                ->with('account_item')
+                ->get();
+        } elseif ($account_department_id == 2) {
+            $ops = $vehicle->garage_operations()
+                ->with('account_item')
+                ->get();
+        } elseif ($account_department_id == 3) {
+            $ops = $vehicle->client_operations()
+                ->with('account_item')
+                ->get();
+        } else {
+            return response()->json(['error' => 'Invalid account department ID'], 400);
+        }
+
         $balance = number_format(($vehicle->purchase_price ?? 0) - $ops->sum('total'), 2, ',', '.');
 
         $payments = $ops->map(function ($op) {
