@@ -24,6 +24,7 @@ use Yajra\DataTables\Facades\DataTables;
 use App\Models\AccountDepartment;
 use App\Models\AccountOperation;
 use App\Models\AccountItem;
+use App\Models\PaymentMethod;
 
 class VehicleController extends Controller
 {
@@ -141,35 +142,7 @@ class VehicleController extends Controller
     {
         $vehicle = Vehicle::create($request->all());
 
-        foreach ($request->input('documents', []) as $file) {
-            $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('documents');
-        }
-
-        foreach ($request->input('photos', []) as $file) {
-            $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('photos');
-        }
-
-        foreach ($request->input('invoice', []) as $file) {
-            $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('invoice');
-        }
-
-        foreach ($request->input('inicial', []) as $file) {
-            $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('inicial');
-        }
-
-        foreach ($request->input('withdrawal_authorization_file', []) as $file) {
-            $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('withdrawal_authorization_file');
-        }
-
-        foreach ($request->input('withdrawal_documents', []) as $file) {
-            $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('withdrawal_documents');
-        }
-
-        if ($media = $request->input('ck-media', false)) {
-            Media::whereIn('id', $media)->update(['model_id' => $vehicle->id]);
-        }
-
-        return redirect()->route('admin.vehicles.index');
+        return redirect()->route('admin.vehicles.edit', $vehicle->id)->with('message', 'Criado com sucesso');
     }
 
     public function edit(Vehicle $vehicle)
@@ -198,7 +171,9 @@ class VehicleController extends Controller
         $sale_department = AccountDepartment::find(3)->load('account_categories.account_items');
         $sale_categories = $sale_department ? $sale_department->account_categories : null;
 
-        return view('admin.vehicles.edit', compact('purchase_categories', 'sale_categories', 'general_states', 'brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers', 'vehicle'));
+        $payment_methods = PaymentMethod::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+
+        return view('admin.vehicles.edit', compact('payment_methods', 'purchase_categories', 'sale_categories', 'general_states', 'brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers', 'vehicle'));
     }
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle)
@@ -289,7 +264,21 @@ class VehicleController extends Controller
             }
         }
 
-        return redirect()->route('admin.vehicles.index');
+        if (count($vehicle->payment_comprovant) > 0) {
+            foreach ($vehicle->payment_comprovant as $media) {
+                if (! in_array($media->file_name, $request->input('payment_comprovant', []))) {
+                    $media->delete();
+                }
+            }
+        }
+        $media = $vehicle->payment_comprovant->pluck('file_name')->toArray();
+        foreach ($request->input('payment_comprovant', []) as $file) {
+            if (count($media) === 0 || ! in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('payment_comprovant');
+            }
+        }
+
+        return redirect()->back()->with('message', 'Atualizado com sucesso');
     }
 
     public function show(Vehicle $vehicle)
@@ -335,8 +324,10 @@ class VehicleController extends Controller
 
     public function storeAccountOperation(Request $request, Vehicle $vehicle)
     {
+
         $vehicle->account_operations()->create([
             'account_item_id' => $request->input('account_item_id'),
+            'date' => $request->input('date'),
             'total' => $request->input('total'),
             'qty' => $request->input('qty', 1),
         ]);
@@ -370,7 +361,7 @@ class VehicleController extends Controller
         $payments = $ops->map(function ($op) {
             return [
                 'id' => $op->id,
-                'date' => $op->created_at->format('d/m/Y'),
+                'date' => $op->date ? \carbon\Carbon::parse($op->date)->format('d/m/Y') : $op->created_at->format('d/m/Y'),
                 'item' => $op->account_item->name ?? '-',
                 'total' => number_format($op->total, 2, ',', '.'),
                 'total_raw' => $op->total

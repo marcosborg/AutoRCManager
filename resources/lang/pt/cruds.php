@@ -295,6 +295,10 @@ return [
             'model_helper'                              => ' ',
             'brand'                                     => 'Marca',
             'brand_helper'                              => ' ',
+            'payment_comprovant'                        => 'Comprovativos de pagamento',
+            'payment_comprovant_helper'                 => ' ',
+            'payment_notes'                            => 'Notas de pagamento', 
+            'payment_notes_helper'                     => ' ',
         ],
     ],
     'suplier' => [

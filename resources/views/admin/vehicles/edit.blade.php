@@ -225,6 +225,10 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
+                                    <label for="purchase_date">Data</label>
+                                    <input type="text" class="form-control date" name="purchase_date" id="purchase_date">
+                                </div>
+                                <div class="form-group">
                                     <label for="purchase_value">Value</label>
                                     <input type="number" class="form-control" name="purchase_value" id="purchase_value" step="0.01">
                                 </div>
@@ -261,7 +265,7 @@
                                         <tbody>
                                             @foreach($account_operations as $op)
                                                 <tr>
-                                                    <td>{{ $op->created_at->format('d/m/Y') }}</td>
+                                                    <td>{{ $op->date ? \Carbon\Carbon::parse($op->date)->format('d/m/Y') : $op->created_at->format('d/m/Y') }}</td>
                                                     <td>{{ $op->account_item->name ?? '-' }}</td>
                                                     <td>{{ number_format($op->total, 2, ',', '.') }} €</td>
                                                     <td>
@@ -602,12 +606,36 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
+                                    <label for="payment_method_id" class="required">Métodos de pagamento</label>
+                                    <select class="form-control select2" name="payment_method_id" id="payment_method_id">
+                                        @foreach($payment_methods as $id => $entry)
+                                        <option value="{{ $id }}">{{ $entry }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-group">
                                     <label>Valor</label>
                                     <input type="number" class="form-control" id="client_payment_value" step="0.01">
                                 </div>
                                 <button type="button" class="btn btn-success btn-sm" onclick="newClientPayment()">Registar</button>
-                                
-
+                                <hr>
+                                <div class="form-group {{ $errors->has('payment_comprovant') ? 'has-error' : '' }}">
+                                    <label for="payment_comprovant">{{ trans('cruds.vehicle.fields.payment_comprovant') }}</label>
+                                    <div class="needsclick dropzone" id="payment_comprovant-dropzone">
+                                    </div>
+                                    @if($errors->has('payment_comprovant'))
+                                        <span class="help-block" role="alert">{{ $errors->first('payment_comprovant') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.payment_comprovant_helper') }}</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('payment_notes') ? 'has-error' : '' }}">
+                                    <label for="payment_notes">{{ trans('cruds.vehicle.fields.payment_notes') }}</label>
+                                    <textarea class="form-control ckeditor" name="payment_notes" id="payment_notes">{!! old('payment_notes', $vehicle->payment_notes) !!}</textarea>
+                                    @if($errors->has('payment_notes'))
+                                        <span class="help-block" role="alert">{{ $errors->first('payment_notes') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.payment_notes_helper') }}</span>
+                                </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('client_registration') ? 'has-error' : '' }}">
@@ -1182,6 +1210,7 @@ Dropzone.options.withdrawalDocumentsDropzone = {
 <script>
 function newPurchasePayment() {
     const itemId = document.getElementById('purchase_item').value;
+    const date = document.getElementById('purchase_date').value;
     const value = parseFloat(document.getElementById('purchase_value').value);
 
     if (!itemId || isNaN(value)) {
@@ -1197,6 +1226,7 @@ function newPurchasePayment() {
         },
         body: JSON.stringify({
             account_item_id: itemId,
+            date: date,
             total: value,
             qty: 1
         })
@@ -1296,6 +1326,62 @@ function refreshPayments() {
 
 
 
+</script>
+<script>
+    var uploadedPaymentComprovantMap = {}
+Dropzone.options.paymentComprovantDropzone = {
+    url: '{{ route('admin.vehicles.storeMedia') }}',
+    maxFilesize: 5, // MB
+    addRemoveLinks: true,
+    headers: {
+      'X-CSRF-TOKEN': "{{ csrf_token() }}"
+    },
+    params: {
+      size: 5
+    },
+    success: function (file, response) {
+      $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + response.name + '">')
+      uploadedPaymentComprovantMap[file.name] = response.name
+    },
+    removedfile: function (file) {
+      file.previewElement.remove()
+      var name = ''
+      if (typeof file.file_name !== 'undefined') {
+        name = file.file_name
+      } else {
+        name = uploadedPaymentComprovantMap[file.name]
+      }
+      $('form').find('input[name="payment_comprovant[]"][value="' + name + '"]').remove()
+    },
+    init: function () {
+@if(isset($vehicle) && $vehicle->payment_comprovant)
+          var files =
+            {!! json_encode($vehicle->payment_comprovant) !!}
+              for (var i in files) {
+              var file = files[i]
+              this.options.addedfile.call(this, file)
+              file.previewElement.classList.add('dz-complete')
+              $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + file.file_name + '">')
+            }
+@endif
+    },
+     error: function (file, response) {
+         if ($.type(response) === 'string') {
+             var message = response //dropzone sends it's own error messages in string
+         } else {
+             var message = response.errors.file
+         }
+         file.previewElement.classList.add('dz-error')
+         _ref = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+         _results = []
+         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+             node = _ref[_i]
+             _results.push(node.textContent = message)
+         }
+
+         return _results
+     }
+}
 </script>
 
 @endsection

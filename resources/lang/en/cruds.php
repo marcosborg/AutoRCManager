@@ -293,6 +293,10 @@ return [
             'general_state_helper'                      => ' ',
             'model'                                     => 'Modelo',
             'model_helper'                              => ' ',
+            'payment_comprovant'                        => 'Payment Comprovant',
+            'payment_comprovant_helper'                 => ' ',
+            'payment_notes'                            => 'Payment Notes', 
+            'payment_notes_helper'                     => ' ',
         ],
     ],
     'suplier' => [

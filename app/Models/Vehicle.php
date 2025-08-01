@@ -29,6 +29,7 @@ class Vehicle extends Model implements HasMedia
         'inicial',
         'withdrawal_authorization_file',
         'withdrawal_documents',
+        'payment_comprovant',
     ];
 
     protected $dates = [
@@ -90,6 +91,7 @@ class Vehicle extends Model implements HasMedia
         'pvp',
         'client_id',
         'client_amount_paid',
+        'payment_notes',
         'client_registration',
         'chekin_documents',
         'chekin_date',
@@ -255,6 +257,11 @@ class Vehicle extends Model implements HasMedia
     public function client()
     {
         return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    public function getPaymentComprovantAttribute()
+    {
+        return $this->getMedia('payment_comprovant');
     }
 
     public function getChekinDateAttribute($value)
