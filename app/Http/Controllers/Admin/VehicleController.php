@@ -327,6 +327,7 @@ class VehicleController extends Controller
 
         $vehicle->account_operations()->create([
             'account_item_id' => $request->input('account_item_id'),
+            'payment_method_id' => $request->input('payment_method_id'),
             'date' => $request->input('date'),
             'total' => $request->input('total'),
             'qty' => $request->input('qty', 1),

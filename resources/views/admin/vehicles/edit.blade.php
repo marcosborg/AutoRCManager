@@ -214,13 +214,10 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>Payment</label>
-                                    <select class="form-control select2" name="purchase_item" id="purchase_item">
-                                        <option selected disabled>Selecionar opção</option>
-                                        @foreach ($purchase_categories as $purchase_category)
-                                            @foreach ($purchase_category->account_items as $purchase_item)
-                                                <option value="{{ $purchase_item->id }}">{{ $purchase_category->name }} - {{ $purchase_item->name }}</option>
-                                            @endforeach
+                                    <label for="purchase_payment_method_id" class="required">Métodos de pagamento</label>
+                                    <select class="form-control select2" name="purchase_payment_method_id" id="purchase_payment_method_id">
+                                        @foreach($payment_methods as $id => $entry)
+                                        <option value="{{ $id }}">{{ $entry }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -1277,7 +1274,8 @@ Dropzone.options.withdrawalDocumentsDropzone = {
 
 <script>
 function newPurchasePayment(account_department_id) {
-    const itemId = document.getElementById('purchase_item').value;
+    const itemId = 1;
+    const payment_method_id = document.getElementById('purchase_payment_method_id').value;
     const date = document.getElementById('purchase_date').value;
     const value = parseFloat(document.getElementById('purchase_value').value);
 
@@ -1295,6 +1293,7 @@ function newPurchasePayment(account_department_id) {
         body: JSON.stringify({
             account_department_id: account_department_id,
             account_item_id: itemId,
+            payment_method_id: payment_method_id,
             date: date,
             total: value,
             qty: 1
