@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Vehicle;
+use App\Models\Repair;
 use App\Mail\VehicleStateChangedMail;
 use Illuminate\Support\Facades\Mail;
 
@@ -10,21 +11,31 @@ class VehicleObserver
 {
     public function updating(Vehicle $vehicle)
     {
-        // Verifica se o campo general_state_id está a ser alterado
+        // Verifica se o general_state_id foi alterado
         if ($vehicle->isDirty('general_state_id')) {
-            $newState = $vehicle->general_state;
+            $newState = \App\Models\GeneralState::find($vehicle->general_state_id);
 
-            // Só se o novo estado tiver notification ativada
+            // Se o novo estado for 4 (na oficina), criar Repair se ainda não existir
+            if ($vehicle->general_state_id == 4) {
+                $existingRepair = Repair::where('vehicle_id', $vehicle->id)->first();
+
+                if (!$existingRepair) {
+                    Repair::create([
+                        'vehicle_id' => $vehicle->id,
+                        // os outros campos serão preenchidos mais tarde
+                    ]);
+                }
+            }
+
+            // Enviar email se o estado tiver notification ativa
             if ($newState && $newState->notification) {
                 $emails = array_map('trim', explode(',', $newState->emails));
 
-                if (!empty($emails)) {
-                    foreach ($emails as $email) {
-                        Mail::to($email)->queue(new VehicleStateChangedMail(
-                            $vehicle->license,
-                            $newState->message
-                        ));
-                    }
+                foreach ($emails as $email) {
+                    Mail::to($email)->queue(new VehicleStateChangedMail(
+                        $vehicle->license,
+                        $newState->message
+                    ));
                 }
             }
         }
