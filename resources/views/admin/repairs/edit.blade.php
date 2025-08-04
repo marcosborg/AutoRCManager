@@ -15,6 +15,12 @@
     <div class="row">
         <div class="col-lg-12">
             <div class="panel panel-default">
+                <div class="panel-heading">Viatura</div>
+                <div class="panel-body">
+
+                </div>
+            </div>
+            <div class="panel panel-default">
                 <div class="panel-heading">
                     {{ trans('global.edit') }} {{ trans('cruds.repair.title_singular') }}
                 </div>
