@@ -31,6 +31,12 @@
                                         {{ trans('cruds.generalState.fields.name') }}
                                     </th>
                                     <th>
+                                        {{ trans('cruds.generalState.fields.notification') }}
+                                    </th>
+                                    <th>
+                                        {{ trans('cruds.generalState.fields.emails') }}
+                                    </th>
+                                    <th>
                                         {{ trans('cruds.generalState.fields.position') }}
                                     </th>
                                     <th>
@@ -49,6 +55,13 @@
                                         </td>
                                         <td>
                                             {{ $generalState->name ?? '' }}
+                                        </td>
+                                        <td>
+                                            <span style="display:none">{{ $generalState->notification ?? '' }}</span>
+                                            <input type="checkbox" disabled="disabled" {{ $generalState->notification ? 'checked' : '' }}>
+                                        </td>
+                                        <td>
+                                            {{ $generalState->emails ?? '' }}
                                         </td>
                                         <td>
                                             {{ $generalState->position ?? '' }}

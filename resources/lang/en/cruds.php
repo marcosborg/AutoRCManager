@@ -617,6 +617,12 @@ return [
             'deleted_at_helper' => ' ',
             'position'          => 'Position',
             'position_helper'   => ' ',
+            'notification'        => 'Notification',
+            'notification_helper' => ' ',
+            'emails'              => 'Emails a avisar',
+            'emails_helper'       => 'Os emails devem ser separados por ,',
+            'message'             => 'Mensagem a enviar',
+            'message_helper'      => ' ',
         ],
     ],
     'account' => [

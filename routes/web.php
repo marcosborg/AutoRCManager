@@ -107,6 +107,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     // General State
     Route::delete('general-states/destroy', 'GeneralStateController@massDestroy')->name('general-states.massDestroy');
+    Route::post('general-states/media', 'GeneralStateController@storeMedia')->name('general-states.storeMedia');
+    Route::post('general-states/ckmedia', 'GeneralStateController@storeCKEditorImages')->name('general-states.storeCKEditorImages');
     Route::resource('general-states', 'GeneralStateController');
 
     // Account Department

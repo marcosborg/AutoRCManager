@@ -21,6 +21,10 @@ class StoreGeneralStateRequest extends FormRequest
                 'string',
                 'required',
             ],
+            'emails' => [
+                'string',
+                'nullable',
+            ],
             'position' => [
                 'nullable',
                 'integer',
