@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\GeneralState;
 
 class RepairController extends Controller
 {
@@ -433,7 +434,11 @@ class RepairController extends Controller
 
         $repair->load('vehicle', 'user', 'repair_state');
 
-        return view('admin.repairs.edit', compact('repair', 'repair_states', 'users', 'vehicles'));
+        $general_states = GeneralState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+
+        $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+
+        return view('admin.repairs.edit', compact('brands', 'repair', 'repair_states', 'users', 'vehicles', 'general_states'));
     }
 
     public function update(UpdateRepairRequest $request, Repair $repair)
