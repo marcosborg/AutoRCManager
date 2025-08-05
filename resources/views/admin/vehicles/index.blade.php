@@ -187,7 +187,7 @@
   dtButtons.push(deleteButton)
 @endcan
 
-  let dtOverrideGlobals = {
+let dtOverrideGlobals = {
     buttons: dtButtons,
     processing: true,
     serverSide: true,
@@ -195,27 +195,42 @@
     aaSorting: [],
     ajax: "{{ route('admin.vehicles.index') }}",
     columns: [
-      { data: 'placeholder', name: 'placeholder' },
-{ data: 'general_state_name', name: 'general_state.name' },
-{ data: 'license', name: 'license' },
-{ data: 'foreign_license', name: 'foreign_license' },
-{ data: 'brand_name', name: 'brand.name' },
-{ data: 'model', name: 'model' },
-{ data: 'month', name: 'month' },
-{ data: 'fuel', name: 'fuel' },
-{ data: 'inspec_b', name: 'inspec_b' },
-{ data: 'pvp', name: 'pvp' },
-{ data: 'suplier_name', name: 'suplier.name' },
-{ data: 'client_name', name: 'client.name' },
-{ data: 'chekin_documents', name: 'chekin_documents' },
-{ data: 'sale_date', name: 'sale_date' },
-{ data: 'key', name: 'key' },
-{ data: 'actions', name: '{{ trans('global.actions') }}' }
+        { data: 'placeholder', name: 'placeholder' },
+        { data: 'general_state_name', name: 'general_state.name' },
+        { data: 'license', name: 'license' },
+        { data: 'foreign_license', name: 'foreign_license' },
+        { data: 'brand_name', name: 'brand.name' },
+        { data: 'model', name: 'model' },
+        { data: 'month', name: 'month' },
+        { data: 'fuel', name: 'fuel' },
+        { data: 'inspec_b', name: 'inspec_b' },
+        { data: 'pvp', name: 'pvp' },
+        { data: 'suplier_name', name: 'suplier.name' },
+        { data: 'client_name', name: 'client.name' },
+        { data: 'chekin_documents', name: 'chekin_documents' },
+        { data: 'sale_date', name: 'sale_date' },
+        { data: 'key', name: 'key' },
+        { data: 'actions', name: '{{ trans('global.actions') }}', orderable: false, searchable: false }
+    ],
+    columnDefs: [
+        {
+            targets: -1,
+            render: function (data, type, row, meta) {
+                let editDeleteButtons = data;
+                let financialBtn = `
+                    <a href="/admin/financial/${row.id}" class="btn btn-xs btn-success" style="margin-left: 5px;">
+                        Financeiro
+                    </a>`;
+                return editDeleteButtons + financialBtn;
+            }
+        }
     ],
     orderCellsTop: true,
-    order: [[ 1, 'desc' ]],
+    order: [[1, 'desc']],
     pageLength: 100,
-  };
+};
+
+
   let table = $('.datatable-Vehicle').DataTable(dtOverrideGlobals);
   $('a[data-toggle="tab"]').on('shown.bs.tab click', function(e){
       $($.fn.dataTable.tables(true)).DataTable()

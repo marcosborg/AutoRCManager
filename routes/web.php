@@ -132,6 +132,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('account-operations', [App\Http\Controllers\Admin\AccountOperationController::class, 'storeAjax'])->name('account-operations.storeAjax');
     Route::delete('account-operations/{operation}', [App\Http\Controllers\Admin\AccountOperationController::class, 'delete'])->name('account-operations.destroy');
 
+    Route::get('financial/{vehicle_id}', [App\Http\Controllers\Admin\FinancialController::class, 'index'])->name('financial.index');
+
     // Audit Logs
     Route::resource('audit-logs', 'AuditLogsController', ['except' => ['create', 'store', 'edit', 'update', 'destroy']]);
 
