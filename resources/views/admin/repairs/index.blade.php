@@ -43,9 +43,6 @@
                                     {{ trans('cruds.repair.fields.obs_1') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.repair.fields.user') }}
-                                </th>
-                                <th>
                                     {{ trans('cruds.repair.fields.repair_state') }}
                                 </th>
                                 <th>
@@ -79,14 +76,6 @@
                                 </td>
                                 <td>
                                     <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <select class="search">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($users as $key => $item)
-                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
                                 </td>
                                 <td>
                                     <select class="search">
@@ -160,7 +149,6 @@
 { data: 'brand', name: 'vehicle.brand.name' },
 { data: 'model', name: 'vehicle.model' },
 { data: 'obs_1', name: 'obs_1' },
-{ data: 'user_name', name: 'user.name' },
 { data: 'repair_state_name', name: 'repair_state.name' },
 { data: 'checklist_percentage', name: 'checklist_percentage' },
 { data: 'actions', name: '{{ trans('global.actions') }}' }

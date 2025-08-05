@@ -21,10 +21,6 @@ class UpdateRepairRequest extends FormRequest
                 'required',
                 'integer',
             ],
-            'user_id' => [
-                'required',
-                'integer',
-            ],
             'kilometers' => [
                 'nullable',
                 'integer',

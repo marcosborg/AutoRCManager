@@ -8,9 +8,10 @@ use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\MassDestroyRepairRequest;
 use App\Http\Requests\StoreRepairRequest;
 use App\Http\Requests\UpdateRepairRequest;
+use App\Models\AccountCategory;
 use App\Models\Repair;
 use App\Models\RepairState;
-use App\Models\User;
+use App\Models\AccountOperation;
 use App\Models\Vehicle;
 use App\Models\Brand;
 use Gate;
@@ -29,7 +30,7 @@ class RepairController extends Controller
         abort_if(Gate::denies('repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ($request->ajax()) {
-            $query = Repair::with(['vehicle', 'user', 'repair_state'])->select(sprintf('%s.*', (new Repair)->table));
+            $query = Repair::with(['vehicle', 'repair_state'])->select(sprintf('%s.*', (new Repair)->table));
             $table = Datatables::of($query);
 
             $table->addColumn('placeholder', '&nbsp;');
@@ -78,9 +79,6 @@ class RepairController extends Controller
                 }
 
                 return implode(' ', $links);
-            });
-            $table->addColumn('user_name', function ($row) {
-                return $row->user ? $row->user->name : '';
             });
 
             $table->editColumn('kilometers', function ($row) {
@@ -384,10 +382,9 @@ class RepairController extends Controller
 
         $vehicles      = Vehicle::get();
         $brands       = Brand::get();
-        $users         = User::get();
         $repair_states = RepairState::get();
 
-        return view('admin.repairs.index', compact('vehicles', 'brands', 'users', 'repair_states'));
+        return view('admin.repairs.index', compact('vehicles', 'brands', 'repair_states'));
     }
 
     public function create()
@@ -396,11 +393,9 @@ class RepairController extends Controller
 
         $vehicles = Vehicle::pluck('license', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $users = User::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
         $repair_states = RepairState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        return view('admin.repairs.create', compact('repair_states', 'users', 'vehicles'));
+        return view('admin.repairs.create', compact('repair_states', 'vehicles'));
     }
 
     public function store(StoreRepairRequest $request)
@@ -428,17 +423,25 @@ class RepairController extends Controller
 
         $vehicles = Vehicle::pluck('license', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $users = User::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
         $repair_states = RepairState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $repair->load('vehicle', 'user', 'repair_state');
+        $repair->load('vehicle', 'repair_state');
 
         $general_states = GeneralState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        return view('admin.repairs.edit', compact('brands', 'repair', 'repair_states', 'users', 'vehicles', 'general_states'));
+        $account_categories = AccountCategory::where('account_department_id', 2)->get();
+
+        $account_operations = AccountOperation::with(['account_item.account_category'])
+            ->where('vehicle_id', $repair->vehicle_id)
+            ->whereHas('account_item.account_category', function ($q) {
+                $q->where('account_department_id', 2);
+            })
+            ->get();
+
+
+        return view('admin.repairs.edit', compact('account_operations', 'brands', 'repair', 'repair_states', 'vehicles', 'general_states', 'account_categories'));
     }
 
     public function update(UpdateRepairRequest $request, Repair $repair)

@@ -7,10 +7,11 @@ use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\Auditable;
 
 class AccountOperation extends Model
 {
-    use SoftDeletes, HasFactory;
+    use SoftDeletes, HasFactory, Auditable;
 
     public $table = 'account_operations';
 

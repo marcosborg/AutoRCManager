@@ -33,7 +33,6 @@ class Repair extends Model implements HasMedia
     protected $fillable = [
         'vehicle_id',
         'obs_1',
-        'user_id',
         'kilometers',
         'front_windshield',
         'front_windshield_text',
@@ -213,11 +212,6 @@ class Repair extends Model implements HasMedia
         });
 
         return $files;
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function getCheckoutAttribute()

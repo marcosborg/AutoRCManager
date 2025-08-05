@@ -122,10 +122,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     // Account Item
     Route::delete('account-items/destroy', 'AccountItemController@massDestroy')->name('account-items.massDestroy');
     Route::resource('account-items', 'AccountItemController');
+    // AJAX - Buscar itens por categoria
+    Route::get('account-items/by-category/{id}', [App\Http\Controllers\Admin\AccountItemController::class, 'getByCategory']);
+
 
     // Account Operation
     Route::delete('account-operations/destroy', 'AccountOperationController@massDestroy')->name('account-operations.massDestroy');
     Route::resource('account-operations', 'AccountOperationController');
+    Route::post('account-operations', [App\Http\Controllers\Admin\AccountOperationController::class, 'storeAjax'])->name('account-operations.storeAjax');
+    Route::delete('account-operations/{operation}', [App\Http\Controllers\Admin\AccountOperationController::class, 'delete'])->name('account-operations.destroy');
 
     // Audit Logs
     Route::resource('audit-logs', 'AuditLogsController', ['except' => ['create', 'store', 'edit', 'update', 'destroy']]);

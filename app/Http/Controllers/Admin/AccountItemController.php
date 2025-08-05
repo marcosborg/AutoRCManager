@@ -130,4 +130,13 @@ class AccountItemController extends Controller
 
         return response(null, Response::HTTP_NO_CONTENT);
     }
+
+    public function getByCategory($id)
+    {
+        $items = AccountItem::where('account_category_id', $id)
+            ->select('id', 'name', 'total')
+            ->get();
+
+        return response()->json($items);
+    }
 }

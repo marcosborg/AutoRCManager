@@ -32,18 +32,6 @@
                             @endif
                             <span class="help-block">{{ trans('cruds.repair.fields.obs_1_helper') }}</span>
                         </div>
-                        <div class="form-group {{ $errors->has('user') ? 'has-error' : '' }}">
-                            <label for="user_id">{{ trans('cruds.repair.fields.user') }}</label>
-                            <select class="form-control select2" name="user_id" id="user_id">
-                                @foreach($users as $id => $entry)
-                                    <option value="{{ $id }}" {{ old('user_id') == $id ? 'selected' : '' }}>{{ $entry }}</option>
-                                @endforeach
-                            </select>
-                            @if($errors->has('user'))
-                                <span class="help-block" role="alert">{{ $errors->first('user') }}</span>
-                            @endif
-                            <span class="help-block">{{ trans('cruds.repair.fields.user_helper') }}</span>
-                        </div>
                         <div class="form-group {{ $errors->has('kilometers') ? 'has-error' : '' }}">
                             <label for="kilometers">{{ trans('cruds.repair.fields.kilometers') }}</label>
                             <input class="form-control" type="number" name="kilometers" id="kilometers" value="{{ old('kilometers', '') }}" step="1">

@@ -146,4 +146,34 @@ class AccountOperationController extends Controller
 
         return response(null, Response::HTTP_NO_CONTENT);
     }
+
+    public function storeAjax(Request $request)
+    {
+        $validated = $request->validate([
+            'vehicle_id' => 'required|exists:vehicles,id',
+            'account_item_id' => 'required|exists:account_items,id',
+            'total' => 'required|numeric|min:0',
+        ]);
+
+        $operation = AccountOperation::create([
+            'vehicle_id' => $validated['vehicle_id'],
+            'account_item_id' => $validated['account_item_id'],
+            'qty' => 1,
+            'total' => $validated['total'],
+            'date' => now()->format('Y-m-d'), // ← Aqui corrigido
+        ]);
+
+        return response()->json([
+            'message' => 'Operação gravada com sucesso.',
+            'item_name' => $operation->account_item->name,
+            'total' => $operation->total,
+        ]);
+    }
+
+    public function delete(AccountOperation $operation)
+    {
+        $operation->delete();
+
+        return response()->json(['success' => true]);
+    }
 }
