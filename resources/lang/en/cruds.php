@@ -757,5 +757,27 @@ return [
             'deleted_at_helper' => ' ',
         ],
     ],
+    'timelog' => [
+        'title'          => 'Timelog',
+        'title_singular' => 'Timelog',
+        'fields'         => [
+            'id'                => 'ID',
+            'id_helper'         => ' ',
+            'vehicle'           => 'Vehicle',
+            'vehicle_helper'    => ' ',
+            'user'              => 'User',
+            'user_helper'       => ' ',
+            'start_time'        => 'Start Time',
+            'start_time_helper' => ' ',
+            'end_time'          => 'End Time',
+            'end_time_helper'   => ' ',
+            'created_at'        => 'Created at',
+            'created_at_helper' => ' ',
+            'updated_at'        => 'Updated at',
+            'updated_at_helper' => ' ',
+            'deleted_at'        => 'Deleted at',
+            'deleted_at_helper' => ' ',
+        ],
+    ],
 
 ];
