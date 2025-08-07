@@ -301,12 +301,45 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
+                                @php
+                                    $timelogs = \App\Models\Timelog::where('vehicle_id', $repair->vehicle_id)
+                                        ->where('user_id', auth()->id()) // ou todos, se fores admin
+                                        ->whereNotNull('end_time')
+                                        ->orderBy('start_time')
+                                        ->get();
+
+                                    $totalMinutes = $timelogs->sum('rounded_minutes');
+                                @endphp
+
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
-                                        Tempo de intervenção
+                                        Registos de Tempo de Intervenção
                                     </div>
                                     <div class="panel-body">
-
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Utilizador</th>
+                                                    <th>Início</th>
+                                                    <th>Fim</th>
+                                                    <th>Tempo (arredondado)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($timelogs as $log)
+                                                    <tr>
+                                                        <td>{{ $log->user?->name ?? 'Desconhecido' }}</td>
+                                                        <td>{{ $log->start_time }}</td>
+                                                        <td>{{ $log->end_time }}</td>
+                                                        <td>{{ $log->rounded_minutes }} min</td>
+                                                    </tr>
+                                                @endforeach
+                                                <tr>
+                                                    <td colspan="3"><strong>Total</strong></td>
+                                                    <td><strong>{{ $totalMinutes }} min</strong></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>

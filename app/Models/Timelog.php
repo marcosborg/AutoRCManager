@@ -28,6 +28,7 @@ class Timelog extends Model
         'user_id',
         'start_time',
         'end_time',
+        'rounded_minutes',
         'created_at',
         'updated_at',
         'deleted_at',

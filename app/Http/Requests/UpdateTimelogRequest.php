@@ -33,6 +33,12 @@ class UpdateTimelogRequest extends FormRequest
                 'date_format:' . config('panel.date_format') . ' ' . config('panel.time_format'),
                 'nullable',
             ],
+            'rounded_minutes' => [
+                'nullable',
+                'integer',
+                'min:-2147483648',
+                'max:2147483647',
+            ],
         ];
     }
 }

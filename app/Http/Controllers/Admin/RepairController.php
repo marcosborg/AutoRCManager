@@ -23,6 +23,7 @@ use App\Models\GeneralState;
 use App\Models\Timelog;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class RepairController extends Controller
 {
@@ -466,7 +467,6 @@ class RepairController extends Controller
     {
         $repair->update($request->all());
 
-        // Fecha o timelog mais recente deste utilizador e viatura
         $timelog = Timelog::where('vehicle_id', $repair->vehicle_id)
             ->where('user_id', Auth::id())
             ->whereNull('end_time')
@@ -474,10 +474,22 @@ class RepairController extends Controller
             ->first();
 
         if ($timelog) {
-            $timelog->update([
-                'end_time' => Carbon::now(),
-            ]);
+            $endTime = now();
+            $startTime = \Carbon\Carbon::parse($timelog->start_time);
+            $minutes = $startTime->diffInMinutes($endTime);
+
+            if ($minutes >= 1) {
+                $rounded = ceil($minutes / 15) * 15;
+                Log::info("TIMESTAMP: " . $startTime . " -> " . $endTime . " = $minutes minutes. Rounded: $rounded");
+                $timelog->update([
+                    'end_time' => $endTime,
+                    'rounded_minutes' => $rounded,
+                ]);
+            } else {
+                $timelog->delete();
+            }
         }
+
 
         if (count($repair->checkin) > 0) {
             foreach ($repair->checkin as $media) {

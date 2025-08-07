@@ -777,6 +777,8 @@ return [
             'updated_at_helper' => ' ',
             'deleted_at'        => 'Deleted at',
             'deleted_at_helper' => ' ',
+            'rounded_minutes'        => 'Rounded Minutes',
+            'rounded_minutes_helper' => ' ',
         ],
     ],
 

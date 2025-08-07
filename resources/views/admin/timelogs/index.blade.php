@@ -54,6 +54,9 @@
                                     {{ trans('cruds.timelog.fields.end_time') }}
                                 </th>
                                 <th>
+                                    {{ trans('cruds.timelog.fields.rounded_minutes') }}
+                                </th>
+                                <th>
                                     &nbsp;
                                 </th>
                             </tr>
@@ -122,6 +125,7 @@
 { data: 'user_name', name: 'user.name' },
 { data: 'start_time', name: 'start_time' },
 { data: 'end_time', name: 'end_time' },
+{ data: 'rounded_minutes', name: 'rounded_minutes' },
 { data: 'actions', name: '{{ trans('global.actions') }}' }
     ],
     orderCellsTop: true,

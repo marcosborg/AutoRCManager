@@ -57,6 +57,14 @@
                                         {{ $timelog->end_time }}
                                     </td>
                                 </tr>
+                                <tr>
+                                    <th>
+                                        {{ trans('cruds.timelog.fields.rounded_minutes') }}
+                                    </th>
+                                    <td>
+                                        {{ $timelog->rounded_minutes }}
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                         <div class="form-group">

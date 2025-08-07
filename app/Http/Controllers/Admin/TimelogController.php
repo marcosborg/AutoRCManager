@@ -68,6 +68,10 @@ class TimelogController extends Controller
                 return $row->user ? $row->user->name : '';
             });
 
+            $table->editColumn('rounded_minutes', function ($row) {
+                return $row->rounded_minutes ? $row->rounded_minutes : '';
+            });
+
             $table->rawColumns(['actions', 'placeholder', 'vehicle', 'user']);
 
             return $table->make(true);

@@ -51,6 +51,14 @@
                             @endif
                             <span class="help-block">{{ trans('cruds.timelog.fields.end_time_helper') }}</span>
                         </div>
+                        <div class="form-group {{ $errors->has('rounded_minutes') ? 'has-error' : '' }}">
+                            <label for="rounded_minutes">{{ trans('cruds.timelog.fields.rounded_minutes') }}</label>
+                            <input class="form-control" type="number" name="rounded_minutes" id="rounded_minutes" value="{{ old('rounded_minutes', '') }}" step="1">
+                            @if($errors->has('rounded_minutes'))
+                                <span class="help-block" role="alert">{{ $errors->first('rounded_minutes') }}</span>
+                            @endif
+                            <span class="help-block">{{ trans('cruds.timelog.fields.rounded_minutes_helper') }}</span>
+                        </div>
                         <div class="form-group">
                             <button class="btn btn-danger" type="submit">
                                 {{ trans('global.save') }}
