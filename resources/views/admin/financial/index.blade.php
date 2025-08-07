@@ -206,10 +206,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        {{-- Venda --}}
-        <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <strong>Venda</strong>
@@ -250,58 +246,110 @@
                     </div>
                 </div>
             </div>
+            
         </div>
-    </div>
 
-    <div class="row mt-4">
-        {{-- Oficina --}}
+        {{-- Venda --}}
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <strong>Oficina</strong>
                 </div>
                 <div class="panel-body">
-                    @php
-                    $garageOps = $operationsByDepartment['garage'] ?? collect();
-                    $garageTotal = $garageOps->sum('total');
-                    @endphp
+                    <div class="row">
+                        <div class="col-md-6">
+                            @php
+                            $garageOps = $operationsByDepartment['garage'] ?? collect();
+                            $garageTotal = $garageOps->sum('total');
+                            @endphp
 
-                    @forelse ($garageOps as $op)
-                    <div class="d-flex justify-content-between border-bottom py-1">
-                        <span>{{ $op->account_item->name }}</span>
-                        <span>€{{ number_format($op->total, 2, ',', '.') }}</span>
-                    </div>
-                    @empty
-                    <p class="text-muted">Nenhuma operação registada.</p>
-                    @endforelse
+                            @forelse ($garageOps as $op)
+                            <div class="d-flex justify-content-between border-bottom py-1">
+                                <span>{{ $op->account_item->name }}</span>
+                                <span>€{{ number_format($op->total, 2, ',', '.') }}</span>
+                            </div>
+                            @empty
+                            <p class="text-muted">Nenhuma operação registada.</p>
+                            @endforelse
 
-                    <hr>
+                            <hr>
 
-                    <div class="d-flex justify-content-between py-1">
-                        <span><strong>Total Oficina</strong></span>
-                        <span><strong>€{{ number_format($garageTotal, 2, ',', '.') }}</strong></span>
+                            <div class="d-flex justify-content-between py-1">
+                                <span><strong>Total Oficina</strong></span>
+                                <span><strong>€{{ number_format($garageTotal, 2, ',', '.') }}</strong></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            @php
+                                $totalMinutes = $timelogs->sum('rounded_minutes');
+                                $hourPrice = 25;
+                                $totalHours = $totalMinutes / 60;
+                                $totalCost = $totalHours * $hourPrice;
+                            @endphp
+
+                            <h5><strong>Registos de Mão de Obra</strong></h5>
+
+                            <table class="table table-bordered table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Mecânico</th>
+                                        <th>Início</th>
+                                        <th>Fim</th>
+                                        <th>Minutos</th>
+                                        <th>Custo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($timelogs as $log)
+                                        <tr>
+                                            <td>{{ $log->user?->name ?? 'Desconhecido' }}</td>
+                                            <td>{{ $log->start_time }}</td>
+                                            <td>{{ $log->end_time }}</td>
+                                            <td>{{ $log->rounded_minutes }}</td>
+                                            <td>€{{ number_format(($log->rounded_minutes / 60) * $hourPrice, 2, ',', '.') }}</td>
+                                        </tr>
+                                    @endforeach
+                                    <tr>
+                                        <td colspan="3"><strong>Total</strong></td>
+                                        <td><strong>{{ $totalMinutes }} min</strong></td>
+                                        <td><strong>€{{ number_format($totalCost, 2, ',', '.') }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        {{-- Reconciliação --}}
-        <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <strong>Reconciliação</strong>
                 </div>
                 <div class="panel-body">
                     @php
-                    $investimentoTotal = $purchaseTotal + $garageTotal;
-                    $lucro = $saleTotal - $investimentoTotal;
-                    $roi = $investimentoTotal > 0 ? ($lucro / $investimentoTotal) * 100 : 0;
+                        $investimentoTotal = $purchaseTotal + $garageTotal + $totalCost;
+                        $lucro = $saleTotal - $investimentoTotal;
+                        $roi = $investimentoTotal > 0 ? ($lucro / $investimentoTotal) * 100 : 0;
                     @endphp
 
+                    <div class="d-flex justify-content-between border-bottom py-1">
+                        <span>Investimento (Compra)</span>
+                        <span>€{{ number_format($purchaseTotal, 2, ',', '.') }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom py-1">
+                        <span>Investimento (Oficina)</span>
+                        <span>€{{ number_format($garageTotal, 2, ',', '.') }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom py-1">
+                        <span>Investimento (Mão de Obra)</span>
+                        <span>€{{ number_format($totalCost, 2, ',', '.') }}</span>
+                    </div>
+                    <hr>
                     <div class="d-flex justify-content-between border-bottom py-1">
                         <span>Total Investido</span>
                         <span>€{{ number_format($investimentoTotal, 2, ',', '.') }}</span>
                     </div>
+
                     <div class="d-flex justify-content-between border-bottom py-1">
                         <span>Total Recebido</span>
                         <span>€{{ number_format($saleTotal, 2, ',', '.') }}</span>
@@ -321,7 +369,6 @@
             </div>
         </div>
     </div>
-
 
 </div>
 @endsection

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Vehicle;
 use App\Models\Brand;
 use App\Models\GeneralState;
+use App\Models\Timelog;
 
 class FinancialController extends Controller
 {
@@ -17,6 +18,13 @@ class FinancialController extends Controller
         $vehicle = Vehicle::find($vehicle_id)->load('brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client', 'acquisition_operations.account_item.account_category', 'client_operations.account_item.account_category');
         $general_states = GeneralState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+
+        $timelogs = Timelog::with('user')
+            ->where('vehicle_id', $vehicle_id)
+            ->whereNotNull('rounded_minutes')
+            ->orderBy('start_time')
+            ->get();
+
 
         // Agrupar operações por departamento
         $operationsByDepartment = [
@@ -42,6 +50,6 @@ class FinancialController extends Controller
                 ->get(),
         ];
 
-        return view('admin.financial.index', compact('vehicle', 'general_states', 'brands', 'operationsByDepartment'));
+        return view('admin.financial.index', compact('vehicle', 'general_states', 'brands', 'operationsByDepartment', 'timelogs'));
     }
 }
