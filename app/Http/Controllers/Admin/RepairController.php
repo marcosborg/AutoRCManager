@@ -20,6 +20,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\GeneralState;
+use App\Models\Timelog;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class RepairController extends Controller
 {
@@ -421,6 +424,21 @@ class RepairController extends Controller
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        // Cria timelog se ainda não existir um aberto para este user e repair
+        $existingTimelog = Timelog::where('vehicle_id', $repair->vehicle_id)
+            ->where('user_id', Auth::id())
+            ->whereNull('end_time')
+            ->latest()
+            ->first();
+
+        if (!$existingTimelog) {
+            Timelog::create([
+                'vehicle_id' => $repair->vehicle_id,
+                'user_id' => Auth::id(),
+                'start_time' => Carbon::now(),
+            ]);
+        }
+
         $vehicles = Vehicle::pluck('license', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $repair_states = RepairState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
@@ -447,6 +465,19 @@ class RepairController extends Controller
     public function update(UpdateRepairRequest $request, Repair $repair)
     {
         $repair->update($request->all());
+
+        // Fecha o timelog mais recente deste utilizador e viatura
+        $timelog = Timelog::where('vehicle_id', $repair->vehicle_id)
+            ->where('user_id', Auth::id())
+            ->whereNull('end_time')
+            ->latest()
+            ->first();
+
+        if ($timelog) {
+            $timelog->update([
+                'end_time' => Carbon::now(),
+            ]);
+        }
 
         if (count($repair->checkin) > 0) {
             foreach ($repair->checkin as $media) {
