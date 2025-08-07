@@ -165,7 +165,7 @@
     </div>
     <div class="row">
         {{-- Aquisição --}}
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <strong>Aquisição</strong>
@@ -250,7 +250,7 @@
         </div>
 
         {{-- Venda --}}
-        <div class="col-md-6">
+        <div class="col-md-8">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <strong>Oficina</strong>
