@@ -144,6 +144,18 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     // Timelog
     Route::delete('timelogs/destroy', 'TimelogController@massDestroy')->name('timelogs.massDestroy');
     Route::resource('timelogs', 'TimelogController');
+
+    // Depreciation
+    Route::delete('depreciations/destroy', 'DepreciationController@massDestroy')->name('depreciations.massDestroy');
+    Route::post('depreciations/parse-csv-import', 'DepreciationController@parseCsvImport')->name('depreciations.parseCsvImport');
+    Route::post('depreciations/process-csv-import', 'DepreciationController@processCsvImport')->name('depreciations.processCsvImport');
+    Route::resource('depreciations', 'DepreciationController');
+
+    // Appreciation
+    Route::delete('appreciations/destroy', 'AppreciationController@massDestroy')->name('appreciations.massDestroy');
+    Route::post('appreciations/parse-csv-import', 'AppreciationController@parseCsvImport')->name('appreciations.parseCsvImport');
+    Route::post('appreciations/process-csv-import', 'AppreciationController@processCsvImport')->name('appreciations.processCsvImport');
+    Route::resource('appreciations', 'AppreciationController');
     
     Route::get('system-calendar', 'SystemCalendarController@index')->name('systemCalendar');
     Route::get('global-search', 'GlobalSearchController@search')->name('globalSearch');

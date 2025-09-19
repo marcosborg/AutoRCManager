@@ -311,6 +311,28 @@
                     </ul>
                 </li>
             @endcan
+            @can('depreciation_access')
+                <li class="{{ request()->is("admin/depreciations") || request()->is("admin/depreciations/*") ? "active" : "" }}">
+                    <a href="{{ route("admin.depreciations.index") }}">
+                        <i class="fa-fw fas fa-arrow-circle-down">
+
+                        </i>
+                        <span>{{ trans('cruds.depreciation.title') }}</span>
+
+                    </a>
+                </li>
+            @endcan
+            @can('appreciation_access')
+                <li class="{{ request()->is("admin/appreciations") || request()->is("admin/appreciations/*") ? "active" : "" }}">
+                    <a href="{{ route("admin.appreciations.index") }}">
+                        <i class="fa-fw fas fa-arrow-circle-up">
+
+                        </i>
+                        <span>{{ trans('cruds.appreciation.title') }}</span>
+
+                    </a>
+                </li>
+            @endcan
             <li class="{{ request()->is("admin/system-calendar") || request()->is("admin/system-calendar/*") ? "active" : "" }}">
                 <a href="{{ route("admin.systemCalendar") }}">
                     <i class="fas fa-fw fa-calendar">
