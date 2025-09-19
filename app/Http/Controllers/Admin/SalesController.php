@@ -27,12 +27,30 @@ class SalesController extends Controller
 
     use MediaUploadingTrait, CsvImportTrait;
 
-    public function index(Request $request)
+    public function index(Request $request, $general_state_id = null)
     {
         abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ($request->ajax()) {
             $query = Vehicle::with(['general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client'])->select(sprintf('%s.*', (new Vehicle)->table));
+
+            $query = Vehicle::with([
+                'general_state',
+                'brand',
+                'suplier',
+                'payment_status',
+                'carrier',
+                'pickup_state',
+                'client'
+            ])->select(sprintf('%s.*', (new Vehicle)->table));
+
+            // pega do path (/{general_state_id?}) ou da query (?general_state_id=)
+            $gsId = $general_state_id ?? $request->input('general_state_id') ?? $request->route('general_state_id');
+
+            if (!empty($gsId)) {
+                $query->where('general_state_id', $gsId);
+            }
+
             $table = Datatables::of($query);
 
             $table->addColumn('placeholder', '&nbsp;');
@@ -116,5 +134,4 @@ class SalesController extends Controller
 
         return view('admin.sales.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients'));
     }
-
 }

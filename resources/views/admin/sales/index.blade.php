@@ -160,7 +160,7 @@
     serverSide: true,
     retrieve: true,
     aaSorting: [],
-    ajax: "{{ route('admin.vehicles.index') }}",
+    ajax: "{{ route('admin.sales.index', request()->general_state_id) }}",
     columns: [
       { data: 'placeholder', name: 'placeholder' },
 { data: 'brand_name', name: 'brand.name' },
