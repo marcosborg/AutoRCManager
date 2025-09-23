@@ -167,9 +167,12 @@
                                 </div>
                             </div>
                         </div>
+                        @can('aquisition_of_the_vehicle')
                         <h4>Aquisição da viatura</h4>
+                        @endcan
                         <hr>
                         <div class="row">
+                            @can('aquisition_of_the_vehicle')
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('purchase_price') ? 'has-error' : '' }}">
                                     <label for="purchase_price">{{ trans('cruds.vehicle.fields.purchase_price') }}</label>
@@ -276,6 +279,7 @@
                                 
 
                             </div>
+                            @endcan
                             <div class="col-md-6">
                                 <div class="form-group {{ $errors->has('inicial') ? 'has-error' : '' }}">
                                     <label for="inicial">{{ trans('cruds.vehicle.fields.inicial') }}</label>
@@ -286,6 +290,7 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.inicial_helper') }}</span>
                                 </div>
+                                @can('aquisition_of_the_vehicle')
                                 <div class="form-group {{ $errors->has('invoice') ? 'has-error' : '' }}">
                                     <label for="invoice">{{ trans('cruds.vehicle.fields.invoice') }}</label>
                                     <div class="needsclick dropzone" id="invoice-dropzone">
@@ -295,6 +300,7 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.invoice_helper') }}</span>
                                 </div>
+                                @endcan
                             </div>
                         </div>
                         <h4>Documentos da viatura</h4>

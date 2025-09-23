@@ -16,7 +16,7 @@ class VehicleObserver
             $newState = \App\Models\GeneralState::find($vehicle->general_state_id);
 
             // Se o novo estado for 4 (na oficina), criar Repair se ainda não existir
-            if ($vehicle->general_state_id == 4) {
+            if ($vehicle->general_state_id == 3 && $vehicle->client_id == 1) {
                 $existingRepair = Repair::where('vehicle_id', $vehicle->id)->first();
 
                 if (!$existingRepair) {
