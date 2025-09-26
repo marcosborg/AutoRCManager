@@ -99,6 +99,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repairs/ckmedia', 'RepairController@storeCKEditorImages')->name('repairs.storeCKEditorImages');
     Route::resource('repairs', 'RepairController');
 
+    // Create Car For Repair
+    Route::get('create-car-for-repairs', 'CreateCarForRepairController@index')->name('create-car-for-repairs.index');
+    Route::post('create-car-for-repairs', 'CreateCarForRepairController@store')->name('create-car-for-repairs.store');
+
     // Repair States
     Route::delete('repair-states/destroy', 'RepairStatesController@massDestroy')->name('repair-states.massDestroy');
     Route::post('repair-states/parse-csv-import', 'RepairStatesController@parseCsvImport')->name('repair-states.parseCsvImport');
@@ -124,7 +128,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('account-items', 'AccountItemController');
     // AJAX - Buscar itens por categoria
     Route::get('account-items/by-category/{id}', [App\Http\Controllers\Admin\AccountItemController::class, 'getByCategory']);
-
 
     // Account Operation
     Route::delete('account-operations/destroy', 'AccountOperationController@massDestroy')->name('account-operations.massDestroy');

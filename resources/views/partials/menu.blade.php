@@ -208,26 +208,50 @@
                 </li>
                 @endforeach
             @endcan
-            @can('repair_access')
-                <li class="{{ request()->is("admin/repairs") || request()->is("admin/repairs/*") ? "active" : "" }}">
-                    <a href="{{ route("admin.repairs.index") }}">
+            @can('repair_menu_access')
+                <li class="treeview">
+                    <a href="#">
                         <i class="fa-fw fas fa-screwdriver">
 
                         </i>
-                        <span>{{ trans('cruds.repair.title') }}</span>
-
+                        <span>{{ trans('cruds.repairMenu.title') }}</span>
+                        <span class="pull-right-container"><i class="fa fa-fw fa-angle-left pull-right"></i></span>
                     </a>
-                </li>
-            @endcan
-            @can('timelog_access')
-                <li class="{{ request()->is("admin/timelogs") || request()->is("admin/timelogs/*") ? "active" : "" }}">
-                    <a href="{{ route("admin.timelogs.index") }}">
-                        <i class="fa-fw fas fa-clock">
+                    <ul class="treeview-menu">
+                        @can('repair_access')
+                            <li class="{{ request()->is("admin/repairs") || request()->is("admin/repairs/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.repairs.index") }}">
+                                    <i class="fa-fw fas fa-car">
 
-                        </i>
-                        <span>{{ trans('cruds.timelog.title') }}</span>
+                                    </i>
+                                    <span>{{ trans('cruds.repair.title') }}</span>
 
-                    </a>
+                                </a>
+                            </li>
+                        @endcan
+                        @can('create_car_for_repair_access')
+                            <li class="{{ request()->is("admin/create-car-for-repairs") || request()->is("admin/create-car-for-repairs/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.create-car-for-repairs.index") }}">
+                                    <i class="fa-fw fas fa-plus">
+
+                                    </i>
+                                    <span>{{ trans('cruds.createCarForRepair.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
+                        @can('timelog_access')
+                            <li class="{{ request()->is("admin/timelogs") || request()->is("admin/timelogs/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.timelogs.index") }}">
+                                    <i class="fa-fw fas fa-clock">
+
+                                    </i>
+                                    <span>{{ trans('cruds.timelog.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
+                    </ul>
                 </li>
             @endcan
             @can('account_access')

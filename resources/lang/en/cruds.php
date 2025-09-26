@@ -817,5 +817,13 @@ return [
             'deleted_at_helper'    => ' ',
         ],
     ],
+    'repairMenu' => [
+        'title'          => 'Oficina',
+        'title_singular' => 'Oficina',
+    ],
+    'createCarForRepair' => [
+        'title'          => 'Create Car For Repair',
+        'title_singular' => 'Create Car For Repair',
+    ],
 
 ];
