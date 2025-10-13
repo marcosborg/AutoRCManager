@@ -155,6 +155,10 @@ class StoreVehicleRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'engine_displacement' => [
+                'string',
+                'nullable',
+            ],
         ];
     }
 }

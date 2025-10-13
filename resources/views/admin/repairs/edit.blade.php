@@ -102,6 +102,16 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
+                                <div class="form-group {{ $errors->has('engine_displacement') ? 'has-error' : '' }}">
+                                    <label for="engine_displacement">{{ trans('cruds.vehicle.fields.engine_displacement') }}</label>
+                                    <input disabled class="form-control" type="text" name="engine_displacement" id="engine_displacement" value="{{ old('engine_displacement', $repair->vehicle->engine_displacement) }}">
+                                    @if($errors->has('engine_displacement'))
+                                        <span class="help-block" role="alert">{{ $errors->first('engine_displacement') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.engine_displacement_helper') }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('year') ? 'has-error' : '' }}">
                                     <label for="year">{{ trans('cruds.vehicle.fields.year') }}</label>
                                     <input disabled class="form-control" type="number" name="year" id="year" value="{{ old('year', $repair->vehicle->year) }}" step="1">

@@ -97,6 +97,16 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
+                                <div class="form-group {{ $errors->has('engine_displacement') ? 'has-error' : '' }}">
+                                    <label for="engine_displacement">{{ trans('cruds.vehicle.fields.engine_displacement') }}</label>
+                                    <input class="form-control" type="text" name="engine_displacement" id="engine_displacement" value="{{ old('engine_displacement', $vehicle->engine_displacement) }}">
+                                    @if($errors->has('engine_displacement'))
+                                        <span class="help-block" role="alert">{{ $errors->first('engine_displacement') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.engine_displacement_helper') }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('year') ? 'has-error' : '' }}">
                                     <label for="year">{{ trans('cruds.vehicle.fields.year') }}</label>
                                     <input class="form-control" type="number" name="year" id="year" value="{{ old('year', $vehicle->year) }}" step="1">
@@ -182,6 +192,22 @@
                                         <span class="help-block" role="alert">{{ $errors->first('purchase_price') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.purchase_price_helper') }}</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('iuc_price') ? 'has-error' : '' }}">
+                                    <label for="iuc_price">{{ trans('cruds.vehicle.fields.iuc_price') }}</label>
+                                    <input class="form-control" type="number" name="iuc_price" id="iuc_price" value="{{ old('iuc_price', $vehicle->iuc_price) }}" step="0.01">
+                                    @if($errors->has('iuc_price'))
+                                        <span class="help-block" role="alert">{{ $errors->first('iuc_price') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.iuc_price_helper') }}</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('tow_price') ? 'has-error' : '' }}">
+                                    <label for="tow_price">{{ trans('cruds.vehicle.fields.tow_price') }}</label>
+                                    <input class="form-control" type="number" name="tow_price" id="tow_price" value="{{ old('tow_price', $vehicle->tow_price) }}" step="0.01">
+                                    @if($errors->has('tow_price'))
+                                        <span class="help-block" role="alert">{{ $errors->first('tow_price') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.tow_price_helper') }}</span>
                                 </div>
                                 <div class="form-group {{ $errors->has('suplier') ? 'has-error' : '' }}">
                                     <label for="suplier_id">{{ trans('cruds.vehicle.fields.suplier') }}</label>
@@ -427,6 +453,17 @@
                                         <span class="help-block" role="alert">{{ $errors->first('cables') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.cables_helper') }}</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('cables_2') ? 'has-error' : '' }}">
+                                    <div>
+                                        <input type="hidden" name="cables_2" value="0">
+                                        <input type="checkbox" name="cables_2" id="cables_2" value="1" {{ $vehicle->cables_2 || old('cables_2', 0) === 1 ? 'checked' : '' }}>
+                                        <label for="cables_2" style="font-weight: 400">{{ trans('cruds.vehicle.fields.cables_2') }}</label>
+                                    </div>
+                                    @if($errors->has('cables_2'))
+                                        <span class="help-block" role="alert">{{ $errors->first('cables_2') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.cables_2_helper') }}</span>
                                 </div>
                                 <div class="form-group {{ $errors->has('date') ? 'has-error' : '' }}">
                                     <label for="date">{{ trans('cruds.vehicle.fields.date') }}</label>

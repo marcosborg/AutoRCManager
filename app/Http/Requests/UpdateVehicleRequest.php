@@ -155,6 +155,10 @@ class UpdateVehicleRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'engine_displacement' => [
+                'string',
+                'nullable',
+            ],
         ];
     }
 }
