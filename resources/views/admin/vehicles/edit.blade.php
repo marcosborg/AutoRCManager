@@ -632,6 +632,38 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.pvp_helper') }}</span>
                                 </div>
+                                <div class="form-group {{ $errors->has('sales_iuc') ? 'has-error' : '' }}">
+                                    <label for="sales_iuc">{{ trans('cruds.vehicle.fields.sales_iuc') }}</label>
+                                    <input class="form-control" type="number" name="sales_iuc" id="sales_iuc" value="{{ old('sales_iuc', $vehicle->sales_iuc) }}" step="0.01">
+                                    @if($errors->has('sales_iuc'))
+                                        <span class="help-block" role="alert">{{ $errors->first('sales_iuc') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.sales_iuc_helper') }}</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('sales_tow') ? 'has-error' : '' }}">
+                                    <label for="sales_tow">{{ trans('cruds.vehicle.fields.sales_tow') }}</label>
+                                    <input class="form-control" type="number" name="sales_tow" id="sales_tow" value="{{ old('sales_tow', $vehicle->sales_tow) }}" step="0.01">
+                                    @if($errors->has('sales_tow'))
+                                        <span class="help-block" role="alert">{{ $errors->first('sales_tow') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.sales_tow_helper') }}</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('sales_transfer') ? 'has-error' : '' }}">
+                                    <label for="sales_transfer">{{ trans('cruds.vehicle.fields.sales_transfer') }}</label>
+                                    <input class="form-control" type="number" name="sales_transfer" id="sales_transfer" value="{{ old('sales_transfer', $vehicle->sales_transfer) }}" step="0.01">
+                                    @if($errors->has('sales_transfer'))
+                                        <span class="help-block" role="alert">{{ $errors->first('sales_transfer') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.sales_transfer_helper') }}</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('sales_others') ? 'has-error' : '' }}">
+                                    <label for="sales_others">{{ trans('cruds.vehicle.fields.sales_others') }}</label>
+                                    <input class="form-control" type="number" name="sales_others" id="sales_others" value="{{ old('sales_others', $vehicle->sales_others) }}" step="0.01">
+                                    @if($errors->has('sales_others'))
+                                        <span class="help-block" role="alert">{{ $errors->first('sales_others') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.sales_others_helper') }}</span>
+                                </div>
                                 <div class="form-group {{ $errors->has('client') ? 'has-error' : '' }}">
                                     <label for="client_id">{{ trans('cruds.vehicle.fields.client') }}</label>
                                     <select class="form-control select2" name="client_id" id="client_id">
