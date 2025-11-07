@@ -227,7 +227,7 @@ return [
             'payment_status_helper'                     => ' ',
             'amount_paid'                               => 'Amount Paid',
             'amount_paid_helper'                        => ' ',
-            'inicial'                                   => 'Inicial',
+            'inicial'                                   => 'Inicial photos in aquisition',
             'inicial_helper'                            => ' ',
             'carrier'                                   => 'Carrier',
             'carrier_helper'                            => ' ',

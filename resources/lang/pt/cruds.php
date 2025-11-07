@@ -307,6 +307,8 @@ return [
             'cables_2_helper'                           => ' ',
             'engine_displacement'                       => 'Cilindrada',
             'engine_displacement_helper'                => ' ',
+            'pdfs'  => 'PDFS',
+            'pdfs_helper'=> ' ',
         ],
     ],
     'suplier' => [
