@@ -323,6 +323,15 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.invoice_helper') }}</span>
                                 </div>
+                                <div class="form-group {{ $errors->has('pdfs') ? 'has-error' : '' }}">
+                                    <label for="pdfs">{{ trans('cruds.vehicle.fields.pdfs') }}</label>
+                                    <div class="needsclick dropzone" id="pdfs-dropzone">
+                                    </div>
+                                    @if($errors->has('pdfs'))
+                                        <span class="help-block" role="alert">{{ $errors->first('pdfs') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.pdfs_helper') }}</span>
+                                </div>
                                 @endcan
                             </div>
                         </div>
@@ -1032,6 +1041,45 @@ Dropzone.options.invoiceDropzone = {
   }
 }
 </script>
+
+<script>
+var uploadedPdfsMap = {}
+Dropzone.options.pdfsDropzone = {
+  url: '{{ route('admin.vehicles.storeMedia') }}',
+  maxFilesize: 20,
+  addRemoveLinks: true,
+  headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+  params: { size: 20 },
+  success: function (file, response) {
+    $('form').append('<input type="hidden" name="pdfs[]" value="' + response.name + '">')
+    uploadedPdfsMap[file.name] = response.name
+  },
+  removedfile: function (file) {
+    file.previewElement.remove()
+    var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPdfsMap[file.name]
+    $('form').find('input[name="pdfs[]"][value="' + name + '"]').remove()
+  },
+  init: function () {
+@if(isset($vehicle) && $vehicle->pdfs)
+    var files = {!! json_encode($vehicle->pdfs) !!}
+    for (var i in files) {
+      var file = files[i]
+      this.options.addedfile.call(this, file)
+      file.previewElement.classList.add('dz-complete')
+      file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
+      $('form').append('<input type="hidden" name="pdfs[]" value="' + file.file_name + '">')
+    }
+@endif
+  },
+  error: function (file, response) {
+    var message = $.type(response) === 'string' ? response : response.errors.file
+    file.previewElement.classList.add('dz-error')
+    var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+    for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+  }
+}
+</script>
+
 
 <script>
 var uploadedInicialMap = {}

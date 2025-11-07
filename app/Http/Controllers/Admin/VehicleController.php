@@ -42,9 +42,9 @@ class VehicleController extends Controller
             $table->addColumn('actions', '&nbsp;');
 
             $table->editColumn('actions', function ($row) {
-                $viewGate      = 'vehicle_show';
-                $editGate      = 'vehicle_edit';
-                $deleteGate    = 'vehicle_delete';
+                $viewGate = 'vehicle_show';
+                $editGate = 'vehicle_edit';
+                $deleteGate = 'vehicle_delete';
                 $crudRoutePart = 'vehicles';
 
                 return view('partials.datatablesActions', compact(
@@ -106,13 +106,13 @@ class VehicleController extends Controller
             return $table->make(true);
         }
 
-        $general_states   = GeneralState::get();
-        $brands           = Brand::get();
-        $supliers         = Suplier::get();
+        $general_states = GeneralState::get();
+        $brands = Brand::get();
+        $supliers = Suplier::get();
         $payment_statuses = PaymentStatus::get();
-        $carriers         = Carrier::get();
-        $pickup_states    = PickupState::get();
-        $clients          = Client::get();
+        $carriers = Carrier::get();
+        $pickup_states = PickupState::get();
+        $clients = Client::get();
 
         return view('admin.vehicles.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients'));
     }
@@ -182,98 +182,112 @@ class VehicleController extends Controller
 
         if (count($vehicle->documents) > 0) {
             foreach ($vehicle->documents as $media) {
-                if (! in_array($media->file_name, $request->input('documents', []))) {
+                if (!in_array($media->file_name, $request->input('documents', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->documents->pluck('file_name')->toArray();
         foreach ($request->input('documents', []) as $file) {
-            if (count($media) === 0 || ! in_array($file, $media)) {
+            if (count($media) === 0 || !in_array($file, $media)) {
                 $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('documents');
             }
         }
 
         if (count($vehicle->photos) > 0) {
             foreach ($vehicle->photos as $media) {
-                if (! in_array($media->file_name, $request->input('photos', []))) {
+                if (!in_array($media->file_name, $request->input('photos', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->photos->pluck('file_name')->toArray();
         foreach ($request->input('photos', []) as $file) {
-            if (count($media) === 0 || ! in_array($file, $media)) {
+            if (count($media) === 0 || !in_array($file, $media)) {
                 $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('photos');
             }
         }
 
         if (count($vehicle->invoice) > 0) {
             foreach ($vehicle->invoice as $media) {
-                if (! in_array($media->file_name, $request->input('invoice', []))) {
+                if (!in_array($media->file_name, $request->input('invoice', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->invoice->pluck('file_name')->toArray();
         foreach ($request->input('invoice', []) as $file) {
-            if (count($media) === 0 || ! in_array($file, $media)) {
+            if (count($media) === 0 || !in_array($file, $media)) {
                 $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('invoice');
             }
         }
 
         if (count($vehicle->inicial) > 0) {
             foreach ($vehicle->inicial as $media) {
-                if (! in_array($media->file_name, $request->input('inicial', []))) {
+                if (!in_array($media->file_name, $request->input('inicial', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->inicial->pluck('file_name')->toArray();
         foreach ($request->input('inicial', []) as $file) {
-            if (count($media) === 0 || ! in_array($file, $media)) {
+            if (count($media) === 0 || !in_array($file, $media)) {
                 $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('inicial');
+            }
+        }
+
+        if (count($vehicle->pdfs) > 0) {
+            foreach ($vehicle->pdfs as $media) {
+                if (!in_array($media->file_name, $request->input('pdfs', []))) {
+                    $media->delete();
+                }
+            }
+        }
+        $media = $vehicle->pdfs->pluck('file_name')->toArray();
+        foreach ($request->input('pdfs', []) as $file) {
+            if (count($media) === 0 || !in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('pdfs');
             }
         }
 
         if (count($vehicle->withdrawal_authorization_file) > 0) {
             foreach ($vehicle->withdrawal_authorization_file as $media) {
-                if (! in_array($media->file_name, $request->input('withdrawal_authorization_file', []))) {
+                if (!in_array($media->file_name, $request->input('withdrawal_authorization_file', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->withdrawal_authorization_file->pluck('file_name')->toArray();
         foreach ($request->input('withdrawal_authorization_file', []) as $file) {
-            if (count($media) === 0 || ! in_array($file, $media)) {
+            if (count($media) === 0 || !in_array($file, $media)) {
                 $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('withdrawal_authorization_file');
             }
         }
 
         if (count($vehicle->withdrawal_documents) > 0) {
             foreach ($vehicle->withdrawal_documents as $media) {
-                if (! in_array($media->file_name, $request->input('withdrawal_documents', []))) {
+                if (!in_array($media->file_name, $request->input('withdrawal_documents', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->withdrawal_documents->pluck('file_name')->toArray();
         foreach ($request->input('withdrawal_documents', []) as $file) {
-            if (count($media) === 0 || ! in_array($file, $media)) {
+            if (count($media) === 0 || !in_array($file, $media)) {
                 $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('withdrawal_documents');
             }
         }
 
         if (count($vehicle->payment_comprovant) > 0) {
             foreach ($vehicle->payment_comprovant as $media) {
-                if (! in_array($media->file_name, $request->input('payment_comprovant', []))) {
+                if (!in_array($media->file_name, $request->input('payment_comprovant', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->payment_comprovant->pluck('file_name')->toArray();
         foreach ($request->input('payment_comprovant', []) as $file) {
-            if (count($media) === 0 || ! in_array($file, $media)) {
+            if (count($media) === 0 || !in_array($file, $media)) {
                 $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('payment_comprovant');
             }
         }
@@ -314,10 +328,10 @@ class VehicleController extends Controller
     {
         abort_if(Gate::denies('vehicle_create') && Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $model         = new Vehicle();
-        $model->id     = $request->input('crud_id', 0);
+        $model = new Vehicle();
+        $model->id = $request->input('crud_id', 0);
         $model->exists = true;
-        $media         = $model->addMediaFromRequest('upload')->toMediaCollection('ck-media');
+        $media = $model->addMediaFromRequest('upload')->toMediaCollection('ck-media');
 
         return response()->json(['id' => $media->id, 'url' => $media->getUrl()], Response::HTTP_CREATED);
     }

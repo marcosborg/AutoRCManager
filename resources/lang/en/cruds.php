@@ -304,7 +304,9 @@ return [
             'cables_2'                                  => 'Cabo doméstico',
             'cables_2_helper'                           => ' ',
             'engine_displacement'                       => 'Cilindrada',
-            'engine_displacement_helper'                => ' ',
+            'engine_displacement_helper'                => 'PDFS',
+            'pdfs'  => 'PDFS',
+            'pdfs_helper'=> ' ',
         ],
     ],
     'suplier' => [

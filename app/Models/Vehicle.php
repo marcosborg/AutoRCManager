@@ -28,6 +28,7 @@ class Vehicle extends Model implements HasMedia
         'photos',
         'invoice',
         'inicial',
+        'pdfs',
         'withdrawal_authorization_file',
         'withdrawal_documents',
         'payment_comprovant',
@@ -168,6 +169,11 @@ class Vehicle extends Model implements HasMedia
     public function getDocumentsAttribute()
     {
         return $this->getMedia('documents');
+    }
+
+    public function getPdfsAttribute()
+    {
+        return $this->getMedia('pdfs');
     }
 
     public function getPhotosAttribute()
