@@ -24,58 +24,25 @@
                     <table class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-Vehicle">
                         <thead>
                             <tr>
-                                <th width="10">
-
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.general_state') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.license') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.foreign_license') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.brand') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.model') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.month') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.fuel') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.inspec_b') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.pvp') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.suplier') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.client') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.chekin_documents') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.sale_date') }}
-                                </th>
-                                <th>
-                                    {{ trans('cruds.vehicle.fields.key') }}
-                                </th>
-                                <th>
-                                    &nbsp;
-                                </th>
+                                <th width="10"></th>
+                                <th>{{ trans('cruds.vehicle.fields.general_state') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.license') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.foreign_license') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.brand') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.model') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.month') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.fuel') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.inspec_b') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.pvp') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.suplier') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.client') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.chekin_documents') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.sale_date') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.key') }}</th>
+                                <th>&nbsp;</th>
                             </tr>
                             <tr>
-                                <td>
-                                </td>
+                                <td></td>
                                 <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
@@ -84,12 +51,8 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
@@ -98,15 +61,9 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
@@ -115,12 +72,8 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
@@ -129,48 +82,36 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                </td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td></td>
                             </tr>
                         </thead>
                     </table>
                 </div>
             </div>
-
-
-
         </div>
     </div>
 </div>
 @endsection
+
 @section('scripts')
 @parent
 <script>
-    $(function () {
+$(function () {
   let dtButtons = $.extend(true, [], $.fn.dataTable.defaults.buttons)
-@can('vehicle_delete')
+  @can('vehicle_delete')
   let deleteButtonTrans = '{{ trans('global.datatables.delete') }}';
   let deleteButton = {
     text: deleteButtonTrans,
     url: "{{ route('admin.vehicles.massDestroy') }}",
     className: 'btn-danger',
     action: function (e, dt, node, config) {
-      var ids = $.map(dt.rows({ selected: true }).data(), function (entry) {
-          return entry.id
-      });
+      var ids = $.map(dt.rows({ selected: true }).data(), function (entry) { return entry.id });
 
       if (ids.length === 0) {
         alert('{{ trans('global.datatables.zero_selected') }}')
-
         return
       }
 
@@ -179,15 +120,15 @@
           headers: {'x-csrf-token': _token},
           method: 'POST',
           url: config.url,
-          data: { ids: ids, _method: 'DELETE' }})
-          .done(function () { location.reload() })
+          data: { ids: ids, _method: 'DELETE' }
+        }).done(function () { location.reload() })
       }
     }
   }
   dtButtons.push(deleteButton)
-@endcan
+  @endcan
 
-let dtOverrideGlobals = {
+  let dtOverrideGlobals = {
     buttons: dtButtons,
     processing: true,
     serverSide: true,
@@ -213,69 +154,153 @@ let dtOverrideGlobals = {
         { data: 'actions', name: '{{ trans('global.actions') }}', orderable: false, searchable: false }
     ],
     columnDefs: [
-        {
-            targets: -1,
-            render: function (data, type, row, meta) {
-                let editDeleteButtons = data;
-                let financialBtn = `
-                    <a href="/admin/financial/${row.id}" class="btn btn-xs btn-success" style="margin-left: 5px;">
-                        Financeiro
-                    </a>`;
-                return editDeleteButtons + financialBtn;
-            }
+      {
+        targets: -1,
+        className: 'no-row-link', // impedir que clique na célula de ações dispare a navegação da linha
+        render: function (data, type, row, meta) {
+          let editDeleteButtons = data;
+          // botão Financeiro adicional
+          let financialBtn = `
+              <a href="/admin/financial/${row.id}" class="btn btn-xs btn-success" style="margin-left: 5px;">
+                  Financeiro
+              </a>`;
+          return editDeleteButtons + financialBtn;
         }
+      }
     ],
     orderCellsTop: true,
     order: [[1, 'desc']],
     pageLength: 100,
-};
-
+    createdRow: function(row, data, dataIndex) {
+      // dá cursor tipo link às células clicáveis (excepto ações)
+      $(row).find('td:not(.no-row-link)').css('cursor', 'pointer');
+    }
+  };
 
   let table = $('.datatable-Vehicle').DataTable(dtOverrideGlobals);
-  $('a[data-toggle="tab"]').on('shown.bs.tab click', function(e){
-      $($.fn.dataTable.tables(true)).DataTable()
-          .columns.adjust();
+
+  // Ajuste ao mudar de tab
+  $('a[data-toggle="tab"]').on('shown.bs.tab click', function(){
+      $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
   });
-  
-let visibleColumnsIndexes = null;
-$('.datatable thead').on('input', '.search', function () {
+
+  // Filtros do cabeçalho
+  let visibleColumnsIndexes = null;
+  $('.datatable thead').on('input', '.search', function () {
       let strict = $(this).attr('strict') || false
       let value = strict && this.value ? "^" + this.value + "$" : this.value
 
       let index = $(this).parent().index()
-      if (visibleColumnsIndexes !== null) {
-        index = visibleColumnsIndexes[index]
+      if (visibleColumnsIndexes !== null) index = visibleColumnsIndexes[index]
+
+      table.column(index).search(value, strict).draw()
+  });
+
+  table.on('column-visibility.dt', function() {
+      visibleColumnsIndexes = []
+      table.columns(":visible").every(function(colIdx) { visibleColumnsIndexes.push(colIdx) });
+  });
+
+  /**
+   * ---------- LINHA CLICÁVEL ABRE O EDIT ----------
+   * Estratégia:
+   * - Em cada draw, procurar no HTML da célula de ações um link que aponte para ".../edit"
+   *   (exclui delete/financeiro) e gravar esse href no data-href da <tr>.
+   * - Delegação de clique no tbody que ignora cliques em <a>, <button>, inputs, etc.
+   */
+
+  function setRowHrefFromActions() {
+    $('.datatable-Vehicle tbody tr').each(function() {
+      const $tr = $(this);
+      const $actionsTd = $tr.find('td').last();
+
+      if (!$actionsTd.length) return;
+
+      // Tenta encontrar o link de editar:
+      // 1) href termina com /edit
+      // 2) não é delete (btn-danger) nem financeiro
+      let $editLink = $actionsTd.find('a[href*="/edit"]').filter(function() {
+        const href = $(this).attr('href') || '';
+        const isDelete = $(this).hasClass('btn-danger') || /delete|destroy/i.test($(this).text());
+        const isFinancial = /financial|financeiro/i.test($(this).text());
+        // garantir que é mesmo rota de edit
+        const looksLikeEdit = /\/edit(\?|$)/.test(href);
+        return looksLikeEdit && !isDelete && !isFinancial;
+      }).first();
+
+      // fallback: primeiro link que não seja delete nem financeiro
+      if (!$editLink.length) {
+        $editLink = $actionsTd.find('a').filter(function() {
+          const txt = ($(this).text() || '').trim();
+          const isDelete = $(this).hasClass('btn-danger') || /apagar|delete|destroy/i.test(txt);
+          const isFinancial = /financial|financeiro/i.test(txt);
+          return !isDelete && !isFinancial;
+        }).first();
       }
 
-      table
-        .column(index)
-        .search(value, strict)
-        .draw()
-  });
-table.on('column-visibility.dt', function(e, settings, column, state) {
-      visibleColumnsIndexes = []
-      table.columns(":visible").every(function(colIdx) {
-          visibleColumnsIndexes.push(colIdx);
-      });
-  })
-});
+      const href = $editLink.attr('href');
+      if (href) {
+        $tr.attr('data-href', href);
+        // acessibilidade
+        $tr.attr('tabindex', '0').attr('role', 'link');
+      } else {
+        $tr.removeAttr('data-href').removeAttr('tabindex').removeAttr('role');
+      }
+    });
+  }
 
+  // correr ao desenhar
+  table.on('draw.dt', function() { setRowHrefFromActions(); });
+  // primeiro draw manual (por segurança)
+  setRowHrefFromActions();
+
+  // elementos a ignorar no clique da linha
+  const IGNORE_SELECTORS = [
+    'a', 'button', 'input', 'textarea', 'label', 'select',
+    '.no-row-link', '.dropdown', '.select2', '.dt-button'
+  ].join(',');
+
+  function shouldIgnore(target) {
+    return target.closest(IGNORE_SELECTORS) !== null;
+  }
+
+  // clique na linha
+  $('.datatable-Vehicle tbody').on('click', 'tr', function(e) {
+    // ignora se clicou em link/botão/input/etc.
+    if (shouldIgnore(e.target)) return;
+
+    const href = $(this).attr('data-href');
+    if (!href) return;
+
+    // botão do meio (1) ou Ctrl/Meta abre nova aba
+    if (e.button === 1 || e.ctrlKey || e.metaKey) {
+      window.open(href, '_blank');
+    } else {
+      window.location.href = href;
+    }
+  });
+
+  // teclado: Enter/Espaço
+  $('.datatable-Vehicle tbody').on('keydown', 'tr', function(e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (shouldIgnore(e.target)) return;
+
+    const href = $(this).attr('data-href');
+    if (!href) return;
+
+    e.preventDefault();
+    window.location.href = href;
+  });
+});
 </script>
 @endsection
+
 @section('styles')
 @parent
 <style>
-    td {
-    padding: 5px!important;
-    margin: 0!important;
-}
-
-input.search {
-    width: 100px!important;
-}
-
-select.search {
-    width: 100px!important;
-}
+td { padding: 5px!important; margin: 0!important; }
+input.search { width: 100px!important; }
+select.search { width: 100px!important; }
+/* feedback visual: só nas células clicáveis (definido em createdRow) */
 </style>
 @endsection
