@@ -603,7 +603,14 @@
                                 </div>
                             </div>
                         </div>
-
+                        @php
+                            $pvp = (float) ($vehicle->pvp ?? 0);
+                            $sales_iuc = (float) ($vehicle->sales_iuc ?? 0);
+                            $sales_tow = (float) ($vehicle->sales_tow ?? 0);
+                            $sales_transfer = (float) ($vehicle->sales_transfer ?? 0);
+                            $sales_others = (float) ($vehicle->sales_others ?? 0);
+                            $final_total = $pvp + $sales_iuc + $sales_tow + $sales_transfer + $sales_others;
+                        @endphp
                         <h4>Preparação e venda da viatura</h4>
                         <hr>
                         <div class="row">
@@ -631,6 +638,11 @@
                                         <span class="help-block" role="alert">{{ $errors->first('pvp') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.pvp_helper') }}</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="final_total">Total final</label>
+                                    <input class="form-control" type="text" name="final_total" id="final_total"
+                                        value="{{ number_format((float)$final_total, 2, ',', '.') }} €" readonly>
                                 </div>
                                 <div class="form-group {{ $errors->has('sales_iuc') ? 'has-error' : '' }}">
                                     <label for="sales_iuc">{{ trans('cruds.vehicle.fields.sales_iuc') }}</label>
@@ -710,8 +722,7 @@
                                 @php
                                     $client_operations = $vehicle->client_operations ?? collect();
                                     $totalPaidClient = $client_operations->sum(fn($op) => (float) $op->total);
-                                    $pvp = (float) ($vehicle->pvp ?? 0);
-                                    $balanceClient = $pvp - $totalPaidClient;
+                                    $balanceClient = $final_total - $totalPaidClient;
                                 @endphp
                                 <div class="form-group">
                                     <label>Balance</label>
@@ -884,564 +895,689 @@
 </div>
 @endsection
 
-@section('styles')
-<style>
-    .dz-details { display: none !important; }
-</style>
-@endsection
-
 @section('scripts')
 
 <script>
     var uploadedDocumentsMap = {}
-Dropzone.options.documentsDropzone = {
-    url: '{{ route('admin.vehicles.storeMedia') }}',
-    maxFilesize: 2000, // MB
-    addRemoveLinks: true,
-    headers: {
-      'X-CSRF-TOKEN': "{{ csrf_token() }}"
-    },
-    params: { size: 2000 },
-    success: function (file, response) {
-      $('form').append('<input type="hidden" name="documents[]" value="' + response.name + '">')
-      uploadedDocumentsMap[file.name] = response.name
-    },
-    removedfile: function (file) {
-      file.previewElement.remove()
-      var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedDocumentsMap[file.name]
-      $('form').find('input[name="documents[]"][value="' + name + '"]').remove()
-    },
-    init: function () {
-@if(isset($vehicle) && $vehicle->documents)
-      var files = {!! json_encode($vehicle->documents) !!}
-      for (var i in files) {
-        var file = files[i]
-        this.options.addedfile.call(this, file)
-        file.previewElement.classList.add('dz-complete')
-        file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-        $('form').append('<input type="hidden" name="documents[]" value="' + file.file_name + '">')
-      }
-@endif
-    },
-    error: function (file, response) {
-      var message = $.type(response) === 'string' ? response : response.errors.file
-      file.previewElement.classList.add('dz-error')
-      var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
-      for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+    Dropzone.options.documentsDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 2000, // MB
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 2000 },
+        success: function (file, response) {
+            $('form').append('<input type="hidden" name="documents[]" value="' + response.name + '">')
+            uploadedDocumentsMap[file.name] = response.name
+        },
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedDocumentsMap[file.name]
+            $('form').find('input[name="documents[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->documents)
+                var files = {!! json_encode($vehicle->documents) !!}
+                for (var i in files) {
+                    var file = files[i]
+                    this.options.addedfile.call(this, file)
+                    file.previewElement.classList.add('dz-complete')
+                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
+                    $('form').append('<input type="hidden" name="documents[]" value="' + file.file_name + '">')
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
     }
-}
 </script>
 
 <script>
-$(document).ready(function () {
-  function SimpleUploadAdapter(editor) {
-    editor.plugins.get('FileRepository').createUploadAdapter = function(loader) {
-      return {
-        upload: function() {
-          return loader.file.then(function (file) {
-            return new Promise(function(resolve, reject) {
-              var xhr = new XMLHttpRequest();
-              xhr.open('POST', '{{ route('admin.vehicles.storeCKEditorImages') }}', true);
-              xhr.setRequestHeader('x-csrf-token', window._token);
-              xhr.setRequestHeader('Accept', 'application/json');
-              xhr.responseType = 'json';
+    $(document).ready(function () {
+        function SimpleUploadAdapter(editor) {
+            editor.plugins.get('FileRepository').createUploadAdapter = function(loader) {
+                return {
+                    upload: function() {
+                        return loader.file.then(function (file) {
+                            return new Promise(function(resolve, reject) {
+                                var xhr = new XMLHttpRequest();
+                                xhr.open('POST', '{{ route('admin.vehicles.storeCKEditorImages') }}', true);
+                                xhr.setRequestHeader('x-csrf-token', window._token);
+                                xhr.setRequestHeader('Accept', 'application/json');
+                                xhr.responseType = 'json';
 
-              var genericErrorText = `Couldn't upload file: ${ file.name }.`;
-              xhr.addEventListener('error', function() { reject(genericErrorText) });
-              xhr.addEventListener('abort', function() { reject() });
-              xhr.addEventListener('load', function() {
-                var response = xhr.response;
-                if (!response || xhr.status !== 201) {
-                  return reject(response && response.message ? `${genericErrorText}\n${xhr.status} ${response.message}` : `${genericErrorText}\n ${xhr.status} ${xhr.statusText}`);
-                }
-                $('form').append('<input type="hidden" name="ck-media[]" value="' + response.id + '">');
-                resolve({ default: response.url });
-              });
+                                var genericErrorText = `Couldn't upload file: ${ file.name }.`;
+                                xhr.addEventListener('error', function() { reject(genericErrorText) });
+                                xhr.addEventListener('abort', function() { reject() });
+                                xhr.addEventListener('load', function() {
+                                    var response = xhr.response;
+                                    if (!response || xhr.status !== 201) {
+                                        return reject(response && response.message
+                                            ? `${genericErrorText}\n${xhr.status} ${response.message}`
+                                            : `${genericErrorText}\n ${xhr.status} ${xhr.statusText}`);
+                                    }
+                                    $('form').append('<input type="hidden" name="ck-media[]" value="' + response.id + '">');
+                                    resolve({ default: response.url });
+                                });
 
-              if (xhr.upload) {
-                xhr.upload.addEventListener('progress', function(e) {
-                  if (e.length computable) {
-                    loader.uploadTotal = e.total;
-                    loader.uploaded = e.loaded;
-                  }
-                });
-              }
+                                if (xhr.upload) {
+                                    xhr.upload.addEventListener('progress', function(e) {
+                                        if (e.lengthComputable) {
+                                            loader.uploadTotal = e.total;
+                                            loader.uploaded = e.loaded;
+                                        }
+                                    });
+                                }
 
-              var data = new FormData();
-              data.append('upload', file);
-              data.append('crud_id', '{{ $vehicle->id ?? 0 }}');
-              xhr.send(data);
-            });
-          })
+                                var data = new FormData();
+                                data.append('upload', file);
+                                data.append('crud_id', '{{ $vehicle->id ?? 0 }}');
+                                xhr.send(data);
+                            });
+                        })
+                    }
+                };
+            }
         }
-      };
-    }
-  }
 
-  var allEditors = document.querySelectorAll('.ckeditor');
-  for (var i = 0; i < allEditors.length; ++i) {
-    ClassicEditor.create(allEditors[i], { extraPlugins: [SimpleUploadAdapter] });
-  }
-});
+        var allEditors = document.querySelectorAll('.ckeditor');
+        for (var i = 0; i < allEditors.length; ++i) {
+            ClassicEditor.create(allEditors[i], { extraPlugins: [SimpleUploadAdapter] });
+        }
+    });
 </script>
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
 
 <script>
-var uploadedPhotosMap = {}
-Dropzone.options.photosDropzone = {
-  url: '{{ route('admin.vehicles.storeMedia') }}',
-  maxFilesize: 20,
-  acceptedFiles: '.jpeg,.jpg,.png,.gif',
-  addRemoveLinks: true,
-  headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-  params: { size: 20, width: 4096, height: 4096 },
-  success: function (file, response) {
-    $('form').append('<input type="hidden" name="photos[]" value="' + response.name + '">')
-    uploadedPhotosMap[file.name] = response.name
-  },
-  removedfile: function (file) {
-    file.previewElement.remove()
-    var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPhotosMap[file.name]
-    $('form').find('input[name="photos[]"][value="' + name + '"]').remove()
-  },
-  init: function () {
-@if(isset($vehicle) && $vehicle->photos)
-    var files = {!! json_encode($vehicle->photos) !!}
-    for (var i in files) {
-      var file = files[i];
-      this.options.addedfile.call(this, file)
-      this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
-      file.previewElement.classList.add('dz-complete')
-      $('form').append('<input type="hidden" name="photos[]" value="' + file.file_name + '">')
-      const img = file.previewElement.querySelector("img");
-      if (img) {
-        img.style.cursor = "pointer";
-        const a = document.createElement('a');
-        a.href = file.original_url;
-        a.setAttribute('data-lightbox', 'gallery');
-        img.parentNode.insertBefore(a, img);
-        a.appendChild(img);
-      }
-    }
-@endif
-  },
-  error: function (file, response) {
-    var message = $.type(response) === 'string' ? response : response.errors.file
-    file.previewElement.classList.add('dz-error')
-    var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
-    for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
-  }
-}
-</script>
-
-<script>
-var uploadedInvoiceMap = {}
-Dropzone.options.invoiceDropzone = {
-  url: '{{ route('admin.vehicles.storeMedia') }}',
-  maxFilesize: 20,
-  addRemoveLinks: true,
-  headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-  params: { size: 20 },
-  success: function (file, response) {
-    $('form').append('<input type="hidden" name="invoice[]" value="' + response.name + '">')
-    uploadedInvoiceMap[file.name] = response.name
-  },
-  removedfile: function (file) {
-    file.previewElement.remove()
-    var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedInvoiceMap[file.name]
-    $('form').find('input[name="invoice[]"][value="' + name + '"]').remove()
-  },
-  init: function () {
-@if(isset($vehicle) && $vehicle->invoice)
-    var files = {!! json_encode($vehicle->invoice) !!}
-    for (var i in files) {
-      var file = files[i]
-      this.options.addedfile.call(this, file)
-      file.previewElement.classList.add('dz-complete')
-      file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-      $('form').append('<input type="hidden" name="invoice[]" value="' + file.file_name + '">')
-    }
-@endif
-  },
-  error: function (file, response) {
-    var message = $.type(response) === 'string' ? response : response.errors.file
-    file.previewElement.classList.add('dz-error')
-    var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
-    for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
-  }
-}
-</script>
-
-<script>
-var uploadedPdfsMap = {}
-Dropzone.options.pdfsDropzone = {
-  url: '{{ route('admin.vehicles.storeMedia') }}',
-  maxFilesize: 20,
-  addRemoveLinks: true,
-  headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-  params: { size: 20 },
-  success: function (file, response) {
-    $('form').append('<input type="hidden" name="pdfs[]" value="' + response.name + '">')
-    uploadedPdfsMap[file.name] = response.name
-  },
-  removedfile: function (file) {
-    file.previewElement.remove()
-    var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPdfsMap[file.name]
-    $('form').find('input[name="pdfs[]"][value="' + name + '"]').remove()
-  },
-  init: function () {
-@if(isset($vehicle) && $vehicle->pdfs)
-    var files = {!! json_encode($vehicle->pdfs) !!}
-    for (var i in files) {
-      var file = files[i]
-      this.options.addedfile.call(this, file)
-      file.previewElement.classList.add('dz-complete')
-      file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-      $('form').append('<input type="hidden" name="pdfs[]" value="' + file.file_name + '">')
-    }
-@endif
-  },
-  error: function (file, response) {
-    var message = $.type(response) === 'string' ? response : response.errors.file
-    file.previewElement.classList.add('dz-error')
-    var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
-    for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
-  }
-}
-</script>
-
-
-<script>
-var uploadedInicialMap = {}
-Dropzone.options.inicialDropzone = {
-  url: '{{ route('admin.vehicles.storeMedia') }}',
-  maxFilesize: 2000,
-  acceptedFiles: '.jpeg,.jpg,.png,.gif',
-  addRemoveLinks: true,
-  headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-  params: { size: 2000, width: 4096, height: 4096 },
-  success: function (file, response) {
-    $('form').append('<input type="hidden" name="inicial[]" value="' + response.name + '">')
-    uploadedInicialMap[file.name] = response.name
-  },
-  removedfile: function (file) {
-    file.previewElement.remove()
-    var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedInicialMap[file.name]
-    $('form').find('input[name="inicial[]"][value="' + name + '"]').remove()
-  },
-  init: function () {
-@if(isset($vehicle) && $vehicle->inicial)
-    var files = {!! json_encode($vehicle->inicial) !!}
-    for (var i in files) {
-      var file = files[i]
-      this.options.addedfile.call(this, file)
-      this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
-      file.previewElement.classList.add('dz-complete')
-      $('form').append('<input type="hidden" name="inicial[]" value="' + file.file_name + '">')
-      const img = file.previewElement.querySelector("img");
-      if (img) {
-        img.style.cursor = "pointer";
-        const a = document.createElement('a');
-        a.href = file.original_url;
-        a.setAttribute('data-lightbox', 'gallery');
-        img.parentNode.insertBefore(a, img);
-        a.appendChild(img);
-      }
-    }
-@endif
-  },
-  error: function (file, response) {
-    var message = $.type(response) === 'string' ? response : response.errors.file
-    file.previewElement.classList.add('dz-error')
-    var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
-    for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
-  }
-}
-</script>
-
-<script>
-var uploadedWithdrawalAuthorizationFileMap = {}
-Dropzone.options.withdrawalAuthorizationFileDropzone = {
-  url: '{{ route('admin.vehicles.storeMedia') }}',
-  maxFilesize: 2000,
-  addRemoveLinks: true,
-  headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-  params: { size: 2000 },
-  success: function (file, response) {
-    $('form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + response.name + '">')
-    uploadedWithdrawalAuthorizationFileMap[file.name] = response.name
-  },
-  removedfile: function (file) {
-    file.previewElement.remove()
-    var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedWithdrawalAuthorizationFileMap[file.name]
-    $('form').find('input[name="withdrawal_authorization_file[]"][value="' + name + '"]').remove()
-  },
-  init: function () {
-@if(isset($vehicle) && $vehicle->withdrawal_authorization_file)
-    var files = {!! json_encode($vehicle->withdrawal_authorization_file) !!}
-    for (var i in files) {
-      var file = files[i]
-      this.options.addedfile.call(this, file)
-      file.previewElement.classList.add('dz-complete')
-      file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-      $('form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + file.file_name + '">')
-    }
-@endif
-  },
-  error: function (file, response) {
-    var message = $.type(response) === 'string' ? response : response.errors.file
-    file.previewElement.classList.add('dz-error')
-    var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
-    for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
-  }
-}
-</script>
-
-<script>
-var uploadedWithdrawalDocumentsMap = {}
-Dropzone.options.withdrawalDocumentsDropzone = {
-  url: '{{ route('admin.vehicles.storeMedia') }}',
-  maxFilesize: 2000,
-  addRemoveLinks: true,
-  headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-  params: { size: 2000 },
-  success: function (file, response) {
-    $('form').append('<input type="hidden" name="withdrawal_documents[]" value="' + response.name + '">')
-    uploadedWithdrawalDocumentsMap[file.name] = response.name
-  },
-  removedfile: function (file) {
-    file.previewElement.remove()
-    var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedWithdrawalDocumentsMap[file.name]
-    $('form').find('input[name="withdrawal_documents[]"][value="' + name + '"]').remove()
-  },
-  init: function () {
-@if(isset($vehicle) && $vehicle->withdrawal_documents)
-    var files = {!! json_encode($vehicle->withdrawal_documents) !!}
-    for (var i in files) {
-      var file = files[i]
-      this.options.addedfile.call(this, file)
-      file.previewElement.classList.add('dz-complete')
-      file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-      $('form').append('<input type="hidden" name="withdrawal_documents[]" value="' + file.file_name + '">')
-    }
-@endif
-  },
-  error: function (file, response) {
-    var message = $.type(response) === 'string' ? response : response.errors.file
-    file.previewElement.classList.add('dz-error')
-    var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
-    for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
-  }
-}
-</script>
-
-<script>
-function newPurchasePayment(account_department_id) {
-    const itemId = 1;
-    const payment_method_id = document.getElementById('purchase_payment_method_id').value;
-    const date = document.getElementById('purchase_date').value;
-    const value = parseFloat(document.getElementById('purchase_value').value);
-
-    if (!itemId || isNaN(value)) {
-        showStatus('Por favor, selecione o item e insira o valor.', 'danger', account_department_id);
-        return;
-    }
-
-    fetch(`{{ route('admin.vehicles.account-operations.store', ['vehicle' => $vehicle->id]) }}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    var uploadedPhotosMap = {}
+    Dropzone.options.photosDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 20,
+        acceptedFiles: '.jpeg,.jpg,.png,.gif',
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 20, width: 4096, height: 4096 },
+        success: function (file, response) {
+            $('form').append('<input type="hidden" name="photos[]" value="' + response.name + '">')
+            uploadedPhotosMap[file.name] = response.name
         },
-        body: JSON.stringify({
-            account_department_id: account_department_id,
-            account_item_id: itemId,
-            payment_method_id: payment_method_id,
-            date: date,
-            total: value,
-            qty: 1
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPhotosMap[file.name]
+            $('form').find('input[name="photos[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->photos)
+                var files = {!! json_encode($vehicle->photos) !!}
+                for (var i in files) {
+                    var file = files[i];
+                    this.options.addedfile.call(this, file)
+                    this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
+                    file.previewElement.classList.add('dz-complete')
+                    $('form').append('<input type="hidden" name="photos[]" value="' + file.file_name + '">')
+                    const img = file.previewElement.querySelector("img");
+                    if (img) {
+                        img.style.cursor = "pointer";
+                        const a = document.createElement('a');
+                        a.href = file.original_url;
+                        a.setAttribute('data-lightbox', 'gallery');
+                        img.parentNode.insertBefore(a, img);
+                        a.appendChild(img);
+                    }
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
+    }
+</script>
+
+<script>
+    var uploadedInvoiceMap = {}
+    Dropzone.options.invoiceDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 20,
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 20 },
+        success: function (file, response) {
+            $('form').append('<input type="hidden" name="invoice[]" value="' + response.name + '">')
+            uploadedInvoiceMap[file.name] = response.name
+        },
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedInvoiceMap[file.name]
+            $('form').find('input[name="invoice[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->invoice)
+                var files = {!! json_encode($vehicle->invoice) !!}
+                for (var i in files) {
+                    var file = files[i]
+                    this.options.addedfile.call(this, file)
+                    file.previewElement.classList.add('dz-complete')
+                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
+                    $('form').append('<input type="hidden" name="invoice[]" value="' + file.file_name + '">')
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
+    }
+</script>
+
+<script>
+    var uploadedPdfsMap = {}
+    Dropzone.options.pdfsDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 20,
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 20 },
+        success: function (file, response) {
+            $('form').append('<input type="hidden" name="pdfs[]" value="' + response.name + '">')
+            uploadedPdfsMap[file.name] = response.name
+        },
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPdfsMap[file.name]
+            $('form').find('input[name="pdfs[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->pdfs)
+                var files = {!! json_encode($vehicle->pdfs) !!}
+                for (var i in files) {
+                    var file = files[i]
+                    this.options.addedfile.call(this, file)
+                    file.previewElement.classList.add('dz-complete')
+                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
+                    $('form').append('<input type="hidden" name="pdfs[]" value="' + file.file_name + '">')
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
+    }
+</script>
+
+<script>
+    var uploadedInicialMap = {}
+    Dropzone.options.inicialDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 2000,
+        acceptedFiles: '.jpeg,.jpg,.png,.gif',
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 2000, width: 4096, height: 4096 },
+        success: function (file, response) {
+            $('form').append('<input type="hidden" name="inicial[]" value="' + response.name + '">')
+            uploadedInicialMap[file.name] = response.name
+        },
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedInicialMap[file.name]
+            $('form').find('input[name="inicial[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->inicial)
+                var files = {!! json_encode($vehicle->inicial) !!}
+                for (var i in files) {
+                    var file = files[i]
+                    this.options.addedfile.call(this, file)
+                    this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
+                    file.previewElement.classList.add('dz-complete')
+                    $('form').append('<input type="hidden" name="inicial[]" value="' + file.file_name + '">')
+                    const img = file.previewElement.querySelector("img");
+                    if (img) {
+                        img.style.cursor = "pointer";
+                        const a = document.createElement('a');
+                        a.href = file.original_url;
+                        a.setAttribute('data-lightbox', 'gallery');
+                        img.parentNode.insertBefore(a, img);
+                        a.appendChild(img);
+                    }
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
+    }
+</script>
+
+<script>
+    var uploadedWithdrawalAuthorizationFileMap = {}
+    Dropzone.options.withdrawalAuthorizationFileDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 2000,
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 2000 },
+        success: function (file, response) {
+            $('form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + response.name + '">')
+            uploadedWithdrawalAuthorizationFileMap[file.name] = response.name
+        },
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedWithdrawalAuthorizationFileMap[file.name]
+            $('form').find('input[name="withdrawal_authorization_file[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->withdrawal_authorization_file)
+                var files = {!! json_encode($vehicle->withdrawal_authorization_file) !!}
+                for (var i in files) {
+                    var file = files[i]
+                    this.options.addedfile.call(this, file)
+                    file.previewElement.classList.add('dz-complete')
+                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
+                    $('form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + file.file_name + '">')
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
+    }
+</script>
+
+<script>
+    var uploadedWithdrawalDocumentsMap = {}
+    Dropzone.options.withdrawalDocumentsDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 2000,
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 2000 },
+        success: function (file, response) {
+            $('form').append('<input type="hidden" name="withdrawal_documents[]" value="' + response.name + '">')
+            uploadedWithdrawalDocumentsMap[file.name] = response.name
+        },
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedWithdrawalDocumentsMap[file.name]
+            $('form').find('input[name="withdrawal_documents[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->withdrawal_documents)
+                var files = {!! json_encode($vehicle->withdrawal_documents) !!}
+                for (var i in files) {
+                    var file = files[i]
+                    this.options.addedfile.call(this, file)
+                    file.previewElement.classList.add('dz-complete')
+                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
+                    $('form').append('<input type="hidden" name="withdrawal_documents[]" value="' + file.file_name + '">')
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
+    }
+</script>
+
+{{-- *********************
+     TOTAL FINAL & SALDO (parser robusto)
+     ********************* --}}
+<script>
+    /**
+     * Converte strings com vírgula/ponto e separadores de milhar numa float correta.
+     * Exemplos aceites: "5.250", "5,250", "5 250", "5.250,75", "5,250.75", "100,00", "100.00", "10000"
+     */
+    function toFloatSafe(input) {
+        if (input == null) return 0;
+        let s = String(input).trim();
+
+        if (s === '') return 0;
+
+        // remove espaços e símbolos (mantém dígitos, vírgula e ponto)
+        s = s.replace(/[^\d.,-]/g, '');
+
+        const hasDot = s.indexOf('.') !== -1;
+        const hasComma = s.indexOf(',') !== -1;
+
+        if (hasDot && hasComma) {
+            // se tem os dois, o separador decimal é o que aparece por último
+            const lastDot = s.lastIndexOf('.');
+            const lastComma = s.lastIndexOf(',');
+            if (lastComma > lastDot) {
+                // vírgula como decimal -> remove pontos (milhar), troca vírgula por ponto
+                s = s.replace(/\./g, '').replace(',', '.');
+            } else {
+                // ponto como decimal -> remove vírgulas (milhar)
+                s = s.replace(/,/g, '');
+            }
+        } else if (hasComma && !hasDot) {
+            // só vírgula -> se houver 1-2 dígitos após a vírgula, tratamos como decimal
+            const parts = s.split(',');
+            if (parts.length === 2 && parts[1].length <= 2) {
+                s = parts[0].replace(/\./g, '') + '.' + parts[1];
+            } else {
+                // caso "5,250" (milhar com vírgula) -> remove vírgulas
+                s = s.replace(/,/g, '');
+            }
+        } else {
+            // só ponto ou nenhum -> remove separadores de milhar estilo "10.000"
+            // mas mantém o último ponto como decimal (caso "100.50")
+            const matches = s.match(/\./g);
+            if (matches && matches.length > 1) {
+                const last = s.lastIndexOf('.');
+                s = s.replace(/\./g, '');
+                // reintroduz o ponto decimal na última posição
+                s = s.slice(0, last - (matches.length - 1)) + '.' + s.slice(last - (matches.length - 1));
+            }
+        }
+
+        const n = parseFloat(s);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function fmtEUR(num) {
+        return (Number(num) || 0).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function getFinalTotalFromInputs() {
+        const pvp            = toFloatSafe(document.getElementById('pvp')?.value);
+        const sales_iuc      = toFloatSafe(document.getElementById('sales_iuc')?.value);
+        const sales_tow      = toFloatSafe(document.getElementById('sales_tow')?.value);
+        const sales_transfer = toFloatSafe(document.getElementById('sales_transfer')?.value);
+        const sales_others   = toFloatSafe(document.getElementById('sales_others')?.value);
+        return pvp + sales_iuc + sales_tow + sales_transfer + sales_others;
+    }
+
+    function calcTotalPaidFromClientTable() {
+        // 1) preferimos linhas com data-total-raw
+        let rows = document.querySelectorAll('#table-department-3 tbody tr[data-total-raw]');
+        if (rows.length > 0) {
+            let sum = 0;
+            rows.forEach(tr => sum += toFloatSafe(tr.getAttribute('data-total-raw')));
+            return sum;
+        }
+        // 2) fallback: 3ª coluna com "1.234,56 €"
+        rows = document.querySelectorAll('#table-department-3 tbody tr');
+        let total = 0;
+        rows.forEach(tr => {
+            const td = tr.querySelector('td:nth-child(3)');
+            if (td) total += toFloatSafe(td.textContent);
+        });
+        return total;
+    }
+
+    function setFinalTotalAndBalance() {
+        const finalTotal = getFinalTotalFromInputs();
+
+        const finalTotalInput = document.getElementById('final_total');
+        if (finalTotalInput) {
+            finalTotalInput.value = fmtEUR(finalTotal) + ' €';
+        }
+
+        const totalPaid = calcTotalPaidFromClientTable();
+        const balanceInput = document.getElementById('balance-3');
+        if (balanceInput) {
+            const balance = finalTotal - totalPaid;
+            balanceInput.value = fmtEUR(balance) + ' €';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        ['pvp','sales_iuc','sales_tow','sales_transfer','sales_others'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', setFinalTotalAndBalance);
+                el.addEventListener('change', setFinalTotalAndBalance);
+            }
+        });
+        setFinalTotalAndBalance();
+    });
+</script>
+
+{{-- *********************
+     PAGAMENTOS (CRUD) — sem alterações, mas recalcula saldo no fim
+     ********************* --}}
+<script>
+    function newPurchasePayment(account_department_id) {
+        const itemId = 1;
+        const payment_method_id = document.getElementById('purchase_payment_method_id').value;
+        const date = document.getElementById('purchase_date').value;
+        const value = parseFloat(document.getElementById('purchase_value').value);
+
+        if (!itemId || isNaN(value)) {
+            showStatus('Por favor, selecione o item e insira o valor.', 'danger', account_department_id);
+            return;
+        }
+
+        fetch(`{{ route('admin.vehicles.account-operations.store', ['vehicle' => $vehicle->id]) }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                account_department_id: account_department_id,
+                account_item_id: itemId,
+                payment_method_id: payment_method_id,
+                date: date,
+                total: value,
+                qty: 1
+            })
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showStatus('Pagamento registado com sucesso.', 'success', account_department_id);
-            refreshPayments(data.account_department_id);
-        } else {
-            showStatus('Erro ao registar o pagamento.', 'danger', account_department_id);
-        }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        showStatus('Erro de rede. Tente novamente.', 'danger', account_department_id);
-    });
-}
-
-function newClientPayment(account_department_id) {
-    const itemId = document.getElementById('client_payment_item').value;
-    const payment_method_id = document.getElementById('client_payment_method_id').value;
-    const date = document.getElementById('client_date').value;
-    const value = parseFloat(document.getElementById('client_payment_value').value);
-
-    if (!itemId || isNaN(value)) {
-        showStatus('Por favor, selecione o item e insira o valor.', 'danger', account_department_id);
-        return;
-    }
-
-    fetch(`{{ route('admin.vehicles.account-operations.store', ['vehicle' => $vehicle->id]) }}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            account_department_id: account_department_id,
-            account_item_id: itemId,
-            payment_method_id: payment_method_id,
-            date: date,
-            total: value,
-            qty: 1
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showStatus('Pagamento registado com sucesso.', 'success', account_department_id);
-            refreshPayments(data.account_department_id);
-        } else {
-            showStatus('Erro ao registar o pagamento.', 'danger', account_department_id);
-        }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        showStatus('Erro de rede. Tente novamente.', 'danger', account_department_id);
-    });
-}
-
-function editPayment(id, value, account_department_id) {
-    const newValue = prompt("Novo valor do pagamento:", value);
-    if (newValue === null) return;
-
-    fetch(`/admin/account-operations/update/${id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({ total: parseFloat(newValue) })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showStatus('Pagamento atualizado com sucesso.', 'success', account_department_id);
-            refreshPayments(account_department_id);
-        } else {
-            showStatus('Erro ao atualizar o pagamento.', 'danger', account_department_id);
-        }
-    });
-}
-
-function deletePayment(id, account_department_id) {
-    if (!confirm('Tem certeza que deseja apagar este pagamento?')) return;
-
-    fetch(`/admin/account-operations/${id}`, {
-        method: 'DELETE',
-        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showStatus('Pagamento apagado com sucesso.', 'success', account_department_id);
-            refreshPayments(account_department_id);
-        } else {
-            showStatus('Erro ao apagar o pagamento.', 'danger', account_department_id);
-        }
-    });
-}
-
-function showStatus(message, type, account_department_id) {
-    let status = (account_department_id == 1)
-        ? document.getElementById('payment-status')
-        : document.getElementById('client-status');
-
-    status.innerText = message;
-    status.className = `alert alert-${type}`;
-    status.style.display = 'block';
-}
-
-function refreshPayments(account_department_id) {
-    fetch('/admin/vehicles/{{ $vehicle->id }}/get-payments/' + account_department_id)
         .then(response => response.json())
         .then(data => {
-            const table = document.querySelector(`#table-department-${account_department_id}`);
-            let tableBody = table.querySelector('tbody');
-            if (!tableBody) {
-                tableBody = document.createElement('tbody');
-                table.appendChild(tableBody);
+            if (data.success) {
+                showStatus('Pagamento registado com sucesso.', 'success', account_department_id);
+                refreshPayments(data.account_department_id);
+            } else {
+                showStatus('Erro ao registar o pagamento.', 'danger', account_department_id);
             }
-            const balanceInput = document.getElementById(`balance-${account_department_id}`);
-
-            // Atualiza a tabela
-            let tbody = '';
-            data.payments.forEach(op => {
-                tbody += `
-                    <tr>
-                        <td>${op.date}</td>
-                        <td>${op.item}</td>
-                        <td>${op.total} €</td>
-                        <td>
-                            <button type="button" class="btn btn-xs btn-warning" onclick="editPayment(${op.id}, ${op.total_raw}, ${account_department_id})">Editar</button>
-                            <button type="button" class="btn btn-xs btn-danger" onclick="deletePayment(${op.id}, ${account_department_id})">Apagar</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            tableBody.innerHTML = tbody;
-
-            // Atualiza o saldo
-            if (balanceInput) { balanceInput.value = `${data.balance} €`; }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showStatus('Erro de rede. Tente novamente.', 'danger', account_department_id);
         });
-}
+    }
+
+    function newClientPayment(account_department_id) {
+        const itemId = document.getElementById('client_payment_item').value;
+        const payment_method_id = document.getElementById('client_payment_method_id').value;
+        const date = document.getElementById('client_date').value;
+        const value = parseFloat(document.getElementById('client_payment_value').value);
+
+        if (!itemId || isNaN(value)) {
+            showStatus('Por favor, selecione o item e insira o valor.', 'danger', account_department_id);
+            return;
+        }
+
+        fetch(`{{ route('admin.vehicles.account-operations.store', ['vehicle' => $vehicle->id]) }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                account_department_id: account_department_id,
+                account_item_id: itemId,
+                payment_method_id: payment_method_id,
+                date: date,
+                total: value,
+                qty: 1
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showStatus('Pagamento registado com sucesso.', 'success', account_department_id);
+                refreshPayments(data.account_department_id);
+            } else {
+                showStatus('Erro ao registar o pagamento.', 'danger', account_department_id);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showStatus('Erro de rede. Tente novamente.', 'danger', account_department_id);
+        });
+    }
+
+    function editPayment(id, value, account_department_id) {
+        const newValue = prompt("Novo valor do pagamento:", value);
+        if (newValue === null) return;
+
+        fetch(`/admin/account-operations/update/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ total: parseFloat(newValue) })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showStatus('Pagamento atualizado com sucesso.', 'success', account_department_id);
+                refreshPayments(account_department_id);
+            } else {
+                showStatus('Erro ao atualizar o pagamento.', 'danger', account_department_id);
+            }
+        });
+    }
+
+    function deletePayment(id, account_department_id) {
+        if (!confirm('Tem certeza que deseja apagar este pagamento?')) return;
+
+        fetch(`/admin/account-operations/${id}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showStatus('Pagamento apagado com sucesso.', 'success', account_department_id);
+                refreshPayments(account_department_id);
+            } else {
+                showStatus('Erro ao apagar o pagamento.', 'danger', account_department_id);
+            }
+        });
+    }
+
+    function showStatus(message, type, account_department_id) {
+        let status = (account_department_id == 1)
+            ? document.getElementById('payment-status')
+            : document.getElementById('client-status');
+
+        status.innerText = message;
+        status.className = `alert alert-${type}`;
+        status.style.display = 'block';
+    }
+
+    function refreshPayments(account_department_id) {
+        fetch('/admin/vehicles/{{ $vehicle->id }}/get-payments/' + account_department_id)
+            .then(response => response.json())
+            .then(data => {
+                const table = document.querySelector(`#table-department-${account_department_id}`);
+                let tableBody = table.querySelector('tbody');
+                if (!tableBody) {
+                    tableBody = document.createElement('tbody');
+                    table.appendChild(tableBody);
+                }
+                const balanceInput = document.getElementById(`balance-${account_department_id}`);
+
+                // Atualiza a tabela
+                let tbody = '';
+                let totalPaid = 0;
+                data.payments.forEach(op => {
+                    totalPaid += toFloatSafe(op.total_raw);
+                    tbody += `
+                        <tr data-total-raw="${op.total_raw}">
+                            <td>${op.date}</td>
+                            <td>${op.item}</td>
+                            <td>${op.total} €</td>
+                            <td>
+                                <button type="button" class="btn btn-xs btn-warning" onclick="editPayment(${op.id}, ${op.total_raw}, ${account_department_id})">Editar</button>
+                                <button type="button" class="btn btn-xs btn-danger" onclick="deletePayment(${op.id}, ${account_department_id})">Apagar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tableBody.innerHTML = tbody;
+
+                // Atualiza o saldo
+                if (balanceInput) {
+                    if (account_department_id == 3) {
+                        const finalTotal = getFinalTotalFromInputs();
+                        const bal = finalTotal - totalPaid;
+                        balanceInput.value = fmtEUR(bal) + ' €';
+                    } else {
+                        balanceInput.value = `${data.balance} €`;
+                    }
+                }
+
+                if (account_department_id == 3) {
+                    setFinalTotalAndBalance();
+                }
+            });
+    }
 </script>
 
 <script>
-var uploadedPaymentComprovantMap = {}
-Dropzone.options.paymentComprovantDropzone = {
-  url: '{{ route('admin.vehicles.storeMedia') }}',
-  maxFilesize: 5,
-  addRemoveLinks: true,
-  headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-  params: { size: 5 },
-  success: function (file, response) {
-    $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + response.name + '">')
-    uploadedPaymentComprovantMap[file.name] = response.name
-  },
-  removedfile: function (file) {
-    file.previewElement.remove()
-    var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPaymentComprovantMap[file.name]
-    $('form').find('input[name="payment_comprovant[]"][value="' + name + '"]').remove()
-  },
-  init: function () {
-@if(isset($vehicle) && $vehicle->payment_comprovant)
-    var files = {!! json_encode($vehicle->payment_comprovant) !!}
-    for (var i in files) {
-      var file = files[i]
-      this.options.addedfile.call(this, file)
-      file.previewElement.classList.add('dz-complete')
-      file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-      $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + file.file_name + '">')
+    var uploadedPaymentComprovantMap = {}
+    Dropzone.options.paymentComprovantDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 5,
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 5 },
+        success: function (file, response) {
+            $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + response.name + '">')
+            uploadedPaymentComprovantMap[file.name] = response.name
+        },
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPaymentComprovantMap[file.name]
+            $('form').find('input[name="payment_comprovant[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->payment_comprovant)
+                var files = {!! json_encode($vehicle->payment_comprovant) !!}
+                for (var i in files) {
+                    var file = files[i]
+                    this.options.addedfile.call(this, file)
+                    file.previewElement.classList.add('dz-complete')
+                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
+                    $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + file.file_name + '">')
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
     }
-@endif
-  },
-  error: function (file, response) {
-    var message = $.type(response) === 'string' ? response : response.errors.file
-    file.previewElement.classList.add('dz-error')
-    var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
-    for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
-  }
-}
 </script>
 
 @endsection
