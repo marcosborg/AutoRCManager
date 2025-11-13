@@ -13,6 +13,7 @@ use Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\Vehicle;
 
 class ClientController extends Controller
 {
@@ -30,9 +31,9 @@ class ClientController extends Controller
             $table->addColumn('actions', '&nbsp;');
 
             $table->editColumn('actions', function ($row) {
-                $viewGate      = 'client_show';
-                $editGate      = 'client_edit';
-                $deleteGate    = 'client_delete';
+                $viewGate = 'client_show';
+                $editGate = 'client_edit';
+                $deleteGate = 'client_delete';
                 $crudRoutePart = 'clients';
 
                 return view('partials.datatablesActions', compact(
@@ -133,7 +134,7 @@ class ClientController extends Controller
 
         $company_countries = Country::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $client->load('country', 'company_country');
+        $client->load('country', 'company_country')->load('vehicles');
 
         return view('admin.clients.edit', compact('client', 'company_countries', 'countries'));
     }

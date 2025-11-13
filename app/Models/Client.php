@@ -55,4 +55,9 @@ class Client extends Model
     {
         return $this->belongsTo(Country::class, 'company_country_id');
     }
+
+    public function vehicles()
+    {
+        return $this->hasMany(Vehicle::class, 'client_id', 'id');
+    }
 }
