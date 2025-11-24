@@ -185,6 +185,7 @@
                         <div class="row">
                             @can('aquisition_of_the_vehicle')
                             <div class="col-md-3">
+                                @can('superadmin')
                                 <div class="form-group {{ $errors->has('purchase_price') ? 'has-error' : '' }}">
                                     <label for="purchase_price">{{ trans('cruds.vehicle.fields.purchase_price') }}</label>
                                     <input class="form-control" type="number" name="purchase_price" id="purchase_price" value="{{ old('purchase_price', $vehicle->purchase_price) }}" step="0.01">
@@ -193,6 +194,7 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.purchase_price_helper') }}</span>
                                 </div>
+                                @endcan
                                 <div class="form-group {{ $errors->has('iuc_price') ? 'has-error' : '' }}">
                                     <label for="iuc_price">{{ trans('cruds.vehicle.fields.iuc_price') }}</label>
                                     <input class="form-control" type="number" name="iuc_price" id="iuc_price" value="{{ old('iuc_price', $vehicle->iuc_price) }}" step="0.01">
