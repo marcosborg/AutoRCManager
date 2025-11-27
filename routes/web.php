@@ -61,6 +61,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('account-operations/{operation}', [App\Http\Controllers\Admin\VehicleController::class, 'destroyValue'])->name('account-operations.destroy');
     Route::get('vehicles/{vehicle}/get-payments/{account_department_id}', [App\Http\Controllers\Admin\VehicleController::class, 'getPayments'])->name('vehicles.get-payments');
 
+    // Vehicle Groups
+    Route::delete('vehicle-groups/destroy', 'VehicleGroupController@massDestroy')->name('vehicle-groups.massDestroy');
+    Route::resource('vehicle-groups', 'VehicleGroupController');
+
     // Suplier
     Route::delete('supliers/destroy', 'SuplierController@massDestroy')->name('supliers.massDestroy');
     Route::post('supliers/parse-csv-import', 'SuplierController@parseCsvImport')->name('supliers.parseCsvImport');

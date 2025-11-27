@@ -60,4 +60,9 @@ class Client extends Model
     {
         return $this->hasMany(Vehicle::class, 'client_id', 'id');
     }
+
+    public function vehicle_groups()
+    {
+        return $this->belongsToMany(VehicleGroup::class, 'client_vehicle_group');
+    }
 }

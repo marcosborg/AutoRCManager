@@ -194,6 +194,17 @@
                     </a>
                 </li>
             @endcan
+            @can('vehicle_group_access')
+                <li class="{{ request()->is("admin/vehicle-groups") || request()->is("admin/vehicle-groups/*") ? "active" : "" }}">
+                    <a href="{{ route("admin.vehicle-groups.index") }}">
+                        <i class="fa-fw fas fa-object-group">
+
+                        </i>
+                        <span>{{ trans('cruds.vehicleGroup.title') }}</span>
+
+                    </a>
+                </li>
+            @endcan
             @can('sale_access')
                 @foreach (\App\Models\GeneralState::all() as $key => $generalState)
                 <li class="{{ request()->is("admin/sales") || request()->is("admin/sales/*") ? "active" : "" }}">

@@ -337,4 +337,9 @@ class Vehicle extends Model implements HasMedia
                 $q->where('account_department_id', 2);
             });
     }
+
+    public function vehicle_groups()
+    {
+        return $this->belongsToMany(VehicleGroup::class, 'vehicle_group_vehicle');
+    }
 }

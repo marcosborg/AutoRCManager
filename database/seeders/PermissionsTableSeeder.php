@@ -302,8 +302,33 @@ class PermissionsTableSeeder extends Seeder
                 'id'    => 73,
                 'title' => 'profile_password_edit',
             ],
+            [
+                'id'    => 74,
+                'title' => 'vehicle_group_create',
+            ],
+            [
+                'id'    => 75,
+                'title' => 'vehicle_group_edit',
+            ],
+            [
+                'id'    => 76,
+                'title' => 'vehicle_group_show',
+            ],
+            [
+                'id'    => 77,
+                'title' => 'vehicle_group_delete',
+            ],
+            [
+                'id'    => 78,
+                'title' => 'vehicle_group_access',
+            ],
         ];
 
-        Permission::insert($permissions);
+        foreach ($permissions as $permission) {
+            Permission::updateOrCreate(
+                ['title' => $permission['title']],
+                $permission
+            );
+        }
     }
 }
