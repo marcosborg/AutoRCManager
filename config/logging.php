@@ -70,6 +70,12 @@ return [
             'days' => 14,
         ],
 
+        'gps' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/gps-server.log'),
+            'level' => 'debug',
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

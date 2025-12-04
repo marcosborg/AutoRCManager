@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\VehiclePosition;
+
 Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', 'middleware' => ['auth:sanctum']], function () {
     // Permissions
     Route::apiResource('permissions', 'PermissionsApiController');
@@ -40,4 +42,29 @@ Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', '
 
     // Repair States
     Route::apiResource('repair-states', 'RepairStatesApiController');
+
+    // Ultimas posicoes por tracker (opcional simples).
+    Route::get('gps/positions/{trackerId?}', function (?string $trackerId = null) {
+        $latestIds = VehiclePosition::query()
+            ->when($trackerId, fn ($query) => $query->where('tracker_id', $trackerId))
+            ->selectRaw('MAX(id) as id')
+            ->groupBy('tracker_id')
+            ->pluck('id');
+
+        $positions = VehiclePosition::whereIn('id', $latestIds)
+            ->orderBy('tracker_id')
+            ->get([
+                'id',
+                'tracker_id',
+                'latitude',
+                'longitude',
+                'speed_kph',
+                'fix_valid',
+                'voltage',
+                'reported_at',
+                'created_at',
+            ]);
+
+        return response()->json($positions);
+    })->name('gps.positions');
 });

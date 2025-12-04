@@ -3,17 +3,25 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\VehiclePosition;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class HomeController
+class GpsController
 {
-    public function index()
+    /**
+     * Devolve as posicoes mais recentes (uma por tracker), em JSON.
+     */
+    public function latest(Request $request): JsonResponse
     {
-        $positions = collect();
+        $trackerId = $request->get('tracker_id');
+        $limit = (int) $request->get('limit', 100);
+        $limit = max(1, min($limit, 200));
 
         try {
             $latestIds = VehiclePosition::query()
+                ->when($trackerId, fn ($query) => $query->where('tracker_id', $trackerId))
                 ->selectRaw('MAX(id) as id')
                 ->groupBy('tracker_id')
                 ->pluck('id');
@@ -22,6 +30,7 @@ class HomeController
                 ->whereIn('id', $latestIds)
                 ->orderBy('tracker_id')
                 ->orderByDesc('reported_at')
+                ->limit($limit)
                 ->get([
                     'id',
                     'tracker_id',
@@ -32,14 +41,22 @@ class HomeController
                     'voltage',
                     'reported_at',
                     'created_at',
+                    'raw_data',
                 ]);
+
+            return response()->json([
+                'data' => $positions,
+                'count' => $positions->count(),
+            ]);
         } catch (Throwable $exception) {
-            Log::channel('gps')->warning('Erro ao obter posicoes para o dashboard.', [
+            Log::channel('gps')->error('Erro ao gerar JSON de posicoes GPS.', [
                 'erro' => $exception->getMessage(),
             ]);
-            $positions = collect();
-        }
 
-        return view('home', compact('positions'));
+            return response()->json([
+                'error' => 'Erro ao obter posicoes GPS.',
+                'message' => $exception->getMessage(),
+            ], 500);
+        }
     }
 }
