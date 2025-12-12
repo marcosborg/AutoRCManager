@@ -8,6 +8,7 @@ use App\Http\Requests\MassDestroySuplierRequest;
 use App\Http\Requests\StoreSuplierRequest;
 use App\Http\Requests\UpdateSuplierRequest;
 use App\Models\Suplier;
+use App\Models\Vehicle;
 use Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -91,6 +92,38 @@ class SuplierController extends Controller
         abort_if(Gate::denies('suplier_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         return view('admin.supliers.show', compact('suplier'));
+    }
+
+    public function account(Suplier $suplier)
+    {
+        abort_if(Gate::denies('suplier_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $suplier->load([
+            'vehicles.brand',
+            'vehicles.general_state',
+            'vehicles.acquisition_operations.account_item.account_category',
+        ]);
+
+        $vehicleBreakdown = $suplier->vehicles->map(function (Vehicle $vehicle) {
+            $purchasePrice = (float) ($vehicle->purchase_price ?? 0);
+            $paid = (float) ($vehicle->acquisition_operations->sum('total') ?? 0);
+
+            return [
+                'vehicle' => $vehicle,
+                'purchase_price' => $purchasePrice,
+                'paid' => $paid,
+                'balance' => $purchasePrice - $paid,
+            ];
+        });
+
+        $summary = [
+            'vehicles' => $vehicleBreakdown->count(),
+            'purchase_total' => (float) $vehicleBreakdown->sum('purchase_price'),
+            'paid_total' => (float) $vehicleBreakdown->sum('paid'),
+            'balance_total' => (float) $vehicleBreakdown->sum('balance'),
+        ];
+
+        return view('admin.supliers.account', compact('suplier', 'vehicleBreakdown', 'summary'));
     }
 
     public function destroy(Suplier $suplier)

@@ -118,6 +118,12 @@ class Vehicle extends Model implements HasMedia
         'created_at',
         'updated_at',
         'deleted_at',
+        'purchase_has_vat',
+        'purchase_vat_value',
+    ];
+
+    protected $casts = [
+        'purchase_has_vat' => 'boolean',
     ];
 
     protected function serializeDate(DateTimeInterface $date)

@@ -271,6 +271,24 @@
                                 </tr>
                                 <tr>
                                     <th>
+                                        {{ trans('cruds.vehicle.fields.purchase_has_vat') }}
+                                    </th>
+                                    <td>
+                                        <span class="label label-{{ $vehicle->purchase_has_vat ? 'success' : 'default' }}">
+                                            {{ $vehicle->purchase_has_vat ? __('global.yes') : __('global.no') }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        {{ trans('cruds.vehicle.fields.purchase_vat_value') }}
+                                    </th>
+                                    <td>
+                                        {{ $vehicle->purchase_vat_value }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
                                         {{ trans('cruds.vehicle.fields.photos') }}
                                     </th>
                                     <td>

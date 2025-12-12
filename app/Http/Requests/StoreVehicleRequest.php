@@ -163,6 +163,14 @@ class StoreVehicleRequest extends FormRequest
                 'nullable',
                 'numeric',
             ],
+            'purchase_has_vat' => [
+                'nullable',
+                'boolean',
+            ],
+            'purchase_vat_value' => [
+                'nullable',
+                'numeric',
+            ],
         ];
     }
 }

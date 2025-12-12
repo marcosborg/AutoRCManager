@@ -194,6 +194,27 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.purchase_price_helper') }}</span>
                                 </div>
+                                <div class="form-group {{ $errors->has('purchase_has_vat') ? 'has-error' : '' }}">
+                                    <div class="checkbox">
+                                        <label for="purchase_has_vat" class="required">
+                                            <input type="hidden" name="purchase_has_vat" value="0">
+                                            <input type="checkbox" name="purchase_has_vat" id="purchase_has_vat" value="1" {{ old('purchase_has_vat', $vehicle->purchase_has_vat) ? 'checked' : '' }}>
+                                            {{ trans('cruds.vehicle.fields.purchase_has_vat') }}
+                                        </label>
+                                    </div>
+                                    @if($errors->has('purchase_has_vat'))
+                                        <span class="help-block" role="alert">{{ $errors->first('purchase_has_vat') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.purchase_has_vat_helper') }}</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('purchase_vat_value') ? 'has-error' : '' }}">
+                                    <label for="purchase_vat_value">{{ trans('cruds.vehicle.fields.purchase_vat_value') }}</label>
+                                    <input class="form-control" type="number" name="purchase_vat_value" id="purchase_vat_value" value="{{ old('purchase_vat_value', $vehicle->purchase_vat_value) }}" step="0.01">
+                                    @if($errors->has('purchase_vat_value'))
+                                        <span class="help-block" role="alert">{{ $errors->first('purchase_vat_value') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.purchase_vat_value_helper') }}</span>
+                                </div>
                                 @endcan
                                 <div class="form-group {{ $errors->has('iuc_price') ? 'has-error' : '' }}">
                                     <label for="iuc_price">{{ trans('cruds.vehicle.fields.iuc_price') }}</label>

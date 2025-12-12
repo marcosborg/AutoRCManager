@@ -14,6 +14,9 @@
                             <a class="btn btn-default" href="{{ route('admin.supliers.index') }}">
                                 {{ trans('global.back_to_list') }}
                             </a>
+                            <a class="btn btn-info" href="{{ route('admin.supliers.account', $suplier->id) }}">
+                                Conta corrente
+                            </a>
                         </div>
                         <table class="table table-bordered table-striped">
                             <tbody>

@@ -71,6 +71,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('supliers/destroy', 'SuplierController@massDestroy')->name('supliers.massDestroy');
     Route::post('supliers/parse-csv-import', 'SuplierController@parseCsvImport')->name('supliers.parseCsvImport');
     Route::post('supliers/process-csv-import', 'SuplierController@processCsvImport')->name('supliers.processCsvImport');
+    Route::get('supliers/{suplier}/account', 'SuplierController@account')->name('supliers.account');
     Route::resource('supliers', 'SuplierController');
 
     // Payment Status

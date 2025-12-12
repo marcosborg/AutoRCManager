@@ -5,6 +5,7 @@ namespace App\Models;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Suplier extends Model
@@ -25,6 +26,11 @@ class Suplier extends Model
         'updated_at',
         'deleted_at',
     ];
+
+    public function vehicles(): HasMany
+    {
+        return $this->hasMany(Vehicle::class, 'suplier_id');
+    }
 
     protected function serializeDate(DateTimeInterface $date)
     {
