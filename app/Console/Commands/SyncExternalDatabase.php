@@ -115,25 +115,20 @@ class SyncExternalDatabase extends Command
             $config['database'],
         ];
 
-        $handle = fopen($dumpPath, 'w+');
-        if ($handle === false) {
-            throw new RuntimeException("Nao foi possivel abrir {$dumpPath} para escrita.");
+        $error = $this->runDumpProcess($command, $dumpPath, $config['password'] ?? '');
+        if ($error === null) {
+            return;
         }
 
-        $process = new Process($command, null, ['MYSQL_PWD' => $config['password'] ?? '']);
-        $process->setTimeout(3600);
+        if (stripos($error, 'set-gtid-purged') !== false || stripos($error, 'unknown variable') !== false) {
+            $this->warn('mysqldump nao aceita --set-gtid-purged; a tentar sem a flag...');
 
-        $process->run(function (string $type, string $buffer) use ($handle): void {
-            if ($type === Process::OUT) {
-                fwrite($handle, $buffer);
-            }
-        });
+            $command = array_values(array_filter($command, static fn (string $part): bool => stripos($part, 'set-gtid-purged') === false));
+            $error = $this->runDumpProcess($command, $dumpPath, $config['password'] ?? '');
+        }
 
-        fclose($handle);
-
-        if (!$process->isSuccessful()) {
-            $message = trim($process->getErrorOutput() ?: $process->getOutput());
-            throw new RuntimeException('Erro ao gerar dump da base externa: ' . $message);
+        if ($error !== null) {
+            throw new RuntimeException('Erro ao gerar dump da base externa: ' . $error);
         }
     }
 
@@ -195,5 +190,33 @@ class SyncExternalDatabase extends Command
         }
 
         return $candidate;
+    }
+
+    /**
+     * Executa mysqldump e grava no caminho indicado. Devolve null em sucesso ou mensagem de erro em caso de falha.
+     */
+    private function runDumpProcess(array $command, string $dumpPath, string $password): ?string
+    {
+        $handle = fopen($dumpPath, 'w+');
+        if ($handle === false) {
+            throw new RuntimeException("Nao foi possivel abrir {$dumpPath} para escrita.");
+        }
+
+        $process = new Process($command, null, ['MYSQL_PWD' => $password]);
+        $process->setTimeout(3600);
+
+        $process->run(function (string $type, string $buffer) use ($handle): void {
+            if ($type === Process::OUT) {
+                fwrite($handle, $buffer);
+            }
+        });
+
+        fclose($handle);
+
+        if ($process->isSuccessful()) {
+            return null;
+        }
+
+        return trim($process->getErrorOutput() ?: $process->getOutput());
     }
 }
