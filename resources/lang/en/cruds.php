@@ -297,6 +297,8 @@ return [
             'payment_notes_helper'                     => ' ',
             'iuc_price'                                 => 'Valor do IUC',
             'iuc_price_helper'                          => ' ',
+            'commission'                                => 'Commissions',
+            'commission_helper'                         => ' ',
             'tow_price'                                 => 'Preço do reboque',
             'tow_price_helper'                          => ' ',
             'cables_2'                                  => 'Cabo doméstico',

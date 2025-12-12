@@ -253,8 +253,9 @@ class ClientController extends Controller
 
     private function calculateFinancialSummaryForVehicles(Collection $vehicles, array $operationsByDepartment, Collection $timelogs, int $hourPrice): array
     {
-        $purchasePrice = (float) $vehicles->sum(fn($vehicle) => $vehicle->purchase_price ?? 0);
-        $purchaseTotal = (float) ($operationsByDepartment['aquisition']->sum('total') ?? 0);
+        $commissionTotal = (float) $vehicles->sum(fn($vehicle) => $vehicle->commission ?? 0);
+        $purchasePrice = (float) $vehicles->sum(fn($vehicle) => $vehicle->purchase_price ?? 0) + $commissionTotal;
+        $purchaseTotal = (float) ($operationsByDepartment['aquisition']->sum('total') ?? 0) + $commissionTotal;
         $purchaseBalance = $purchasePrice - $purchaseTotal;
 
         $garageTotal = (float) ($operationsByDepartment['garage']->sum('total') ?? 0);
@@ -307,6 +308,7 @@ class ClientController extends Controller
             $garageOps = $this->filterOperationsByDepartment($ops, self::DEPARTMENT_GARAGE);
             $saleOps = $this->filterOperationsByDepartment($ops, self::DEPARTMENT_SALE);
 
+            $commission = (float) ($vehicle->commission ?? 0);
             $saleTarget = (float) ($vehicle->pvp ?? 0)
                 + (float) ($vehicle->sales_iuc ?? 0)
                 + (float) ($vehicle->sales_tow ?? 0)
@@ -317,14 +319,14 @@ class ClientController extends Controller
             $minutes = (int) $vehicleTimelogs->sum('rounded_minutes');
             $labourCost = ($minutes / 60) * $hourPrice;
 
-            $invested = (float) $purchaseOps->sum('total') + (float) $garageOps->sum('total') + $labourCost;
+            $invested = (float) $purchaseOps->sum('total') + $commission + (float) $garageOps->sum('total') + $labourCost;
             $saleTotal = (float) $saleOps->sum('total');
 
             return [
                 'vehicle' => $vehicle,
-                'purchase_price' => (float) ($vehicle->purchase_price ?? 0),
-                'purchase_total' => (float) $purchaseOps->sum('total'),
-                'purchase_balance' => (float) ($vehicle->purchase_price ?? 0) - (float) $purchaseOps->sum('total'),
+                'purchase_price' => (float) ($vehicle->purchase_price ?? 0) + $commission,
+                'purchase_total' => (float) $purchaseOps->sum('total') + $commission,
+                'purchase_balance' => ((float) ($vehicle->purchase_price ?? 0) + $commission) - ((float) $purchaseOps->sum('total') + $commission),
                 'garage_total' => (float) $garageOps->sum('total'),
                 'sale_target' => $saleTarget,
                 'sale_total' => $saleTotal,

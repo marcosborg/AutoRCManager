@@ -159,6 +159,10 @@ class UpdateVehicleRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'commission' => [
+                'nullable',
+                'numeric',
+            ],
         ];
     }
 }

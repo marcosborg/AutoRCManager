@@ -159,6 +159,10 @@ class StoreVehicleRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'commission' => [
+                'nullable',
+                'numeric',
+            ],
         ];
     }
 }

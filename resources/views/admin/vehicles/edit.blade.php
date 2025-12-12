@@ -203,6 +203,14 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.iuc_price_helper') }}</span>
                                 </div>
+                                <div class="form-group {{ $errors->has('commission') ? 'has-error' : '' }}">
+                                    <label for="commission">{{ trans('cruds.vehicle.fields.commission') }}</label>
+                                    <input class="form-control" type="number" name="commission" id="commission" value="{{ old('commission', $vehicle->commission) }}" step="0.01">
+                                    @if($errors->has('commission'))
+                                        <span class="help-block" role="alert">{{ $errors->first('commission') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.commission_helper') }}</span>
+                                </div>
                                 <div class="form-group {{ $errors->has('tow_price') ? 'has-error' : '' }}">
                                     <label for="tow_price">{{ trans('cruds.vehicle.fields.tow_price') }}</label>
                                     <input class="form-control" type="number" name="tow_price" id="tow_price" value="{{ old('tow_price', $vehicle->tow_price) }}" step="0.01">

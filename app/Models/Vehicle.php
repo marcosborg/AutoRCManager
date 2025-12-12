@@ -111,6 +111,7 @@ class Vehicle extends Model implements HasMedia
         'sale_notes',
         'local',
         'iuc_price',
+        'commission',
         'tow_price',
         'cables_2',
         'engine_displacement',
