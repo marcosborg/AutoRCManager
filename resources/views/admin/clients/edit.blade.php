@@ -7,6 +7,9 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         {{ trans('global.edit') }} {{ trans('cruds.client.title_singular') }}
+                        <a href="{{ route('admin.clients.reconciliation', $client->id) }}" class="btn btn-xs btn-primary pull-right">
+                            Reconcilia&ccedil;&atilde;o de contas
+                        </a>
                     </div>
                     <div class="panel-body">
                         <form method="POST" action="{{ route('admin.clients.update', [$client->id]) }}"
