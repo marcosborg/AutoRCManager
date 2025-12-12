@@ -2,6 +2,42 @@
 
 use Illuminate\Support\Str;
 
+$databaseProfile = env('DB_PROFILE', env('APP_ENV') === 'production' ? 'production' : 'sandbox');
+
+$mysqlProfiles = [
+    'sandbox' => [
+        'host' => env('DB_HOST_SANDBOX', env('DB_HOST', '127.0.0.1')),
+        'port' => env('DB_PORT_SANDBOX', env('DB_PORT', '3306')),
+        'database' => env('DB_DATABASE_SANDBOX', env('DB_DATABASE', 'forge')),
+        'username' => env('DB_USERNAME_SANDBOX', env('DB_USERNAME', 'forge')),
+        'password' => env('DB_PASSWORD_SANDBOX', env('DB_PASSWORD', '')),
+    ],
+    'production' => [
+        'host' => env('DB_HOST_PRODUCTION', env('DB_HOST', '127.0.0.1')),
+        'port' => env('DB_PORT_PRODUCTION', env('DB_PORT', '3306')),
+        'database' => env('DB_DATABASE_PRODUCTION', env('DB_DATABASE', 'forge')),
+        'username' => env('DB_USERNAME_PRODUCTION', env('DB_USERNAME', 'forge')),
+        'password' => env('DB_PASSWORD_PRODUCTION', env('DB_PASSWORD', '')),
+    ],
+];
+
+$currentMysqlProfile = $mysqlProfiles[$databaseProfile] ?? $mysqlProfiles['sandbox'];
+
+$baseMysqlConfig = [
+    'driver' => 'mysql',
+    'url' => env('DATABASE_URL'),
+    'unix_socket' => env('DB_SOCKET', ''),
+    'charset' => 'utf8mb4',
+    'collation' => 'utf8mb4_unicode_ci',
+    'prefix' => '',
+    'prefix_indexes' => true,
+    'strict' => true,
+    'engine' => null,
+    'options' => extension_loaded('pdo_mysql') ? array_filter([
+        PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+    ]) : [],
+];
+
 return [
 
     /*
@@ -43,25 +79,29 @@ return [
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],
 
-        'mysql' => [
-            'driver' => 'mysql',
-            'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'forge'),
-            'username' => env('DB_USERNAME', 'forge'),
-            'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
+        'mysql' => array_merge($baseMysqlConfig, [
+            'host' => $currentMysqlProfile['host'],
+            'port' => $currentMysqlProfile['port'],
+            'database' => $currentMysqlProfile['database'],
+            'username' => $currentMysqlProfile['username'],
+            'password' => $currentMysqlProfile['password'],
+        ]),
+
+        'mysql_external' => array_merge($baseMysqlConfig, [
+            'host' => $mysqlProfiles['production']['host'],
+            'port' => $mysqlProfiles['production']['port'],
+            'database' => $mysqlProfiles['production']['database'],
+            'username' => $mysqlProfiles['production']['username'],
+            'password' => $mysqlProfiles['production']['password'],
+        ]),
+
+        'mysql_internal' => array_merge($baseMysqlConfig, [
+            'host' => $mysqlProfiles['sandbox']['host'],
+            'port' => $mysqlProfiles['sandbox']['port'],
+            'database' => $mysqlProfiles['sandbox']['database'],
+            'username' => $mysqlProfiles['sandbox']['username'],
+            'password' => $mysqlProfiles['sandbox']['password'],
+        ]),
 
         'pgsql' => [
             'driver' => 'pgsql',
