@@ -22,6 +22,7 @@ class VehicleGroup extends Model
 
     protected $fillable = [
         'name',
+        'wholesale_pvp',
         'created_at',
         'updated_at',
         'deleted_at',

@@ -325,6 +325,8 @@ return [
             'id_helper'         => ' ',
             'name'              => 'Name',
             'name_helper'       => ' ',
+            'wholesale_pvp'     => 'Wholesale PVP',
+            'wholesale_pvp_helper' => 'Total sale price for the whole group',
             'vehicles'          => 'Vehicles',
             'vehicles_helper'   => 'Select the vehicles for this group',
             'clients'           => 'Clients',

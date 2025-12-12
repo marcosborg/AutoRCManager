@@ -35,6 +35,11 @@ class StoreVehicleGroupRequest extends FormRequest
                 'integer',
                 'exists:clients,id',
             ],
+            'wholesale_pvp' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
         ];
     }
 }

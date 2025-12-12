@@ -19,6 +19,14 @@
                             @endif
                             <span class="help-block">{{ trans('cruds.vehicleGroup.fields.name_helper') }}</span>
                         </div>
+                        <div class="form-group {{ $errors->has('wholesale_pvp') ? 'has-error' : '' }}">
+                            <label for="wholesale_pvp">{{ trans('cruds.vehicleGroup.fields.wholesale_pvp') }}</label>
+                            <input class="form-control" type="number" name="wholesale_pvp" id="wholesale_pvp" value="{{ old('wholesale_pvp', '') }}" step="0.01">
+                            @if($errors->has('wholesale_pvp'))
+                                <span class="help-block" role="alert">{{ $errors->first('wholesale_pvp') }}</span>
+                            @endif
+                            <span class="help-block">{{ trans('cruds.vehicleGroup.fields.wholesale_pvp_helper') }}</span>
+                        </div>
                         <div class="form-group {{ $errors->has('vehicles') ? 'has-error' : '' }}">
                             <label for="vehicles">{{ trans('cruds.vehicleGroup.fields.vehicles') }}</label>
                             <select class="form-control select2" name="vehicles[]" id="vehicles" multiple>

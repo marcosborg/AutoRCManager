@@ -7,10 +7,12 @@ use App\Http\Requests\MassDestroyVehicleGroupRequest;
 use App\Http\Requests\StoreVehicleGroupRequest;
 use App\Http\Requests\UpdateVehicleGroupRequest;
 use App\Models\AccountOperation;
+use App\Models\AccountItem;
 use App\Models\Client;
 use App\Models\Timelog;
 use App\Models\Vehicle;
 use App\Models\VehicleGroup;
+use App\Models\PaymentMethod;
 use Gate;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
@@ -43,6 +45,9 @@ class VehicleGroupController extends Controller
         $vehicleGroup->vehicles()->sync($request->input('vehicles', []));
         $vehicleGroup->clients()->sync($request->input('clients', []));
 
+        $vehicleGroup->load('vehicles');
+        $this->applyWholesalePvpDistribution($vehicleGroup);
+
         return redirect()->route('admin.vehicle-groups.show', $vehicleGroup->id)->with('message', 'Grupo criado com sucesso');
     }
 
@@ -64,6 +69,9 @@ class VehicleGroupController extends Controller
 
         $vehicleGroup->vehicles()->sync($request->input('vehicles', []));
         $vehicleGroup->clients()->sync($request->input('clients', []));
+
+        $vehicleGroup->load('vehicles');
+        $this->applyWholesalePvpDistribution($vehicleGroup);
 
         return redirect()->route('admin.vehicle-groups.show', $vehicleGroup->id)->with('message', 'Grupo atualizado com sucesso');
     }
@@ -241,5 +249,60 @@ class VehicleGroupController extends Controller
         })
             ->sortBy(fn($row) => $row['vehicle']->license ?? $row['vehicle']->id)
             ->values();
+    }
+
+    private function applyWholesalePvpDistribution(VehicleGroup $vehicleGroup): void
+    {
+        $wholesalePvp = (float) ($vehicleGroup->wholesale_pvp ?? 0);
+        if ($wholesalePvp <= 0) {
+            return;
+        }
+
+        $vehicles = $vehicleGroup->vehicles;
+        if ($vehicles->isEmpty()) {
+            return;
+        }
+
+        $weights = $vehicles->map(fn($vehicle) => max((float) ($vehicle->pvp ?? 0), 0));
+        $weightSum = (float) $weights->sum();
+
+        if ($weightSum <= 0) {
+            $weights = $vehicles->map(fn() => 1);
+            $weightSum = (float) $weights->sum();
+        }
+
+        $saleItem = AccountItem::whereHas('account_category', function ($query) {
+            $query->where('account_department_id', 3);
+        })->orderBy('id')->first();
+        $paymentMethodId = PaymentMethod::orderBy('id')->value('id');
+
+        foreach ($vehicles as $index => $vehicle) {
+            $weight = (float) $weights[$index];
+            $share = $weightSum > 0 ? $wholesalePvp * ($weight / $weightSum) : 0;
+            $newPvp = round($share, 2);
+
+            $vehicle->pvp = $newPvp;
+            $vehicle->save();
+
+            if (!$saleItem) {
+                continue;
+            }
+
+            $alreadyPaid = (float) $vehicle->client_operations()->sum('total');
+            $due = $newPvp - $alreadyPaid;
+
+            if ($due <= 0) {
+                continue;
+            }
+
+            AccountOperation::create([
+                'vehicle_id' => $vehicle->id,
+                'account_item_id' => $saleItem->id,
+                'payment_method_id' => $paymentMethodId,
+                'date' => now()->format('Y-m-d'),
+                'total' => $due,
+                'qty' => 1,
+            ]);
+        }
     }
 }

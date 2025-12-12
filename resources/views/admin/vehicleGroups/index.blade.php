@@ -31,6 +31,9 @@
                                         {{ trans('cruds.vehicleGroup.fields.name') }}
                                     </th>
                                     <th>
+                                        {{ trans('cruds.vehicleGroup.fields.wholesale_pvp') }}
+                                    </th>
+                                    <th>
                                         {{ trans('cruds.vehicleGroup.fields.vehicles') }}
                                     </th>
                                     <th>
@@ -50,12 +53,15 @@
                                         <td>
                                             {{ $vehicleGroup->id ?? '' }}
                                         </td>
-                                        <td>
-                                            {{ $vehicleGroup->name ?? '' }}
-                                        </td>
-                                        <td>
-                                            {{ $vehicleGroup->vehicles_count }}
-                                        </td>
+                                    <td>
+                                        {{ $vehicleGroup->name ?? '' }}
+                                    </td>
+                                    <td>
+                                        {{ number_format($vehicleGroup->wholesale_pvp ?? 0, 2, ',', '.') }}
+                                    </td>
+                                    <td>
+                                        {{ $vehicleGroup->vehicles_count }}
+                                    </td>
                                         <td>
                                             {{ $vehicleGroup->clients_count }}
                                         </td>

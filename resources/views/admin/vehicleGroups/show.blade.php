@@ -5,6 +5,11 @@
         <div class="panel panel-default">
             <div class="panel-heading">
                 Grupo: {{ $vehicleGroup->name }}
+                @if($vehicleGroup->wholesale_pvp > 0)
+                    <span class="label label-success" style="margin-left: 10px;">
+                        PVP atacado: &euro; {{ number_format($vehicleGroup->wholesale_pvp, 2, ',', '.') }}
+                    </span>
+                @endif
 
                 @can('vehicle_group_edit')
                     <a href="{{ route('admin.vehicle-groups.edit', $vehicleGroup->id) }}" class="btn btn-xs btn-info pull-right">
