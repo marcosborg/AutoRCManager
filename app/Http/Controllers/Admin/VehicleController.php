@@ -140,7 +140,15 @@ class VehicleController extends Controller
 
     public function store(StoreVehicleRequest $request)
     {
-        $vehicle = Vehicle::create($request->all());
+        $payload = $request->all();
+
+        if (! $this->canViewFinancialSensitive()) {
+            foreach ($this->sensitiveVehicleFields() as $field) {
+                unset($payload[$field]);
+            }
+        }
+
+        $vehicle = Vehicle::create($payload);
 
         return redirect()->route('admin.vehicles.edit', $vehicle->id)->with('message', 'Criado com sucesso');
     }
@@ -148,6 +156,8 @@ class VehicleController extends Controller
     public function edit(Vehicle $vehicle)
     {
         abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $canViewSensitive = $this->canViewFinancialSensitive();
 
         $general_states = GeneralState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
@@ -163,22 +173,74 @@ class VehicleController extends Controller
 
         $clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $vehicle->load('brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client', 'acquisition_operations.account_item.account_category', 'client_operations.account_item.account_category');
+        $relations = [
+            'brand',
+            'seller_client',
+            'buyer_client',
+            'suplier',
+            'payment_status',
+            'carrier',
+            'pickup_state',
+            'client',
+            'client_operations.account_item.account_category',
+        ];
 
-        $account_department = AccountDepartment::find(1)->load('account_categories.account_items');
-        $purchase_categories = $account_department ? $account_department->account_categories : null;
+        if ($canViewSensitive) {
+            $relations[] = 'acquisition_operations.account_item.account_category';
+        }
+
+        $relations[] = 'financial_entries';
+        $vehicle->load($relations);
+
+        $financialEntries = $vehicle->financial_entries->sortByDesc('entry_date')->values();
+        $financialTotalCost = (float) $financialEntries->where('entry_type', 'cost')->sum('amount');
+        $financialTotalRevenue = (float) $financialEntries->where('entry_type', 'revenue')->sum('amount');
+        $financialBalance = $financialTotalRevenue - $financialTotalCost;
+        $showWorkshopSection = $this->isWorkshopState($vehicle);
+
+        $purchase_categories = collect();
+
+        if ($canViewSensitive) {
+            $account_department = AccountDepartment::find(1)->load('account_categories.account_items');
+            $purchase_categories = $account_department ? $account_department->account_categories : collect();
+        }
 
         $sale_department = AccountDepartment::find(3)->load('account_categories.account_items');
         $sale_categories = $sale_department ? $sale_department->account_categories : null;
 
         $payment_methods = PaymentMethod::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        return view('admin.vehicles.edit', compact('payment_methods', 'purchase_categories', 'sale_categories', 'general_states', 'brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers', 'vehicle'));
+        return view('admin.vehicles.edit', compact(
+            'payment_methods',
+            'purchase_categories',
+            'sale_categories',
+            'general_states',
+            'brands',
+            'carriers',
+            'clients',
+            'payment_statuses',
+            'pickup_states',
+            'supliers',
+            'vehicle',
+            'financialEntries',
+            'financialTotalCost',
+            'financialTotalRevenue',
+            'financialBalance',
+            'showWorkshopSection'
+        ));
     }
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle)
     {
-        $vehicle->update($request->all());
+        $payload = $request->all();
+
+        if (! $this->canViewFinancialSensitive()) {
+            foreach ($this->sensitiveVehicleFields() as $field) {
+                unset($payload[$field]);
+            }
+        }
+
+        $vehicle->update($payload);
 
         if (count($vehicle->documents) > 0) {
             foreach ($vehicle->documents as $media) {
@@ -299,9 +361,22 @@ class VehicleController extends Controller
     {
         abort_if(Gate::denies('vehicle_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $vehicle->load('general_state', 'brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client');
+        $vehicle->load('general_state', 'brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client', 'financial_entries');
 
-        return view('admin.vehicles.show', compact('vehicle'));
+        $financialEntries = $vehicle->financial_entries->sortByDesc('entry_date')->values();
+        $financialTotalCost = (float) $financialEntries->where('entry_type', 'cost')->sum('amount');
+        $financialTotalRevenue = (float) $financialEntries->where('entry_type', 'revenue')->sum('amount');
+        $financialBalance = $financialTotalRevenue - $financialTotalCost;
+        $showWorkshopSection = $this->isWorkshopState($vehicle);
+
+        return view('admin.vehicles.show', compact(
+            'vehicle',
+            'financialEntries',
+            'financialTotalCost',
+            'financialTotalRevenue',
+            'financialBalance',
+            'showWorkshopSection'
+        ));
     }
 
     public function destroy(Vehicle $vehicle)
@@ -338,6 +413,7 @@ class VehicleController extends Controller
 
     public function storeAccountOperation(Request $request, Vehicle $vehicle)
     {
+        $this->authorizeAccountOperation((int) $request->input('account_department_id'));
 
         $vehicle->account_operations()->create([
             'account_item_id' => $request->input('account_item_id'),
@@ -355,6 +431,8 @@ class VehicleController extends Controller
 
     public function updateValue(Request $request, AccountOperation $operation)
     {
+        $this->authorizeOperationChange($operation);
+
         $operation->update([
             'total' => $request->input('total')
         ]);
@@ -364,6 +442,8 @@ class VehicleController extends Controller
 
     public function destroyValue(AccountOperation $operation)
     {
+        $this->authorizeOperationChange($operation);
+
         $operation->delete();
 
         return response()->json(['success' => true]);
@@ -371,6 +451,8 @@ class VehicleController extends Controller
 
     public function getPayments(Vehicle $vehicle, $account_department_id)
     {
+        $this->authorizeAccountOperation((int) $account_department_id);
+
         if ($account_department_id == 1) {
             $ops = $vehicle->acquisition_operations()
                 ->with('account_item')
@@ -403,5 +485,56 @@ class VehicleController extends Controller
             'payments' => $payments,
             'balance' => $balance
         ]);
+    }
+
+    private function canViewFinancialSensitive(): bool
+    {
+        return Gate::allows('financial_sensitive_access');
+    }
+
+    private function sensitiveVehicleFields(): array
+    {
+        return [
+            'purchase_price',
+            'purchase_has_vat',
+            'purchase_vat_value',
+            'commission',
+            'iuc_price',
+            'tow_price',
+            'acquisition_notes',
+        ];
+    }
+
+    private function authorizeAccountOperation(int $accountDepartmentId): void
+    {
+        if ($accountDepartmentId !== 1) {
+            return;
+        }
+
+        abort_if(! $this->canViewFinancialSensitive(), Response::HTTP_FORBIDDEN, '403 Forbidden');
+    }
+
+    private function authorizeOperationChange(AccountOperation $operation): void
+    {
+        $operation->loadMissing('account_item.account_category');
+
+        $departmentId = (int) optional(optional($operation->account_item)->account_category)->account_department_id;
+
+        if ($departmentId !== 1) {
+            return;
+        }
+
+        abort_if(! $this->canViewFinancialSensitive(), Response::HTTP_FORBIDDEN, '403 Forbidden');
+    }
+
+    private function isWorkshopState(Vehicle $vehicle): bool
+    {
+        $stateName = optional($vehicle->general_state)->name;
+
+        if (! $stateName) {
+            return false;
+        }
+
+        return strcasecmp($stateName, 'OFICINA') === 0;
     }
 }

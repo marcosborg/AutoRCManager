@@ -120,6 +120,7 @@ class Vehicle extends Model implements HasMedia
         'deleted_at',
         'purchase_has_vat',
         'purchase_vat_value',
+        'acquisition_notes',
     ];
 
     protected $casts = [
@@ -348,5 +349,10 @@ class Vehicle extends Model implements HasMedia
     public function vehicle_groups()
     {
         return $this->belongsToMany(VehicleGroup::class, 'vehicle_group_vehicle');
+    }
+
+    public function financial_entries()
+    {
+        return $this->hasMany(VehicleFinancialEntry::class, 'vehicle_id');
     }
 }

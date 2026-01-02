@@ -9,6 +9,8 @@ use App\Models\Vehicle;
 use App\Models\Brand;
 use App\Models\GeneralState;
 use App\Models\Timelog;
+use Gate;
+use Symfony\Component\HttpFoundation\Response;
 
 class FinancialController extends Controller
 {
@@ -16,6 +18,8 @@ class FinancialController extends Controller
 
     public function index($vehicle_id)
     {
+        abort_if(Gate::denies('financial_sensitive_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
         $vehicle = Vehicle::find($vehicle_id)->load(
             'brand',
             'seller_client',

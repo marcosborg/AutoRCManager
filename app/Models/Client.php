@@ -65,4 +65,9 @@ class Client extends Model
     {
         return $this->belongsToMany(VehicleGroup::class, 'client_vehicle_group');
     }
+
+    public function ledger_entries()
+    {
+        return $this->hasMany(ClientLedgerEntry::class, 'client_id');
+    }
 }

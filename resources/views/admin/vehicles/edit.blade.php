@@ -178,12 +178,12 @@
                             </div>
                         </div>
 
-                        @can('aquisition_of_the_vehicle')
+                        @can('financial_sensitive_access')
                         <h4>Aquisição da viatura</h4>
                         @endcan
                         <hr>
                         <div class="row">
-                            @can('aquisition_of_the_vehicle')
+                            @can('financial_sensitive_access')
                             <div class="col-md-3">
                                 @can('superadmin')
                                 <div class="form-group {{ $errors->has('purchase_price') ? 'has-error' : '' }}">
@@ -239,6 +239,14 @@
                                         <span class="help-block" role="alert">{{ $errors->first('tow_price') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.tow_price_helper') }}</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('acquisition_notes') ? 'has-error' : '' }}">
+                                    <label for="acquisition_notes">Notas da aquisicao</label>
+                                    <textarea class="form-control" name="acquisition_notes" id="acquisition_notes">{{ old('acquisition_notes', $vehicle->acquisition_notes) }}</textarea>
+                                    @if($errors->has('acquisition_notes'))
+                                        <span class="help-block" role="alert">{{ $errors->first('acquisition_notes') }}</span>
+                                    @endif
+                                    <span class="help-block">Notas internas da aquisicao.</span>
                                 </div>
                                 <div class="form-group {{ $errors->has('suplier') ? 'has-error' : '' }}">
                                     <label for="suplier_id">{{ trans('cruds.vehicle.fields.suplier') }}</label>
@@ -344,7 +352,7 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.inicial_helper') }}</span>
                                 </div>
-                                @can('aquisition_of_the_vehicle')
+                                @can('financial_sensitive_access')
                                 <div class="form-group {{ $errors->has('invoice') ? 'has-error' : '' }}">
                                     <label for="invoice">{{ trans('cruds.vehicle.fields.invoice') }}</label>
                                     <div class="needsclick dropzone" id="invoice-dropzone">
@@ -912,6 +920,195 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if($showWorkshopSection)
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    Oficina
+                                </div>
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5><strong>Checklist</strong></h5>
+                                            <div class="checkbox">
+                                                <label style="font-weight: 400">
+                                                    <input type="checkbox" disabled {{ $vehicle->vehicle_manuals ? 'checked' : '' }}>
+                                                    {{ trans('cruds.vehicle.fields.vehicle_manuals') }}
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label style="font-weight: 400">
+                                                    <input type="checkbox" disabled {{ $vehicle->vehicle_keys ? 'checked' : '' }}>
+                                                    {{ trans('cruds.vehicle.fields.vehicle_keys') }}
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label style="font-weight: 400">
+                                                    <input type="checkbox" disabled {{ $vehicle->cables ? 'checked' : '' }}>
+                                                    {{ trans('cruds.vehicle.fields.cables') }}
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label style="font-weight: 400">
+                                                    <input type="checkbox" disabled {{ $vehicle->cables_2 ? 'checked' : '' }}>
+                                                    {{ trans('cruds.vehicle.fields.cables_2') }}
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <strong>{{ trans('cruds.vehicle.fields.first_key') }}:</strong> {{ $vehicle->first_key ?? '-' }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ trans('cruds.vehicle.fields.key') }}:</strong> {{ $vehicle->key ?? '-' }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ trans('cruds.vehicle.fields.manuals') }}:</strong> {{ $vehicle->manuals ?? '-' }}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5><strong>Documentos</strong></h5>
+                                            <div class="checkbox">
+                                                <label style="font-weight: 400">
+                                                    <input type="checkbox" disabled {{ $vehicle->vehicle_registration_document ? 'checked' : '' }}>
+                                                    {{ trans('cruds.vehicle.fields.vehicle_registration_document') }}
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label style="font-weight: 400">
+                                                    <input type="checkbox" disabled {{ $vehicle->vehicle_ownership_title ? 'checked' : '' }}>
+                                                    {{ trans('cruds.vehicle.fields.vehicle_ownership_title') }}
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label style="font-weight: 400">
+                                                    <input type="checkbox" disabled {{ $vehicle->tax_identification_card ? 'checked' : '' }}>
+                                                    {{ trans('cruds.vehicle.fields.tax_identification_card') }}
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label style="font-weight: 400">
+                                                    <input type="checkbox" disabled {{ $vehicle->copy_of_the_citizen_card ? 'checked' : '' }}>
+                                                    {{ trans('cruds.vehicle.fields.copy_of_the_citizen_card') }}
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label style="font-weight: 400">
+                                                    <input type="checkbox" disabled {{ $vehicle->copy_of_the_stamp_duty_receipt ? 'checked' : '' }}>
+                                                    {{ trans('cruds.vehicle.fields.copy_of_the_stamp_duty_receipt') }}
+                                                </label>
+                                            </div>
+                                            <div style="margin-top: 10px;">
+                                                @foreach($vehicle->documents as $media)
+                                                    <a href="{{ $media->getUrl() }}" target="_blank">{{ trans('global.view_file') }}</a>
+                                                @endforeach
+                                            </div>
+                                            <div style="margin-top: 5px;">
+                                                @foreach($vehicle->pdfs as $media)
+                                                    <a href="{{ $media->getUrl() }}" target="_blank">{{ trans('global.view_file') }}</a>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <h5><strong>Fotos a chegada</strong></h5>
+                                    <div>
+                                        @foreach($vehicle->inicial as $media)
+                                            <a href="{{ $media->getUrl() }}" target="_blank" style="display: inline-block; margin-right: 5px;">
+                                                <img src="{{ $media->getUrl('thumb') }}">
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                    <hr>
+                                    <h5><strong>Notas de venda</strong></h5>
+                                    <div>
+                                        {!! $vehicle->sale_notes !!}
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        @can('vehicle_financial_entry_access')
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    Financeiro detalhado
+                                    @can('vehicle_financial_entry_create')
+                                        <a class="btn btn-xs btn-success pull-right" href="{{ route('admin.vehicle-financial-entries.create', ['vehicle_id' => $vehicle->id]) }}">
+                                            Adicionar linha
+                                        </a>
+                                    @endcan
+                                </div>
+                                <div class="panel-body">
+                                    @if($financialEntries->isEmpty())
+                                        <p class="text-muted">Nenhuma linha financeira registada.</p>
+                                    @else
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Data</th>
+                                                        <th>Tipo</th>
+                                                        <th>Categoria</th>
+                                                        <th class="text-right">Valor</th>
+                                                        <th>Notas</th>
+                                                        <th>&nbsp;</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($financialEntries as $entry)
+                                                        <tr>
+                                                            <td>{{ $entry->entry_date }}</td>
+                                                            <td>{{ $entry->entry_type === 'cost' ? 'Custo' : 'Receita' }}</td>
+                                                            <td>{{ $entry->category }}</td>
+                                                            <td class="text-right">€{{ number_format((float) $entry->amount, 2, ',', '.') }}</td>
+                                                            <td>{{ $entry->notes }}</td>
+                                                            <td>
+                                                                @can('vehicle_financial_entry_show')
+                                                                    <a class="btn btn-xs btn-primary" href="{{ route('admin.vehicle-financial-entries.show', $entry->id) }}">
+                                                                        {{ trans('global.view') }}
+                                                                    </a>
+                                                                @endcan
+                                                                @can('vehicle_financial_entry_edit')
+                                                                    <a class="btn btn-xs btn-info" href="{{ route('admin.vehicle-financial-entries.edit', $entry->id) }}">
+                                                                        {{ trans('global.edit') }}
+                                                                    </a>
+                                                                @endcan
+                                                                @can('vehicle_financial_entry_delete')
+                                                                    <form action="{{ route('admin.vehicle-financial-entries.destroy', $entry->id) }}" method="POST" onsubmit="return confirm('{{ trans('global.areYouSure') }}');" style="display: inline-block;">
+                                                                        <input type="hidden" name="_method" value="DELETE">
+                                                                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                                                        <input type="submit" class="btn btn-xs btn-danger" value="{{ trans('global.delete') }}">
+                                                                    </form>
+                                                                @endcan
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @endif
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="well well-sm text-center">
+                                                <div><strong>Total custos</strong></div>
+                                                <div class="lead">€{{ number_format($financialTotalCost, 2, ',', '.') }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="well well-sm text-center">
+                                                <div><strong>Total receitas</strong></div>
+                                                <div class="lead">€{{ number_format($financialTotalRevenue, 2, ',', '.') }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="well well-sm text-center">
+                                                <div><strong>Balanço</strong></div>
+                                                <div class="lead">€{{ number_format($financialBalance, 2, ',', '.') }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endcan
 
                         <div class="form-group">
                             <button class="btn btn-danger" type="submit">

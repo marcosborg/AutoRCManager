@@ -253,6 +253,90 @@
             </div>
         </div>
 
+        @can('client_ledger_entry_access')
+            <hr>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Conta corrente
+                    @can('client_ledger_entry_create')
+                        <a class="btn btn-xs btn-success pull-right" href="{{ route('admin.client-ledger-entries.create', ['client_id' => $client->id]) }}">
+                            Adicionar movimento
+                        </a>
+                    @endcan
+                </div>
+                <div class="panel-body">
+                    @if($ledgerEntries->isEmpty())
+                        <p class="text-muted">Nenhum movimento registado.</p>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Tipo</th>
+                                        <th>Descricao</th>
+                                        <th>Viatura</th>
+                                        <th class="text-right">Valor</th>
+                                        <th>&nbsp;</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($ledgerEntries as $entry)
+                                        <tr>
+                                            <td>{{ $entry->entry_date }}</td>
+                                            <td>{{ $entry->entry_type === 'debit' ? 'Debito' : 'Credito' }}</td>
+                                            <td>{{ $entry->description }}</td>
+                                            <td>{{ $entry->vehicle->license ?? '-' }}</td>
+                                            <td class="text-right">€{{ number_format((float) $entry->amount, 2, ',', '.') }}</td>
+                                            <td>
+                                                @can('client_ledger_entry_show')
+                                                    <a class="btn btn-xs btn-primary" href="{{ route('admin.client-ledger-entries.show', $entry->id) }}">
+                                                        {{ trans('global.view') }}
+                                                    </a>
+                                                @endcan
+                                                @can('client_ledger_entry_edit')
+                                                    <a class="btn btn-xs btn-info" href="{{ route('admin.client-ledger-entries.edit', $entry->id) }}">
+                                                        {{ trans('global.edit') }}
+                                                    </a>
+                                                @endcan
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="well well-sm text-center">
+                                <div><strong>Total debitos</strong></div>
+                                <div class="lead">€{{ number_format($ledgerTotalDebits, 2, ',', '.') }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="well well-sm text-center">
+                                <div><strong>Total creditos</strong></div>
+                                <div class="lead">€{{ number_format($ledgerTotalCredits, 2, ',', '.') }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="well well-sm text-center">
+                                <div><strong>Saldo</strong></div>
+                                <div class="lead">€{{ number_format($ledgerBalance, 2, ',', '.') }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="well well-sm text-center">
+                                <div><strong>Em falta</strong></div>
+                                <div class="lead">€{{ number_format($ledgerOutstanding, 2, ',', '.') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endcan
+
         {{-- Lista de viaturas deste cliente --}}
         @if($client->vehicles->count())
             <hr>

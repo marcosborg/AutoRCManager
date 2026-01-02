@@ -142,6 +142,14 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('account-operations', [App\Http\Controllers\Admin\AccountOperationController::class, 'storeAjax'])->name('account-operations.storeAjax');
     Route::delete('account-operations/{operation}', [App\Http\Controllers\Admin\AccountOperationController::class, 'delete'])->name('account-operations.destroy');
 
+    // Client Ledger Entries
+    Route::delete('client-ledger-entries/destroy', 'ClientLedgerEntryController@massDestroy')->name('client-ledger-entries.massDestroy');
+    Route::resource('client-ledger-entries', 'ClientLedgerEntryController');
+
+    // Vehicle Financial Entries
+    Route::delete('vehicle-financial-entries/destroy', 'VehicleFinancialEntryController@massDestroy')->name('vehicle-financial-entries.massDestroy');
+    Route::resource('vehicle-financial-entries', 'VehicleFinancialEntryController');
+
     Route::get('financial/{vehicle_id}', [App\Http\Controllers\Admin\FinancialController::class, 'index'])->name('financial.index');
 
     // Audit Logs

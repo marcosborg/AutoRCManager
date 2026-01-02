@@ -286,6 +286,28 @@
                                 </a>
                             </li>
                         @endcan
+                        @can('client_ledger_entry_access')
+                            <li class="{{ request()->is("admin/client-ledger-entries") || request()->is("admin/client-ledger-entries/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.client-ledger-entries.index") }}">
+                                    <i class="fa-fw fas fa-book">
+
+                                    </i>
+                                    <span>{{ trans('cruds.clientLedgerEntry.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
+                        @can('vehicle_financial_entry_access')
+                            <li class="{{ request()->is("admin/vehicle-financial-entries") || request()->is("admin/vehicle-financial-entries/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.vehicle-financial-entries.index") }}">
+                                    <i class="fa-fw fas fa-receipt">
+
+                                    </i>
+                                    <span>{{ trans('cruds.vehicleFinancialEntry.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
                         @can('account_configuration_access')
                             <li class="treeview">
                                 <a href="#">

@@ -31,6 +31,33 @@ class AuthGates
             });
         }
 
+        $financeUserNames = ['rita', 'rafael'];
+        $financePermissionTitles = ['financial_sensitive_access', 'aquisition_of_the_vehicle'];
+        $financeRoleIds = [];
+
+        foreach ($financePermissionTitles as $title) {
+            $financeRoleIds = array_merge($financeRoleIds, $permissionsArray[$title] ?? []);
+        }
+
+        $financeRoleIds = array_unique($financeRoleIds);
+
+        $financeGate = function ($user) use ($financeUserNames, $financeRoleIds) {
+            $name = strtolower(trim((string) $user->name));
+
+            if (in_array($name, $financeUserNames, true)) {
+                return true;
+            }
+
+            if (empty($financeRoleIds)) {
+                return false;
+            }
+
+            return count(array_intersect($user->roles->pluck('id')->toArray(), $financeRoleIds)) > 0;
+        };
+
+        Gate::define('financial_sensitive_access', $financeGate);
+        Gate::define('aquisition_of_the_vehicle', $financeGate);
+
         return $next($request);
     }
 }

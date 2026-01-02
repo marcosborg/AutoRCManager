@@ -171,6 +171,10 @@ class StoreVehicleRequest extends FormRequest
                 'nullable',
                 'numeric',
             ],
+            'acquisition_notes' => [
+                'nullable',
+                'string',
+            ],
         ];
     }
 }

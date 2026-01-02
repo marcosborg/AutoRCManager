@@ -141,9 +141,24 @@ class ClientController extends Controller
 
         $company_countries = Country::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $client->load('country', 'company_country')->load('vehicles');
+        $client->load('country', 'company_country', 'vehicles', 'ledger_entries');
 
-        return view('admin.clients.edit', compact('client', 'company_countries', 'countries'));
+        $ledgerEntries = $client->ledger_entries->sortByDesc('entry_date')->values();
+        $ledgerTotalDebits = (float) $ledgerEntries->where('entry_type', 'debit')->sum('amount');
+        $ledgerTotalCredits = (float) $ledgerEntries->where('entry_type', 'credit')->sum('amount');
+        $ledgerBalance = $ledgerTotalCredits - $ledgerTotalDebits;
+        $ledgerOutstanding = max($ledgerTotalDebits - $ledgerTotalCredits, 0);
+
+        return view('admin.clients.edit', compact(
+            'client',
+            'company_countries',
+            'countries',
+            'ledgerEntries',
+            'ledgerTotalDebits',
+            'ledgerTotalCredits',
+            'ledgerBalance',
+            'ledgerOutstanding'
+        ));
     }
 
     public function update(UpdateClientRequest $request, Client $client)
@@ -157,14 +172,30 @@ class ClientController extends Controller
     {
         abort_if(Gate::denies('client_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $client->load('country', 'company_country');
+        $client->load('country', 'company_country', 'ledger_entries');
 
-        return view('admin.clients.show', compact('client'));
+        $ledgerEntries = $client->ledger_entries->sortByDesc('entry_date')->values();
+        $ledgerTotalDebits = (float) $ledgerEntries->where('entry_type', 'debit')->sum('amount');
+        $ledgerTotalCredits = (float) $ledgerEntries->where('entry_type', 'credit')->sum('amount');
+        $ledgerBalance = $ledgerTotalCredits - $ledgerTotalDebits;
+        $ledgerOutstanding = max($ledgerTotalDebits - $ledgerTotalCredits, 0);
+
+        return view('admin.clients.show', compact(
+            'client',
+            'ledgerEntries',
+            'ledgerTotalDebits',
+            'ledgerTotalCredits',
+            'ledgerBalance',
+            'ledgerOutstanding'
+        ));
     }
 
     public function reconciliation(Client $client)
     {
         abort_if(Gate::denies('client_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $canViewSensitive = $this->canViewFinancialSensitive();
+        $clientViewMode = request()->boolean('client_view') || ! $canViewSensitive;
 
         $client->load([
             'vehicles.brand',
@@ -181,15 +212,24 @@ class ClientController extends Controller
         $vehicles->load('vehicle_groups');
         $vehicleIds = $vehicles->pluck('id')->filter();
 
-        $operations = $vehicleIds->isEmpty()
-            ? collect()
-            : AccountOperation::with(['account_item.account_category', 'vehicle'])
-                ->whereIn('vehicle_id', $vehicleIds)
-                ->get();
+        if ($vehicleIds->isEmpty()) {
+            $operations = collect();
+        } else {
+            $operationsQuery = AccountOperation::with(['account_item.account_category', 'vehicle'])
+                ->whereIn('vehicle_id', $vehicleIds);
 
-        $operationsByDepartment = $this->splitOperationsByDepartment($operations);
+            if ($clientViewMode) {
+                $operationsQuery->whereHas('account_item.account_category', function ($query) {
+                    $query->where('account_department_id', self::DEPARTMENT_SALE);
+                });
+            }
 
-        $timelogs = $vehicleIds->isEmpty()
+            $operations = $operationsQuery->get();
+        }
+
+        $operationsByDepartment = $this->splitOperationsByDepartment($operations, $clientViewMode);
+
+        $timelogs = $clientViewMode || $vehicleIds->isEmpty()
             ? collect()
             : Timelog::with(['user', 'vehicle'])
                 ->whereIn('vehicle_id', $vehicleIds)
@@ -199,9 +239,9 @@ class ClientController extends Controller
 
         $hourPrice = 25;
 
-        $financial = $this->calculateFinancialSummaryForVehicles($vehicles, $operationsByDepartment, $timelogs, $hourPrice);
-        $vehicleBreakdown = $this->buildVehicleBreakdown($vehicles, $operations, $timelogs, $hourPrice);
-        $groupBreakdown = $this->buildGroupBreakdown($client->vehicle_groups, $vehicles, $operations, $timelogs, $hourPrice);
+        $financial = $this->calculateFinancialSummaryForVehicles($vehicles, $operationsByDepartment, $timelogs, $hourPrice, $clientViewMode);
+        $vehicleBreakdown = $this->buildVehicleBreakdown($vehicles, $operations, $timelogs, $hourPrice, $clientViewMode);
+        $groupBreakdown = $this->buildGroupBreakdown($client->vehicle_groups, $vehicles, $operations, $timelogs, $hourPrice, $clientViewMode);
 
         return view('admin.clients.reconciliation', compact(
             'client',
@@ -209,7 +249,9 @@ class ClientController extends Controller
             'operationsByDepartment',
             'vehicleBreakdown',
             'groupBreakdown',
-            'hourPrice'
+            'hourPrice',
+            'clientViewMode',
+            'canViewSensitive'
         ));
     }
 
@@ -233,8 +275,16 @@ class ClientController extends Controller
         return response(null, Response::HTTP_NO_CONTENT);
     }
 
-    private function splitOperationsByDepartment(Collection $operations): array
+    private function splitOperationsByDepartment(Collection $operations, bool $clientViewMode = false): array
     {
+        if ($clientViewMode) {
+            return [
+                'aquisition' => collect(),
+                'garage' => collect(),
+                'sale' => $this->filterOperationsByDepartment($operations, self::DEPARTMENT_SALE),
+            ];
+        }
+
         return [
             'aquisition' => $this->filterOperationsByDepartment($operations, self::DEPARTMENT_PURCHASE),
             'garage' => $this->filterOperationsByDepartment($operations, self::DEPARTMENT_GARAGE),
@@ -251,15 +301,8 @@ class ClientController extends Controller
         })->values();
     }
 
-    private function calculateFinancialSummaryForVehicles(Collection $vehicles, array $operationsByDepartment, Collection $timelogs, int $hourPrice): array
+    private function calculateFinancialSummaryForVehicles(Collection $vehicles, array $operationsByDepartment, Collection $timelogs, int $hourPrice, bool $clientViewMode = false): array
     {
-        $commissionTotal = (float) $vehicles->sum(fn($vehicle) => $vehicle->commission ?? 0);
-        $purchasePrice = (float) $vehicles->sum(fn($vehicle) => $vehicle->purchase_price ?? 0) + $commissionTotal;
-        $purchaseTotal = (float) ($operationsByDepartment['aquisition']->sum('total') ?? 0) + $commissionTotal;
-        $purchaseBalance = $purchasePrice - $purchaseTotal;
-
-        $garageTotal = (float) ($operationsByDepartment['garage']->sum('total') ?? 0);
-
         $finalSalesTarget = (float) $vehicles->sum(function ($vehicle) {
             return (float) ($vehicle->pvp ?? 0)
                 + (float) ($vehicle->sales_iuc ?? 0)
@@ -270,6 +313,31 @@ class ClientController extends Controller
 
         $saleTotal = (float) ($operationsByDepartment['sale']->sum('total') ?? 0);
         $saleBalance = $finalSalesTarget - $saleTotal;
+
+        if ($clientViewMode) {
+            return [
+                'purchasePrice' => 0,
+                'purchaseTotal' => 0,
+                'purchaseBalance' => 0,
+                'garageTotal' => 0,
+                'finalSalesTarget' => $finalSalesTarget,
+                'saleTotal' => $saleTotal,
+                'saleBalance' => $saleBalance,
+                'totalMinutes' => 0,
+                'labourCost' => 0,
+                'invested' => 0,
+                'profit' => 0,
+                'roi' => 0,
+                'theoreticalProfit' => 0,
+            ];
+        }
+
+        $commissionTotal = (float) $vehicles->sum(fn($vehicle) => $vehicle->commission ?? 0);
+        $purchasePrice = (float) $vehicles->sum(fn($vehicle) => $vehicle->purchase_price ?? 0) + $commissionTotal;
+        $purchaseTotal = (float) ($operationsByDepartment['aquisition']->sum('total') ?? 0) + $commissionTotal;
+        $purchaseBalance = $purchasePrice - $purchaseTotal;
+
+        $garageTotal = (float) ($operationsByDepartment['garage']->sum('total') ?? 0);
 
         $totalMinutes = (int) $timelogs->sum('rounded_minutes');
         $labourCost = ($totalMinutes / 60) * $hourPrice;
@@ -296,7 +364,7 @@ class ClientController extends Controller
         ];
     }
 
-    private function buildVehicleBreakdown(Collection $vehicles, Collection $operations, Collection $timelogs, int $hourPrice): Collection
+    private function buildVehicleBreakdown(Collection $vehicles, Collection $operations, Collection $timelogs, int $hourPrice, bool $clientViewMode = false): Collection
     {
         $operationsByVehicle = $operations->groupBy('vehicle_id');
         $timelogsByVehicle = $timelogs->groupBy('vehicle_id');
@@ -308,7 +376,6 @@ class ClientController extends Controller
             $garageOps = $this->filterOperationsByDepartment($ops, self::DEPARTMENT_GARAGE);
             $saleOps = $this->filterOperationsByDepartment($ops, self::DEPARTMENT_SALE);
 
-            $commission = (float) ($vehicle->commission ?? 0);
             $saleTarget = (float) ($vehicle->pvp ?? 0)
                 + (float) ($vehicle->sales_iuc ?? 0)
                 + (float) ($vehicle->sales_tow ?? 0)
@@ -319,8 +386,29 @@ class ClientController extends Controller
             $minutes = (int) $vehicleTimelogs->sum('rounded_minutes');
             $labourCost = ($minutes / 60) * $hourPrice;
 
-            $invested = (float) $purchaseOps->sum('total') + $commission + (float) $garageOps->sum('total') + $labourCost;
             $saleTotal = (float) $saleOps->sum('total');
+            $saleBalance = $saleTarget - $saleTotal;
+
+            if ($clientViewMode) {
+                return [
+                    'vehicle' => $vehicle,
+                    'purchase_price' => 0,
+                    'purchase_total' => 0,
+                    'purchase_balance' => 0,
+                    'garage_total' => 0,
+                    'sale_target' => $saleTarget,
+                    'sale_total' => $saleTotal,
+                    'sale_balance' => $saleBalance,
+                    'minutes' => 0,
+                    'labour_cost' => 0,
+                    'invested' => 0,
+                    'profit' => 0,
+                    'groups' => $vehicle->vehicle_groups->pluck('name')->filter()->values(),
+                ];
+            }
+
+            $commission = (float) ($vehicle->commission ?? 0);
+            $invested = (float) $purchaseOps->sum('total') + $commission + (float) $garageOps->sum('total') + $labourCost;
 
             return [
                 'vehicle' => $vehicle,
@@ -330,7 +418,7 @@ class ClientController extends Controller
                 'garage_total' => (float) $garageOps->sum('total'),
                 'sale_target' => $saleTarget,
                 'sale_total' => $saleTotal,
-                'sale_balance' => $saleTarget - $saleTotal,
+                'sale_balance' => $saleBalance,
                 'minutes' => $minutes,
                 'labour_cost' => $labourCost,
                 'invested' => $invested,
@@ -342,7 +430,7 @@ class ClientController extends Controller
             ->values();
     }
 
-    private function buildGroupBreakdown(Collection $vehicleGroups, Collection $vehicles, Collection $operations, Collection $timelogs, int $hourPrice): Collection
+    private function buildGroupBreakdown(Collection $vehicleGroups, Collection $vehicles, Collection $operations, Collection $timelogs, int $hourPrice, bool $clientViewMode = false): Collection
     {
         $allowedIds = $vehicles->pluck('id')->filter()->unique();
         $operationsByVehicle = $operations->groupBy('vehicle_id');
@@ -356,13 +444,13 @@ class ClientController extends Controller
                 ? collect()
                 : $vehicleIds->flatMap(fn($id) => $operationsByVehicle->get($id, collect()));
 
-            $operationsByDepartment = $this->splitOperationsByDepartment($ops);
+            $operationsByDepartment = $this->splitOperationsByDepartment($ops, $clientViewMode);
 
             $timelogs = $vehicleIds->isEmpty()
                 ? collect()
                 : $vehicleIds->flatMap(fn($id) => $timelogsByVehicle->get($id, collect()));
 
-            $financial = $this->calculateFinancialSummaryForVehicles($vehicles, $operationsByDepartment, $timelogs, $hourPrice);
+            $financial = $this->calculateFinancialSummaryForVehicles($vehicles, $operationsByDepartment, $timelogs, $hourPrice, $clientViewMode);
 
             return [
                 'group' => $group,
@@ -370,5 +458,10 @@ class ClientController extends Controller
                 'financial' => $financial,
             ];
         });
+    }
+
+    private function canViewFinancialSensitive(): bool
+    {
+        return Gate::allows('financial_sensitive_access');
     }
 }
