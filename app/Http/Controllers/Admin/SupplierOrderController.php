@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\ReceiveSupplierOrderItemRequest;
 use App\Http\Requests\MassDestroySupplierOrderRequest;
 use App\Http\Requests\StoreSupplierOrderItemRequest;
 use App\Http\Requests\StoreSupplierOrderRequest;
 use App\Http\Requests\UpdateSupplierOrderRequest;
+use App\Http\Requests\UpdateSupplierOrderItemRequest;
 use App\Models\AccountCategory;
 use App\Models\AccountItem;
 use App\Models\Repair;
@@ -20,6 +22,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SupplierOrderController extends Controller
 {
+    use MediaUploadingTrait;
     public function index()
     {
         abort_if(Gate::denies('repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -57,7 +60,12 @@ class SupplierOrderController extends Controller
 
     public function store(StoreSupplierOrderRequest $request)
     {
-        $order = SupplierOrder::create($request->all());
+        $data = $request->except(['invoice_attachment']);
+        $order = SupplierOrder::create($data);
+
+        if ($request->hasFile('invoice_attachment')) {
+            $order->addMediaFromRequest('invoice_attachment')->toMediaCollection('invoice_attachment');
+        }
 
         return redirect()->route('admin.supplier-orders.edit', $order->id);
     }
@@ -68,7 +76,7 @@ class SupplierOrderController extends Controller
 
         $supliers = Suplier::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $repairs = Repair::pluck('id', 'id')->prepend(trans('global.pleaseSelect'), '');
-        $supplierOrder->load(['suplier', 'repair', 'items.account_category']);
+        $supplierOrder->load(['suplier', 'repair', 'items.account_category', 'media']);
 
         $account_categories = AccountCategory::where('account_department_id', 2)->get();
 
@@ -77,7 +85,16 @@ class SupplierOrderController extends Controller
 
     public function update(UpdateSupplierOrderRequest $request, SupplierOrder $supplierOrder)
     {
-        $supplierOrder->update($request->all());
+        $supplierOrder->update($request->except(['invoice_attachment', 'clear_invoice_attachment']));
+
+        if ($request->boolean('clear_invoice_attachment')) {
+            $supplierOrder->clearMediaCollection('invoice_attachment');
+        }
+
+        if ($request->hasFile('invoice_attachment')) {
+            $supplierOrder->clearMediaCollection('invoice_attachment');
+            $supplierOrder->addMediaFromRequest('invoice_attachment')->toMediaCollection('invoice_attachment');
+        }
 
         return redirect()->route('admin.supplier-orders.edit', $supplierOrder->id);
     }
@@ -86,7 +103,7 @@ class SupplierOrderController extends Controller
     {
         abort_if(Gate::denies('repair_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $supplierOrder->load(['suplier', 'repair', 'items.account_category']);
+        $supplierOrder->load(['suplier', 'repair', 'items.account_category', 'media']);
 
         return view('admin.supplierOrders.show', compact('supplierOrder'));
     }
@@ -118,6 +135,19 @@ class SupplierOrderController extends Controller
             'account_category_id' => $request->input('account_category_id'),
             'item_name' => $request->input('item_name'),
             'qty_ordered' => $request->input('qty_ordered'),
+            'unit_price' => $request->input('unit_price'),
+        ]);
+
+        return back();
+    }
+
+    public function updateItem(UpdateSupplierOrderItemRequest $request, SupplierOrderItem $item)
+    {
+        $item->update([
+            'account_category_id' => $request->input('account_category_id'),
+            'item_name' => $request->input('item_name'),
+            'qty_ordered' => $request->input('qty_ordered'),
+            'qty_received' => $request->input('qty_received', 0),
             'unit_price' => $request->input('unit_price'),
         ]);
 

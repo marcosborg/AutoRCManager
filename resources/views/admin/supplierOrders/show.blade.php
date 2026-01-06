@@ -37,6 +37,28 @@
                                     <th>{{ trans('cruds.supplierOrder.fields.notes') }}</th>
                                     <td>{{ $supplierOrder->notes }}</td>
                                 </tr>
+                                <tr>
+                                    <th>Valor fatura confirmado</th>
+                                    <td>
+                                        {{ $supplierOrder->invoice_total_confirmed !== null ? number_format((float) $supplierOrder->invoice_total_confirmed, 2, ',', '.') : '-' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Valor peças confirmado</th>
+                                    <td>
+                                        {{ $supplierOrder->parts_total_confirmed !== null ? number_format((float) $supplierOrder->parts_total_confirmed, 2, ',', '.') : '-' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Fatura anexada</th>
+                                    <td>
+                                        @if($supplierOrder->invoice_attachment)
+                                            <a href="{{ $supplierOrder->invoice_attachment->getUrl() }}" target="_blank">Ver fatura</a>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
 

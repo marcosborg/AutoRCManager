@@ -110,6 +110,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('supplier-orders/destroy', 'SupplierOrderController@massDestroy')->name('supplier-orders.massDestroy');
     Route::get('supplier-orders/summary', 'SupplierOrderController@summary')->name('supplier-orders.summary');
     Route::post('supplier-orders/items', 'SupplierOrderController@storeItem')->name('supplier-orders.items.store');
+    Route::put('supplier-orders/items/{item}', 'SupplierOrderController@updateItem')->name('supplier-orders.items.update');
     Route::post('supplier-orders/items/{item}/receive', 'SupplierOrderController@receiveItem')->name('supplier-orders.items.receive');
     Route::resource('supplier-orders', 'SupplierOrderController');
 

@@ -33,6 +33,21 @@ class StoreSupplierOrderRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'invoice_total_confirmed' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'parts_total_confirmed' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'invoice_attachment' => [
+                'nullable',
+                'file',
+                'max:10240',
+            ],
         ];
     }
 }

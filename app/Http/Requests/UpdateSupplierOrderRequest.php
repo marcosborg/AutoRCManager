@@ -33,6 +33,25 @@ class UpdateSupplierOrderRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'invoice_total_confirmed' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'parts_total_confirmed' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'invoice_attachment' => [
+                'nullable',
+                'file',
+                'max:10240',
+            ],
+            'clear_invoice_attachment' => [
+                'nullable',
+                'boolean',
+            ],
         ];
     }
 }

@@ -6,10 +6,12 @@ use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class SupplierOrder extends Model
+class SupplierOrder extends Model implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
 
     public $table = 'supplier_orders';
 
@@ -24,6 +26,8 @@ class SupplierOrder extends Model
         'repair_id',
         'order_date',
         'notes',
+        'invoice_total_confirmed',
+        'parts_total_confirmed',
         'created_at',
         'updated_at',
     ];
@@ -46,6 +50,11 @@ class SupplierOrder extends Model
     public function items()
     {
         return $this->hasMany(SupplierOrderItem::class, 'supplier_order_id');
+    }
+
+    public function getInvoiceAttachmentAttribute()
+    {
+        return $this->getMedia('invoice_attachment')->last();
     }
 
     public function getOrderDateAttribute($value)

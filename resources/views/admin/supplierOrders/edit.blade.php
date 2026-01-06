@@ -48,6 +48,38 @@
                                 <span class="help-block" role="alert">{{ $errors->first('notes') }}</span>
                             @endif
                         </div>
+                        <div class="form-group {{ $errors->has('invoice_total_confirmed') ? 'has-error' : '' }}">
+                            <label for="invoice_total_confirmed">Valor da fatura confirmado</label>
+                            <input class="form-control" type="number" step="0.01" name="invoice_total_confirmed" id="invoice_total_confirmed" value="{{ old('invoice_total_confirmed', $supplierOrder->invoice_total_confirmed) }}">
+                            @if($errors->has('invoice_total_confirmed'))
+                                <span class="help-block" role="alert">{{ $errors->first('invoice_total_confirmed') }}</span>
+                            @endif
+                        </div>
+                        <div class="form-group {{ $errors->has('parts_total_confirmed') ? 'has-error' : '' }}">
+                            <label for="parts_total_confirmed">Valor das peças confirmado</label>
+                            <input class="form-control" type="number" step="0.01" name="parts_total_confirmed" id="parts_total_confirmed" value="{{ old('parts_total_confirmed', $supplierOrder->parts_total_confirmed) }}">
+                            @if($errors->has('parts_total_confirmed'))
+                                <span class="help-block" role="alert">{{ $errors->first('parts_total_confirmed') }}</span>
+                            @endif
+                        </div>
+                        <div class="form-group {{ $errors->has('invoice_attachment') ? 'has-error' : '' }}">
+                            <label for="invoice_attachment">Fatura (anexo)</label>
+                            <input class="form-control" type="file" name="invoice_attachment" id="invoice_attachment">
+                            @if($supplierOrder->invoice_attachment)
+                                <p class="help-block" style="margin-top:10px;">
+                                    <a href="{{ $supplierOrder->invoice_attachment->getUrl() }}" target="_blank">Ver fatura atual</a>
+                                </p>
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" name="clear_invoice_attachment" value="1">
+                                        Remover fatura atual
+                                    </label>
+                                </div>
+                            @endif
+                            @if($errors->has('invoice_attachment'))
+                                <span class="help-block" role="alert">{{ $errors->first('invoice_attachment') }}</span>
+                            @endif
+                        </div>
                         <div class="form-group">
                             <button class="btn btn-danger" type="submit">
                                 {{ trans('global.save') }}
@@ -66,6 +98,26 @@
                     Itens da nota
                 </div>
                 <div class="panel-body">
+                    @php
+                        $orderedValue = $supplierOrder->items->reduce(function ($carry, $item) {
+                            return $carry + ((float) $item->qty_ordered * (float) ($item->unit_price ?? 0));
+                        }, 0);
+                        $receivedValue = $supplierOrder->items->reduce(function ($carry, $item) {
+                            return $carry + ((float) $item->qty_received * (float) ($item->unit_price ?? 0));
+                        }, 0);
+                        $confirmedInvoice = (float) ($supplierOrder->invoice_total_confirmed ?? 0);
+                        $confirmedParts = (float) ($supplierOrder->parts_total_confirmed ?? 0);
+                    @endphp
+                    <div class="alert alert-info">
+                        <div><strong>Total calculado (Qtd encomendada x Preço):</strong> {{ number_format($orderedValue, 2, ',', '.') }}</div>
+                        <div><strong>Total calculado (Qtd recebida x Preço):</strong> {{ number_format($receivedValue, 2, ',', '.') }}</div>
+                        <div><strong>Valor fatura confirmado:</strong> {{ $supplierOrder->invoice_total_confirmed !== null ? number_format($confirmedInvoice, 2, ',', '.') : '-' }}</div>
+                        <div><strong>Valor peças confirmado:</strong> {{ $supplierOrder->parts_total_confirmed !== null ? number_format($confirmedParts, 2, ',', '.') : '-' }}</div>
+                        @if($supplierOrder->invoice_total_confirmed !== null && $supplierOrder->parts_total_confirmed !== null)
+                            <div><strong>Diferença confirmada:</strong> {{ number_format($confirmedInvoice - $confirmedParts, 2, ',', '.') }}</div>
+                        @endif
+                    </div>
+
                     <form method="POST" action="{{ route('admin.supplier-orders.items.store') }}">
                         @csrf
                         <input type="hidden" name="supplier_order_id" value="{{ $supplierOrder->id }}">
@@ -103,31 +155,53 @@
                         <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
-                                    <th>Categoria</th>
+                                    <th style="width: 15%;">Categoria</th>
                                     <th>Item</th>
-                                    <th class="text-right">Qtd</th>
-                                    <th class="text-right">Recebido</th>
-                                    <th class="text-right">Preco</th>
-                                    <th>&nbsp;</th>
+                                    <th class="text-right" style="width: 10%;">Qtd encomendada</th>
+                                    <th class="text-right" style="width: 10%;">Qtd recebida</th>
+                                    <th class="text-right" style="width: 10%;">Preco</th>
+                                    <th style="width: 25%;">&nbsp;</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($supplierOrder->items as $item)
+                                    @php $formId = 'item-update-' . $item->id; @endphp
                                     <tr>
-                                        <td>{{ $item->account_category->name ?? '-' }}</td>
-                                        <td>{{ $item->item_name }}</td>
-                                        <td class="text-right">{{ number_format((float) $item->qty_ordered, 2, ',', '.') }}</td>
-                                        <td class="text-right">{{ number_format((float) $item->qty_received, 2, ',', '.') }}</td>
-                                        <td class="text-right">
-                                            {{ $item->unit_price !== null ? number_format((float) $item->unit_price, 2, ',', '.') : '-' }}
+                                        <td>
+                                            <select name="account_category_id" class="form-control input-sm" form="{{ $formId }}">
+                                                @foreach ($account_categories as $account_category)
+                                                    <option value="{{ $account_category->id }}" {{ (int) $item->account_category_id === (int) $account_category->id ? 'selected' : '' }}>
+                                                        {{ $account_category->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </td>
                                         <td>
-                                            <form method="POST" action="{{ route('admin.supplier-orders.items.receive', $item->id) }}" style="display: inline-block;">
+                                            <input type="text" name="item_name" class="form-control input-sm" form="{{ $formId }}" value="{{ $item->item_name }}">
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" name="qty_ordered" class="form-control input-sm text-right" form="{{ $formId }}" value="{{ $item->qty_ordered }}">
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" name="qty_received" class="form-control input-sm text-right" form="{{ $formId }}" value="{{ $item->qty_received }}">
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" name="unit_price" class="form-control input-sm text-right" form="{{ $formId }}" value="{{ $item->unit_price }}">
+                                        </td>
+                                        <td>
+                                            <form id="{{ $formId }}" method="POST" action="{{ route('admin.supplier-orders.items.update', $item->id) }}" style="display:none;">
                                                 @csrf
-                                                <div class="input-group input-group-sm" style="width: 180px;">
+                                                @method('PUT')
+                                            </form>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button type="submit" form="{{ $formId }}" class="btn btn-primary">Guardar</button>
+                                            </div>
+                                            <form method="POST" action="{{ route('admin.supplier-orders.items.receive', $item->id) }}" style="display: inline-block; margin-left:10px;">
+                                                @csrf
+                                                <div class="input-group input-group-sm" style="width: 200px;">
                                                     <input type="number" step="0.01" name="qty_received" class="form-control" placeholder="Dar baixa">
                                                     <span class="input-group-btn">
-                                                        <button class="btn btn-primary" type="submit">Baixar</button>
+                                                        <button class="btn btn-default" type="submit">Baixar</button>
                                                     </span>
                                                 </div>
                                             </form>
