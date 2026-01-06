@@ -641,6 +641,8 @@ return [
             'obs_2_helper'                                              => ' ',
             'timestamp'                                                 => 'Data e hora',
             'timestamp_helper'                                          => ' ',
+            'expected_completion_date'                                  => 'Data previsível',
+            'expected_completion_date_helper'                           => ' ',
             'name'                                                      => 'Assinatura',
             'name_helper'                                               => 'Escreva o seu nome para confirmar assinatura',
             'repair_state'                                              => 'Estado da reparação',

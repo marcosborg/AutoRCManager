@@ -1548,6 +1548,14 @@
                                         </div>
                                     </div>
                                     <div class="col-md-6">
+                                        <div class="form-group {{ $errors->has('expected_completion_date') ? 'has-error' : '' }}">
+                                            <label for="expected_completion_date">{{ trans('cruds.repair.fields.expected_completion_date') }}</label>
+                                            <input class="form-control date" type="text" name="expected_completion_date" id="expected_completion_date" value="{{ old('expected_completion_date', $repair->expected_completion_date) }}">
+                                            @if($errors->has('expected_completion_date'))
+                                            <span class="help-block" role="alert">{{ $errors->first('expected_completion_date') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.expected_completion_date_helper') }}</span>
+                                        </div>
                                         <div class="form-group {{ $errors->has('timestamp') ? 'has-error' : '' }}">
                                             <label for="timestamp">{{ trans('cruds.repair.fields.timestamp') }}</label>
                                             <input class="form-control datetime" type="text" name="timestamp" id="timestamp" value="{{ old('timestamp', $repair->timestamp) }}">

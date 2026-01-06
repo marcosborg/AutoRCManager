@@ -779,6 +779,14 @@
                                 </tr>
                                 <tr>
                                     <th>
+                                        {{ trans('cruds.repair.fields.expected_completion_date') }}
+                                    </th>
+                                    <td>
+                                        {{ $repair->expected_completion_date }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
                                         {{ trans('cruds.repair.fields.name') }}
                                     </th>
                                     <td>

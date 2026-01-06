@@ -123,6 +123,7 @@ class Repair extends Model implements HasMedia
         'check_gearbox_oil',
         'check_gearbox_oil_text',
         'obs_2',
+        'expected_completion_date',
         'timestamp',
         'name',
         'repair_state_id',
@@ -231,9 +232,19 @@ class Repair extends Model implements HasMedia
         return $value ? Carbon::createFromFormat('Y-m-d H:i:s', $value)->format(config('panel.date_format') . ' ' . config('panel.time_format')) : null;
     }
 
+    public function getExpectedCompletionDateAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format(config('panel.date_format')) : null;
+    }
+
     public function setTimestampAttribute($value)
     {
         $this->attributes['timestamp'] = $value ? Carbon::createFromFormat(config('panel.date_format') . ' ' . config('panel.time_format'), $value)->format('Y-m-d H:i:s') : null;
+    }
+
+    public function setExpectedCompletionDateAttribute($value)
+    {
+        $this->attributes['expected_completion_date'] = $value ? Carbon::createFromFormat(config('panel.date_format'), $value)->format('Y-m-d') : null;
     }
 
     public function repair_state()

@@ -203,6 +203,10 @@ class StoreRepairRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'expected_completion_date' => [
+                'date_format:' . config('panel.date_format'),
+                'nullable',
+            ],
             'timestamp' => [
                 'date_format:' . config('panel.date_format') . ' ' . config('panel.time_format'),
                 'nullable',
