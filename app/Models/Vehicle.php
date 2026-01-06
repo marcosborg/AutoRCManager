@@ -143,6 +143,11 @@ class Vehicle extends Model implements HasMedia
         return $this->belongsTo(GeneralState::class, 'general_state_id');
     }
 
+    public function state_transfers()
+    {
+        return $this->hasMany(VehicleStateTransfer::class, 'vehicle_id');
+    }
+
     public function brand()
     {
         return $this->belongsTo(Brand::class, 'brand_id');

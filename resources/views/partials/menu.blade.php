@@ -169,6 +169,17 @@
                                 </a>
                             </li>
                         @endcan
+                        @can('setting_access')
+                            <li class="{{ request()->is("admin/vehicle-state-transfers") ? "active" : "" }}">
+                                <a href="{{ route("admin.vehicle-state-transfers.index") }}">
+                                    <i class="fa-fw fas fa-history">
+
+                                    </i>
+                                    <span>{{ trans('cruds.vehicleStateTransfer.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
                     </ul>
                 </li>
             @endcan
@@ -236,6 +247,17 @@
 
                                     </i>
                                     <span>{{ trans('cruds.repair.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
+                        @can('repair_access')
+                            <li class="{{ request()->is("admin/supplier-orders") || request()->is("admin/supplier-orders/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.supplier-orders.index") }}">
+                                    <i class="fa-fw fas fa-clipboard-list">
+
+                                    </i>
+                                    <span>{{ trans('cruds.supplierOrder.title') }}</span>
 
                                 </a>
                             </li>

@@ -32,6 +32,11 @@ class Suplier extends Model
         return $this->hasMany(Vehicle::class, 'suplier_id');
     }
 
+    public function supplier_orders(): HasMany
+    {
+        return $this->hasMany(SupplierOrder::class, 'suplier_id');
+    }
+
     protected function serializeDate(DateTimeInterface $date)
     {
         return $date->format('Y-m-d H:i:s');

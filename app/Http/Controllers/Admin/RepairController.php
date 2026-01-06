@@ -12,6 +12,7 @@ use App\Models\AccountCategory;
 use App\Models\Repair;
 use App\Models\RepairState;
 use App\Models\AccountOperation;
+use App\Models\SupplierOrder;
 use App\Models\Vehicle;
 use App\Models\Brand;
 use Gate;
@@ -459,8 +460,12 @@ class RepairController extends Controller
             })
             ->get();
 
+        $supplierOrders = SupplierOrder::with(['suplier', 'items'])
+            ->where('repair_id', $repair->id)
+            ->orderBy('order_date', 'desc')
+            ->get();
 
-        return view('admin.repairs.edit', compact('account_operations', 'brands', 'repair', 'repair_states', 'vehicles', 'general_states', 'account_categories'));
+        return view('admin.repairs.edit', compact('account_operations', 'brands', 'repair', 'repair_states', 'vehicles', 'general_states', 'account_categories', 'supplierOrders'));
     }
 
     public function update(UpdateRepairRequest $request, Repair $repair)

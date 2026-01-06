@@ -354,7 +354,74 @@
                                 </div>
                             </div>
                         </div>
-                        
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        {{ trans('cruds.supplierOrder.title') }}
+                                        <span class="pull-right">
+                                            @can('repair_edit')
+                                                <a class="btn btn-xs btn-success" href="{{ route('admin.supplier-orders.create', ['repair_id' => $repair->id]) }}">
+                                                    {{ trans('global.add') }}
+                                                </a>
+                                            @endcan
+                                            @can('repair_access')
+                                                <a class="btn btn-xs btn-default" href="{{ route('admin.supplier-orders.summary') }}">
+                                                    Resumo por fornecedor
+                                                </a>
+                                            @endcan
+                                        </span>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>{{ trans('cruds.supplierOrder.fields.suplier') }}</th>
+                                                        <th>{{ trans('cruds.supplierOrder.fields.order_date') }}</th>
+                                                        <th class="text-right">Qtd</th>
+                                                        <th class="text-right">Recebido</th>
+                                                        <th>{{ trans('cruds.supplierOrder.fields.notes') }}</th>
+                                                        <th>&nbsp;</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @forelse($supplierOrders as $supplierOrder)
+                                                        <tr>
+                                                            <td>{{ $supplierOrder->id }}</td>
+                                                            <td>{{ $supplierOrder->suplier->name ?? '-' }}</td>
+                                                            <td>{{ $supplierOrder->order_date }}</td>
+                                                            <td class="text-right">{{ number_format((float) $supplierOrder->items->sum('qty_ordered'), 2, ',', '.') }}</td>
+                                                            <td class="text-right">{{ number_format((float) $supplierOrder->items->sum('qty_received'), 2, ',', '.') }}</td>
+                                                            <td>{{ $supplierOrder->notes }}</td>
+                                                            <td>
+                                                                @can('repair_show')
+                                                                    <a class="btn btn-xs btn-primary" href="{{ route('admin.supplier-orders.show', $supplierOrder->id) }}">
+                                                                        {{ trans('global.view') }}
+                                                                    </a>
+                                                                @endcan
+                                                                @can('repair_edit')
+                                                                    <a class="btn btn-xs btn-info" href="{{ route('admin.supplier-orders.edit', $supplierOrder->id) }}">
+                                                                        {{ trans('global.edit') }}
+                                                                    </a>
+                                                                @endcan
+                                                            </td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td colspan="7" class="text-muted text-center">Sem notas de encomenda.</td>
+                                                        </tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="panel panel-default">

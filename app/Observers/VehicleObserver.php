@@ -4,7 +4,9 @@ namespace App\Observers;
 
 use App\Models\Vehicle;
 use App\Models\Repair;
+use App\Models\VehicleStateTransfer;
 use App\Mail\VehicleStateChangedMail;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 
 class VehicleObserver
@@ -13,6 +15,18 @@ class VehicleObserver
     {
         // Verifica se o general_state_id foi alterado
         if ($vehicle->isDirty('general_state_id')) {
+            $originalStateId = $vehicle->getOriginal('general_state_id');
+            $originalSnapshot = $vehicle->getOriginal();
+
+            VehicleStateTransfer::create([
+                'vehicle_id' => $vehicle->id,
+                'from_general_state_id' => $originalStateId,
+                'to_general_state_id' => $vehicle->general_state_id,
+                'user_id' => Auth::id(),
+                'fuel_level' => $originalSnapshot['fuel'] ?? null,
+                'snapshot' => $originalSnapshot,
+            ]);
+
             $newState = \App\Models\GeneralState::find($vehicle->general_state_id);
 
             // Se o novo estado for 4 (na oficina), criar Repair se ainda não existir

@@ -106,6 +106,13 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repairs/ckmedia', 'RepairController@storeCKEditorImages')->name('repairs.storeCKEditorImages');
     Route::resource('repairs', 'RepairController');
 
+    // Supplier Orders (Oficina)
+    Route::delete('supplier-orders/destroy', 'SupplierOrderController@massDestroy')->name('supplier-orders.massDestroy');
+    Route::get('supplier-orders/summary', 'SupplierOrderController@summary')->name('supplier-orders.summary');
+    Route::post('supplier-orders/items', 'SupplierOrderController@storeItem')->name('supplier-orders.items.store');
+    Route::post('supplier-orders/items/{item}/receive', 'SupplierOrderController@receiveItem')->name('supplier-orders.items.receive');
+    Route::resource('supplier-orders', 'SupplierOrderController');
+
     // Create Car For Repair
     Route::get('create-car-for-repairs', 'CreateCarForRepairController@index')->name('create-car-for-repairs.index');
     Route::post('create-car-for-repairs', 'CreateCarForRepairController@store')->name('create-car-for-repairs.store');
@@ -121,6 +128,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('general-states/media', 'GeneralStateController@storeMedia')->name('general-states.storeMedia');
     Route::post('general-states/ckmedia', 'GeneralStateController@storeCKEditorImages')->name('general-states.storeCKEditorImages');
     Route::resource('general-states', 'GeneralStateController');
+    Route::get('vehicle-state-transfers', 'VehicleStateTransferController@index')->name('vehicle-state-transfers.index');
 
     // Account Department
     Route::delete('account-departments/destroy', 'AccountDepartmentController@massDestroy')->name('account-departments.massDestroy');
