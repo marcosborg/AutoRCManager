@@ -58,6 +58,7 @@ class Vehicle extends Model implements HasMedia
         'transmission',
         'year',
         'month',
+        'mes_iuc',
         'license_date',
         'color',
         'fuel',

@@ -16,10 +16,14 @@ use App\Models\PickupState;
 use App\Models\Suplier;
 use App\Models\Vehicle;
 use App\Models\GeneralState;
+use App\Services\VehicleCsvSyncService;
 use Gate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\AccountDepartment;
 use App\Models\AccountOperation;
@@ -485,6 +489,291 @@ class VehicleController extends Controller
             'payments' => $payments,
             'balance' => $balance
         ]);
+    }
+
+    public function parseCsvSync(Request $request)
+    {
+        abort_if(
+            Gate::denies('vehicle_create') || Gate::denies('vehicle_delete'),
+            Response::HTTP_FORBIDDEN,
+            '403 Forbidden'
+        );
+
+        $data = $request->validate([
+            'csv_file' => ['required', 'file', 'mimes:csv,txt'],
+            'has_header' => ['nullable', 'boolean'],
+            'delimiter' => ['nullable', 'string', 'max:2'],
+            'general_state_id' => ['nullable', 'integer', 'exists:general_states,id'],
+        ]);
+
+        $file = $data['csv_file'];
+        $filename = 'vehicles-sync-' . now()->format('Ymd_His') . '-' . Str::random(6) . '.csv';
+        $relativePath = $file->storeAs('csv_sync', $filename);
+
+        if (!$relativePath || !Storage::exists($relativePath)) {
+            return back()->withErrors(['csv_file' => 'Falha ao guardar o CSV.']);
+        }
+
+        $delimiterInput = $data['delimiter'] ?? null;
+        $hasHeader = (bool) ($data['has_header'] ?? true);
+
+        session()->put('vehicles.sync_csv.file', $relativePath);
+        return redirect()->route('admin.vehicles.syncCsvParseForm', [
+            'file' => $relativePath,
+            'hasHeader' => $hasHeader ? 1 : 0,
+            'delimiter' => $delimiterInput,
+            'general_state_id' => $data['general_state_id'] ?? null,
+        ]);
+    }
+
+    public function showCsvSyncParse(Request $request, VehicleCsvSyncService $service)
+    {
+        abort_if(
+            Gate::denies('vehicle_create') || Gate::denies('vehicle_delete'),
+            Response::HTTP_FORBIDDEN,
+            '403 Forbidden'
+        );
+
+        $file = $this->resolveCsvSyncFile($request->query('file'));
+        if ($file === null) {
+            return redirect()->route('admin.vehicles.index')->withErrors(['csv_file' => 'CSV nao encontrado.']);
+        }
+
+        session()->put('vehicles.sync_csv.file', $file);
+
+        $fullPath = storage_path('app/' . $file);
+        if (!is_file($fullPath)) {
+            session()->forget('vehicles.sync_csv.file');
+
+            return redirect()->route('admin.vehicles.index')->withErrors(['csv_file' => 'CSV nao encontrado.']);
+        }
+
+        $delimiterInput = $request->query('delimiter');
+        $delimiter = $delimiterInput;
+        if ($delimiter === '\\t') {
+            $delimiter = "\t";
+        }
+        if ($delimiter === '') {
+            $delimiter = null;
+        }
+
+        $hasHeader = (bool) $request->query('hasHeader', 1);
+        $generalStateId = $request->query('general_state_id');
+        $generalStateId = $generalStateId !== null && $generalStateId !== '' ? (int) $generalStateId : null;
+
+        try {
+            $preview = $service->previewCsv($fullPath, $delimiter, $hasHeader);
+        } catch (Throwable $exception) {
+            return redirect()->route('admin.vehicles.index')->withErrors(['csv_file' => $exception->getMessage()]);
+        }
+
+        $suggested = $hasHeader ? $service->suggestMapping($preview['headers']) : [];
+        $suggestedByIndex = [];
+        foreach ($suggested as $field => $index) {
+            $suggestedByIndex[$index] = $field;
+        }
+
+        $generalStates = GeneralState::get();
+
+        return view('admin.vehicles.syncCsvParse', [
+            'filename' => $file,
+            'headers' => $preview['headers'],
+            'lines' => $preview['lines'],
+            'delimiter' => $delimiterInput,
+            'hasHeader' => $hasHeader ? 1 : 0,
+            'general_states' => $generalStates,
+            'general_state_id' => $generalStateId,
+            'suggestedByIndex' => $suggestedByIndex,
+        ]);
+    }
+
+    public function syncCsv(Request $request, VehicleCsvSyncService $service)
+    {
+        abort_if(
+            Gate::denies('vehicle_create') || Gate::denies('vehicle_delete'),
+            Response::HTTP_FORBIDDEN,
+            '403 Forbidden'
+        );
+
+        if ($request->hasFile('csv_file')) {
+            $data = $request->validate([
+                'csv_file' => ['required', 'file', 'mimes:csv,txt'],
+                'general_state_id' => ['nullable', 'integer', 'exists:general_states,id'],
+                'delimiter' => ['nullable', 'string', 'max:2'],
+                'has_header' => ['nullable', 'boolean'],
+            ]);
+
+            $file = $data['csv_file'];
+            $filename = 'vehicles-sync-' . now()->format('Ymd_His') . '-' . Str::random(6) . '.csv';
+            $relativePath = $file->storeAs('csv_sync', $filename);
+
+            if (!$relativePath || !Storage::exists($relativePath)) {
+                return back()->withErrors(['csv_file' => 'Falha ao guardar o CSV.']);
+            }
+
+            $fullPath = storage_path('app/' . $relativePath);
+
+            $generalStateId = $data['general_state_id'] ?? null;
+            if ($generalStateId === '' || $generalStateId === null) {
+                $generalStateId = null;
+            } else {
+                $generalStateId = (int) $generalStateId;
+            }
+
+            $delimiter = $data['delimiter'] ?? null;
+            if ($delimiter === '\\t') {
+                $delimiter = "\t";
+            }
+            if ($delimiter === '') {
+                $delimiter = null;
+            }
+
+            $hasHeader = (bool) ($data['has_header'] ?? true);
+
+            try {
+                $result = $service->syncFromCsv($fullPath, $generalStateId, $delimiter, null, $hasHeader);
+            } catch (Throwable $exception) {
+                Storage::delete($relativePath);
+
+                return back()->withErrors(['csv_file' => $exception->getMessage()]);
+            }
+
+            Storage::delete($relativePath);
+        } else {
+            $data = $request->validate([
+                'filename' => ['required', 'string'],
+                'fields' => ['required', 'array'],
+                'general_state_id' => ['nullable', 'integer', 'exists:general_states,id'],
+                'delimiter' => ['nullable', 'string', 'max:2'],
+                'hasHeader' => ['nullable', 'boolean'],
+            ]);
+
+            $relativePath = $this->resolveCsvSyncFile($data['filename'] ?? null);
+
+            $redirectParams = [
+                'file' => $relativePath ?? ($data['filename'] ?? null),
+                'hasHeader' => $data['hasHeader'] ?? 1,
+                'delimiter' => $data['delimiter'] ?? null,
+                'general_state_id' => $data['general_state_id'] ?? null,
+            ];
+
+            if ($relativePath === null) {
+                session()->forget('vehicles.sync_csv.file');
+
+                return redirect()->route('admin.vehicles.syncCsvParseForm', $redirectParams)
+                    ->withErrors(['csv_file' => 'CSV nao encontrado para sincronizar.'])
+                    ->withInput();
+            }
+
+            $fullPath = storage_path('app/' . $relativePath);
+
+            if (!is_file($fullPath)) {
+                session()->forget('vehicles.sync_csv.file');
+
+                return redirect()->route('admin.vehicles.syncCsvParseForm', $redirectParams)
+                    ->withErrors(['csv_file' => 'CSV nao encontrado para sincronizar.'])
+                    ->withInput();
+            }
+
+            $mapping = [];
+            foreach ($data['fields'] as $index => $field) {
+                if ($field === '' || $field === null) {
+                    continue;
+                }
+
+                $mapping[$field] = (int) $index;
+            }
+
+            if (!isset($mapping['license'], $mapping['brand'])) {
+                return redirect()->route('admin.vehicles.syncCsvParseForm', $redirectParams)
+                    ->withErrors(['fields' => 'Selecione colunas para matricula/license e marca/brand.'])
+                    ->withInput();
+            }
+
+            $generalStateId = $data['general_state_id'] ?? null;
+            if ($generalStateId === '' || $generalStateId === null) {
+                $generalStateId = null;
+            } else {
+                $generalStateId = (int) $generalStateId;
+            }
+
+            $delimiter = $data['delimiter'] ?? null;
+            if ($delimiter === '\\t') {
+                $delimiter = "\t";
+            }
+            if ($delimiter === '') {
+                $delimiter = null;
+            }
+
+            $hasHeader = (bool) ($data['hasHeader'] ?? true);
+
+            try {
+                $result = $service->syncFromCsv($fullPath, $generalStateId, $delimiter, $mapping, $hasHeader);
+            } catch (Throwable $exception) {
+                Storage::delete($relativePath);
+                session()->forget('vehicles.sync_csv.file');
+
+                return redirect()->route('admin.vehicles.syncCsvParseForm', $redirectParams)
+                    ->withErrors(['csv_file' => $exception->getMessage()])
+                    ->withInput();
+            }
+
+            Storage::delete($relativePath);
+            session()->forget('vehicles.sync_csv.file');
+        }
+
+        $message = sprintf(
+            'Sync concluida. CSV=%d, existentes=%d, criadas=%d, removidas=%d, ignoradas=%d, duplicadas=%d.',
+            $result['csv_total'],
+            $result['existing'],
+            $result['created'],
+            $result['deleted'],
+            $result['skipped'],
+            $result['duplicates']
+        );
+
+        return redirect()->route('admin.vehicles.index')->with('message', $message);
+    }
+
+    private function resolveCsvSyncFile(?string $file): ?string
+    {
+        $candidate = is_string($file) ? trim($file) : '';
+        if ($candidate !== '' && $this->csvSyncFileExists($candidate)) {
+            return $candidate;
+        }
+
+        $sessionFile = session('vehicles.sync_csv.file');
+        if (is_string($sessionFile) && $sessionFile !== '' && $this->csvSyncFileExists($sessionFile)) {
+            return $sessionFile;
+        }
+
+        return $this->latestCsvSyncFile();
+    }
+
+    private function csvSyncFileExists(string $path): bool
+    {
+        return Storage::exists($path);
+    }
+
+    private function latestCsvSyncFile(): ?string
+    {
+        $files = Storage::files('csv_sync');
+        if ($files === []) {
+            return null;
+        }
+
+        $latest = null;
+        $latestTimestamp = null;
+
+        foreach ($files as $file) {
+            $timestamp = Storage::lastModified($file);
+            if ($latestTimestamp === null || $timestamp > $latestTimestamp) {
+                $latestTimestamp = $timestamp;
+                $latest = $file;
+            }
+        }
+
+        return $latest;
     }
 
     private function canViewFinancialSensitive(): bool

@@ -57,6 +57,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('vehicles/ckmedia', 'VehicleController@storeCKEditorImages')->name('vehicles.storeCKEditorImages');
     Route::post('vehicles/parse-csv-import', 'VehicleController@parseCsvImport')->name('vehicles.parseCsvImport');
     Route::post('vehicles/process-csv-import', 'VehicleController@processCsvImport')->name('vehicles.processCsvImport');
+    Route::get('vehicles/sync-csv/parse', 'VehicleController@showCsvSyncParse')->name('vehicles.syncCsvParseForm');
+    Route::post('vehicles/sync-csv/parse', 'VehicleController@parseCsvSync')->name('vehicles.syncCsvParse');
+    Route::post('vehicles/sync-csv', 'VehicleController@syncCsv')->name('vehicles.syncCsv');
     Route::resource('vehicles', 'VehicleController');
     Route::post('vehicles/{vehicle}/account-operations', [App\Http\Controllers\Admin\VehicleController::class, 'storeAccountOperation'])->name('vehicles.account-operations.store');
     Route::put('account-operations/update/{operation}', [App\Http\Controllers\Admin\VehicleController::class, 'updateValue'])->name('account-operations.update');
