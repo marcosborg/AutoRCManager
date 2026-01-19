@@ -13,6 +13,7 @@
         "laravel/tinker": "^2.8",
         "laravel/ui": "^4.2",
         "laraveldaily/laravel-charts": "^0.1.29",
+        "nunomaduro/collision": "^7.0",
         "nuovo/spreadsheet-reader": "^0.5.11",
         "spatie/laravel-medialibrary": "^10.7",
         "yajra/laravel-datatables-oracle": "^10.3"
@@ -22,7 +23,6 @@
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.18",
         "mockery/mockery": "^1.4.4",
-        "nunomaduro/collision": "^7.0",
         "phpunit/phpunit": "^10.0",
         "spatie/laravel-ignition": "^2.0"
     },
