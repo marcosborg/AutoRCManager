@@ -3,9 +3,11 @@
 namespace App\Http\Requests;
 
 use App\Models\Vehicle;
+use App\Domain\Consignments\ConsignmentRules;
 use Gate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Validator;
 
 class UpdateVehicleRequest extends FormRequest
 {
@@ -176,5 +178,20 @@ class UpdateVehicleRequest extends FormRequest
                 'string',
             ],
         ];
+    }
+
+    public function withValidator(Validator $validator)
+    {
+        $validator->after(function (Validator $validator) {
+            $vehicle = $this->route('vehicle');
+            if (! $vehicle) {
+                return;
+            }
+
+            $incomingSaleDate = $this->input('sale_date');
+            if (ConsignmentRules::shouldBlockSale($vehicle, $incomingSaleDate)) {
+                $validator->errors()->add('sale_date', 'Nao e possivel vender com consignacao ativa.');
+            }
+        });
     }
 }

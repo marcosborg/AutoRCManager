@@ -13,6 +13,7 @@ Auth::routes(['register' => false]);
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'middleware' => ['auth']], function () {
     Route::get('/', 'HomeController@index')->name('home');
+    Route::get('dashboard', 'DashboardController@index')->name('dashboard');
     Route::get('gps-positions', 'GpsController@latest')->name('gps.positions');
     // Permissions
     Route::delete('permissions/destroy', 'PermissionsController@massDestroy')->name('permissions.massDestroy');
@@ -61,10 +62,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('vehicles/sync-csv/parse', 'VehicleController@parseCsvSync')->name('vehicles.syncCsvParse');
     Route::post('vehicles/sync-csv', 'VehicleController@syncCsv')->name('vehicles.syncCsv');
     Route::resource('vehicles', 'VehicleController');
+    Route::get('vehicles/{vehicle}/timeline', 'VehicleTimelineController@show')->name('vehicles.timeline');
+    Route::get('vehicles/{vehicle}/timeline/export/pdf', 'VehicleTimelineExportController@exportPdf')->name('vehicles.timeline.export.pdf');
     Route::post('vehicles/{vehicle}/account-operations', [App\Http\Controllers\Admin\VehicleController::class, 'storeAccountOperation'])->name('vehicles.account-operations.store');
     Route::put('account-operations/update/{operation}', [App\Http\Controllers\Admin\VehicleController::class, 'updateValue'])->name('account-operations.update');
     Route::delete('account-operations/{operation}', [App\Http\Controllers\Admin\VehicleController::class, 'destroyValue'])->name('account-operations.destroy');
     Route::get('vehicles/{vehicle}/get-payments/{account_department_id}', [App\Http\Controllers\Admin\VehicleController::class, 'getPayments'])->name('vehicles.get-payments');
+
+    // Vehicle Consignments
+    Route::resource('vehicle-consignments', 'VehicleConsignmentController')->except(['destroy']);
 
     // Vehicle Groups
     Route::delete('vehicle-groups/destroy', 'VehicleGroupController@massDestroy')->name('vehicle-groups.massDestroy');
@@ -163,6 +169,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('vehicle-financial-entries', 'VehicleFinancialEntryController');
 
     Route::get('financial/{vehicle_id}', [App\Http\Controllers\Admin\FinancialController::class, 'index'])->name('financial.index');
+    Route::get('reports/operational-units', 'OperationalUnitReportController@index')->name('reports.operational-units');
+    Route::get('reports/operational-units/export', 'OperationalUnitReportExportController@export')->name('reports.operational-units.export');
 
     // Audit Logs
     Route::resource('audit-logs', 'AuditLogsController', ['except' => ['create', 'store', 'edit', 'update', 'destroy']]);

@@ -14,6 +14,11 @@
                             <a class="btn btn-default" href="{{ route('admin.vehicles.index') }}">
                                 {{ trans('global.back_to_list') }}
                             </a>
+                            @can('vehicle_show')
+                                <a class="btn btn-primary" href="{{ route('admin.vehicles.timeline', $vehicle->id) }}">
+                                    Timeline
+                                </a>
+                            @endcan
                         </div>
                         <table class="table table-bordered table-striped">
                             <tbody>

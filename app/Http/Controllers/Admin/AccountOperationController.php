@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Finance\AccountDepartments;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MassDestroyAccountOperationRequest;
 use App\Http\Requests\StoreAccountOperationRequest;
@@ -27,7 +28,7 @@ class AccountOperationController extends Controller
 
             if (! $this->canViewFinancialSensitive()) {
                 $query->whereDoesntHave('account_item.account_category', function ($query) {
-                    $query->where('account_department_id', 1);
+                    $query->where('account_department_id', AccountDepartments::ACQUISITION);
                 });
             }
             $table = Datatables::of($query);
@@ -81,7 +82,7 @@ class AccountOperationController extends Controller
 
         if (! $this->canViewFinancialSensitive()) {
             $accountItemsQuery->whereHas('account_category', function ($query) {
-                $query->where('account_department_id', '!=', 1);
+                $query->where('account_department_id', '!=', AccountDepartments::ACQUISITION);
             });
         }
 
@@ -101,7 +102,7 @@ class AccountOperationController extends Controller
 
         if (! $this->canViewFinancialSensitive()) {
             $accountItemsQuery->whereHas('account_category', function ($query) {
-                $query->where('account_department_id', '!=', 1);
+                $query->where('account_department_id', '!=', AccountDepartments::ACQUISITION);
             });
         }
 
@@ -139,7 +140,7 @@ class AccountOperationController extends Controller
 
         if (! $this->canViewFinancialSensitive()) {
             $accountItemsQuery->whereHas('account_category', function ($query) {
-                $query->where('account_department_id', '!=', 1);
+                $query->where('account_department_id', '!=', AccountDepartments::ACQUISITION);
             });
         }
 
@@ -270,13 +271,13 @@ class AccountOperationController extends Controller
     {
         $operation->loadMissing('account_item.account_category');
 
-        return (int) optional(optional($operation->account_item)->account_category)->account_department_id === 1;
+        return (int) optional(optional($operation->account_item)->account_category)->account_department_id === AccountDepartments::ACQUISITION;
     }
 
     private function isAcquisitionItem(AccountItem $accountItem): bool
     {
         $accountItem->loadMissing('account_category');
 
-        return (int) optional($accountItem->account_category)->account_department_id === 1;
+        return (int) optional($accountItem->account_category)->account_department_id === AccountDepartments::ACQUISITION;
     }
 }

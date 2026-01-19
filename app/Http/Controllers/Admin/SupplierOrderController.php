@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Finance\AccountDepartments;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\ReceiveSupplierOrderItemRequest;
@@ -78,7 +79,7 @@ class SupplierOrderController extends Controller
         $repairs = Repair::pluck('id', 'id')->prepend(trans('global.pleaseSelect'), '');
         $supplierOrder->load(['suplier', 'repair', 'items.account_category', 'media']);
 
-        $account_categories = AccountCategory::where('account_department_id', 2)->get();
+        $account_categories = AccountCategory::where('account_department_id', AccountDepartments::GARAGE)->get();
 
         return view('admin.supplierOrders.edit', compact('supplierOrder', 'supliers', 'repairs', 'account_categories'));
     }

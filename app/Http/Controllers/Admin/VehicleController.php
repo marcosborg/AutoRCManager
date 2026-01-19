@@ -25,6 +25,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 use Yajra\DataTables\Facades\DataTables;
+use App\Domain\Finance\AccountDepartments;
 use App\Models\AccountDepartment;
 use App\Models\AccountOperation;
 use App\Models\AccountItem;
@@ -205,11 +206,11 @@ class VehicleController extends Controller
         $purchase_categories = collect();
 
         if ($canViewSensitive) {
-            $account_department = AccountDepartment::find(1)->load('account_categories.account_items');
+            $account_department = AccountDepartment::find(AccountDepartments::ACQUISITION)->load('account_categories.account_items');
             $purchase_categories = $account_department ? $account_department->account_categories : collect();
         }
 
-        $sale_department = AccountDepartment::find(3)->load('account_categories.account_items');
+        $sale_department = AccountDepartment::find(AccountDepartments::REVENUE)->load('account_categories.account_items');
         $sale_categories = $sale_department ? $sale_department->account_categories : null;
 
         $payment_methods = PaymentMethod::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
@@ -457,15 +458,15 @@ class VehicleController extends Controller
     {
         $this->authorizeAccountOperation((int) $account_department_id);
 
-        if ($account_department_id == 1) {
+        if ($account_department_id == AccountDepartments::ACQUISITION) {
             $ops = $vehicle->acquisition_operations()
                 ->with('account_item')
                 ->get();
-        } elseif ($account_department_id == 2) {
+        } elseif ($account_department_id == AccountDepartments::GARAGE) {
             $ops = $vehicle->garage_operations()
                 ->with('account_item')
                 ->get();
-        } elseif ($account_department_id == 3) {
+        } elseif ($account_department_id == AccountDepartments::REVENUE) {
             $ops = $vehicle->client_operations()
                 ->with('account_item')
                 ->get();
@@ -796,7 +797,7 @@ class VehicleController extends Controller
 
     private function authorizeAccountOperation(int $accountDepartmentId): void
     {
-        if ($accountDepartmentId !== 1) {
+        if ($accountDepartmentId !== AccountDepartments::ACQUISITION) {
             return;
         }
 

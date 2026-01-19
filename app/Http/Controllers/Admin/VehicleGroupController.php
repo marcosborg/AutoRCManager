@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\MassDestroyVehicleGroupRequest;
 use App\Http\Requests\StoreVehicleGroupRequest;
 use App\Http\Requests\UpdateVehicleGroupRequest;
+use App\Domain\Finance\AccountDepartments;
 use App\Models\AccountOperation;
 use App\Models\AccountItem;
 use App\Models\Client;
@@ -90,9 +91,9 @@ class VehicleGroupController extends Controller
                 ->get();
 
         $operationsByDepartment = [
-            'aquisition' => $operations->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == 1)->values(),
-            'garage' => $operations->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == 2)->values(),
-            'sale' => $operations->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == 3)->values(),
+            'aquisition' => $operations->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == AccountDepartments::ACQUISITION)->values(),
+            'garage' => $operations->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == AccountDepartments::GARAGE)->values(),
+            'sale' => $operations->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == AccountDepartments::REVENUE)->values(),
         ];
 
         $timelogs = $vehicleIds->isEmpty()
@@ -215,9 +216,9 @@ class VehicleGroupController extends Controller
         return $vehicleGroup->vehicles->map(function ($vehicle) use ($operationsByVehicle, $timelogsByVehicle, $hourPrice) {
             $ops = $operationsByVehicle->get($vehicle->id, collect());
 
-            $purchaseOps = $ops->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == 1);
-            $garageOps = $ops->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == 2);
-            $saleOps = $ops->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == 3);
+            $purchaseOps = $ops->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == AccountDepartments::ACQUISITION);
+            $garageOps = $ops->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == AccountDepartments::GARAGE);
+            $saleOps = $ops->filter(fn($op) => optional($op->account_item->account_category)->account_department_id == AccountDepartments::REVENUE);
 
             $commission = (float) ($vehicle->commission ?? 0);
             $saleTarget = (float) ($vehicle->pvp ?? 0)
@@ -272,7 +273,7 @@ class VehicleGroupController extends Controller
         }
 
         $saleItem = AccountItem::whereHas('account_category', function ($query) {
-            $query->where('account_department_id', 3);
+            $query->where('account_department_id', AccountDepartments::REVENUE);
         })->orderBy('id')->first();
         $paymentMethodId = PaymentMethod::orderBy('id')->value('id');
 

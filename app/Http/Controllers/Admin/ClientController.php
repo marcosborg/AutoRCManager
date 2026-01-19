@@ -7,6 +7,7 @@ use App\Http\Controllers\Traits\CsvImportTrait;
 use App\Http\Requests\MassDestroyClientRequest;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
+use App\Domain\Finance\AccountDepartments;
 use App\Models\AccountOperation;
 use App\Models\Client;
 use App\Models\Country;
@@ -22,9 +23,9 @@ class ClientController extends Controller
 {
     use CsvImportTrait;
 
-    private const DEPARTMENT_PURCHASE = 1;
-    private const DEPARTMENT_GARAGE = 2;
-    private const DEPARTMENT_SALE = 3;
+    private const DEPARTMENT_PURCHASE = AccountDepartments::ACQUISITION;
+    private const DEPARTMENT_GARAGE = AccountDepartments::GARAGE;
+    private const DEPARTMENT_SALE = AccountDepartments::REVENUE;
 
     public function index(Request $request)
     {

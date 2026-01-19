@@ -14,6 +14,16 @@
                     {{ trans('global.dashboard') }}
                 </a>
             </li>
+            @can('account_access')
+                <li class="{{ request()->is("admin/dashboard") ? "active" : "" }}">
+                    <a href="{{ route("admin.dashboard") }}">
+                        <i class="fa-fw fas fa-chart-line">
+
+                        </i>
+                        <span>Visao geral</span>
+                    </a>
+                </li>
+            @endcan
             @can('user_management_access')
                 <li class="treeview">
                     <a href="#">
@@ -205,6 +215,17 @@
                     </a>
                 </li>
             @endcan
+            @can('vehicle_consignment_access')
+                <li class="{{ request()->is("admin/vehicle-consignments") || request()->is("admin/vehicle-consignments/*") ? "active" : "" }}">
+                    <a href="{{ route("admin.vehicle-consignments.index") }}">
+                        <i class="fa-fw fas fa-exchange-alt">
+
+                        </i>
+                        <span>{{ trans('cruds.vehicleConsignment.title') }}</span>
+
+                    </a>
+                </li>
+            @endcan
             @can('vehicle_group_access')
                 <li class="{{ request()->is("admin/vehicle-groups") || request()->is("admin/vehicle-groups/*") ? "active" : "" }}">
                     <a href="{{ route("admin.vehicle-groups.index") }}">
@@ -304,6 +325,17 @@
 
                                     </i>
                                     <span>{{ trans('cruds.accountOperation.title') }}</span>
+
+                                </a>
+                            </li>
+                        @endcan
+                        @can('account_access')
+                            <li class="{{ request()->is("admin/reports/operational-units") ? "active" : "" }}">
+                                <a href="{{ route("admin.reports.operational-units") }}">
+                                    <i class="fa-fw fas fa-clipboard-list">
+
+                                    </i>
+                                    <span>Relatorio unidades</span>
 
                                 </a>
                             </li>

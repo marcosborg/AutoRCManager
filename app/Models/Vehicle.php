@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Finance\AccountDepartments;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -332,7 +333,7 @@ class Vehicle extends Model implements HasMedia
     {
         return $this->hasMany(AccountOperation::class, 'vehicle_id')
             ->whereHas('account_item.account_category', function ($q) {
-                $q->where('account_department_id', 1);
+                $q->where('account_department_id', AccountDepartments::ACQUISITION);
             });
     }
 
@@ -340,7 +341,7 @@ class Vehicle extends Model implements HasMedia
     {
         return $this->hasMany(AccountOperation::class)
             ->whereHas('account_item.account_category', function ($q) {
-                $q->where('account_department_id', 3);
+                $q->where('account_department_id', AccountDepartments::REVENUE);
             });
     }
 
@@ -348,7 +349,7 @@ class Vehicle extends Model implements HasMedia
     {
         return $this->hasMany(AccountOperation::class)
             ->whereHas('account_item.account_category', function ($q) {
-                $q->where('account_department_id', 2);
+                $q->where('account_department_id', AccountDepartments::GARAGE);
             });
     }
 
@@ -360,5 +361,20 @@ class Vehicle extends Model implements HasMedia
     public function financial_entries()
     {
         return $this->hasMany(VehicleFinancialEntry::class, 'vehicle_id');
+    }
+
+    public function ownerships()
+    {
+        return $this->hasMany(VehicleOwnership::class, 'vehicle_id');
+    }
+
+    public function locations()
+    {
+        return $this->hasMany(VehicleLocation::class, 'vehicle_id');
+    }
+
+    public function consignments()
+    {
+        return $this->hasMany(VehicleConsignment::class, 'vehicle_id');
     }
 }

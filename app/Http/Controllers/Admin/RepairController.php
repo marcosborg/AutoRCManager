@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Finance\AccountDepartments;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\CsvImportTrait;
 use App\Http\Controllers\Traits\MediaUploadingTrait;
@@ -451,12 +452,12 @@ class RepairController extends Controller
 
         $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $account_categories = AccountCategory::where('account_department_id', 2)->get();
+        $account_categories = AccountCategory::where('account_department_id', AccountDepartments::GARAGE)->get();
 
         $account_operations = AccountOperation::with(['account_item.account_category'])
             ->where('vehicle_id', $repair->vehicle_id)
             ->whereHas('account_item.account_category', function ($q) {
-                $q->where('account_department_id', 2);
+                $q->where('account_department_id', AccountDepartments::GARAGE);
             })
             ->get();
 

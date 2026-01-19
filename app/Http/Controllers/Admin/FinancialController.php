@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Finance\AccountDepartments;
 use App\Http\Controllers\Controller;
 use App\Models\AccountOperation;
 use Illuminate\Http\Request;
@@ -53,17 +54,17 @@ class FinancialController extends Controller
         $operationsByDepartment = [
             'aquisition' => AccountOperation::with(['account_item.account_category'])
                 ->where('vehicle_id', $vehicle_id)
-                ->whereHas('account_item.account_category', fn($q) => $q->where('account_department_id', 1))
+                ->whereHas('account_item.account_category', fn($q) => $q->where('account_department_id', AccountDepartments::ACQUISITION))
                 ->get(),
 
             'garage' => AccountOperation::with(['account_item.account_category'])
                 ->where('vehicle_id', $vehicle_id)
-                ->whereHas('account_item.account_category', fn($q) => $q->where('account_department_id', 2))
+                ->whereHas('account_item.account_category', fn($q) => $q->where('account_department_id', AccountDepartments::GARAGE))
                 ->get(),
 
             'sale' => AccountOperation::with(['account_item.account_category'])
                 ->where('vehicle_id', $vehicle_id)
-                ->whereHas('account_item.account_category', fn($q) => $q->where('account_department_id', 3))
+                ->whereHas('account_item.account_category', fn($q) => $q->where('account_department_id', AccountDepartments::REVENUE))
                 ->get(),
         ];
 
