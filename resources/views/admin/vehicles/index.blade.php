@@ -32,6 +32,8 @@
                                 <th>{{ trans('cruds.vehicle.fields.foreign_license') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.brand') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.model') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.version') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.color') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.month') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.fuel') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.inspec_b') }}</th>
@@ -63,6 +65,10 @@
                                         @endforeach
                                     </select>
                                 </td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
@@ -144,6 +150,8 @@ $(function () {
         { data: 'foreign_license', name: 'foreign_license' },
         { data: 'brand_name', name: 'brand.name' },
         { data: 'model', name: 'model' },
+        { data: 'version', name: 'version' },
+        { data: 'color', name: 'color' },
         { data: 'month', name: 'month' },
         { data: 'fuel', name: 'fuel' },
         { data: 'inspec_b', name: 'inspec_b' },
