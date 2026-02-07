@@ -78,6 +78,12 @@ class VehicleController extends Controller
             $table->editColumn('model', function ($row) {
                 return $row->model ? $row->model : '';
             });
+            $table->editColumn('version', function ($row) {
+                return $row->version ? $row->version : '';
+            });
+            $table->editColumn('color', function ($row) {
+                return $row->color ? $row->color : '';
+            });
             $table->editColumn('month', function ($row) {
                 return $row->month ? $row->month : '';
             });

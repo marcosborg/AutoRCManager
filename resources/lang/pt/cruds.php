@@ -253,7 +253,7 @@ return [
             'fuel_helper'                               => ' ',
             'cables'                                    => 'Cabo exterior',
             'cables_helper'                             => ' ',
-            'version'                                   => 'Versão',
+            'version'                                   => 'Tipo (Range)',
             'version_helper'                            => ' ',
             'inspec_b'                                  => 'Inspeção B',
             'inspec_b_helper'                           => ' ',
