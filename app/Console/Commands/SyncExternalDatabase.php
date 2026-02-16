@@ -183,13 +183,35 @@ class SyncExternalDatabase extends Command
 
     private function resolveBinary(string $default, ?string $option, ?string $envValue): string
     {
-        $candidate = $option ?: $envValue ?: $default;
+        $candidates = [];
+        if ($option) {
+            $candidates[] = ['value' => $option, 'source' => 'option'];
+        }
+        if ($envValue) {
+            $candidates[] = ['value' => $envValue, 'source' => 'env'];
+        }
+        $candidates[] = ['value' => $default, 'source' => 'default'];
 
-        if (str_contains($candidate, DIRECTORY_SEPARATOR) && !file_exists($candidate)) {
-            throw new RuntimeException("Binario {$candidate} nao encontrado. Defina o caminho correto.");
+        foreach ($candidates as $candidate) {
+            $value = $candidate['value'];
+            $hasPath = str_contains($value, '/') || str_contains($value, '\\');
+
+            if ($hasPath) {
+                if (file_exists($value)) {
+                    return $value;
+                }
+
+                if ($candidate['source'] === 'option') {
+                    throw new RuntimeException("Binario {$value} nao encontrado. Defina o caminho correto.");
+                }
+
+                continue;
+            }
+
+            return $value;
         }
 
-        return $candidate;
+        throw new RuntimeException("Binario {$default} nao encontrado. Defina o caminho correto.");
     }
 
     /**
