@@ -20,22 +20,20 @@
                             @endif
                             <span class="help-block">{{ trans('cruds.role.fields.title_helper') }}</span>
                         </div>
-                        <div class="form-group {{ $errors->has('permissions') ? 'has-error' : '' }}">
-                            <label class="required" for="permissions">{{ trans('cruds.role.fields.permissions') }}</label>
-                            <div style="padding-bottom: 4px">
-                                <span class="btn btn-info btn-xs select-all" style="border-radius: 0">{{ trans('global.select_all') }}</span>
-                                <span class="btn btn-info btn-xs deselect-all" style="border-radius: 0">{{ trans('global.deselect_all') }}</span>
-                            </div>
-                            <select class="form-control select2" name="permissions[]" id="permissions" multiple required>
-                                @foreach($permissions as $id => $permission)
-                                    <option value="{{ $id }}" {{ (in_array($id, old('permissions', [])) || $role->permissions->contains($id)) ? 'selected' : '' }}>{{ $permission }}</option>
-                                @endforeach
-                            </select>
-                            @if($errors->has('permissions'))
-                                <span class="help-block" role="alert">{{ $errors->first('permissions') }}</span>
-                            @endif
-                            <span class="help-block">{{ trans('cruds.role.fields.permissions_helper') }}</span>
-                        </div>
+                        @php
+                            $selectedPermissions = old('permissions', $role->permissions->pluck('id')->toArray());
+                        @endphp
+                        @include('admin.roles.partials.permissions-matrix', [
+                            'permissions' => $permissions,
+                            'selectedPermissions' => $selectedPermissions,
+                        ])
+                        @php
+                            $selectedUsers = old('users', $role->users->pluck('id')->toArray());
+                        @endphp
+                        @include('admin.roles.partials.users-checklist', [
+                            'users' => $users,
+                            'selectedUsers' => $selectedUsers,
+                        ])
                         <div class="form-group">
                             <button class="btn btn-danger" type="submit">
                                 {{ trans('global.save') }}
@@ -51,3 +49,5 @@
     </div>
 </div>
 @endsection
+
+@include('admin.roles.partials.form-scripts')

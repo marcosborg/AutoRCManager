@@ -28,19 +28,19 @@
                         <div class="col-md-3">
                             <div class="well well-sm text-center">
                                 <div><strong>Total custos</strong></div>
-                                <div class="lead">ƒ'ª{{ number_format($totals['cost'], 2, ',', '.') }}</div>
+                                <div class="lead">€{{ number_format($totals['cost'], 2, ',', '.') }}</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="well well-sm text-center">
                                 <div><strong>Total receitas</strong></div>
-                                <div class="lead">ƒ'ª{{ number_format($totals['revenue'], 2, ',', '.') }}</div>
+                                <div class="lead">€{{ number_format($totals['revenue'], 2, ',', '.') }}</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="well well-sm text-center">
                                 <div><strong>Resultado</strong></div>
-                                <div class="lead">ƒ'ª{{ number_format($totals['result'], 2, ',', '.') }}</div>
+                                <div class="lead">€{{ number_format($totals['result'], 2, ',', '.') }}</div>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -75,9 +75,9 @@
                             @forelse($units as $unit)
                                 <tr>
                                     <td>{{ $unit['unit_name'] }}</td>
-                                    <td class="text-right">ƒ'ª{{ number_format($unit['total_cost'], 2, ',', '.') }}</td>
-                                    <td class="text-right">ƒ'ª{{ number_format($unit['total_revenue'], 2, ',', '.') }}</td>
-                                    <td class="text-right">ƒ'ª{{ number_format($unit['result'], 2, ',', '.') }}</td>
+                                    <td class="text-right">€{{ number_format($unit['total_cost'], 2, ',', '.') }}</td>
+                                    <td class="text-right">€{{ number_format($unit['total_revenue'], 2, ',', '.') }}</td>
+                                    <td class="text-right">€{{ number_format($unit['result'], 2, ',', '.') }}</td>
                                     <td class="text-right">{{ $unit['vehicle_count'] }}</td>
                                     <td>
                                         <a class="btn btn-xs btn-primary" href="{{ route('admin.reports.operational-units', ['from' => $fromDate->format(config('panel.date_format')), 'to' => $toDate->format(config('panel.date_format'))]) }}">

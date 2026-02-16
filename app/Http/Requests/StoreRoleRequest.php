@@ -28,6 +28,13 @@ class StoreRoleRequest extends FormRequest
                 'required',
                 'array',
             ],
+            'users.*' => [
+                'integer',
+            ],
+            'users' => [
+                'nullable',
+                'array',
+            ],
         ];
     }
 }

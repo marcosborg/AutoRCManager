@@ -19,22 +19,14 @@
                             @endif
                             <span class="help-block">{{ trans('cruds.role.fields.title_helper') }}</span>
                         </div>
-                        <div class="form-group {{ $errors->has('permissions') ? 'has-error' : '' }}">
-                            <label class="required" for="permissions">{{ trans('cruds.role.fields.permissions') }}</label>
-                            <div style="padding-bottom: 4px">
-                                <span class="btn btn-info btn-xs select-all" style="border-radius: 0">{{ trans('global.select_all') }}</span>
-                                <span class="btn btn-info btn-xs deselect-all" style="border-radius: 0">{{ trans('global.deselect_all') }}</span>
-                            </div>
-                            <select class="form-control select2" name="permissions[]" id="permissions" multiple required>
-                                @foreach($permissions as $id => $permission)
-                                    <option value="{{ $id }}" {{ in_array($id, old('permissions', [])) ? 'selected' : '' }}>{{ $permission }}</option>
-                                @endforeach
-                            </select>
-                            @if($errors->has('permissions'))
-                                <span class="help-block" role="alert">{{ $errors->first('permissions') }}</span>
-                            @endif
-                            <span class="help-block">{{ trans('cruds.role.fields.permissions_helper') }}</span>
-                        </div>
+                        @include('admin.roles.partials.permissions-matrix', [
+                            'permissions' => $permissions,
+                            'selectedPermissions' => old('permissions', []),
+                        ])
+                        @include('admin.roles.partials.users-checklist', [
+                            'users' => $users,
+                            'selectedUsers' => old('users', []),
+                        ])
                         <div class="form-group">
                             <button class="btn btn-danger" type="submit">
                                 {{ trans('global.save') }}
@@ -50,3 +42,5 @@
     </div>
 </div>
 @endsection
+
+@include('admin.roles.partials.form-scripts')

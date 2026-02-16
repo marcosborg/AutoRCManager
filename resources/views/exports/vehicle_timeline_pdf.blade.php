@@ -51,7 +51,7 @@
                     <td>{{ $event['description'] }}</td>
                     <td>
                         @if(! is_null($event['amount']))
-                            ƒ'ª{{ number_format((float) $event['amount'], 2, ',', '.') }}
+                            €{{ number_format((float) $event['amount'], 2, ',', '.') }}
                         @endif
                     </td>
                 </tr>
@@ -64,9 +64,9 @@
     </table>
 
     <div class="totals">
-        <div><strong>Total custos:</strong> ƒ'ª{{ number_format($totalCost, 2, ',', '.') }}</div>
-        <div><strong>Total receitas:</strong> ƒ'ª{{ number_format($totalRevenue, 2, ',', '.') }}</div>
-        <div><strong>Resultado:</strong> ƒ'ª{{ number_format($result, 2, ',', '.') }}</div>
+        <div><strong>Total custos:</strong> €{{ number_format($totalCost, 2, ',', '.') }}</div>
+        <div><strong>Total receitas:</strong> €{{ number_format($totalRevenue, 2, ',', '.') }}</div>
+        <div><strong>Resultado:</strong> €{{ number_format($result, 2, ',', '.') }}</div>
     </div>
 
     <div class="footer">

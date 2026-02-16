@@ -28,6 +28,13 @@ class UpdateRoleRequest extends FormRequest
                 'required',
                 'array',
             ],
+            'users.*' => [
+                'integer',
+            ],
+            'users' => [
+                'nullable',
+                'array',
+            ],
         ];
     }
 }

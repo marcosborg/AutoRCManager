@@ -42,9 +42,9 @@
                             @forelse($units as $unit)
                                 <tr>
                                     <td>{{ $unit['unit_name'] }}</td>
-                                    <td class="text-right">ƒ'ª{{ number_format($unit['total_cost'], 2, ',', '.') }}</td>
-                                    <td class="text-right">ƒ'ª{{ number_format($unit['total_revenue'], 2, ',', '.') }}</td>
-                                    <td class="text-right">ƒ'ª{{ number_format($unit['result'], 2, ',', '.') }}</td>
+                                    <td class="text-right">€{{ number_format($unit['total_cost'], 2, ',', '.') }}</td>
+                                    <td class="text-right">€{{ number_format($unit['total_revenue'], 2, ',', '.') }}</td>
+                                    <td class="text-right">€{{ number_format($unit['result'], 2, ',', '.') }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -55,9 +55,9 @@
                         <tfoot>
                             <tr>
                                 <th>Total</th>
-                                <th class="text-right">ƒ'ª{{ number_format($totalCost, 2, ',', '.') }}</th>
-                                <th class="text-right">ƒ'ª{{ number_format($totalRevenue, 2, ',', '.') }}</th>
-                                <th class="text-right">ƒ'ª{{ number_format($totalResult, 2, ',', '.') }}</th>
+                                <th class="text-right">€{{ number_format($totalCost, 2, ',', '.') }}</th>
+                                <th class="text-right">€{{ number_format($totalRevenue, 2, ',', '.') }}</th>
+                                <th class="text-right">€{{ number_format($totalResult, 2, ',', '.') }}</th>
                             </tr>
                         </tfoot>
                     </table>
