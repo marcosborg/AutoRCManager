@@ -38,6 +38,8 @@ class Vehicle extends Model implements HasMedia
         'license_date',
         'date',
         'payment_date',
+        'iuc_paid_date',
+        'tow_paid_date',
         'withdrawal_authorization_date',
         'pickup_state_date',
         'chekin_date',
@@ -82,6 +84,10 @@ class Vehicle extends Model implements HasMedia
         'suplier_id',
         'payment_date',
         'payment_status_id',
+        'iuc_paid_date',
+        'iuc_paid_value',
+        'tow_paid_date',
+        'tow_paid_value',
         'amount_paid',
         'carrier_id',
         'storage_location',
@@ -219,6 +225,26 @@ class Vehicle extends Model implements HasMedia
     public function setPaymentDateAttribute($value)
     {
         $this->attributes['payment_date'] = $value ? Carbon::createFromFormat(config('panel.date_format'), $value)->format('Y-m-d') : null;
+    }
+
+    public function getIucPaidDateAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format(config('panel.date_format')) : null;
+    }
+
+    public function setIucPaidDateAttribute($value)
+    {
+        $this->attributes['iuc_paid_date'] = $value ? Carbon::createFromFormat(config('panel.date_format'), $value)->format('Y-m-d') : null;
+    }
+
+    public function getTowPaidDateAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format(config('panel.date_format')) : null;
+    }
+
+    public function setTowPaidDateAttribute($value)
+    {
+        $this->attributes['tow_paid_date'] = $value ? Carbon::createFromFormat(config('panel.date_format'), $value)->format('Y-m-d') : null;
     }
 
     public function getInvoiceAttribute()

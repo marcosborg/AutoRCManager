@@ -695,6 +695,10 @@ class VehicleController extends Controller
             'commission',
             'iuc_price',
             'tow_price',
+            'iuc_paid_date',
+            'iuc_paid_value',
+            'tow_paid_date',
+            'tow_paid_value',
             'acquisition_notes',
         ];
     }

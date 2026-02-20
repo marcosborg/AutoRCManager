@@ -85,6 +85,22 @@ class UpdateVehicleRequest extends FormRequest
                 'date_format:' . config('panel.date_format'),
                 'nullable',
             ],
+            'iuc_paid_date' => [
+                'date_format:' . config('panel.date_format'),
+                'nullable',
+            ],
+            'iuc_paid_value' => [
+                'nullable',
+                'numeric',
+            ],
+            'tow_paid_date' => [
+                'date_format:' . config('panel.date_format'),
+                'nullable',
+            ],
+            'tow_paid_value' => [
+                'nullable',
+                'numeric',
+            ],
             'invoice' => [
                 'array',
             ],

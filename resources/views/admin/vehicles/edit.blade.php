@@ -248,6 +248,8 @@
                                     @endif
                                     <span class="help-block">Notas internas da aquisicao.</span>
                                 </div>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('suplier') ? 'has-error' : '' }}">
                                     <label for="suplier_id">{{ trans('cruds.vehicle.fields.suplier') }}</label>
                                     <select class="form-control select2" name="suplier_id" id="suplier_id">
@@ -279,6 +281,34 @@
                                         <span class="help-block" role="alert">{{ $errors->first('payment_status') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.payment_status_helper') }}</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('iuc_paid_date') ? 'has-error' : '' }}">
+                                    <label for="iuc_paid_date">Data pagamento IUC</label>
+                                    <input class="form-control date" type="text" name="iuc_paid_date" id="iuc_paid_date" value="{{ old('iuc_paid_date', $vehicle->iuc_paid_date) }}">
+                                    @if($errors->has('iuc_paid_date'))
+                                        <span class="help-block" role="alert">{{ $errors->first('iuc_paid_date') }}</span>
+                                    @endif
+                                </div>
+                                <div class="form-group {{ $errors->has('iuc_paid_value') ? 'has-error' : '' }}">
+                                    <label for="iuc_paid_value">Valor IUC pago</label>
+                                    <input class="form-control" type="number" name="iuc_paid_value" id="iuc_paid_value" value="{{ old('iuc_paid_value', $vehicle->iuc_paid_value) }}" step="0.01">
+                                    @if($errors->has('iuc_paid_value'))
+                                        <span class="help-block" role="alert">{{ $errors->first('iuc_paid_value') }}</span>
+                                    @endif
+                                </div>
+                                <div class="form-group {{ $errors->has('tow_paid_date') ? 'has-error' : '' }}">
+                                    <label for="tow_paid_date">Data pagamento reboque</label>
+                                    <input class="form-control date" type="text" name="tow_paid_date" id="tow_paid_date" value="{{ old('tow_paid_date', $vehicle->tow_paid_date) }}">
+                                    @if($errors->has('tow_paid_date'))
+                                        <span class="help-block" role="alert">{{ $errors->first('tow_paid_date') }}</span>
+                                    @endif
+                                </div>
+                                <div class="form-group {{ $errors->has('tow_paid_value') ? 'has-error' : '' }}">
+                                    <label for="tow_paid_value">Valor reboque pago</label>
+                                    <input class="form-control" type="number" name="tow_paid_value" id="tow_paid_value" value="{{ old('tow_paid_value', $vehicle->tow_paid_value) }}" step="0.01">
+                                    @if($errors->has('tow_paid_value'))
+                                        <span class="help-block" role="alert">{{ $errors->first('tow_paid_value') }}</span>
+                                    @endif
                                 </div>
                             </div>
 @endcan
