@@ -79,11 +79,7 @@
                                     <td class="text-right">€{{ number_format($unit['total_revenue'], 2, ',', '.') }}</td>
                                     <td class="text-right">€{{ number_format($unit['result'], 2, ',', '.') }}</td>
                                     <td class="text-right">{{ $unit['vehicle_count'] }}</td>
-                                    <td>
-                                        <a class="btn btn-xs btn-primary" href="{{ route('admin.reports.operational-units', ['from' => $fromDate->format(config('panel.date_format')), 'to' => $toDate->format(config('panel.date_format'))]) }}">
-                                            Relatorio
-                                        </a>
-                                    </td>
+                                    <td class="text-muted">-</td>
                                 </tr>
                             @empty
                                 <tr>

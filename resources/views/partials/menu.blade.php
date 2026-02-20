@@ -272,17 +272,6 @@
                                 </a>
                             </li>
                         @endcan
-                        @can('repair_access')
-                            <li class="{{ request()->is("admin/supplier-orders") || request()->is("admin/supplier-orders/*") ? "active" : "" }}">
-                                <a href="{{ route("admin.supplier-orders.index") }}">
-                                    <i class="fa-fw fas fa-clipboard-list">
-
-                                    </i>
-                                    <span>{{ trans('cruds.supplierOrder.title') }}</span>
-
-                                </a>
-                            </li>
-                        @endcan
                         @can('create_car_for_repair_access')
                             <li class="{{ request()->is("admin/create-car-for-repairs") || request()->is("admin/create-car-for-repairs/*") ? "active" : "" }}">
                                 <a href="{{ route("admin.create-car-for-repairs.index") }}">
@@ -303,120 +292,6 @@
                                     <span>{{ trans('cruds.timelog.title') }}</span>
 
                                 </a>
-                            </li>
-                        @endcan
-                    </ul>
-                </li>
-            @endcan
-            @can('account_access')
-                <li class="treeview">
-                    <a href="#">
-                        <i class="fa-fw fas fa-euro-sign">
-
-                        </i>
-                        <span>{{ trans('cruds.account.title') }}</span>
-                        <span class="pull-right-container"><i class="fa fa-fw fa-angle-left pull-right"></i></span>
-                    </a>
-                    <ul class="treeview-menu">
-                        @can('account_operation_access')
-                            <li class="{{ request()->is("admin/account-operations") || request()->is("admin/account-operations/*") ? "active" : "" }}">
-                                <a href="{{ route("admin.account-operations.index") }}">
-                                    <i class="fa-fw fas fa-plus">
-
-                                    </i>
-                                    <span>{{ trans('cruds.accountOperation.title') }}</span>
-
-                                </a>
-                            </li>
-                        @endcan
-                        @can('account_access')
-                            <li class="{{ request()->is("admin/reports/operational-units") ? "active" : "" }}">
-                                <a href="{{ route("admin.reports.operational-units") }}">
-                                    <i class="fa-fw fas fa-clipboard-list">
-
-                                    </i>
-                                    <span>Relatorio unidades</span>
-
-                                </a>
-                            </li>
-                        @endcan
-                        @can('client_ledger_entry_access')
-                            <li class="{{ request()->is("admin/client-ledger-entries") || request()->is("admin/client-ledger-entries/*") ? "active" : "" }}">
-                                <a href="{{ route("admin.client-ledger-entries.index") }}">
-                                    <i class="fa-fw fas fa-book">
-
-                                    </i>
-                                    <span>{{ trans('cruds.clientLedgerEntry.title') }}</span>
-
-                                </a>
-                            </li>
-                        @endcan
-                        @can('vehicle_financial_entry_access')
-                            <li class="{{ request()->is("admin/vehicle-financial-entries") || request()->is("admin/vehicle-financial-entries/*") ? "active" : "" }}">
-                                <a href="{{ route("admin.vehicle-financial-entries.index") }}">
-                                    <i class="fa-fw fas fa-receipt">
-
-                                    </i>
-                                    <span>{{ trans('cruds.vehicleFinancialEntry.title') }}</span>
-
-                                </a>
-                            </li>
-                        @endcan
-                        @can('account_configuration_access')
-                            <li class="treeview">
-                                <a href="#">
-                                    <i class="fa-fw fas fa-cogs">
-
-                                    </i>
-                                    <span>{{ trans('cruds.accountConfiguration.title') }}</span>
-                                    <span class="pull-right-container"><i class="fa fa-fw fa-angle-left pull-right"></i></span>
-                                </a>
-                                <ul class="treeview-menu">
-                                    @can('account_department_access')
-                                        <li class="{{ request()->is("admin/account-departments") || request()->is("admin/account-departments/*") ? "active" : "" }}">
-                                            <a href="{{ route("admin.account-departments.index") }}">
-                                                <i class="fa-fw far fa-building">
-
-                                                </i>
-                                                <span>{{ trans('cruds.accountDepartment.title') }}</span>
-
-                                            </a>
-                                        </li>
-                                    @endcan
-                                    @can('account_category_access')
-                                        <li class="{{ request()->is("admin/account-categories") || request()->is("admin/account-categories/*") ? "active" : "" }}">
-                                            <a href="{{ route("admin.account-categories.index") }}">
-                                                <i class="fa-fw fas fa-th-large">
-
-                                                </i>
-                                                <span>{{ trans('cruds.accountCategory.title') }}</span>
-
-                                            </a>
-                                        </li>
-                                    @endcan
-                                    @can('account_item_access')
-                                        <li class="{{ request()->is("admin/account-items") || request()->is("admin/account-items/*") ? "active" : "" }}">
-                                            <a href="{{ route("admin.account-items.index") }}">
-                                                <i class="fa-fw far fa-square">
-
-                                                </i>
-                                                <span>{{ trans('cruds.accountItem.title') }}</span>
-
-                                            </a>
-                                        </li>
-                                    @endcan
-                                    @can('payment_method_access')
-                                        <li class="{{ request()->is("admin/payment-methods") || request()->is("admin/payment-methods/*") ? "active" : "" }}">
-                                            <a href="{{ route("admin.payment-methods.index") }}">
-                                                <i class="fa-fw far fa-credit-card">
-
-                                                </i>
-                                                <span>{{ trans('cruds.paymentMethod.title') }}</span>
-
-                                            </a>
-                                        </li>
-                                    @endcan
-                                </ul>
                             </li>
                         @endcan
                     </ul>

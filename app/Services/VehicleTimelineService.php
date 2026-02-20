@@ -2,11 +2,8 @@
 
 namespace App\Services;
 
-use App\Domain\Finance\AccountDepartments;
-use App\Models\AccountOperation;
 use App\Models\Vehicle;
 use App\Models\VehicleConsignment;
-use App\Models\VehicleFinancialEntry;
 use App\Models\VehicleStateTransfer;
 use App\Models\Repair;
 use Carbon\Carbon;
@@ -21,8 +18,6 @@ class VehicleTimelineService
         $this->addStateTransfers($events, $vehicle->id);
         $this->addConsignments($events, $vehicle->id);
         $this->addRepairs($events, $vehicle->id);
-        $this->addAccountOperations($events, $vehicle->id);
-        $this->addFinancialEntries($events, $vehicle->id);
 
         return $events
             ->sortBy('date_start')
@@ -116,65 +111,4 @@ class VehicleTimelineService
         }
     }
 
-    private function addAccountOperations(Collection $events, int $vehicleId): void
-    {
-        $operations = AccountOperation::with(['account_item.account_category'])
-            ->where('vehicle_id', $vehicleId)
-            ->orderBy('date')
-            ->get();
-
-        foreach ($operations as $operation) {
-            $departmentId = optional($operation->account_item->account_category)->account_department_id;
-            $type = $departmentId === AccountDepartments::REVENUE ? 'revenue' : 'cost';
-            $amount = (float) ($operation->total ?? 0);
-            $signedAmount = $type === 'cost' ? -$amount : $amount;
-
-            $itemName = $operation->account_item->name ?? 'N/A';
-            $categoryName = $operation->account_item->account_category->name ?? '';
-
-            $events->push([
-                'type' => $type,
-                'date_start' => Carbon::parse($operation->date ?? $operation->created_at),
-                'date_end' => null,
-                'title' => $type === 'cost' ? 'Custo operacao' : 'Receita operacao',
-                'description' => trim($categoryName . ' - ' . $itemName, ' -'),
-                'related_model' => 'AccountOperation',
-                'related_id' => $operation->id,
-                'amount' => $signedAmount,
-                'unit' => null,
-                'metadata' => [
-                    'department_id' => $departmentId,
-                ],
-            ]);
-        }
-    }
-
-    private function addFinancialEntries(Collection $events, int $vehicleId): void
-    {
-        $entries = VehicleFinancialEntry::query()
-            ->where('vehicle_id', $vehicleId)
-            ->orderBy('entry_date')
-            ->get();
-
-        foreach ($entries as $entry) {
-            $type = $entry->entry_type === 'revenue' ? 'revenue' : 'cost';
-            $amount = (float) ($entry->amount ?? 0);
-            $signedAmount = $type === 'cost' ? -$amount : $amount;
-
-            $events->push([
-                'type' => $type,
-                'date_start' => Carbon::parse($entry->entry_date ?? $entry->created_at),
-                'date_end' => null,
-                'title' => 'Financeiro por viatura',
-                'description' => $entry->category ?? '',
-                'related_model' => 'VehicleFinancialEntry',
-                'related_id' => $entry->id,
-                'amount' => $signedAmount,
-                'unit' => null,
-                'metadata' => [
-                    'entry_type' => $entry->entry_type,
-                ],
-            ]);
-        }
-    }
 }

@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 @section('content')
 <div class="content">
 
@@ -24,19 +24,19 @@
                         <div class="col-md-4">
                             <div class="well well-sm text-center">
                                 <div><strong>Total custos</strong></div>
-                                <div class="lead">€{{ number_format($totalCost, 2, ',', '.') }}</div>
+                                <div class="lead">â‚¬{{ number_format($totalCost, 2, ',', '.') }}</div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="well well-sm text-center">
                                 <div><strong>Total receitas</strong></div>
-                                <div class="lead">€{{ number_format($totalRevenue, 2, ',', '.') }}</div>
+                                <div class="lead">â‚¬{{ number_format($totalRevenue, 2, ',', '.') }}</div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="well well-sm text-center">
                                 <div><strong>Resultado</strong></div>
-                                <div class="lead">€{{ number_format($result, 2, ',', '.') }}</div>
+                                <div class="lead">â‚¬{{ number_format($result, 2, ',', '.') }}</div>
                             </div>
                         </div>
                     </div>
@@ -75,7 +75,7 @@
                                             <div><strong>Unidade:</strong> {{ $event['unit'] }}</div>
                                         @endif
                                         @if(! is_null($amountLabel))
-                                            <div><strong>Valor:</strong> €{{ $amountLabel }}</div>
+                                            <div><strong>Valor:</strong> â‚¬{{ $amountLabel }}</div>
                                         @endif
                                         @php
                                             $relatedModel = $event['related_model'];
@@ -86,10 +86,6 @@
                                                 $link = route('admin.vehicle-consignments.show', $relatedId);
                                             } elseif ($relatedModel === 'Repair') {
                                                 $link = route('admin.repairs.show', $relatedId);
-                                            } elseif ($relatedModel === 'AccountOperation') {
-                                                $link = route('admin.account-operations.show', $relatedId);
-                                            } elseif ($relatedModel === 'VehicleFinancialEntry') {
-                                                $link = route('admin.vehicle-financial-entries.show', $relatedId);
                                             }
                                         @endphp
                                         @if($link)
@@ -117,3 +113,5 @@
     </div>
 </div>
 @endsection
+
+

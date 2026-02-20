@@ -1,5 +1,6 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 @section('content')
+@php($vehicle = $repair->vehicle)
 <div class="content">
 <div id="progress-container" style="position: sticky; top: 0; z-index: 999; background: #f8f9fa; padding: 10px;">
     <div class="progress" style="height: 25px;">
@@ -23,7 +24,7 @@
                                     <label class="required" for="general_state_id">{{ trans('cruds.vehicle.fields.general_state') }}</label>
                                     <select class="form-control select2" name="general_state_id" id="general_state_id" disabled>
                                         @foreach($general_states as $id => $entry)
-                                        <option value="{{ $id }}" {{ (old('general_state_id') ? old('general_state_id') : $repair->vehicle->general_state->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                        <option value="{{ $id }}" {{ (old('general_state_id') ? old('general_state_id') : optional(optional($vehicle)->general_state)->id) == $id ? 'selected' : '' }}>{{ $entry }}</option>
                                         @endforeach
                                     </select>
                                     @if($errors->has('general_state'))
@@ -35,7 +36,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('license') ? 'has-error' : '' }}">
                                     <label for="license">{{ trans('cruds.vehicle.fields.license') }}</label>
-                                    <input class="form-control" type="text" name="license" id="license" value="{{ old('license', $repair->vehicle->license) }}" disabled>
+                                    <input class="form-control" type="text" name="license" id="license" value="{{ old('license', optional($vehicle)->license) }}" disabled>
                                     @if($errors->has('license'))
                                         <span class="help-block" role="alert">{{ $errors->first('license') }}</span>
                                     @endif
@@ -45,7 +46,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('foreign_license') ? 'has-error' : '' }}">
                                     <label for="foreign_license">{{ trans('cruds.vehicle.fields.foreign_license') }}</label>
-                                    <input disabled class="form-control" type="text" name="foreign_license" id="foreign_license" value="{{ old('foreign_license', $repair->vehicle->foreign_license) }}">
+                                    <input disabled class="form-control" type="text" name="foreign_license" id="foreign_license" value="{{ old('foreign_license', optional($vehicle)->foreign_license) }}">
                                     @if($errors->has('foreign_license'))
                                         <span class="help-block" role="alert">{{ $errors->first('foreign_license') }}</span>
                                     @endif
@@ -57,7 +58,7 @@
                                     <label for="brand_id">{{ trans('cruds.vehicle.fields.brand') }}</label>
                                     <select class="form-control select2" name="brand_id" id="brand_id" disabled>
                                         @foreach($brands as $id => $entry)
-                                        <option value="{{ $id }}" {{ (old('brand_id') ? old('brand_id') : $vehicle->brand->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                        <option value="{{ $id }}" {{ (old('brand_id') ? old('brand_id') : optional(optional($vehicle)->brand)->id) == $id ? 'selected' : '' }}>{{ $entry }}</option>
                                         @endforeach
                                     </select>
                                     @if($errors->has('brand'))
@@ -69,7 +70,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('model') ? 'has-error' : '' }}">
                                     <label for="model">{{ trans('cruds.vehicle.fields.model') }}</label>
-                                    <input disabled class="form-control" type="text" name="model" id="model" value="{{ old('model', $repair->vehicle->model) }}">
+                                    <input disabled class="form-control" type="text" name="model" id="model" value="{{ old('model', optional($vehicle)->model) }}">
                                     @if($errors->has('model'))
                                         <span class="help-block" role="alert">{{ $errors->first('model') }}</span>
                                     @endif
@@ -79,7 +80,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('version') ? 'has-error' : '' }}">
                                     <label for="version">{{ trans('cruds.vehicle.fields.version') }}</label>
-                                    <input disabled class="form-control" type="text" name="version" id="version" value="{{ old('version', $repair->vehicle->version) }}">
+                                    <input disabled class="form-control" type="text" name="version" id="version" value="{{ old('version', optional($vehicle)->version) }}">
                                     @if($errors->has('version'))
                                         <span class="help-block" role="alert">{{ $errors->first('version') }}</span>
                                     @endif
@@ -92,7 +93,7 @@
                                     <select disabled class="form-control" name="transmission" id="transmission">
                                         <option value disabled {{ old('transmission', null) === null ? 'selected' : '' }}>{{ trans('global.pleaseSelect') }}</option>
                                         @foreach(App\Models\Vehicle::TRANSMISSION_SELECT as $key => $label)
-                                            <option value="{{ $key }}" {{ old('transmission', $repair->vehicle->transmission) === (string) $key ? 'selected' : '' }}>{{ $label }}</option>
+                                            <option value="{{ $key }}" {{ old('transmission', optional($vehicle)->transmission) === (string) $key ? 'selected' : '' }}>{{ $label }}</option>
                                         @endforeach
                                     </select>
                                     @if($errors->has('transmission'))
@@ -104,7 +105,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('engine_displacement') ? 'has-error' : '' }}">
                                     <label for="engine_displacement">{{ trans('cruds.vehicle.fields.engine_displacement') }}</label>
-                                    <input disabled class="form-control" type="text" name="engine_displacement" id="engine_displacement" value="{{ old('engine_displacement', $repair->vehicle->engine_displacement) }}">
+                                    <input disabled class="form-control" type="text" name="engine_displacement" id="engine_displacement" value="{{ old('engine_displacement', optional($vehicle)->engine_displacement) }}">
                                     @if($errors->has('engine_displacement'))
                                         <span class="help-block" role="alert">{{ $errors->first('engine_displacement') }}</span>
                                     @endif
@@ -114,7 +115,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('year') ? 'has-error' : '' }}">
                                     <label for="year">{{ trans('cruds.vehicle.fields.year') }}</label>
-                                    <input disabled class="form-control" type="number" name="year" id="year" value="{{ old('year', $repair->vehicle->year) }}" step="1">
+                                    <input disabled class="form-control" type="number" name="year" id="year" value="{{ old('year', optional($vehicle)->year) }}" step="1">
                                     @if($errors->has('year'))
                                         <span class="help-block" role="alert">{{ $errors->first('year') }}</span>
                                     @endif
@@ -124,7 +125,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('month') ? 'has-error' : '' }}">
                                     <label for="month">{{ trans('cruds.vehicle.fields.month') }}</label>
-                                    <input disabled class="form-control" type="text" name="month" id="month" value="{{ old('month', $repair->vehicle->month) }}">
+                                    <input disabled class="form-control" type="text" name="month" id="month" value="{{ old('month', optional($vehicle)->month) }}">
                                     @if($errors->has('month'))
                                         <span class="help-block" role="alert">{{ $errors->first('month') }}</span>
                                     @endif
@@ -134,7 +135,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('license_date') ? 'has-error' : '' }}">
                                     <label for="license_date">{{ trans('cruds.vehicle.fields.license_date') }}</label>
-                                    <input disabled class="form-control date" type="text" name="license_date" id="license_date" value="{{ old('license_date', $repair->vehicle->license_date) }}">
+                                    <input disabled class="form-control date" type="text" name="license_date" id="license_date" value="{{ old('license_date', optional($vehicle)->license_date) }}">
                                     @if($errors->has('license_date'))
                                         <span class="help-block" role="alert">{{ $errors->first('license_date') }}</span>
                                     @endif
@@ -144,7 +145,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('color') ? 'has-error' : '' }}">
                                     <label for="color">{{ trans('cruds.vehicle.fields.color') }}</label>
-                                    <input disabled class="form-control" type="text" name="color" id="color" value="{{ old('color', $repair->vehicle->color) }}">
+                                    <input disabled class="form-control" type="text" name="color" id="color" value="{{ old('color', optional($vehicle)->color) }}">
                                     @if($errors->has('color'))
                                         <span class="help-block" role="alert">{{ $errors->first('color') }}</span>
                                     @endif
@@ -154,7 +155,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('fuel') ? 'has-error' : '' }}">
                                     <label for="fuel">{{ trans('cruds.vehicle.fields.fuel') }}</label>
-                                    <input disabled class="form-control" type="text" name="fuel" id="fuel" value="{{ old('fuel', $repair->vehicle->fuel) }}">
+                                    <input disabled class="form-control" type="text" name="fuel" id="fuel" value="{{ old('fuel', optional($vehicle)->fuel) }}">
                                     @if($errors->has('fuel'))
                                         <span class="help-block" role="alert">{{ $errors->first('fuel') }}</span>
                                     @endif
@@ -164,7 +165,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('kilometers') ? 'has-error' : '' }}">
                                     <label for="kilometers">{{ trans('cruds.vehicle.fields.kilometers') }}</label>
-                                    <input disabled class="form-control" type="number" name="kilometers" id="kilometers" value="{{ old('kilometers', $repair->vehicle->kilometers) }}" step="1">
+                                    <input disabled class="form-control" type="number" name="kilometers" id="kilometers" value="{{ old('kilometers', optional($vehicle)->kilometers) }}" step="1">
                                     @if($errors->has('kilometers'))
                                         <span class="help-block" role="alert">{{ $errors->first('kilometers') }}</span>
                                     @endif
@@ -174,7 +175,7 @@
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('inspec_b') ? 'has-error' : '' }}">
                                     <label for="inspec_b">{{ trans('cruds.vehicle.fields.inspec_b') }}</label>
-                                    <input disabled class="form-control" type="text" name="inspec_b" id="inspec_b" value="{{ old('inspec_b', $repair->vehicle->inspec_b) }}">
+                                    <input disabled class="form-control" type="text" name="inspec_b" id="inspec_b" value="{{ old('inspec_b', optional($vehicle)->inspec_b) }}">
                                     @if($errors->has('inspec_b'))
                                         <span class="help-block" role="alert">{{ $errors->first('inspec_b') }}</span>
                                     @endif
@@ -202,7 +203,7 @@
                                                     <label class="required" for="vehicle_id">{{ trans('cruds.repair.fields.vehicle') }}</label>
                                                     <select class="form-control select2" name="vehicle_id" id="vehicle_id" required>
                                                         @foreach($vehicles as $id => $entry)
-                                                        <option value="{{ $id }}" {{ (old('vehicle_id') ? old('vehicle_id') : $repair->vehicle->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                                        <option value="{{ $id }}" {{ (old('vehicle_id') ? old('vehicle_id') : $repair->vehicle_id) == $id ? 'selected' : '' }}>{{ $entry }}</option>
                                                         @endforeach
                                                     </select>
                                                     @if($errors->has('vehicle'))
@@ -241,102 +242,24 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="panel panel-default">
-                                    <div class="panel-heading">
-                                        Material
-                                    </div>
-                                    <div class="panel-body">
-                                        <div class="form-group">
-                                            <label for="account_category_id">Categorias</label>
-                                            <select name="account_category_id" id="account_category_id" class="form-control select2">
-                                                <option selected disabled>Selecionar categoria</option>
-                                                @foreach ($account_categories as $account_category)
-                                                    <option value="{{ $account_category->id }}">{{ $account_category->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="account_item_id">Item</label>
-                                            <select name="account_item_id" id="account_item_id" class="form-control select2">
-                                                <option selected disabled>Selecionar item</option>
-                                                {{-- Itens serão carregados via JavaScript --}}
-                                            </select>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label for="total">Valor (€)</label>
-                                            <input type="number" step="0.01" name="total" id="total" class="form-control" value="{{ old('total') }}">
-                                        </div>
-
-
-                                        <div class="form-group">
-                                            <button type="button" class="btn btn-success btn-block" id="save-material">
-                                                Gravar material
-                                            </button>
-                                        </div>
-
-                                        <hr>
-
-                                        <div id="operation-list">
-                                            <h5>Materiais inseridos</h5>
-                                            <table class="table table-bordered table-striped" id="operation-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Item</th>
-                                                        <th>Valor (€)</th>
-                                                        <th style="width: 40px;">&nbsp;</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="operation-table-body">
-                                                    @forelse ($account_operations as $operation)
-                                                        <tr data-id="{{ $operation->id }}">
-                                                            <td>{{ $operation->account_item->name ?? 'Item desconhecido' }}</td>
-                                                            <td>€{{ number_format($operation->total, 2, ',', '.') }}</td>
-                                                            <td>
-                                                                <button type="button" class="btn btn-sm btn-danger delete-operation" data-id="{{ $operation->id }}">
-                                                                    &times;
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    @empty
-                                                        <tr>
-                                                            <td colspan="3" class="text-muted text-center">Nenhum material inserido ainda para este veículo.</td>
-                                                        </tr>
-                                                    @endforelse
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            @can('repair_timelogs')
                             <div class="col-md-4">
-                                @php
-                                    $timelogs = \App\Models\Timelog::where('vehicle_id', $repair->vehicle_id)
-                                        ->where('user_id', auth()->id()) // ou todos, se fores admin
-                                        ->whereNotNull('end_time')
-                                        ->orderBy('start_time')
-                                        ->get();
-
-                                    $totalMinutes = $timelogs->sum('rounded_minutes');
-                                @endphp
-
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
-                                        Registos de Tempo de Intervenção
+                                        Registos de Tempo de IntervenÃ§Ã£o
                                     </div>
                                     <div class="panel-body">
                                         <table class="table table-bordered">
                                             <thead>
                                                 <tr>
                                                     <th>Utilizador</th>
-                                                    <th>Início</th>
+                                                    <th>InÃ­cio</th>
                                                     <th>Fim</th>
                                                     <th>Tempo (arredondado)</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @foreach($timelogs as $log)
+                                                @foreach(($timelogs ?? collect()) as $log)
                                                     <tr>
                                                         <td>{{ $log->user?->name ?? 'Desconhecido' }}</td>
                                                         <td>{{ $log->start_time }}</td>
@@ -346,81 +269,16 @@
                                                 @endforeach
                                                 <tr>
                                                     <td colspan="3"><strong>Total</strong></td>
-                                                    <td><strong>{{ $totalMinutes }} min</strong></td>
+                                                    <td><strong>{{ $totalMinutes ?? 0 }} min</strong></td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
+                            @endcan
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="panel panel-default">
-                                    <div class="panel-heading">
-                                        {{ trans('cruds.supplierOrder.title') }}
-                                        <span class="pull-right">
-                                            @can('repair_edit')
-                                                <a class="btn btn-xs btn-success" href="{{ route('admin.supplier-orders.create', ['repair_id' => $repair->id]) }}">
-                                                    {{ trans('global.add') }}
-                                                </a>
-                                            @endcan
-                                            @can('repair_access')
-                                                <a class="btn btn-xs btn-default" href="{{ route('admin.supplier-orders.summary') }}">
-                                                    Resumo por fornecedor
-                                                </a>
-                                            @endcan
-                                        </span>
-                                    </div>
-                                    <div class="panel-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered table-striped">
-                                                <thead>
-                                                    <tr>
-                                                        <th>#</th>
-                                                        <th>{{ trans('cruds.supplierOrder.fields.suplier') }}</th>
-                                                        <th>{{ trans('cruds.supplierOrder.fields.order_date') }}</th>
-                                                        <th class="text-right">Qtd</th>
-                                                        <th class="text-right">Recebido</th>
-                                                        <th>{{ trans('cruds.supplierOrder.fields.notes') }}</th>
-                                                        <th>&nbsp;</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @forelse($supplierOrders as $supplierOrder)
-                                                        <tr>
-                                                            <td>{{ $supplierOrder->id }}</td>
-                                                            <td>{{ $supplierOrder->suplier->name ?? '-' }}</td>
-                                                            <td>{{ $supplierOrder->order_date }}</td>
-                                                            <td class="text-right">{{ number_format((float) $supplierOrder->items->sum('qty_ordered'), 2, ',', '.') }}</td>
-                                                            <td class="text-right">{{ number_format((float) $supplierOrder->items->sum('qty_received'), 2, ',', '.') }}</td>
-                                                            <td>{{ $supplierOrder->notes }}</td>
-                                                            <td>
-                                                                @can('repair_show')
-                                                                    <a class="btn btn-xs btn-primary" href="{{ route('admin.supplier-orders.show', $supplierOrder->id) }}">
-                                                                        {{ trans('global.view') }}
-                                                                    </a>
-                                                                @endcan
-                                                                @can('repair_edit')
-                                                                    <a class="btn btn-xs btn-info" href="{{ route('admin.supplier-orders.edit', $supplierOrder->id) }}">
-                                                                        {{ trans('global.edit') }}
-                                                                    </a>
-                                                                @endcan
-                                                            </td>
-                                                        </tr>
-                                                    @empty
-                                                        <tr>
-                                                            <td colspan="7" class="text-muted text-center">Sem notas de encomenda.</td>
-                                                        </tr>
-                                                    @endforelse
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                         <div class="row">
                             <div class="col-md-4">
@@ -1576,7 +1434,7 @@
                                             <label for="repair_state_id">{{ trans('cruds.repair.fields.repair_state') }}</label>
                                             <select class="form-control select2" name="repair_state_id" id="repair_state_id">
                                                 @foreach($repair_states as $id => $entry)
-                                                <option value="{{ $id }}" {{ (old('repair_state_id') ? old('repair_state_id') : $repair->repair_state->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                                <option value="{{ $id }}" {{ (old('repair_state_id') ? old('repair_state_id') : optional($repair->repair_state)->id) == $id ? 'selected' : '' }}>{{ $entry }}</option>
                                                 @endforeach
                                             </select>
                                             @if($errors->has('repair_state'))
@@ -1740,141 +1598,8 @@ Dropzone.options.checkoutDropzone = {
 
         checkboxes.forEach(cb => cb.addEventListener('change', updateProgress));
 
-        // Atualizar quando a página carregar
+        // Atualizar quando a pÃ¡gina carregar
         updateProgress();
-    });
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const categorySelect = $('#account_category_id');
-        const itemSelect = $('#account_item_id');
-        const totalInput = $('#total');
-
-        // Garantir que select2 está ativado
-        categorySelect.select2();
-        itemSelect.select2();
-
-        // Ao mudar de categoria
-        categorySelect.on('change', function () {
-            const categoryId = $(this).val();
-
-            // Limpar itens e total
-            itemSelect.empty().append('<option disabled selected>A carregar...</option>').trigger('change');
-            totalInput.val('');
-
-            fetch(`/admin/account-items/by-category/${categoryId}`)
-                .then(response => response.json())
-                .then(data => {
-                    itemSelect.empty().append('<option disabled selected>Selecionar item</option>');
-
-                    data.forEach(item => {
-                        const option = $('<option>')
-                            .val(item.id)
-                            .text(item.name)
-                            .data('total', item.total); // armazenamos o total aqui
-
-                        itemSelect.append(option);
-                    });
-
-                    itemSelect.trigger('change'); // Atualiza select2 visualmente
-                });
-        });
-
-        // Quando o item muda, preencher o total
-        itemSelect.on('change', function () {
-            const selectedOption = $(this).find(':selected');
-            const total = selectedOption.data('total');
-            totalInput.val(total ?? '');
-        });
-    });
-</script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const saveBtn = document.getElementById('save-material');
-        const itemSelect = $('#account_item_id');
-        const categorySelect = $('#account_category_id');
-        const totalInput = $('#total');
-        const vehicleSelect = document.getElementById('vehicle_id');
-        const tableBody = document.getElementById('operation-table-body');
-
-        saveBtn.addEventListener('click', function () {
-            const accountItemId = itemSelect.val();
-            const total = totalInput.val();
-            const vehicleId = vehicleSelect.value;
-
-            if (!accountItemId || !total || !vehicleId) {
-                alert('Por favor, preenche todos os campos.');
-                return;
-            }
-
-            fetch('{{ route('admin.account-operations.storeAjax') }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    vehicle_id: vehicleId,
-                    account_item_id: accountItemId,
-                    total: total
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                const tr = document.createElement('tr');
-                tr.dataset.id = data.id;
-                tr.innerHTML = `
-                    <td>${data.item_name}</td>
-                    <td>€${parseFloat(data.total).toFixed(2).replace('.', ',')}</td>
-                    <td>
-                        <button type="button" class="btn btn-sm btn-danger delete-operation" data-id="${data.id}">
-                            &times;
-                        </button>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
-
-                // Limpar campos
-                itemSelect.val(null).trigger('change');
-                totalInput.val('');
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                alert('Ocorreu um erro ao gravar.');
-            });
-        });
-
-        // Remoção de materiais (delegação de eventos)
-        document.getElementById('operation-list').addEventListener('click', function (event) {
-            if (event.target.classList.contains('delete-operation')) {
-                const button = event.target;
-                const id = button.dataset.id;
-
-                if (!confirm('Tens a certeza que queres remover este material?')) return;
-
-                fetch(`/admin/account-operations/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const tr = button.closest('tr');
-                        tr.remove();
-                    } else {
-                        alert('Erro ao apagar material.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro:', error);
-                    alert('Erro inesperado ao apagar material.');
-                });
-            }
-        });
     });
 </script>
 
@@ -1889,7 +1614,7 @@ Dropzone.options.checkoutDropzone = {
             padding: 10px;
         }
 
-        /* Garante que o sticky não seja bloqueado por elementos pai */
+        /* Garante que o sticky nÃ£o seja bloqueado por elementos pai */
         .wrapper {
             position: relative;
             overflow: visible !important;

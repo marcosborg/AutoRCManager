@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('content')
     <div class="content">
@@ -37,7 +37,7 @@
                             <p class="text-muted">Nenhuma viatura no grupo.</p>
                         @else
                             @foreach($vehicleGroup->vehicles as $vehicle)
-                                <a href="{{ route('admin.financial.index', $vehicle->id) }}" class="label label-primary" style="display: inline-block; margin-bottom: 5px; margin-right: 5px;">
+                                <a href="{{ route('admin.vehicles.show', $vehicle->id) }}" class="label label-primary" style="display: inline-block; margin-bottom: 5px; margin-right: 5px;">
                                     {{ $vehicle->license ?? $vehicle->foreign_license ?? 'Sem matricula' }}
                                     @if($vehicle->brand || $vehicle->model)
                                         <small>{{ $vehicle->brand->name ?? '' }} {{ $vehicle->model }}</small>
@@ -59,7 +59,7 @@
                     <div class="panel-body">
                         <div class="d-flex justify-content-between border-bottom py-1">
                             <span><strong>Preco total de compra</strong></span>
-                            <span><strong>€{{ number_format($financial['purchasePrice'], 2, ',', '.') }}</strong></span>
+                            <span><strong>â‚¬{{ number_format($financial['purchasePrice'], 2, ',', '.') }}</strong></span>
                         </div>
 
                         <hr>
@@ -72,7 +72,7 @@
                                         <small class="text-muted">({{ $op->vehicle->license ?? 'Sem matricula' }})</small>
                                     @endif
                                 </span>
-                                <span>€{{ number_format($op->total, 2, ',', '.') }}</span>
+                                <span>â‚¬{{ number_format($op->total, 2, ',', '.') }}</span>
                             </div>
                         @empty
                             <p class="text-muted">Sem pagamentos registados.</p>
@@ -82,11 +82,11 @@
 
                         <div class="d-flex justify-content-between py-1">
                             <span><strong>Total pago</strong></span>
-                            <span><strong>€{{ number_format($financial['purchaseTotal'], 2, ',', '.') }}</strong></span>
+                            <span><strong>â‚¬{{ number_format($financial['purchaseTotal'], 2, ',', '.') }}</strong></span>
                         </div>
                         <div class="d-flex justify-content-between py-1">
                             <span><strong>Saldo por pagar</strong></span>
-                            <span><strong>€{{ number_format($financial['purchaseBalance'], 2, ',', '.') }}</strong></span>
+                            <span><strong>â‚¬{{ number_format($financial['purchaseBalance'], 2, ',', '.') }}</strong></span>
                         </div>
                     </div>
                 </div>
@@ -100,7 +100,7 @@
                     <div class="panel-body">
                         <div class="d-flex justify-content-between border-bottom py-1">
                             <span><strong>Valor final alvo</strong></span>
-                            <span><strong>€{{ number_format($financial['finalSalesTarget'], 2, ',', '.') }}</strong></span>
+                            <span><strong>â‚¬{{ number_format($financial['finalSalesTarget'], 2, ',', '.') }}</strong></span>
                         </div>
 
                         <hr>
@@ -113,7 +113,7 @@
                                         <small class="text-muted">({{ $op->vehicle->license ?? 'Sem matricula' }})</small>
                                     @endif
                                 </span>
-                                <span>€{{ number_format($op->total, 2, ',', '.') }}</span>
+                                <span>â‚¬{{ number_format($op->total, 2, ',', '.') }}</span>
                             </div>
                         @empty
                             <p class="text-muted">Nenhum recebimento registado.</p>
@@ -123,11 +123,11 @@
 
                         <div class="d-flex justify-content-between py-1">
                             <span><strong>Total recebido</strong></span>
-                            <span><strong>€{{ number_format($financial['saleTotal'], 2, ',', '.') }}</strong></span>
+                            <span><strong>â‚¬{{ number_format($financial['saleTotal'], 2, ',', '.') }}</strong></span>
                         </div>
                         <div class="d-flex justify-content-between py-1">
                             <span><strong>Saldo por receber</strong></span>
-                            <span><strong>€{{ number_format($financial['saleBalance'], 2, ',', '.') }}</strong></span>
+                            <span><strong>â‚¬{{ number_format($financial['saleBalance'], 2, ',', '.') }}</strong></span>
                         </div>
                     </div>
                 </div>
@@ -136,44 +136,44 @@
             <div class="col-md-4">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <strong>Reconciliação</strong>
+                        <strong>ReconciliaÃ§Ã£o</strong>
                     </div>
                     <div class="panel-body">
                         <div class="d-flex justify-content-between border-bottom py-1">
                             <span>Investimento (compra)</span>
-                            <span>€{{ number_format($financial['purchaseTotal'], 2, ',', '.') }}</span>
+                            <span>â‚¬{{ number_format($financial['purchaseTotal'], 2, ',', '.') }}</span>
                         </div>
                         <div class="d-flex justify-content-between border-bottom py-1">
                             <span>Investimento (oficina)</span>
-                            <span>€{{ number_format($financial['garageTotal'], 2, ',', '.') }}</span>
+                            <span>â‚¬{{ number_format($financial['garageTotal'], 2, ',', '.') }}</span>
                         </div>
                         <div class="d-flex justify-content-between border-bottom py-1">
-                            <span>Investimento (mão de obra)</span>
-                            <span>€{{ number_format($financial['labourCost'], 2, ',', '.') }}</span>
+                            <span>Investimento (mÃ£o de obra)</span>
+                            <span>â‚¬{{ number_format($financial['labourCost'], 2, ',', '.') }}</span>
                         </div>
 
                         <hr>
 
                         <div class="d-flex justify-content-between border-bottom py-1">
                             <span><strong>Total investido</strong></span>
-                            <span><strong>€{{ number_format($financial['invested'], 2, ',', '.') }}</strong></span>
+                            <span><strong>â‚¬{{ number_format($financial['invested'], 2, ',', '.') }}</strong></span>
                         </div>
                         <div class="d-flex justify-content-between border-bottom py-1">
                             <span>Valor final de venda (alvo)</span>
-                            <span>€{{ number_format($financial['finalSalesTarget'], 2, ',', '.') }}</span>
+                            <span>â‚¬{{ number_format($financial['finalSalesTarget'], 2, ',', '.') }}</span>
                         </div>
                         <div class="d-flex justify-content-between border-bottom py-1">
                             <span>Total recebido</span>
-                            <span>€{{ number_format($financial['saleTotal'], 2, ',', '.') }}</span>
+                            <span>â‚¬{{ number_format($financial['saleTotal'], 2, ',', '.') }}</span>
                         </div>
 
                         <hr>
 
                         <div class="d-flex justify-content-between border-bottom py-1">
-                            <span><strong>Lucro / prejuízo</strong></span>
+                            <span><strong>Lucro / prejuÃ­zo</strong></span>
                             <span>
                                 <strong class="{{ $financial['profit'] >= 0 ? 'text-success' : 'text-danger' }}">
-                                    €{{ number_format($financial['profit'], 2, ',', '.') }}
+                                    â‚¬{{ number_format($financial['profit'], 2, ',', '.') }}
                                 </strong>
                             </span>
                         </div>
@@ -182,8 +182,8 @@
                             <span><strong>{{ number_format($financial['roi'], 2, ',', '.') }}%</strong></span>
                         </div>
                         <div class="d-flex justify-content-between py-1">
-                            <span><em>Lucro teórico</em></span>
-                            <span><em>€{{ number_format($financial['theoreticalProfit'], 2, ',', '.') }}</em></span>
+                            <span><em>Lucro teÃ³rico</em></span>
+                            <span><em>â‚¬{{ number_format($financial['theoreticalProfit'], 2, ',', '.') }}</em></span>
                         </div>
                     </div>
                 </div>
@@ -205,32 +205,32 @@
                                         <small class="text-muted">({{ $op->vehicle->license ?? 'Sem matricula' }})</small>
                                     @endif
                                 </span>
-                                <span>€{{ number_format($op->total, 2, ',', '.') }}</span>
+                                <span>â‚¬{{ number_format($op->total, 2, ',', '.') }}</span>
                             </div>
                         @empty
-                            <p class="text-muted">Nenhuma operação registada.</p>
+                            <p class="text-muted">Nenhuma operaÃ§Ã£o registada.</p>
                         @endforelse
 
                         <hr>
 
                         <div class="d-flex justify-content-between py-1">
                             <span><strong>Total oficina</strong></span>
-                            <span><strong>€{{ number_format($financial['garageTotal'], 2, ',', '.') }}</strong></span>
+                            <span><strong>â‚¬{{ number_format($financial['garageTotal'], 2, ',', '.') }}</strong></span>
                         </div>
                     </div>
                 </div>
 
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <strong>Mão de obra</strong>
+                        <strong>MÃ£o de obra</strong>
                     </div>
                     <div class="panel-body">
                         <table class="table table-bordered table-sm">
                             <thead>
                                 <tr>
                                     <th>Viatura</th>
-                                    <th>Mecânico</th>
-                                    <th>Início</th>
+                                    <th>MecÃ¢nico</th>
+                                    <th>InÃ­cio</th>
                                     <th>Fim</th>
                                     <th>Minutos</th>
                                     <th>Custo</th>
@@ -244,17 +244,17 @@
                                         <td>{{ $log->start_time }}</td>
                                         <td>{{ $log->end_time }}</td>
                                         <td>{{ $log->rounded_minutes }}</td>
-                                        <td>€{{ number_format(($log->rounded_minutes / 60) * $hourPrice, 2, ',', '.') }}</td>
+                                        <td>â‚¬{{ number_format(($log->rounded_minutes / 60) * $hourPrice, 2, ',', '.') }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-muted">Nenhum registo de mão de obra.</td>
+                                        <td colspan="6" class="text-muted">Nenhum registo de mÃ£o de obra.</td>
                                     </tr>
                                 @endforelse
                                 <tr>
                                     <td colspan="4"><strong>Total</strong></td>
                                     <td><strong>{{ $financial['totalMinutes'] }} min</strong></td>
-                                    <td><strong>€{{ number_format($financial['labourCost'], 2, ',', '.') }}</strong></td>
+                                    <td><strong>â‚¬{{ number_format($financial['labourCost'], 2, ',', '.') }}</strong></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -290,13 +290,13 @@
                                                     {{ $row['vehicle']->brand->name ?? '' }} {{ $row['vehicle']->model }}
                                                 </div>
                                             </td>
-                                            <td>€{{ number_format($row['sale_target'], 2, ',', '.') }}</td>
-                                            <td>€{{ number_format($row['sale_total'], 2, ',', '.') }}</td>
-                                            <td>€{{ number_format($row['invested'], 2, ',', '.') }}</td>
+                                            <td>â‚¬{{ number_format($row['sale_target'], 2, ',', '.') }}</td>
+                                            <td>â‚¬{{ number_format($row['sale_total'], 2, ',', '.') }}</td>
+                                            <td>â‚¬{{ number_format($row['invested'], 2, ',', '.') }}</td>
                                             <td class="{{ $row['profit'] >= 0 ? 'text-success' : 'text-danger' }}">
-                                                €{{ number_format($row['profit'], 2, ',', '.') }}
+                                                â‚¬{{ number_format($row['profit'], 2, ',', '.') }}
                                             </td>
-                                            <td>€{{ number_format($row['sale_balance'], 2, ',', '.') }}</td>
+                                            <td>â‚¬{{ number_format($row['sale_balance'], 2, ',', '.') }}</td>
                                             <td>{{ $row['minutes'] }}</td>
                                         </tr>
                                     @empty
@@ -313,3 +313,7 @@
         </div>
     </div>
 @endsection
+
+
+
+

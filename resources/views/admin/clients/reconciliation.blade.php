@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('content')
     <div class="content">
@@ -167,7 +167,7 @@
                                     <tr>
                                         <td>
                                             @if(! $clientViewMode)
-                                                <a href="{{ route('admin.financial.index', $vehicle->id) }}">
+                                                <a href="{{ route('admin.vehicles.show', $vehicle->id) }}">
                                                     {{ $vehicle->license ?? $vehicle->foreign_license ?? 'Sem matricula' }}
                                                 </a>
                                             @else
@@ -286,3 +286,7 @@
         </div>
     </div>
 @endsection
+
+
+
+

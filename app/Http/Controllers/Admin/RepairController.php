@@ -2,18 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Domain\Finance\AccountDepartments;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\CsvImportTrait;
 use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\MassDestroyRepairRequest;
 use App\Http\Requests\StoreRepairRequest;
 use App\Http\Requests\UpdateRepairRequest;
-use App\Models\AccountCategory;
 use App\Models\Repair;
 use App\Models\RepairState;
-use App\Models\AccountOperation;
-use App\Models\SupplierOrder;
 use App\Models\Vehicle;
 use App\Models\Brand;
 use Gate;
@@ -452,21 +448,21 @@ class RepairController extends Controller
 
         $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $account_categories = AccountCategory::where('account_department_id', AccountDepartments::GARAGE)->get();
+        $timelogs = collect();
+        $totalMinutes = 0;
 
-        $account_operations = AccountOperation::with(['account_item.account_category'])
-            ->where('vehicle_id', $repair->vehicle_id)
-            ->whereHas('account_item.account_category', function ($q) {
-                $q->where('account_department_id', AccountDepartments::GARAGE);
-            })
-            ->get();
+        if (Gate::allows('repair_timelogs')) {
+            $timelogs = Timelog::with('user')
+                ->where('vehicle_id', $repair->vehicle_id)
+                ->where('user_id', Auth::id())
+                ->whereNotNull('end_time')
+                ->orderBy('start_time')
+                ->get();
 
-        $supplierOrders = SupplierOrder::with(['suplier', 'items'])
-            ->where('repair_id', $repair->id)
-            ->orderBy('order_date', 'desc')
-            ->get();
+            $totalMinutes = (int) $timelogs->sum('rounded_minutes');
+        }
 
-        return view('admin.repairs.edit', compact('account_operations', 'brands', 'repair', 'repair_states', 'vehicles', 'general_states', 'account_categories', 'supplierOrders'));
+        return view('admin.repairs.edit', compact('brands', 'repair', 'repair_states', 'vehicles', 'general_states', 'timelogs', 'totalMinutes'));
     }
 
     public function update(UpdateRepairRequest $request, Repair $repair)

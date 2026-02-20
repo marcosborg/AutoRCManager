@@ -64,10 +64,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('vehicles', 'VehicleController');
     Route::get('vehicles/{vehicle}/timeline', 'VehicleTimelineController@show')->name('vehicles.timeline');
     Route::get('vehicles/{vehicle}/timeline/export/pdf', 'VehicleTimelineExportController@exportPdf')->name('vehicles.timeline.export.pdf');
-    Route::post('vehicles/{vehicle}/account-operations', [App\Http\Controllers\Admin\VehicleController::class, 'storeAccountOperation'])->name('vehicles.account-operations.store');
-    Route::put('account-operations/update/{operation}', [App\Http\Controllers\Admin\VehicleController::class, 'updateValue'])->name('account-operations.update');
-    Route::delete('account-operations/{operation}', [App\Http\Controllers\Admin\VehicleController::class, 'destroyValue'])->name('account-operations.destroy');
-    Route::get('vehicles/{vehicle}/get-payments/{account_department_id}', [App\Http\Controllers\Admin\VehicleController::class, 'getPayments'])->name('vehicles.get-payments');
 
     // Vehicle Consignments
     Route::resource('vehicle-consignments', 'VehicleConsignmentController')->except(['destroy']);
@@ -80,7 +76,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('supliers/destroy', 'SuplierController@massDestroy')->name('supliers.massDestroy');
     Route::post('supliers/parse-csv-import', 'SuplierController@parseCsvImport')->name('supliers.parseCsvImport');
     Route::post('supliers/process-csv-import', 'SuplierController@processCsvImport')->name('supliers.processCsvImport');
-    Route::get('supliers/{suplier}/account', 'SuplierController@account')->name('supliers.account');
     Route::resource('supliers', 'SuplierController');
 
     // Payment Status
@@ -115,14 +110,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repairs/ckmedia', 'RepairController@storeCKEditorImages')->name('repairs.storeCKEditorImages');
     Route::resource('repairs', 'RepairController');
 
-    // Supplier Orders (Oficina)
-    Route::delete('supplier-orders/destroy', 'SupplierOrderController@massDestroy')->name('supplier-orders.massDestroy');
-    Route::get('supplier-orders/summary', 'SupplierOrderController@summary')->name('supplier-orders.summary');
-    Route::post('supplier-orders/items', 'SupplierOrderController@storeItem')->name('supplier-orders.items.store');
-    Route::put('supplier-orders/items/{item}', 'SupplierOrderController@updateItem')->name('supplier-orders.items.update');
-    Route::post('supplier-orders/items/{item}/receive', 'SupplierOrderController@receiveItem')->name('supplier-orders.items.receive');
-    Route::resource('supplier-orders', 'SupplierOrderController');
-
     // Create Car For Repair
     Route::get('create-car-for-repairs', 'CreateCarForRepairController@index')->name('create-car-for-repairs.index');
     Route::post('create-car-for-repairs', 'CreateCarForRepairController@store')->name('create-car-for-repairs.store');
@@ -139,39 +126,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('general-states/ckmedia', 'GeneralStateController@storeCKEditorImages')->name('general-states.storeCKEditorImages');
     Route::resource('general-states', 'GeneralStateController');
     Route::get('vehicle-state-transfers', 'VehicleStateTransferController@index')->name('vehicle-state-transfers.index');
-
-    // Account Department
-    Route::delete('account-departments/destroy', 'AccountDepartmentController@massDestroy')->name('account-departments.massDestroy');
-    Route::resource('account-departments', 'AccountDepartmentController');
-
-    // Account Category
-    Route::delete('account-categories/destroy', 'AccountCategoryController@massDestroy')->name('account-categories.massDestroy');
-    Route::resource('account-categories', 'AccountCategoryController');
-
-    // Account Item
-    Route::delete('account-items/destroy', 'AccountItemController@massDestroy')->name('account-items.massDestroy');
-    Route::resource('account-items', 'AccountItemController');
-    // AJAX - Buscar itens por categoria
-    Route::get('account-items/by-category/{id}', [App\Http\Controllers\Admin\AccountItemController::class, 'getByCategory']);
-
-    // Account Operation
-    Route::delete('account-operations/destroy', 'AccountOperationController@massDestroy')->name('account-operations.massDestroy');
-    Route::resource('account-operations', 'AccountOperationController');
-    Route::post('account-operations', [App\Http\Controllers\Admin\AccountOperationController::class, 'storeAjax'])->name('account-operations.storeAjax');
-    Route::delete('account-operations/{operation}', [App\Http\Controllers\Admin\AccountOperationController::class, 'delete'])->name('account-operations.destroy');
-
-    // Client Ledger Entries
-    Route::delete('client-ledger-entries/destroy', 'ClientLedgerEntryController@massDestroy')->name('client-ledger-entries.massDestroy');
-    Route::resource('client-ledger-entries', 'ClientLedgerEntryController');
-
-    // Vehicle Financial Entries
-    Route::delete('vehicle-financial-entries/destroy', 'VehicleFinancialEntryController@massDestroy')->name('vehicle-financial-entries.massDestroy');
-    Route::resource('vehicle-financial-entries', 'VehicleFinancialEntryController');
-
-    Route::get('financial/{vehicle_id}', [App\Http\Controllers\Admin\FinancialController::class, 'index'])->name('financial.index');
-    Route::get('reports/operational-units', 'OperationalUnitReportController@index')->name('reports.operational-units');
-    Route::get('reports/operational-units/export', 'OperationalUnitReportExportController@export')->name('reports.operational-units.export');
-
     // Audit Logs
     Route::resource('audit-logs', 'AuditLogsController', ['except' => ['create', 'store', 'edit', 'update', 'destroy']]);
 

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Domain\Finance\AccountDepartments;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -324,43 +323,10 @@ class Vehicle extends Model implements HasMedia
         $this->attributes['sele_chekout'] = $value ? Carbon::createFromFormat(config('panel.date_format'), $value)->format('Y-m-d') : null;
     }
 
-    public function account_operations()
-    {
-        return $this->hasMany(AccountOperation::class, 'vehicle_id');
-    }
-
-    public function acquisition_operations()
-    {
-        return $this->hasMany(AccountOperation::class, 'vehicle_id')
-            ->whereHas('account_item.account_category', function ($q) {
-                $q->where('account_department_id', AccountDepartments::ACQUISITION);
-            });
-    }
-
-    public function client_operations()
-    {
-        return $this->hasMany(AccountOperation::class)
-            ->whereHas('account_item.account_category', function ($q) {
-                $q->where('account_department_id', AccountDepartments::REVENUE);
-            });
-    }
-
-    public function garage_operations()
-    {
-        return $this->hasMany(AccountOperation::class)
-            ->whereHas('account_item.account_category', function ($q) {
-                $q->where('account_department_id', AccountDepartments::GARAGE);
-            });
-    }
 
     public function vehicle_groups()
     {
         return $this->belongsToMany(VehicleGroup::class, 'vehicle_group_vehicle');
-    }
-
-    public function financial_entries()
-    {
-        return $this->hasMany(VehicleFinancialEntry::class, 'vehicle_id');
     }
 
     public function ownerships()

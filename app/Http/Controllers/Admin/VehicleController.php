@@ -25,11 +25,6 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 use Yajra\DataTables\Facades\DataTables;
-use App\Domain\Finance\AccountDepartments;
-use App\Models\AccountDepartment;
-use App\Models\AccountOperation;
-use App\Models\AccountItem;
-use App\Models\PaymentMethod;
 
 class VehicleController extends Controller
 {
@@ -187,36 +182,20 @@ class VehicleController extends Controller
             'carrier',
             'pickup_state',
             'client',
-            'client_operations.account_item.account_category',
         ];
-
-        if ($canViewSensitive) {
-            $relations[] = 'acquisition_operations.account_item.account_category';
-        }
-
-        $relations[] = 'financial_entries';
         $vehicle->load($relations);
 
-        $financialEntries = $vehicle->financial_entries->sortByDesc('entry_date')->values();
-        $financialTotalCost = (float) $financialEntries->where('entry_type', 'cost')->sum('amount');
-        $financialTotalRevenue = (float) $financialEntries->where('entry_type', 'revenue')->sum('amount');
-        $financialBalance = $financialTotalRevenue - $financialTotalCost;
+        $financialEntries = collect();
+        $financialTotalCost = 0.0;
+        $financialTotalRevenue = 0.0;
+        $financialBalance = 0.0;
         $showWorkshopSection = $this->isWorkshopState($vehicle);
 
         $purchase_categories = collect();
-
-        if ($canViewSensitive) {
-            $account_department = AccountDepartment::find(AccountDepartments::ACQUISITION)->load('account_categories.account_items');
-            $purchase_categories = $account_department ? $account_department->account_categories : collect();
-        }
-
-        $sale_department = AccountDepartment::find(AccountDepartments::REVENUE)->load('account_categories.account_items');
-        $sale_categories = $sale_department ? $sale_department->account_categories : null;
-
-        $payment_methods = PaymentMethod::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $sale_categories = collect();
+        $payment_methods = collect();
 
         return view('admin.vehicles.edit', compact(
-            'payment_methods',
             'purchase_categories',
             'sale_categories',
             'general_states',
@@ -366,12 +345,12 @@ class VehicleController extends Controller
     {
         abort_if(Gate::denies('vehicle_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $vehicle->load('general_state', 'brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client', 'financial_entries');
+        $vehicle->load('general_state', 'brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client');
 
-        $financialEntries = $vehicle->financial_entries->sortByDesc('entry_date')->values();
-        $financialTotalCost = (float) $financialEntries->where('entry_type', 'cost')->sum('amount');
-        $financialTotalRevenue = (float) $financialEntries->where('entry_type', 'revenue')->sum('amount');
-        $financialBalance = $financialTotalRevenue - $financialTotalCost;
+        $financialEntries = collect();
+        $financialTotalCost = 0.0;
+        $financialTotalRevenue = 0.0;
+        $financialBalance = 0.0;
         $showWorkshopSection = $this->isWorkshopState($vehicle);
 
         return view('admin.vehicles.show', compact(
@@ -416,81 +395,6 @@ class VehicleController extends Controller
         return response()->json(['id' => $media->id, 'url' => $media->getUrl()], Response::HTTP_CREATED);
     }
 
-    public function storeAccountOperation(Request $request, Vehicle $vehicle)
-    {
-        $this->authorizeAccountOperation((int) $request->input('account_department_id'));
-
-        $vehicle->account_operations()->create([
-            'account_item_id' => $request->input('account_item_id'),
-            'payment_method_id' => $request->input('payment_method_id'),
-            'date' => $request->input('date'),
-            'total' => $request->input('total'),
-            'qty' => $request->input('qty', 1),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'account_department_id' => $request->input('account_department_id'),
-        ]);
-    }
-
-    public function updateValue(Request $request, AccountOperation $operation)
-    {
-        $this->authorizeOperationChange($operation);
-
-        $operation->update([
-            'total' => $request->input('total')
-        ]);
-
-        return response()->json(['success' => true]);
-    }
-
-    public function destroyValue(AccountOperation $operation)
-    {
-        $this->authorizeOperationChange($operation);
-
-        $operation->delete();
-
-        return response()->json(['success' => true]);
-    }
-
-    public function getPayments(Vehicle $vehicle, $account_department_id)
-    {
-        $this->authorizeAccountOperation((int) $account_department_id);
-
-        if ($account_department_id == AccountDepartments::ACQUISITION) {
-            $ops = $vehicle->acquisition_operations()
-                ->with('account_item')
-                ->get();
-        } elseif ($account_department_id == AccountDepartments::GARAGE) {
-            $ops = $vehicle->garage_operations()
-                ->with('account_item')
-                ->get();
-        } elseif ($account_department_id == AccountDepartments::REVENUE) {
-            $ops = $vehicle->client_operations()
-                ->with('account_item')
-                ->get();
-        } else {
-            return response()->json(['error' => 'Invalid account department ID'], 400);
-        }
-
-        $balance = number_format(($vehicle->purchase_price ?? 0) - $ops->sum('total'), 2, ',', '.');
-
-        $payments = $ops->map(function ($op) {
-            return [
-                'id' => $op->id,
-                'date' => $op->date ? \carbon\Carbon::parse($op->date)->format('d/m/Y') : $op->created_at->format('d/m/Y'),
-                'item' => $op->account_item->name ?? '-',
-                'total' => number_format($op->total, 2, ',', '.'),
-                'total_raw' => $op->total
-            ];
-        });
-
-        return response()->json([
-            'payments' => $payments,
-            'balance' => $balance
-        ]);
-    }
 
     public function parseCsvSync(Request $request)
     {
@@ -793,28 +697,6 @@ class VehicleController extends Controller
             'tow_price',
             'acquisition_notes',
         ];
-    }
-
-    private function authorizeAccountOperation(int $accountDepartmentId): void
-    {
-        if ($accountDepartmentId !== AccountDepartments::ACQUISITION) {
-            return;
-        }
-
-        abort_if(! $this->canViewFinancialSensitive(), Response::HTTP_FORBIDDEN, '403 Forbidden');
-    }
-
-    private function authorizeOperationChange(AccountOperation $operation): void
-    {
-        $operation->loadMissing('account_item.account_category');
-
-        $departmentId = (int) optional(optional($operation->account_item)->account_category)->account_department_id;
-
-        if ($departmentId !== 1) {
-            return;
-        }
-
-        abort_if(! $this->canViewFinancialSensitive(), Response::HTTP_FORBIDDEN, '403 Forbidden');
     }
 
     private function isWorkshopState(Vehicle $vehicle): bool

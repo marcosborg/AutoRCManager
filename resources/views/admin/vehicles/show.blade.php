@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 @section('content')
 <div class="content">
 
@@ -685,89 +685,6 @@
                             </div>
                         @endif
 
-                        @can('vehicle_financial_entry_access')
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    Financeiro detalhado
-                                    @can('vehicle_financial_entry_create')
-                                        <a class="btn btn-xs btn-success pull-right" href="{{ route('admin.vehicle-financial-entries.create', ['vehicle_id' => $vehicle->id]) }}">
-                                            Adicionar linha
-                                        </a>
-                                    @endcan
-                                </div>
-                                <div class="panel-body">
-                                    @if($financialEntries->isEmpty())
-                                        <p class="text-muted">Nenhuma linha financeira registada.</p>
-                                    @else
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered table-striped">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Data</th>
-                                                        <th>Tipo</th>
-                                                        <th>Categoria</th>
-                                                        <th class="text-right">Valor</th>
-                                                        <th>Notas</th>
-                                                        <th>&nbsp;</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach($financialEntries as $entry)
-                                                        <tr>
-                                                            <td>{{ $entry->entry_date }}</td>
-                                                            <td>{{ $entry->entry_type === 'cost' ? 'Custo' : 'Receita' }}</td>
-                                                            <td>{{ $entry->category }}</td>
-                                                            <td class="text-right">€{{ number_format((float) $entry->amount, 2, ',', '.') }}</td>
-                                                            <td>{{ $entry->notes }}</td>
-                                                            <td>
-                                                                @can('vehicle_financial_entry_show')
-                                                                    <a class="btn btn-xs btn-primary" href="{{ route('admin.vehicle-financial-entries.show', $entry->id) }}">
-                                                                        {{ trans('global.view') }}
-                                                                    </a>
-                                                                @endcan
-                                                                @can('vehicle_financial_entry_edit')
-                                                                    <a class="btn btn-xs btn-info" href="{{ route('admin.vehicle-financial-entries.edit', $entry->id) }}">
-                                                                        {{ trans('global.edit') }}
-                                                                    </a>
-                                                                @endcan
-                                                                @can('vehicle_financial_entry_delete')
-                                                                    <form action="{{ route('admin.vehicle-financial-entries.destroy', $entry->id) }}" method="POST" onsubmit="return confirm('{{ trans('global.areYouSure') }}');" style="display: inline-block;">
-                                                                        <input type="hidden" name="_method" value="DELETE">
-                                                                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                                                        <input type="submit" class="btn btn-xs btn-danger" value="{{ trans('global.delete') }}">
-                                                                    </form>
-                                                                @endcan
-                                                            </td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    @endif
-
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <div class="well well-sm text-center">
-                                                <div><strong>Total custos</strong></div>
-                                                <div class="lead">€{{ number_format($financialTotalCost, 2, ',', '.') }}</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="well well-sm text-center">
-                                                <div><strong>Total receitas</strong></div>
-                                                <div class="lead">€{{ number_format($financialTotalRevenue, 2, ',', '.') }}</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="well well-sm text-center">
-                                                <div><strong>Balanço</strong></div>
-                                                <div class="lead">€{{ number_format($financialBalance, 2, ',', '.') }}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endcan
                         <div class="form-group">
                             <a class="btn btn-default" href="{{ route('admin.vehicles.index') }}">
                                 {{ trans('global.back_to_list') }}
@@ -783,3 +700,7 @@
     </div>
 </div>
 @endsection
+
+
+
+
