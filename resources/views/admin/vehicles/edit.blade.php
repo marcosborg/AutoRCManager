@@ -887,8 +887,8 @@
                                     <h5><strong>Fotos a chegada</strong></h5>
                                     <div>
                                         @foreach($vehicle->inicial as $media)
-                                            <a href="{{ $media->getUrl() }}" target="_blank" style="display: inline-block; margin-right: 5px;">
-                                                <img src="{{ $media->getUrl('thumb') }}">
+                                            <a href="{{ $media->getUrl() }}" data-lightbox="vehicle-inicial-gallery" style="display: inline-block; margin-right: 5px;">
+                                                <img src="{{ $media->getUrl('thumb') }}" alt="Foto inicial da viatura">
                                             </a>
                                         @endforeach
                                     </div>
@@ -936,11 +936,17 @@
             @if(isset($vehicle) && $vehicle->documents)
                 var files = {!! json_encode($vehicle->documents) !!}
                 for (var i in files) {
-                    var file = files[i]
-                    this.options.addedfile.call(this, file)
-                    file.previewElement.classList.add('dz-complete')
-                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-                    $('form').append('<input type="hidden" name="documents[]" value="' + file.file_name + '">')
+                    const currentFile = files[i]
+                    this.options.addedfile.call(this, currentFile)
+                    currentFile.previewElement.classList.add('dz-complete')
+                    currentFile.previewElement.style.cursor = 'pointer'
+                    currentFile.previewElement.addEventListener('click', function (e) {
+                        if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
+                            return
+                        }
+                        window.open(currentFile.original_url, '_blank')
+                    })
+                    $('form').append('<input type="hidden" name="documents[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },
@@ -1046,6 +1052,13 @@
                         a.setAttribute('data-lightbox', 'gallery');
                         img.parentNode.insertBefore(a, img);
                         a.appendChild(img);
+                        file.previewElement.style.cursor = "pointer";
+                        file.previewElement.addEventListener('click', function (e) {
+                            if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
+                                return;
+                            }
+                            a.click();
+                        });
                     }
                 }
             @endif
@@ -1080,11 +1093,17 @@
             @if(isset($vehicle) && $vehicle->invoice)
                 var files = {!! json_encode($vehicle->invoice) !!}
                 for (var i in files) {
-                    var file = files[i]
-                    this.options.addedfile.call(this, file)
-                    file.previewElement.classList.add('dz-complete')
-                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-                    $('form').append('<input type="hidden" name="invoice[]" value="' + file.file_name + '">')
+                    const currentFile = files[i]
+                    this.options.addedfile.call(this, currentFile)
+                    currentFile.previewElement.classList.add('dz-complete')
+                    currentFile.previewElement.style.cursor = 'pointer'
+                    currentFile.previewElement.addEventListener('click', function (e) {
+                        if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
+                            return
+                        }
+                        window.open(currentFile.original_url, '_blank')
+                    })
+                    $('form').append('<input type="hidden" name="invoice[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },
@@ -1118,11 +1137,17 @@
             @if(isset($vehicle) && $vehicle->pdfs)
                 var files = {!! json_encode($vehicle->pdfs) !!}
                 for (var i in files) {
-                    var file = files[i]
-                    this.options.addedfile.call(this, file)
-                    file.previewElement.classList.add('dz-complete')
-                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-                    $('form').append('<input type="hidden" name="pdfs[]" value="' + file.file_name + '">')
+                    const currentFile = files[i]
+                    this.options.addedfile.call(this, currentFile)
+                    currentFile.previewElement.classList.add('dz-complete')
+                    currentFile.previewElement.style.cursor = 'pointer'
+                    currentFile.previewElement.addEventListener('click', function (e) {
+                        if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
+                            return
+                        }
+                        window.open(currentFile.original_url, '_blank')
+                    })
+                    $('form').append('<input type="hidden" name="pdfs[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },
@@ -1170,6 +1195,13 @@
                         a.setAttribute('data-lightbox', 'gallery');
                         img.parentNode.insertBefore(a, img);
                         a.appendChild(img);
+                        file.previewElement.style.cursor = "pointer";
+                        file.previewElement.addEventListener('click', function (e) {
+                            if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
+                                return;
+                            }
+                            a.click();
+                        });
                     }
                 }
             @endif
@@ -1204,11 +1236,17 @@
             @if(isset($vehicle) && $vehicle->withdrawal_authorization_file)
                 var files = {!! json_encode($vehicle->withdrawal_authorization_file) !!}
                 for (var i in files) {
-                    var file = files[i]
-                    this.options.addedfile.call(this, file)
-                    file.previewElement.classList.add('dz-complete')
-                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-                    $('form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + file.file_name + '">')
+                    const currentFile = files[i]
+                    this.options.addedfile.call(this, currentFile)
+                    currentFile.previewElement.classList.add('dz-complete')
+                    currentFile.previewElement.style.cursor = 'pointer'
+                    currentFile.previewElement.addEventListener('click', function (e) {
+                        if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
+                            return
+                        }
+                        window.open(currentFile.original_url, '_blank')
+                    })
+                    $('form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },
@@ -1242,11 +1280,17 @@
             @if(isset($vehicle) && $vehicle->withdrawal_documents)
                 var files = {!! json_encode($vehicle->withdrawal_documents) !!}
                 for (var i in files) {
-                    var file = files[i]
-                    this.options.addedfile.call(this, file)
-                    file.previewElement.classList.add('dz-complete')
-                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-                    $('form').append('<input type="hidden" name="withdrawal_documents[]" value="' + file.file_name + '">')
+                    const currentFile = files[i]
+                    this.options.addedfile.call(this, currentFile)
+                    currentFile.previewElement.classList.add('dz-complete')
+                    currentFile.previewElement.style.cursor = 'pointer'
+                    currentFile.previewElement.addEventListener('click', function (e) {
+                        if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
+                            return
+                        }
+                        window.open(currentFile.original_url, '_blank')
+                    })
+                    $('form').append('<input type="hidden" name="withdrawal_documents[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },
@@ -1398,11 +1442,17 @@
             @if(isset($vehicle) && $vehicle->payment_comprovant)
                 var files = {!! json_encode($vehicle->payment_comprovant) !!}
                 for (var i in files) {
-                    var file = files[i]
-                    this.options.addedfile.call(this, file)
-                    file.previewElement.classList.add('dz-complete')
-                    file.previewElement.onclick = function () { window.open(file.original_url, '_blank'); };
-                    $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + file.file_name + '">')
+                    const currentFile = files[i]
+                    this.options.addedfile.call(this, currentFile)
+                    currentFile.previewElement.classList.add('dz-complete')
+                    currentFile.previewElement.style.cursor = 'pointer'
+                    currentFile.previewElement.addEventListener('click', function (e) {
+                        if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
+                            return
+                        }
+                        window.open(currentFile.original_url, '_blank')
+                    })
+                    $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },
