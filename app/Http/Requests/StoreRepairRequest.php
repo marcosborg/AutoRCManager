@@ -217,6 +217,34 @@ class StoreRepairRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'repair_parts' => [
+                'array',
+                'nullable',
+            ],
+            'repair_parts.*.supplier' => [
+                'string',
+                'nullable',
+                'max:255',
+            ],
+            'repair_parts.*.invoice_number' => [
+                'string',
+                'nullable',
+                'max:255',
+            ],
+            'repair_parts.*.part_date' => [
+                'nullable',
+                'date',
+            ],
+            'repair_parts.*.part_name' => [
+                'string',
+                'nullable',
+                'max:255',
+            ],
+            'repair_parts.*.amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
             'expected_completion_date' => [
                 'date_format:' . config('panel.date_format'),
                 'nullable',

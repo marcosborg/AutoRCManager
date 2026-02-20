@@ -532,7 +532,7 @@ class RepairController extends Controller
 
         $repair_states = RepairState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $repair->load('vehicle', 'repair_state');
+        $repair->load('vehicle', 'repair_state', 'parts');
 
         $general_states = GeneralState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
@@ -558,6 +558,20 @@ class RepairController extends Controller
 
         $currentIsOpen = $repair->repair_state_id === null || (int) $repair->repair_state_id !== 3;
         $canCreateNewIntervention = ! RepairRules::hasOpenRepairs($repair->vehicle_id) || ! $currentIsOpen;
+        $repairParts = old('repair_parts', $repair->parts
+            ->sortBy('part_date')
+            ->values()
+            ->map(function ($part) {
+                return [
+                    'id' => $part->id,
+                    'supplier' => $part->supplier,
+                    'invoice_number' => $part->invoice_number,
+                    'part_date' => optional($part->part_date)->format('Y-m-d'),
+                    'part_name' => $part->part_name,
+                    'amount' => $part->amount,
+                ];
+            })
+            ->toArray());
 
         return view('admin.repairs.edit', compact(
             'brands',
@@ -568,13 +582,15 @@ class RepairController extends Controller
             'timelogs',
             'totalMinutes',
             'vehicleRepairs',
-            'canCreateNewIntervention'
+            'canCreateNewIntervention',
+            'repairParts'
         ));
     }
 
     public function update(UpdateRepairRequest $request, Repair $repair)
     {
         $repair->update($request->all());
+        $this->syncRepairParts($repair, $request->input('repair_parts', []));
 
         $timelog = Timelog::where('repair_id', $repair->id)
             ->where('user_id', Auth::id())
@@ -691,5 +707,53 @@ class RepairController extends Controller
         $media         = $model->addMediaFromRequest('upload')->toMediaCollection('ck-media');
 
         return response()->json(['id' => $media->id, 'url' => $media->getUrl()], Response::HTTP_CREATED);
+    }
+
+    private function syncRepairParts(Repair $repair, array $rows): void
+    {
+        $normalizedRows = collect($rows)
+            ->map(function ($row) {
+                $supplier = trim((string) ($row['supplier'] ?? ''));
+                $invoiceNumber = trim((string) ($row['invoice_number'] ?? ''));
+                $partName = trim((string) ($row['part_name'] ?? ''));
+                $amountRaw = $row['amount'] ?? null;
+
+                if ($amountRaw === '' || $amountRaw === null) {
+                    $amount = null;
+                } else {
+                    $amount = (float) str_replace(',', '.', (string) $amountRaw);
+                }
+
+                $partDate = null;
+                if (! empty($row['part_date'])) {
+                    try {
+                        $partDate = Carbon::parse($row['part_date'])->format('Y-m-d');
+                    } catch (\Throwable $e) {
+                        $partDate = null;
+                    }
+                }
+
+                return [
+                    'supplier' => $supplier !== '' ? $supplier : null,
+                    'invoice_number' => $invoiceNumber !== '' ? $invoiceNumber : null,
+                    'part_date' => $partDate,
+                    'part_name' => $partName !== '' ? $partName : null,
+                    'amount' => $amount,
+                ];
+            })
+            ->filter(function ($row) {
+                return $row['supplier'] !== null
+                    || $row['invoice_number'] !== null
+                    || $row['part_date'] !== null
+                    || $row['part_name'] !== null
+                    || $row['amount'] !== null;
+            })
+            ->values();
+
+        $repair->parts()->delete();
+
+        foreach ($normalizedRows as $row) {
+            $repair->parts()->create($row);
+        }
     }
 }

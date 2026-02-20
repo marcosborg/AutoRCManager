@@ -1498,6 +1498,76 @@
                                             @endif
                                             <span class="help-block">{{ trans('cruds.repair.fields.materials_used_helper') }}</span>
                                         </div>
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                Peças (lançamento administrativo)
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered" id="repair-parts-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Fornecedor</th>
+                                                                <th>Número fatura</th>
+                                                                <th>Data</th>
+                                                                <th>Nome</th>
+                                                                <th>Valor</th>
+                                                                <th style="width:40px;"></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @forelse(($repairParts ?? []) as $index => $part)
+                                                                <tr>
+                                                                    <td>
+                                                                        <input class="form-control" type="text" name="repair_parts[{{ $index }}][supplier]" value="{{ $part['supplier'] ?? '' }}">
+                                                                    </td>
+                                                                    <td>
+                                                                        <input class="form-control" type="text" name="repair_parts[{{ $index }}][invoice_number]" value="{{ $part['invoice_number'] ?? '' }}">
+                                                                    </td>
+                                                                    <td>
+                                                                        <input class="form-control" type="date" name="repair_parts[{{ $index }}][part_date]" value="{{ $part['part_date'] ?? '' }}">
+                                                                    </td>
+                                                                    <td>
+                                                                        <input class="form-control" type="text" name="repair_parts[{{ $index }}][part_name]" value="{{ $part['part_name'] ?? '' }}">
+                                                                    </td>
+                                                                    <td>
+                                                                        <input class="form-control" type="number" step="0.01" min="0" name="repair_parts[{{ $index }}][amount]" value="{{ $part['amount'] ?? '' }}">
+                                                                    </td>
+                                                                    <td class="text-center">
+                                                                        <button type="button" class="btn btn-xs btn-danger js-remove-repair-part">&times;</button>
+                                                                    </td>
+                                                                </tr>
+                                                            @empty
+                                                                <tr>
+                                                                    <td>
+                                                                        <input class="form-control" type="text" name="repair_parts[0][supplier]">
+                                                                    </td>
+                                                                    <td>
+                                                                        <input class="form-control" type="text" name="repair_parts[0][invoice_number]">
+                                                                    </td>
+                                                                    <td>
+                                                                        <input class="form-control" type="date" name="repair_parts[0][part_date]">
+                                                                    </td>
+                                                                    <td>
+                                                                        <input class="form-control" type="text" name="repair_parts[0][part_name]">
+                                                                    </td>
+                                                                    <td>
+                                                                        <input class="form-control" type="number" step="0.01" min="0" name="repair_parts[0][amount]">
+                                                                    </td>
+                                                                    <td class="text-center">
+                                                                        <button type="button" class="btn btn-xs btn-danger js-remove-repair-part">&times;</button>
+                                                                    </td>
+                                                                </tr>
+                                                            @endforelse
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <button type="button" class="btn btn-xs btn-primary" id="add-repair-part-row">Adicionar peça</button>
+                                                @if($errors->has('repair_parts'))
+                                                    <span class="help-block" role="alert">{{ $errors->first('repair_parts') }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
                                         <div class="form-group {{ $errors->has('checkout') ? 'has-error' : '' }}">
                                             <label for="checkout">{{ trans('cruds.repair.fields.checkout') }}</label>
                                             <div class="needsclick dropzone" id="checkout-dropzone">
@@ -1703,6 +1773,61 @@ Dropzone.options.checkoutDropzone = {
 
         // Atualizar quando a pagina carregar
         updateProgress();
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tableBody = document.querySelector('#repair-parts-table tbody');
+        const addBtn = document.getElementById('add-repair-part-row');
+        if (!tableBody || !addBtn) {
+            return;
+        }
+
+        function reindexRows() {
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach(function (row, idx) {
+                row.querySelectorAll('input').forEach(function (input) {
+                    const field = input.getAttribute('name').replace(/^repair_parts\[\d+\]\[(.+)\]$/, '$1');
+                    input.setAttribute('name', 'repair_parts[' + idx + '][' + field + ']');
+                });
+            });
+        }
+
+        function buildRow() {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input class="form-control" type="text" name="repair_parts[0][supplier]"></td>
+                <td><input class="form-control" type="text" name="repair_parts[0][invoice_number]"></td>
+                <td><input class="form-control" type="date" name="repair_parts[0][part_date]"></td>
+                <td><input class="form-control" type="text" name="repair_parts[0][part_name]"></td>
+                <td><input class="form-control" type="number" step="0.01" min="0" name="repair_parts[0][amount]"></td>
+                <td class="text-center"><button type="button" class="btn btn-xs btn-danger js-remove-repair-part">&times;</button></td>
+            `;
+            return row;
+        }
+
+        addBtn.addEventListener('click', function () {
+            tableBody.appendChild(buildRow());
+            reindexRows();
+        });
+
+        tableBody.addEventListener('click', function (event) {
+            const btn = event.target.closest('.js-remove-repair-part');
+            if (!btn) {
+                return;
+            }
+            const row = btn.closest('tr');
+            if (!row) {
+                return;
+            }
+            row.remove();
+            if (!tableBody.querySelector('tr')) {
+                tableBody.appendChild(buildRow());
+            }
+            reindexRows();
+        });
+
+        reindexRows();
     });
 </script>
 

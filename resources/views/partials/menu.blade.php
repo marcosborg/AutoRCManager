@@ -271,6 +271,12 @@
 
                                 </a>
                             </li>
+                            <li class="{{ request()->is('admin/repair-parts-report') ? 'active' : '' }}">
+                                <a href="{{ route('admin.repair-parts-report.index') }}">
+                                    <i class="fa-fw fas fa-file-invoice-dollar"></i>
+                                    <span>Relatorio de pecas</span>
+                                </a>
+                            </li>
                         @endcan
                         @can('create_car_for_repair_access')
                             <li class="{{ request()->is("admin/create-car-for-repairs") || request()->is("admin/create-car-for-repairs/*") ? "active" : "" }}">

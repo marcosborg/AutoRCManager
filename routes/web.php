@@ -110,6 +110,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repairs/ckmedia', 'RepairController@storeCKEditorImages')->name('repairs.storeCKEditorImages');
     Route::post('repairs/{repair}/new-intervention', 'RepairController@newIntervention')->name('repairs.newIntervention');
     Route::resource('repairs', 'RepairController');
+    Route::get('repair-parts-report', 'RepairPartsReportController@index')->name('repair-parts-report.index');
 
     // Create Car For Repair
     Route::get('create-car-for-repairs', 'CreateCarForRepairController@index')->name('create-car-for-repairs.index');
