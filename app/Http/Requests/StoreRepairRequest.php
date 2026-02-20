@@ -209,6 +209,14 @@ class StoreRepairRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'work_performed' => [
+                'string',
+                'nullable',
+            ],
+            'materials_used' => [
+                'string',
+                'nullable',
+            ],
             'expected_completion_date' => [
                 'date_format:' . config('panel.date_format'),
                 'nullable',

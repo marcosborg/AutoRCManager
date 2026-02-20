@@ -123,6 +123,8 @@ class Repair extends Model implements HasMedia
         'check_gearbox_oil',
         'check_gearbox_oil_text',
         'obs_2',
+        'work_performed',
+        'materials_used',
         'expected_completion_date',
         'timestamp',
         'name',

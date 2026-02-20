@@ -771,6 +771,22 @@
                                 </tr>
                                 <tr>
                                     <th>
+                                        {{ trans('cruds.repair.fields.work_performed') }}
+                                    </th>
+                                    <td>
+                                        {{ $repair->work_performed }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        {{ trans('cruds.repair.fields.materials_used') }}
+                                    </th>
+                                    <td>
+                                        {{ $repair->materials_used }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
                                         {{ trans('cruds.repair.fields.timestamp') }}
                                     </th>
                                     <td>

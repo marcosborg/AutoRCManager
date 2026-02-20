@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('content')
     <div class="content">
@@ -28,9 +28,9 @@
                     </div>
                     <div class="col-md-4">
                         <div class="well well-sm">
-                            <div><strong>Valor de aquisiÃ§Ã£o</strong></div>
+                            <div><strong>Valor de aquisição</strong></div>
                             <div class="lead">{!! $formatMoney($summary['purchase_total'] ?? 0) !!}</div>
-                            <small class="text-muted">SomatÃ³rio de {{ trans('cruds.vehicle.fields.purchase_price') }}.</small>
+                            <small class="text-muted">Somatório de {{ trans('cruds.vehicle.fields.purchase_price') }}.</small>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -50,7 +50,7 @@
             </div>
             <div class="panel-body">
                 @if($vehicleBreakdown->isEmpty())
-                    <p class="text-muted">Ainda nÃ£o existem viaturas associadas a este fornecedor.</p>
+                    <p class="text-muted">Ainda não existem viaturas associadas a este fornecedor.</p>
                 @else
                     <div class="table-responsive">
                         <table class="table table-condensed table-striped">
@@ -58,7 +58,7 @@
                                 <tr>
                                     <th>Viatura</th>
                                     <th>Estado</th>
-                                    <th class="text-right">Valor aquisiÃ§Ã£o</th>
+                                    <th class="text-right">Valor aquisição</th>
                                     <th class="text-right">Pago</th>
                                     <th class="text-right">Em falta</th>
                                 </tr>
@@ -69,12 +69,12 @@
                                     <tr>
                                         <td>
                                             <a href="{{ route('admin.vehicles.show', $vehicle->id) }}">
-                                                {{ $vehicle->license ?? $vehicle->foreign_license ?? 'Sem matrÃ­cula' }}
+                                                {{ $vehicle->license ?? $vehicle->foreign_license ?? 'Sem matrícula' }}
                                             </a>
                                             <br>
                                             <small class="text-muted">{{ $vehicle->brand->name ?? '' }} {{ $vehicle->model }}</small>
                                         </td>
-                                        <td>{{ $vehicle->general_state->name ?? 'â€”' }}</td>
+                                        <td>{{ $vehicle->general_state->name ?? '—' }}</td>
                                         <td class="text-right">{!! $formatMoney($row['purchase_price']) !!}</td>
                                         <td class="text-right">{!! $formatMoney($row['paid']) !!}</td>
                                         <td class="text-right">

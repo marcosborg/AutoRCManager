@@ -32,6 +32,22 @@
                             @endif
                             <span class="help-block">{{ trans('cruds.repair.fields.obs_1_helper') }}</span>
                         </div>
+                        <div class="form-group {{ $errors->has('work_performed') ? 'has-error' : '' }}">
+                            <label for="work_performed">{{ trans('cruds.repair.fields.work_performed') }}</label>
+                            <textarea class="form-control" name="work_performed" id="work_performed">{{ old('work_performed') }}</textarea>
+                            @if($errors->has('work_performed'))
+                                <span class="help-block" role="alert">{{ $errors->first('work_performed') }}</span>
+                            @endif
+                            <span class="help-block">{{ trans('cruds.repair.fields.work_performed_helper') }}</span>
+                        </div>
+                        <div class="form-group {{ $errors->has('materials_used') ? 'has-error' : '' }}">
+                            <label for="materials_used">{{ trans('cruds.repair.fields.materials_used') }}</label>
+                            <textarea class="form-control" name="materials_used" id="materials_used">{{ old('materials_used') }}</textarea>
+                            @if($errors->has('materials_used'))
+                                <span class="help-block" role="alert">{{ $errors->first('materials_used') }}</span>
+                            @endif
+                            <span class="help-block">{{ trans('cruds.repair.fields.materials_used_helper') }}</span>
+                        </div>
                         <div class="form-group {{ $errors->has('kilometers') ? 'has-error' : '' }}">
                             <label for="kilometers">{{ trans('cruds.repair.fields.kilometers') }}</label>
                             <input class="form-control" type="number" name="kilometers" id="kilometers" value="{{ old('kilometers', '') }}" step="1">

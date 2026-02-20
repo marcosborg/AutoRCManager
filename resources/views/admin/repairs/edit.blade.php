@@ -188,6 +188,30 @@
 
             <div class="panel panel-default">
                 <div class="panel-heading">
+                    Inicial photos in aquisition (apenas visualizacao)
+                </div>
+                <div class="panel-body">
+                    @if(optional($vehicle)->inicial && $vehicle->inicial->count())
+                        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                            @foreach($vehicle->inicial as $media)
+                                <a href="{{ $media->getUrl() }}" target="_blank" rel="noopener noreferrer" title="Abrir foto original">
+                                    <img
+                                        src="{{ $media->getUrl('thumb') }}"
+                                        alt="Inicial photo"
+                                        style="width:120px; height:120px; object-fit:cover; border:1px solid #ddd; border-radius:4px;"
+                                    >
+                                </a>
+                            @endforeach
+                        </div>
+                        <p class="help-block" style="margin-top:8px;">Clique numa miniatura para abrir a foto original.</p>
+                    @else
+                        <p class="text-muted">Sem fotos iniciais de aquisicao para esta viatura.</p>
+                    @endif
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading">
                     Historico de intervencoes da viatura
                     @can('repair_create')
                         <span class="pull-right">
@@ -309,14 +333,14 @@
                             <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
-                                        Registos de Tempo de IntervenÃ§Ã£o
+                                        Registos de Tempo de Intervencao
                                     </div>
                                     <div class="panel-body">
                                         <table class="table table-bordered">
                                             <thead>
                                                 <tr>
                                                     <th>Utilizador</th>
-                                                    <th>InÃ­cio</th>
+                                                    <th>Inicio</th>
                                                     <th>Fim</th>
                                                     <th>Tempo (arredondado)</th>
                                                 </tr>
@@ -1458,6 +1482,22 @@
                                             @endif
                                             <span class="help-block">{{ trans('cruds.repair.fields.obs_2_helper') }}</span>
                                         </div>
+                                        <div class="form-group {{ $errors->has('work_performed') ? 'has-error' : '' }}">
+                                            <label for="work_performed">{{ trans('cruds.repair.fields.work_performed') }}</label>
+                                            <textarea class="form-control" name="work_performed" id="work_performed">{{ old('work_performed', $repair->work_performed) }}</textarea>
+                                            @if($errors->has('work_performed'))
+                                            <span class="help-block" role="alert">{{ $errors->first('work_performed') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.work_performed_helper') }}</span>
+                                        </div>
+                                        <div class="form-group {{ $errors->has('materials_used') ? 'has-error' : '' }}">
+                                            <label for="materials_used">{{ trans('cruds.repair.fields.materials_used') }}</label>
+                                            <textarea class="form-control" name="materials_used" id="materials_used">{{ old('materials_used', $repair->materials_used) }}</textarea>
+                                            @if($errors->has('materials_used'))
+                                            <span class="help-block" role="alert">{{ $errors->first('materials_used') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.repair.fields.materials_used_helper') }}</span>
+                                        </div>
                                         <div class="form-group {{ $errors->has('checkout') ? 'has-error' : '' }}">
                                             <label for="checkout">{{ trans('cruds.repair.fields.checkout') }}</label>
                                             <div class="needsclick dropzone" id="checkout-dropzone">
@@ -1661,7 +1701,7 @@ Dropzone.options.checkoutDropzone = {
 
         checkboxes.forEach(cb => cb.addEventListener('change', updateProgress));
 
-        // Atualizar quando a pÃ¡gina carregar
+        // Atualizar quando a pagina carregar
         updateProgress();
     });
 </script>
@@ -1677,7 +1717,7 @@ Dropzone.options.checkoutDropzone = {
             padding: 10px;
         }
 
-        /* Garante que o sticky nÃ£o seja bloqueado por elementos pai */
+        /* Garante que o sticky nao seja bloqueado por elementos pai */
         .wrapper {
             position: relative;
             overflow: visible !important;

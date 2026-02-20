@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('content')
     <div class="content">
 
@@ -261,14 +261,14 @@
 
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    HistÃ³rico de viaturas
+                    Histórico de viaturas
                 </div>
                 <div class="panel-body">
                     <table class="table table-bordered table-striped table-hover">
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>MatrÃ­cula</th>
+                                <th>Matrícula</th>
                                 <th>Marca</th>
                                 <th>Modelo</th>
                                 <th>Ano</th>
@@ -300,7 +300,7 @@
             </div>
         @else
             <hr>
-            <p><em>Este cliente ainda nÃ£o tem viaturas registadas como adquiridas.</em></p>
+            <p><em>Este cliente ainda não tem viaturas registadas como adquiridas.</em></p>
         @endif
 
     </div>
