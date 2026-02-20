@@ -78,8 +78,6 @@ class VehicleGroupController extends Controller
 
         $vehicleGroup->load(['vehicles.brand', 'vehicles.general_state', 'clients']);
         $operationsByDepartment = ['aquisition' => collect(), 'garage' => collect(), 'sale' => collect()];
-        $timelogs = collect();
-        $hourPrice = 0;
         $financial = [
             'purchasePrice' => 0.0,
             'purchaseTotal' => 0.0,
@@ -88,8 +86,6 @@ class VehicleGroupController extends Controller
             'finalSalesTarget' => 0.0,
             'saleTotal' => 0.0,
             'saleBalance' => 0.0,
-            'totalMinutes' => 0,
-            'labourCost' => 0.0,
             'invested' => 0.0,
             'profit' => 0.0,
             'roi' => 0.0,
@@ -100,9 +96,7 @@ class VehicleGroupController extends Controller
         return view('admin.vehicleGroups.show', compact(
             'vehicleGroup',
             'operationsByDepartment',
-            'timelogs',
             'financial',
-            'hourPrice',
             'vehicleBreakdown'
         ));
     }

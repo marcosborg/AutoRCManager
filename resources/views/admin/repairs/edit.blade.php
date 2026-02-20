@@ -329,41 +329,98 @@
                                     </div>
                                 </div>
                             </div>
-                            @can('repair_timelogs')
                             <div class="col-md-4">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
-                                        Registos de Tempo de Intervencao
+                                        Controlo de reparacao
                                     </div>
                                     <div class="panel-body">
-                                        <table class="table table-bordered">
-                                            <thead>
-                                                <tr>
-                                                    <th>Utilizador</th>
-                                                    <th>Inicio</th>
-                                                    <th>Fim</th>
-                                                    <th>Tempo (arredondado)</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach(($timelogs ?? collect()) as $log)
+                                        <p><strong>Inicio:</strong> {{ $repair->repair_started_at ?: '-' }}</p>
+                                        <p><strong>Fim:</strong> {{ $repair->repair_finished_at ?: '-' }}</p>
+                                        <p>
+                                            <strong>Duracao:</strong>
+                                            @if($repair->repair_duration_minutes !== null)
+                                                {{ $repair->repair_duration_minutes }} min
+                                            @elseif($repair->getRawOriginal('repair_started_at') && ! $repair->getRawOriginal('repair_finished_at'))
+                                                {{ \Carbon\Carbon::parse($repair->getRawOriginal('repair_started_at'))->diffInMinutes(now()) }} min (em curso)
+                                            @else
+                                                -
+                                            @endif
+                                        </p>
+                                        <p><strong>Total mecanicos:</strong> {{ $totalMechanicMinutes ?? 0 }} min</p>
+
+                                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                            <button
+                                                class="btn btn-sm btn-success"
+                                                type="submit"
+                                                form="start-repair-form"
+                                                {{ $repair->getRawOriginal('repair_started_at') && ! $repair->getRawOriginal('repair_finished_at') ? 'disabled' : '' }}
+                                            >
+                                                Iniciar reparacao
+                                            </button>
+                                            <button
+                                                class="btn btn-sm btn-danger"
+                                                type="submit"
+                                                form="finish-repair-form"
+                                                {{ ! $repair->getRawOriginal('repair_started_at') || $repair->getRawOriginal('repair_finished_at') ? 'disabled' : '' }}
+                                            >
+                                                Finalizar reparacao
+                                            </button>
+                                        </div>
+
+                                        <hr>
+                                        <p>
+                                            <strong>Meu trabalho em curso:</strong>
+                                            @if($currentUserOpenWork)
+                                                desde {{ \Carbon\Carbon::parse($currentUserOpenWork->started_at)->format('Y-m-d H:i') }}
+                                            @else
+                                                -
+                                            @endif
+                                        </p>
+                                        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                                            <button
+                                                class="btn btn-sm btn-primary"
+                                                type="submit"
+                                                form="start-work-form"
+                                                {{ $currentUserOpenWork ? 'disabled' : '' }}
+                                            >
+                                                Iniciar trabalho (eu)
+                                            </button>
+                                            <button
+                                                class="btn btn-sm btn-warning"
+                                                type="submit"
+                                                form="finish-work-form"
+                                                {{ $currentUserOpenWork ? '' : 'disabled' }}
+                                            >
+                                                Finalizar trabalho (eu)
+                                            </button>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-condensed">
+                                                <thead>
                                                     <tr>
-                                                        <td>{{ $log->user?->name ?? 'Desconhecido' }}</td>
-                                                        <td>{{ $log->start_time }}</td>
-                                                        <td>{{ $log->end_time }}</td>
-                                                        <td>{{ $log->rounded_minutes }} min</td>
+                                                        <th>Mecanico</th>
+                                                        <th>Total (min)</th>
                                                     </tr>
-                                                @endforeach
-                                                <tr>
-                                                    <td colspan="3"><strong>Total</strong></td>
-                                                    <td><strong>{{ $totalMinutes ?? 0 }} min</strong></td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody>
+                                                    @forelse(($mechanicTotals ?? collect()) as $row)
+                                                        <tr>
+                                                            <td>{{ $row['name'] }}</td>
+                                                            <td>{{ $row['minutes'] }}</td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td colspan="2" class="text-muted">Sem registos de mecanicos.</td>
+                                                        </tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            @endcan
                         </div>
 
 
@@ -1630,6 +1687,18 @@
         </div>
     </div>
 </div>
+<form id="start-repair-form" method="POST" action="{{ route('admin.repairs.start', $repair->id) }}" style="display:none;">
+    @csrf
+</form>
+<form id="finish-repair-form" method="POST" action="{{ route('admin.repairs.finish', $repair->id) }}" style="display:none;">
+    @csrf
+</form>
+<form id="start-work-form" method="POST" action="{{ route('admin.repairs.work.start', $repair->id) }}" style="display:none;">
+    @csrf
+</form>
+<form id="finish-work-form" method="POST" action="{{ route('admin.repairs.work.finish', $repair->id) }}" style="display:none;">
+    @csrf
+</form>
 @endsection
 @section('scripts')
 <script>

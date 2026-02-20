@@ -289,17 +289,6 @@
                                 </a>
                             </li>
                         @endcan
-                        @can('timelog_access')
-                            <li class="{{ request()->is("admin/timelogs") || request()->is("admin/timelogs/*") ? "active" : "" }}">
-                                <a href="{{ route("admin.timelogs.index") }}">
-                                    <i class="fa-fw fas fa-clock">
-
-                                    </i>
-                                    <span>{{ trans('cruds.timelog.title') }}</span>
-
-                                </a>
-                            </li>
-                        @endcan
                     </ul>
                 </li>
             @endcan

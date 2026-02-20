@@ -25,6 +25,8 @@ class Repair extends Model implements HasMedia
 
     protected $dates = [
         'timestamp',
+        'repair_started_at',
+        'repair_finished_at',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -127,6 +129,8 @@ class Repair extends Model implements HasMedia
         'materials_used',
         'expected_completion_date',
         'timestamp',
+        'repair_started_at',
+        'repair_finished_at',
         'name',
         'repair_state_id',
         'created_at',
@@ -239,6 +243,72 @@ class Repair extends Model implements HasMedia
         return $value ? Carbon::parse($value)->format(config('panel.date_format')) : null;
     }
 
+    public function getRepairStartedAtAttribute($value)
+    {
+        return $value ? Carbon::createFromFormat('Y-m-d H:i:s', $value)->format(config('panel.date_format') . ' ' . config('panel.time_format')) : null;
+    }
+
+    public function setRepairStartedAtAttribute($value)
+    {
+        if (empty($value)) {
+            $this->attributes['repair_started_at'] = null;
+            return;
+        }
+
+        if ($value instanceof Carbon) {
+            $this->attributes['repair_started_at'] = $value->format('Y-m-d H:i:s');
+            return;
+        }
+
+        try {
+            $this->attributes['repair_started_at'] = Carbon::createFromFormat(
+                config('panel.date_format') . ' ' . config('panel.time_format'),
+                (string) $value
+            )->format('Y-m-d H:i:s');
+        } catch (\Throwable $e) {
+            $this->attributes['repair_started_at'] = Carbon::parse((string) $value)->format('Y-m-d H:i:s');
+        }
+    }
+
+    public function getRepairFinishedAtAttribute($value)
+    {
+        return $value ? Carbon::createFromFormat('Y-m-d H:i:s', $value)->format(config('panel.date_format') . ' ' . config('panel.time_format')) : null;
+    }
+
+    public function setRepairFinishedAtAttribute($value)
+    {
+        if (empty($value)) {
+            $this->attributes['repair_finished_at'] = null;
+            return;
+        }
+
+        if ($value instanceof Carbon) {
+            $this->attributes['repair_finished_at'] = $value->format('Y-m-d H:i:s');
+            return;
+        }
+
+        try {
+            $this->attributes['repair_finished_at'] = Carbon::createFromFormat(
+                config('panel.date_format') . ' ' . config('panel.time_format'),
+                (string) $value
+            )->format('Y-m-d H:i:s');
+        } catch (\Throwable $e) {
+            $this->attributes['repair_finished_at'] = Carbon::parse((string) $value)->format('Y-m-d H:i:s');
+        }
+    }
+
+    public function getRepairDurationMinutesAttribute()
+    {
+        $start = $this->getRawOriginal('repair_started_at');
+        $end = $this->getRawOriginal('repair_finished_at');
+
+        if (! $start || ! $end) {
+            return null;
+        }
+
+        return Carbon::parse($start)->diffInMinutes(Carbon::parse($end));
+    }
+
     public function setTimestampAttribute($value)
     {
         $this->attributes['timestamp'] = $value ? Carbon::createFromFormat(config('panel.date_format') . ' ' . config('panel.time_format'), $value)->format('Y-m-d H:i:s') : null;
@@ -254,13 +324,13 @@ class Repair extends Model implements HasMedia
         return $this->belongsTo(RepairState::class, 'repair_state_id');
     }
 
-    public function timelogs()
-    {
-        return $this->hasMany(Timelog::class, 'repair_id');
-    }
-
     public function parts()
     {
         return $this->hasMany(RepairPart::class, 'repair_id');
+    }
+
+    public function workLogs()
+    {
+        return $this->hasMany(RepairWorkLog::class, 'repair_id');
     }
 }

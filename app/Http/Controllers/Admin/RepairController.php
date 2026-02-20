@@ -10,6 +10,7 @@ use App\Http\Requests\MassDestroyRepairRequest;
 use App\Http\Requests\StoreRepairRequest;
 use App\Http\Requests\UpdateRepairRequest;
 use App\Models\Repair;
+use App\Models\RepairWorkLog;
 use App\Models\RepairState;
 use App\Models\Vehicle;
 use App\Models\Brand;
@@ -19,10 +20,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\GeneralState;
-use App\Models\Timelog;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class RepairController extends Controller
 {
@@ -512,22 +511,6 @@ class RepairController extends Controller
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        // Cria timelog se ainda não existir um aberto para este user e repair
-        $existingTimelog = Timelog::where('repair_id', $repair->id)
-            ->where('user_id', Auth::id())
-            ->whereNull('end_time')
-            ->latest()
-            ->first();
-
-        if (!$existingTimelog) {
-            Timelog::create([
-                'repair_id' => $repair->id,
-                'vehicle_id' => $repair->vehicle_id,
-                'user_id' => Auth::id(),
-                'start_time' => Carbon::now(),
-            ]);
-        }
-
         $vehicles = Vehicle::pluck('license', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $repair_states = RepairState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
@@ -537,19 +520,6 @@ class RepairController extends Controller
         $general_states = GeneralState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-
-        $timelogs = collect();
-        $totalMinutes = 0;
-
-        if (Gate::allows('repair_timelogs')) {
-            $timelogs = Timelog::with('user')
-                ->where('repair_id', $repair->id)
-                ->whereNotNull('end_time')
-                ->orderBy('start_time')
-                ->get();
-
-            $totalMinutes = (int) $timelogs->sum('rounded_minutes');
-        }
 
         $vehicleRepairs = Repair::with('repair_state')
             ->where('vehicle_id', $repair->vehicle_id)
@@ -573,17 +543,52 @@ class RepairController extends Controller
             })
             ->toArray());
 
+        $workLogs = RepairWorkLog::with('user')
+            ->where('repair_id', $repair->id)
+            ->orderByDesc('started_at')
+            ->get();
+
+        $currentUserOpenWork = $workLogs->first(function ($log) {
+            return (int) $log->user_id === (int) Auth::id() && $log->finished_at === null;
+        });
+
+        $mechanicTotals = $workLogs
+            ->groupBy('user_id')
+            ->map(function ($logs) {
+                $minutes = (int) $logs->sum(function ($log) {
+                    if ($log->duration_minutes !== null) {
+                        return (int) $log->duration_minutes;
+                    }
+
+                    if ($log->finished_at) {
+                        return Carbon::parse($log->started_at)->diffInMinutes(Carbon::parse($log->finished_at));
+                    }
+
+                    return Carbon::parse($log->started_at)->diffInMinutes(now());
+                });
+
+                return [
+                    'name' => $logs->first()->user?->name ?? 'Desconhecido',
+                    'minutes' => $minutes,
+                ];
+            })
+            ->values();
+
+        $totalMechanicMinutes = (int) $mechanicTotals->sum('minutes');
+
         return view('admin.repairs.edit', compact(
             'brands',
             'repair',
             'repair_states',
             'vehicles',
             'general_states',
-            'timelogs',
-            'totalMinutes',
             'vehicleRepairs',
             'canCreateNewIntervention',
-            'repairParts'
+            'repairParts',
+            'workLogs',
+            'currentUserOpenWork',
+            'mechanicTotals',
+            'totalMechanicMinutes'
         ));
     }
 
@@ -591,30 +596,6 @@ class RepairController extends Controller
     {
         $repair->update($request->all());
         $this->syncRepairParts($repair, $request->input('repair_parts', []));
-
-        $timelog = Timelog::where('repair_id', $repair->id)
-            ->where('user_id', Auth::id())
-            ->whereNull('end_time')
-            ->latest()
-            ->first();
-
-        if ($timelog) {
-            $endTime = now();
-            $startTime = \Carbon\Carbon::parse($timelog->start_time);
-            $minutes = $startTime->diffInMinutes($endTime);
-
-            if ($minutes >= 1) {
-                $rounded = ceil($minutes / 15) * 15;
-                Log::info("TIMESTAMP: " . $startTime . " -> " . $endTime . " = $minutes minutes. Rounded: $rounded");
-                $timelog->update([
-                    'end_time' => $endTime,
-                    'rounded_minutes' => $rounded,
-                ]);
-            } else {
-                $timelog->delete();
-            }
-        }
-
 
         if (count($repair->checkin) > 0) {
             foreach ($repair->checkin as $media) {
@@ -645,6 +626,92 @@ class RepairController extends Controller
         }
 
         return redirect()->route('admin.repairs.index');
+    }
+
+    public function startRepair(Repair $repair)
+    {
+        abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        if (! $repair->getRawOriginal('repair_started_at')) {
+            $repair->repair_started_at = now();
+            $repair->repair_finished_at = null;
+            $repair->save();
+        }
+
+        return redirect()
+            ->route('admin.repairs.edit', $repair->id)
+            ->with('message', 'Reparacao iniciada com sucesso.');
+    }
+
+    public function finishRepair(Repair $repair)
+    {
+        abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        if (! $repair->getRawOriginal('repair_started_at')) {
+            return redirect()
+                ->route('admin.repairs.edit', $repair->id)
+                ->withErrors(['repair_started_at' => 'Inicie a reparacao antes de finalizar.']);
+        }
+
+        if (! $repair->getRawOriginal('repair_finished_at')) {
+            $repair->repair_finished_at = now();
+            $repair->save();
+        }
+
+        return redirect()
+            ->route('admin.repairs.edit', $repair->id)
+            ->with('message', 'Reparacao finalizada com sucesso.');
+    }
+
+    public function startWork(Repair $repair)
+    {
+        abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $openLog = RepairWorkLog::where('repair_id', $repair->id)
+            ->where('user_id', Auth::id())
+            ->whereNull('finished_at')
+            ->first();
+
+        if (! $openLog) {
+            RepairWorkLog::create([
+                'repair_id' => $repair->id,
+                'user_id' => Auth::id(),
+                'started_at' => now(),
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.repairs.edit', $repair->id)
+            ->with('message', 'Trabalho iniciado para este mecanico.');
+    }
+
+    public function finishWork(Repair $repair)
+    {
+        abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $openLog = RepairWorkLog::where('repair_id', $repair->id)
+            ->where('user_id', Auth::id())
+            ->whereNull('finished_at')
+            ->latest('started_at')
+            ->first();
+
+        if (! $openLog) {
+            return redirect()
+                ->route('admin.repairs.edit', $repair->id)
+                ->withErrors(['repair_work' => 'Nao existe trabalho em curso para este mecanico.']);
+        }
+
+        $end = now();
+        $minutes = Carbon::parse($openLog->started_at)->diffInMinutes($end);
+
+        $openLog->update([
+            'finished_at' => $end,
+            'duration_minutes' => $minutes,
+        ]);
+
+        return redirect()
+            ->route('admin.repairs.edit', $repair->id)
+            ->with('message', 'Trabalho finalizado para este mecanico.');
     }
 
     public function newIntervention(Repair $repair)
@@ -757,3 +824,4 @@ class RepairController extends Controller
         }
     }
 }
+

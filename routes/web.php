@@ -109,6 +109,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repairs/media', 'RepairController@storeMedia')->name('repairs.storeMedia');
     Route::post('repairs/ckmedia', 'RepairController@storeCKEditorImages')->name('repairs.storeCKEditorImages');
     Route::post('repairs/{repair}/new-intervention', 'RepairController@newIntervention')->name('repairs.newIntervention');
+    Route::post('repairs/{repair}/start', 'RepairController@startRepair')->name('repairs.start');
+    Route::post('repairs/{repair}/finish', 'RepairController@finishRepair')->name('repairs.finish');
+    Route::post('repairs/{repair}/work/start', 'RepairController@startWork')->name('repairs.work.start');
+    Route::post('repairs/{repair}/work/finish', 'RepairController@finishWork')->name('repairs.work.finish');
     Route::resource('repairs', 'RepairController');
     Route::get('repair-parts-report', 'RepairPartsReportController@index')->name('repair-parts-report.index');
 
@@ -134,10 +138,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     // Payment Method
     Route::delete('payment-methods/destroy', 'PaymentMethodController@massDestroy')->name('payment-methods.massDestroy');
     Route::resource('payment-methods', 'PaymentMethodController');
-
-    // Timelog
-    Route::delete('timelogs/destroy', 'TimelogController@massDestroy')->name('timelogs.massDestroy');
-    Route::resource('timelogs', 'TimelogController');
 
     // Depreciation
     Route::delete('depreciations/destroy', 'DepreciationController@massDestroy')->name('depreciations.massDestroy');
