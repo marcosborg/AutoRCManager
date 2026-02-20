@@ -251,4 +251,9 @@ class Repair extends Model implements HasMedia
     {
         return $this->belongsTo(RepairState::class, 'repair_state_id');
     }
+
+    public function timelogs()
+    {
+        return $this->hasMany(Timelog::class, 'repair_id');
+    }
 }

@@ -185,6 +185,69 @@
                         </div>
                 </div>
             </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Historico de intervencoes da viatura
+                    @can('repair_create')
+                        <span class="pull-right">
+                            @if($canCreateNewIntervention)
+                                <form method="POST" action="{{ route('admin.repairs.newIntervention', $repair->id) }}" style="display:inline;">
+                                    @csrf
+                                    <button class="btn btn-xs btn-success" type="submit">
+                                        Nova intervencao
+                                    </button>
+                                </form>
+                            @else
+                                <button class="btn btn-xs btn-default" type="button" disabled title="Feche a intervencao aberta para criar outra.">
+                                    Nova intervencao
+                                </button>
+                            @endif
+                        </span>
+                    @endcan
+                </div>
+                <div class="panel-body">
+                    @if($vehicleRepairs->isEmpty())
+                        <p class="text-muted">Sem intervencoes registadas para esta viatura.</p>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Abertura</th>
+                                        <th>Estado</th>
+                                        <th>Previsao</th>
+                                        <th>Checklist</th>
+                                        <th>&nbsp;</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($vehicleRepairs as $item)
+                                        <tr class="{{ $item->id === $repair->id ? 'info' : '' }}">
+                                            <td>#{{ $item->id }}</td>
+                                            <td>{{ optional($item->created_at)->format('Y-m-d H:i') }}</td>
+                                            <td>{{ $item->repair_state->name ?? 'Aberta' }}</td>
+                                            <td>{{ $item->expected_completion_date ?: '-' }}</td>
+                                            <td>{{ $item->checklist_percentage }}%</td>
+                                            <td>
+                                                @if($item->id === $repair->id)
+                                                    <span class="label label-info">Atual</span>
+                                                @else
+                                                    <a class="btn btn-xs btn-primary" href="{{ route('admin.repairs.edit', $item->id) }}">
+                                                        Abrir
+                                                    </a>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
             <div class="panel panel-default">
                 <div class="panel-heading">
                     Entrada em oficina

@@ -24,6 +24,7 @@ class Timelog extends Model
     ];
 
     protected $fillable = [
+        'repair_id',
         'vehicle_id',
         'user_id',
         'start_time',
@@ -42,6 +43,11 @@ class Timelog extends Model
     public function vehicle()
     {
         return $this->belongsTo(Vehicle::class, 'vehicle_id');
+    }
+
+    public function repair()
+    {
+        return $this->belongsTo(Repair::class, 'repair_id');
     }
 
     public function user()

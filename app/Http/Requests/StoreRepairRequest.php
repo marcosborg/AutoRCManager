@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Domain\Repairs\RepairRules;
 use App\Models\Repair;
 use Gate;
 use Illuminate\Foundation\Http\FormRequest;
@@ -20,6 +21,11 @@ class StoreRepairRequest extends FormRequest
             'vehicle_id' => [
                 'required',
                 'integer',
+                function ($attribute, $value, $fail) {
+                    if (RepairRules::hasOpenRepairs((int) $value)) {
+                        $fail('Ja existe uma intervencao aberta para esta viatura.');
+                    }
+                },
             ],
             'kilometers' => [
                 'nullable',

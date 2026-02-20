@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Repairs\RepairRules;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\CsvImportTrait;
 use App\Http\Controllers\Traits\MediaUploadingTrait;
@@ -382,11 +383,99 @@ class RepairController extends Controller
             return $table->make(true);
         }
 
-        $vehicles      = Vehicle::get();
-        $brands       = Brand::get();
-        $repair_states = RepairState::get();
+        $licenseFilter = trim((string) $request->query('license', ''));
+        $stateFilter = $request->query('state');
+        $openOnly = $request->boolean('open_only');
+        $sort = (string) $request->query('sort', 'latest');
+        $dir = strtolower((string) $request->query('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        return view('admin.repairs.index', compact('vehicles', 'brands', 'repair_states'));
+        $repairStates = RepairState::query()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $groupedRepairs = Repair::with(['vehicle.brand', 'repair_state'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->groupBy('vehicle_id')
+            ->map(function ($vehicleRepairs) {
+                $sorted = $vehicleRepairs->sortByDesc('created_at')->values();
+                $latest = $sorted->first();
+
+                $isOpen = function ($item) {
+                    return $item->repair_state_id === null || (int) $item->repair_state_id !== 3;
+                };
+
+                $openRepair = $sorted->first($isOpen);
+                $openCount = $sorted->filter($isOpen)->count();
+                $current = $openRepair ?: $latest;
+                $currentStateId = $current?->repair_state_id;
+                $currentStateName = $current?->repair_state?->name ?? ($openRepair ? 'Aberta' : 'Fechada');
+
+                return [
+                    'vehicle' => $latest?->vehicle,
+                    'latest' => $latest,
+                    'open' => $openRepair,
+                    'count' => $sorted->count(),
+                    'open_count' => $openCount,
+                    'current_state_id' => $currentStateId,
+                    'current_state_name' => $currentStateName,
+                ];
+            })
+            ->filter(function ($row) use ($licenseFilter, $stateFilter, $openOnly) {
+                $vehicle = $row['vehicle'];
+                if (! $vehicle) {
+                    return false;
+                }
+
+                if ($licenseFilter !== '') {
+                    $needle = mb_strtolower($licenseFilter);
+                    $license = mb_strtolower((string) ($vehicle->license ?? ''));
+                    $foreign = mb_strtolower((string) ($vehicle->foreign_license ?? ''));
+
+                    if (! str_contains($license, $needle) && ! str_contains($foreign, $needle)) {
+                        return false;
+                    }
+                }
+
+                if ($stateFilter !== null && $stateFilter !== '') {
+                    if ($stateFilter === '__null') {
+                        if ($row['current_state_id'] !== null) {
+                            return false;
+                        }
+                    } elseif ((int) $row['current_state_id'] !== (int) $stateFilter) {
+                        return false;
+                    }
+                }
+
+                if ($openOnly && (int) $row['open_count'] < 1) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->sortBy(function ($row) use ($sort) {
+                if ($sort === 'license') {
+                    $vehicle = $row['vehicle'];
+                    return mb_strtolower((string) ($vehicle?->license ?? $vehicle?->foreign_license ?? ''));
+                }
+
+                if ($sort === 'open_count') {
+                    return (int) ($row['open_count'] ?? 0);
+                }
+
+                return optional($row['latest']?->created_at)->timestamp ?? 0;
+            }, SORT_REGULAR, $dir === 'desc')
+            ->values();
+
+        return view('admin.repairs.index', compact(
+            'groupedRepairs',
+            'repairStates',
+            'licenseFilter',
+            'stateFilter',
+            'openOnly',
+            'sort',
+            'dir'
+        ));
     }
 
     public function create()
@@ -424,7 +513,7 @@ class RepairController extends Controller
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         // Cria timelog se ainda não existir um aberto para este user e repair
-        $existingTimelog = Timelog::where('vehicle_id', $repair->vehicle_id)
+        $existingTimelog = Timelog::where('repair_id', $repair->id)
             ->where('user_id', Auth::id())
             ->whereNull('end_time')
             ->latest()
@@ -432,6 +521,7 @@ class RepairController extends Controller
 
         if (!$existingTimelog) {
             Timelog::create([
+                'repair_id' => $repair->id,
                 'vehicle_id' => $repair->vehicle_id,
                 'user_id' => Auth::id(),
                 'start_time' => Carbon::now(),
@@ -453,8 +543,7 @@ class RepairController extends Controller
 
         if (Gate::allows('repair_timelogs')) {
             $timelogs = Timelog::with('user')
-                ->where('vehicle_id', $repair->vehicle_id)
-                ->where('user_id', Auth::id())
+                ->where('repair_id', $repair->id)
                 ->whereNotNull('end_time')
                 ->orderBy('start_time')
                 ->get();
@@ -462,14 +551,32 @@ class RepairController extends Controller
             $totalMinutes = (int) $timelogs->sum('rounded_minutes');
         }
 
-        return view('admin.repairs.edit', compact('brands', 'repair', 'repair_states', 'vehicles', 'general_states', 'timelogs', 'totalMinutes'));
+        $vehicleRepairs = Repair::with('repair_state')
+            ->where('vehicle_id', $repair->vehicle_id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $currentIsOpen = $repair->repair_state_id === null || (int) $repair->repair_state_id !== 3;
+        $canCreateNewIntervention = ! RepairRules::hasOpenRepairs($repair->vehicle_id) || ! $currentIsOpen;
+
+        return view('admin.repairs.edit', compact(
+            'brands',
+            'repair',
+            'repair_states',
+            'vehicles',
+            'general_states',
+            'timelogs',
+            'totalMinutes',
+            'vehicleRepairs',
+            'canCreateNewIntervention'
+        ));
     }
 
     public function update(UpdateRepairRequest $request, Repair $repair)
     {
         $repair->update($request->all());
 
-        $timelog = Timelog::where('vehicle_id', $repair->vehicle_id)
+        $timelog = Timelog::where('repair_id', $repair->id)
             ->where('user_id', Auth::id())
             ->whereNull('end_time')
             ->latest()
@@ -522,6 +629,27 @@ class RepairController extends Controller
         }
 
         return redirect()->route('admin.repairs.index');
+    }
+
+    public function newIntervention(Repair $repair)
+    {
+        abort_if(Gate::denies('repair_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        if (RepairRules::hasOpenRepairs($repair->vehicle_id)) {
+            return redirect()
+                ->route('admin.repairs.edit', $repair->id)
+                ->withErrors(['vehicle_id' => 'Feche a intervencao aberta antes de criar uma nova para esta viatura.']);
+        }
+
+        $newRepair = Repair::create([
+            'vehicle_id' => $repair->vehicle_id,
+            'kilometers' => $repair->vehicle?->kilometers,
+            'timestamp' => now()->format('Y-m-d H:i:s'),
+        ]);
+
+        return redirect()
+            ->route('admin.repairs.edit', $newRepair->id)
+            ->with('message', 'Nova intervencao criada com sucesso.');
     }
 
     public function show(Repair $repair)

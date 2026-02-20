@@ -108,6 +108,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repairs/process-csv-import', 'RepairController@processCsvImport')->name('repairs.processCsvImport');
     Route::post('repairs/media', 'RepairController@storeMedia')->name('repairs.storeMedia');
     Route::post('repairs/ckmedia', 'RepairController@storeCKEditorImages')->name('repairs.storeCKEditorImages');
+    Route::post('repairs/{repair}/new-intervention', 'RepairController@newIntervention')->name('repairs.newIntervention');
     Route::resource('repairs', 'RepairController');
 
     // Create Car For Repair
