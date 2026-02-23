@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\VehiclePosition;
+use App\Http\Controllers\Api\V1\Mobile\AuthApiController;
+use App\Http\Controllers\Api\V1\Mobile\WorkshopApiController;
 
 Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', 'middleware' => ['auth:sanctum']], function () {
     // Permissions
@@ -67,4 +69,27 @@ Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', '
 
         return response()->json($positions);
     })->name('gps.positions');
+});
+
+Route::prefix('mobile')->group(function () {
+    Route::post('auth/login', [AuthApiController::class, 'login']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('auth/me', [AuthApiController::class, 'me']);
+        Route::post('auth/logout', [AuthApiController::class, 'logout']);
+
+        Route::get('workshop/repair-states', [WorkshopApiController::class, 'repairStates']);
+        Route::get('workshop/repairs', [WorkshopApiController::class, 'repairs']);
+        Route::get('workshop/repairs/{repair}', [WorkshopApiController::class, 'repair']);
+        Route::put('workshop/repairs/{repair}', [WorkshopApiController::class, 'updateRepair']);
+        Route::post('workshop/repairs/{repair}/start', [WorkshopApiController::class, 'startRepair']);
+        Route::post('workshop/repairs/{repair}/finish', [WorkshopApiController::class, 'finishRepair']);
+        Route::post('workshop/repairs/{repair}/work/start', [WorkshopApiController::class, 'startWork']);
+        Route::post('workshop/repairs/{repair}/work/finish', [WorkshopApiController::class, 'finishWork']);
+        Route::post('workshop/repairs/{repair}/parts', [WorkshopApiController::class, 'addPart']);
+        Route::delete('workshop/repairs/{repair}/parts/{part}', [WorkshopApiController::class, 'deletePart']);
+
+        Route::get('workshop/vehicles', [WorkshopApiController::class, 'vehicles']);
+        Route::post('workshop/vehicles/{vehicle}/interventions', [WorkshopApiController::class, 'newIntervention']);
+    });
 });
