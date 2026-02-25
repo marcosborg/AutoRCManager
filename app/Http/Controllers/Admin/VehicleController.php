@@ -19,6 +19,7 @@ use App\Models\GeneralState;
 use App\Services\VehicleCsvSyncService;
 use Gate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -148,6 +149,8 @@ class VehicleController extends Controller
             }
         }
 
+        $payload = $this->filterPayloadToExistingVehicleColumns($payload);
+
         $vehicle = Vehicle::create($payload);
 
         return redirect()->route('admin.vehicles.edit', $vehicle->id)->with('message', 'Criado com sucesso');
@@ -223,6 +226,8 @@ class VehicleController extends Controller
                 unset($payload[$field]);
             }
         }
+
+        $payload = $this->filterPayloadToExistingVehicleColumns($payload);
 
         $vehicle->update($payload);
 
@@ -712,5 +717,16 @@ class VehicleController extends Controller
         }
 
         return strcasecmp($stateName, 'OFICINA') === 0;
+    }
+
+    private function filterPayloadToExistingVehicleColumns(array $payload): array
+    {
+        static $existingColumnsMap = null;
+
+        if ($existingColumnsMap === null) {
+            $existingColumnsMap = array_flip(Schema::getColumnListing((new Vehicle())->getTable()));
+        }
+
+        return array_intersect_key($payload, $existingColumnsMap);
     }
 }
