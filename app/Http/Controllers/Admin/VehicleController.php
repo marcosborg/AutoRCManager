@@ -16,8 +16,10 @@ use App\Models\PickupState;
 use App\Models\Suplier;
 use App\Models\Vehicle;
 use App\Models\GeneralState;
+use App\Models\PaymentMethod;
 use App\Services\VehicleCsvSyncService;
 use Gate;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -95,7 +97,33 @@ class VehicleController extends Controller
             });
 
             $table->editColumn('chekin_documents', function ($row) {
-                return $row->chekin_documents ? $row->chekin_documents : '';
+                return $this->vehicleHasAllDocuments($row) ? 'Sim' : 'Nao';
+            });
+            $table->filterColumn('chekin_documents', function ($query, $keyword) {
+                $value = mb_strtolower(trim((string) $keyword));
+                $truthy = ['sim', '1', 'true', 'yes', 'y'];
+                $falsy = ['nao', 'não', '0', 'false', 'no', 'n'];
+                $expression = $this->allDocumentsSqlExpression();
+
+                if (in_array($value, $truthy, true)) {
+                    $query->whereRaw("($expression) = 1");
+                    return;
+                }
+
+                if (in_array($value, $falsy, true)) {
+                    $query->whereRaw("($expression) = 0");
+                    return;
+                }
+
+                $query->where(function ($subQuery) use ($value, $expression) {
+                    if (str_starts_with('sim', $value)) {
+                        $subQuery->orWhereRaw("($expression) = 1");
+                    }
+
+                    if (str_starts_with('nao', $value) || str_starts_with('não', $value)) {
+                        $subQuery->orWhereRaw("($expression) = 0");
+                    }
+                });
             });
 
             $table->editColumn('key', function ($row) {
@@ -185,6 +213,8 @@ class VehicleController extends Controller
             'carrier',
             'pickup_state',
             'client',
+            'supplier_payments.payment_method',
+            'generic_payments.payment_method',
         ];
         $vehicle->load($relations);
 
@@ -196,11 +226,22 @@ class VehicleController extends Controller
 
         $purchase_categories = collect();
         $sale_categories = collect();
-        $payment_methods = collect();
+        $payment_methods = PaymentMethod::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $supplierPayments = $vehicle->supplier_payments->sortByDesc(function ($payment) {
+            return sprintf('%s-%09d', Carbon::createFromFormat(config('panel.date_format'), $payment->paid_at)->format('Ymd'), $payment->id);
+        })->values();
+        $supplierPaymentsTotal = (float) $vehicle->supplier_payments->sum('amount');
+        $purchasePrice = (float) ($vehicle->purchase_price ?? 0);
+        $supplierPaymentsOutstanding = $purchasePrice - $supplierPaymentsTotal;
+        $genericPayments = $vehicle->generic_payments->sortByDesc(function ($payment) {
+            return sprintf('%s-%09d', Carbon::createFromFormat(config('panel.date_format'), $payment->paid_at)->format('Ymd'), $payment->id);
+        })->values();
+        $genericPaymentsTotal = (float) $vehicle->generic_payments->sum('amount');
 
         return view('admin.vehicles.edit', compact(
             'purchase_categories',
             'sale_categories',
+            'payment_methods',
             'general_states',
             'brands',
             'carriers',
@@ -213,7 +254,12 @@ class VehicleController extends Controller
             'financialTotalCost',
             'financialTotalRevenue',
             'financialBalance',
-            'showWorkshopSection'
+            'showWorkshopSection',
+            'supplierPayments',
+            'supplierPaymentsTotal',
+            'supplierPaymentsOutstanding',
+            'genericPayments',
+            'genericPaymentsTotal'
         ));
     }
 
@@ -230,6 +276,11 @@ class VehicleController extends Controller
         $payload = $this->filterPayloadToExistingVehicleColumns($payload);
 
         $vehicle->update($payload);
+
+        if ($this->canViewFinancialSensitive()) {
+            $this->createSupplierPaymentLine($request, $vehicle);
+            $this->createGenericPaymentLine($request, $vehicle);
+        }
 
         if (count($vehicle->documents) > 0) {
             foreach ($vehicle->documents as $media) {
@@ -341,6 +392,12 @@ class VehicleController extends Controller
             if (count($media) === 0 || !in_array($file, $media)) {
                 $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('payment_comprovant');
             }
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Atualizado com sucesso',
+            ]);
         }
 
         return redirect()->back()->with('message', 'Atualizado com sucesso');
@@ -728,5 +785,76 @@ class VehicleController extends Controller
         }
 
         return array_intersect_key($payload, $existingColumnsMap);
+    }
+
+    private function createSupplierPaymentLine(UpdateVehicleRequest $request, Vehicle $vehicle): void
+    {
+        $date = $request->input('supplier_payment_date');
+        $amount = $request->input('supplier_payment_amount');
+        $paymentMethodId = $request->input('supplier_payment_method_id');
+
+        if ($date === null || $date === '' || $amount === null || $amount === '' || $paymentMethodId === null || $paymentMethodId === '') {
+            return;
+        }
+
+        $vehicle->supplier_payments()->create([
+            'paid_at' => $date,
+            'amount' => (float) $amount,
+            'payment_method_id' => (int) $paymentMethodId,
+        ]);
+    }
+
+    private function createGenericPaymentLine(UpdateVehicleRequest $request, Vehicle $vehicle): void
+    {
+        $description = $request->input('generic_payment_expense_label');
+        $date = $request->input('generic_payment_date');
+        $amount = $request->input('generic_payment_amount');
+        $paymentMethodId = $request->input('generic_payment_method_id');
+
+        if ($description === null || $description === '' || $date === null || $date === '' || $amount === null || $amount === '' || $paymentMethodId === null || $paymentMethodId === '') {
+            return;
+        }
+
+        $vehicle->generic_payments()->create([
+            'expense_label' => trim((string) $description),
+            'paid_at' => $date,
+            'amount' => (float) $amount,
+            'payment_method_id' => (int) $paymentMethodId,
+        ]);
+    }
+
+    private function vehicleHasAllDocuments(Vehicle $vehicle): bool
+    {
+        foreach ($this->documentBooleanFields() as $field) {
+            if ((int) ($vehicle->{$field} ?? 0) !== 1) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function documentBooleanFields(): array
+    {
+        return [
+            'purchase_and_sale_agreement',
+            'copy_of_the_citizen_card',
+            'tax_identification_card',
+            'copy_of_the_stamp_duty_receipt',
+            'vehicle_registration_document',
+            'vehicle_ownership_title',
+            'vehicle_keys',
+            'vehicle_manuals',
+            'release_of_reservation_or_mortgage',
+            'leasing_agreement',
+        ];
+    }
+
+    private function allDocumentsSqlExpression(): string
+    {
+        return implode(' AND ', array_map(
+            static fn ($field) => sprintf('COALESCE(`vehicles`.`%s`, 0) = 1', $field),
+            $this->documentBooleanFields()
+        ));
     }
 }

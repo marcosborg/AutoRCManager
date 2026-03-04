@@ -38,7 +38,7 @@
                                 <th>{{ trans('cruds.vehicle.fields.pvp') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.suplier') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.client') }}</th>
-                                <th>{{ trans('cruds.vehicle.fields.chekin_documents') }}</th>
+                                <th>Documentos</th>
                                 <th>{{ trans('cruds.vehicle.fields.sale_date') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.key') }}</th>
                                 <th>&nbsp;</th>
@@ -66,6 +66,8 @@
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
@@ -74,8 +76,6 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
-                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
@@ -84,7 +84,13 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td>
+                                    <select class="search">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        <option value="Sim">Sim</option>
+                                        <option value="Nao">Não</option>
+                                    </select>
+                                </td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td></td>

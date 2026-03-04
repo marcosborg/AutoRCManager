@@ -1,4 +1,31 @@
 ﻿@extends('layouts.admin')
+@section('styles')
+<style>
+    .floating-save-btn {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 1100;
+        padding: 12px 18px;
+        border-radius: 999px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    @media (max-width: 767px) {
+        .floating-save-btn {
+            right: 14px;
+            bottom: 14px;
+            width: calc(100% - 28px);
+            border-radius: 8px;
+        }
+    }
+
+    .floating-save-btn.is-loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+</style>
+@endsection
 @section('content')
 <div class="content">
 
@@ -9,7 +36,7 @@
                     {{ trans('global.edit') }} {{ trans('cruds.vehicle.title_singular') }}
                 </div>
                 <div class="panel-body">
-                    <form method="POST" action="{{ route('admin.vehicles.update', [$vehicle->id]) }}" enctype="multipart/form-data">
+                    <form id="vehicle-edit-form" method="POST" action="{{ route('admin.vehicles.update', [$vehicle->id]) }}" enctype="multipart/form-data">
                         @method('PUT')
                         @csrf
                         <div class="row">
@@ -262,14 +289,6 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.suplier_helper') }}</span>
                                 </div>
-                                <div class="form-group {{ $errors->has('payment_date') ? 'has-error' : '' }}">
-                                    <label for="payment_date">{{ trans('cruds.vehicle.fields.payment_date') }}</label>
-                                    <input class="form-control date" type="text" name="payment_date" id="payment_date" value="{{ old('payment_date', $vehicle->payment_date) }}">
-                                    @if($errors->has('payment_date'))
-                                        <span class="help-block" role="alert">{{ $errors->first('payment_date') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.payment_date_helper') }}</span>
-                                </div>
                                 <div class="form-group {{ $errors->has('payment_status') ? 'has-error' : '' }}">
                                     <label for="payment_status_id">{{ trans('cruds.vehicle.fields.payment_status') }}</label>
                                     <select class="form-control select2" name="payment_status_id" id="payment_status_id">
@@ -282,33 +301,140 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.payment_status_helper') }}</span>
                                 </div>
-                                <div class="form-group {{ $errors->has('iuc_paid_date') ? 'has-error' : '' }}">
-                                    <label for="iuc_paid_date">Data pagamento IUC</label>
-                                    <input class="form-control date" type="text" name="iuc_paid_date" id="iuc_paid_date" value="{{ old('iuc_paid_date', $vehicle->iuc_paid_date) }}">
-                                    @if($errors->has('iuc_paid_date'))
-                                        <span class="help-block" role="alert">{{ $errors->first('iuc_paid_date') }}</span>
+                                <div class="form-group {{ $errors->has('payment_date') ? 'has-error' : '' }}">
+                                    <label for="payment_date">{{ trans('cruds.vehicle.fields.payment_date') }}</label>
+                                    <input class="form-control date" type="text" name="payment_date" id="payment_date" value="{{ old('payment_date', $vehicle->payment_date) }}">
+                                    @if($errors->has('payment_date'))
+                                        <span class="help-block" role="alert">{{ $errors->first('payment_date') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.payment_date_helper') }}</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('supplier_payment_date') ? 'has-error' : '' }}">
+                                    <label for="supplier_payment_date">Data pagamento fornecedor</label>
+                                    <input class="form-control date" type="text" name="supplier_payment_date" id="supplier_payment_date" value="{{ old('supplier_payment_date') }}">
+                                    @if($errors->has('supplier_payment_date'))
+                                        <span class="help-block" role="alert">{{ $errors->first('supplier_payment_date') }}</span>
                                     @endif
                                 </div>
-                                <div class="form-group {{ $errors->has('iuc_paid_value') ? 'has-error' : '' }}">
-                                    <label for="iuc_paid_value">Valor IUC pago</label>
-                                    <input class="form-control" type="number" name="iuc_paid_value" id="iuc_paid_value" value="{{ old('iuc_paid_value', $vehicle->iuc_paid_value) }}" step="0.01">
-                                    @if($errors->has('iuc_paid_value'))
-                                        <span class="help-block" role="alert">{{ $errors->first('iuc_paid_value') }}</span>
+                                <div class="form-group {{ $errors->has('supplier_payment_amount') ? 'has-error' : '' }}">
+                                    <label for="supplier_payment_amount">Valor pagamento fornecedor</label>
+                                    <input class="form-control" type="number" name="supplier_payment_amount" id="supplier_payment_amount" value="{{ old('supplier_payment_amount') }}" step="0.01" min="0.01">
+                                    @if($errors->has('supplier_payment_amount'))
+                                        <span class="help-block" role="alert">{{ $errors->first('supplier_payment_amount') }}</span>
                                     @endif
                                 </div>
-                                <div class="form-group {{ $errors->has('tow_paid_date') ? 'has-error' : '' }}">
-                                    <label for="tow_paid_date">Data pagamento reboque</label>
-                                    <input class="form-control date" type="text" name="tow_paid_date" id="tow_paid_date" value="{{ old('tow_paid_date', $vehicle->tow_paid_date) }}">
-                                    @if($errors->has('tow_paid_date'))
-                                        <span class="help-block" role="alert">{{ $errors->first('tow_paid_date') }}</span>
+                                <div class="form-group {{ $errors->has('supplier_payment_method_id') ? 'has-error' : '' }}">
+                                    <label for="supplier_payment_method_id">Meio de pagamento fornecedor</label>
+                                    <select class="form-control select2" name="supplier_payment_method_id" id="supplier_payment_method_id">
+                                        @foreach($payment_methods as $id => $entry)
+                                            <option value="{{ $id }}" {{ old('supplier_payment_method_id') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if($errors->has('supplier_payment_method_id'))
+                                        <span class="help-block" role="alert">{{ $errors->first('supplier_payment_method_id') }}</span>
                                     @endif
                                 </div>
-                                <div class="form-group {{ $errors->has('tow_paid_value') ? 'has-error' : '' }}">
-                                    <label for="tow_paid_value">Valor reboque pago</label>
-                                    <input class="form-control" type="number" name="tow_paid_value" id="tow_paid_value" value="{{ old('tow_paid_value', $vehicle->tow_paid_value) }}" step="0.01">
-                                    @if($errors->has('tow_paid_value'))
-                                        <span class="help-block" role="alert">{{ $errors->first('tow_paid_value') }}</span>
+                                <div class="panel panel-default" id="supplier-payments-panel">
+                                    <div class="panel-heading">Pagamentos ao fornecedor</div>
+                                    <div class="panel-body" style="padding: 10px;">
+                                        <div style="margin-bottom: 8px;">
+                                            <strong>Compra:</strong> {{ number_format((float) ($vehicle->purchase_price ?? 0), 2, ',', '.') }} EUR
+                                            <br>
+                                            <strong>Total pago:</strong> {{ number_format((float) ($supplierPaymentsTotal ?? 0), 2, ',', '.') }} EUR
+                                            <br>
+                                            <strong>Em divida:</strong> {{ number_format((float) ($supplierPaymentsOutstanding ?? 0), 2, ',', '.') }} EUR
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-striped table-condensed">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Data</th>
+                                                        <th>Valor</th>
+                                                        <th>Meio</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @forelse(($supplierPayments ?? collect()) as $supplierPayment)
+                                                        <tr>
+                                                            <td>{{ $supplierPayment->paid_at }}</td>
+                                                            <td>{{ number_format((float) $supplierPayment->amount, 2, ',', '.') }} EUR</td>
+                                                            <td>{{ $supplierPayment->payment_method->name ?? '-' }}</td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td colspan="3">Sem pagamentos registados.</td>
+                                                        </tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group {{ $errors->has('generic_payment_expense_label') ? 'has-error' : '' }}">
+                                    <label for="generic_payment_expense_label">Despesa (livre)</label>
+                                    <input class="form-control" type="text" name="generic_payment_expense_label" id="generic_payment_expense_label" value="{{ old('generic_payment_expense_label') }}">
+                                    @if($errors->has('generic_payment_expense_label'))
+                                        <span class="help-block" role="alert">{{ $errors->first('generic_payment_expense_label') }}</span>
                                     @endif
+                                </div>
+                                <div class="form-group {{ $errors->has('generic_payment_date') ? 'has-error' : '' }}">
+                                    <label for="generic_payment_date">Data pagamento</label>
+                                    <input class="form-control date" type="text" name="generic_payment_date" id="generic_payment_date" value="{{ old('generic_payment_date') }}">
+                                    @if($errors->has('generic_payment_date'))
+                                        <span class="help-block" role="alert">{{ $errors->first('generic_payment_date') }}</span>
+                                    @endif
+                                </div>
+                                <div class="form-group {{ $errors->has('generic_payment_amount') ? 'has-error' : '' }}">
+                                    <label for="generic_payment_amount">Valor despesa</label>
+                                    <input class="form-control" type="number" name="generic_payment_amount" id="generic_payment_amount" value="{{ old('generic_payment_amount') }}" step="0.01" min="0.01">
+                                    @if($errors->has('generic_payment_amount'))
+                                        <span class="help-block" role="alert">{{ $errors->first('generic_payment_amount') }}</span>
+                                    @endif
+                                </div>
+                                <div class="form-group {{ $errors->has('generic_payment_method_id') ? 'has-error' : '' }}">
+                                    <label for="generic_payment_method_id">Meio de pagamento</label>
+                                    <select class="form-control select2" name="generic_payment_method_id" id="generic_payment_method_id">
+                                        @foreach($payment_methods as $id => $entry)
+                                            <option value="{{ $id }}" {{ old('generic_payment_method_id') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if($errors->has('generic_payment_method_id'))
+                                        <span class="help-block" role="alert">{{ $errors->first('generic_payment_method_id') }}</span>
+                                    @endif
+                                </div>
+                                <div class="panel panel-default" id="generic-payments-panel">
+                                    <div class="panel-heading">Pagamentos genericos da viatura</div>
+                                    <div class="panel-body" style="padding: 10px;">
+                                        <div style="margin-bottom: 8px;">
+                                            <strong>Total acumulado:</strong> {{ number_format((float) ($genericPaymentsTotal ?? 0), 2, ',', '.') }} EUR
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-striped table-condensed">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Despesa</th>
+                                                        <th>Data</th>
+                                                        <th>Valor</th>
+                                                        <th>Meio</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @forelse(($genericPayments ?? collect()) as $genericPayment)
+                                                        <tr>
+                                                            <td>{{ $genericPayment->expense_label }}</td>
+                                                            <td>{{ $genericPayment->paid_at }}</td>
+                                                            <td>{{ number_format((float) $genericPayment->amount, 2, ',', '.') }} EUR</td>
+                                                            <td>{{ $genericPayment->payment_method->name ?? '-' }}</td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td colspan="4">Sem pagamentos genericos registados.</td>
+                                                        </tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 @endcan
@@ -347,6 +473,28 @@
 
                         <h4>Documentos da viatura</h4>
                         <hr>
+                        @php
+                            $hasAllDocuments = (int) ($vehicle->purchase_and_sale_agreement ?? 0) === 1
+                                && (int) ($vehicle->copy_of_the_citizen_card ?? 0) === 1
+                                && (int) ($vehicle->tax_identification_card ?? 0) === 1
+                                && (int) ($vehicle->copy_of_the_stamp_duty_receipt ?? 0) === 1
+                                && (int) ($vehicle->vehicle_registration_document ?? 0) === 1
+                                && (int) ($vehicle->vehicle_ownership_title ?? 0) === 1
+                                && (int) ($vehicle->vehicle_keys ?? 0) === 1
+                                && (int) ($vehicle->vehicle_manuals ?? 0) === 1
+                                && (int) ($vehicle->release_of_reservation_or_mortgage ?? 0) === 1
+                                && (int) ($vehicle->leasing_agreement ?? 0) === 1;
+                        @endphp
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="checkbox" style="margin-top: 0;">
+                                    <label for="has_all_documents_toggle" style="font-weight: 600;">
+                                        <input type="checkbox" id="has_all_documents_toggle" {{ $hasAllDocuments ? 'checked' : '' }}>
+                                        Possui todos os documentos
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('purchase_and_sale_agreement') ? 'has-error' : '' }}">
@@ -936,6 +1084,9 @@
                             </button>
                         </div>
                     </form>
+                    <button type="submit" form="vehicle-edit-form" class="btn btn-danger floating-save-btn">
+                        {{ trans('global.save') }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -990,6 +1141,48 @@
 </script>
 
 <script>
+    (function () {
+        const masterCheckbox = document.getElementById('has_all_documents_toggle');
+        if (!masterCheckbox) return;
+
+        const documentFieldIds = [
+            'purchase_and_sale_agreement',
+            'copy_of_the_citizen_card',
+            'tax_identification_card',
+            'copy_of_the_stamp_duty_receipt',
+            'vehicle_registration_document',
+            'vehicle_ownership_title',
+            'vehicle_keys',
+            'vehicle_manuals',
+            'release_of_reservation_or_mortgage',
+            'leasing_agreement'
+        ];
+
+        const documentCheckboxes = documentFieldIds
+            .map(function (id) { return document.getElementById(id); })
+            .filter(function (el) { return !!el; });
+
+        function syncMasterFromDocuments() {
+            if (documentCheckboxes.length === 0) return;
+            masterCheckbox.checked = documentCheckboxes.every(function (checkbox) { return checkbox.checked; });
+        }
+
+        masterCheckbox.addEventListener('change', function () {
+            documentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = masterCheckbox.checked;
+            });
+        });
+
+        documentCheckboxes.forEach(function (checkbox) {
+            checkbox.addEventListener('change', syncMasterFromDocuments);
+        });
+
+        syncMasterFromDocuments();
+    })();
+</script>
+
+<script>
+    window.vehicleEditCkEditors = window.vehicleEditCkEditors || [];
     $(document).ready(function () {
         function SimpleUploadAdapter(editor) {
             editor.plugins.get('FileRepository').createUploadAdapter = function(loader) {
@@ -1039,7 +1232,11 @@
 
         var allEditors = document.querySelectorAll('.ckeditor');
         for (var i = 0; i < allEditors.length; ++i) {
-            ClassicEditor.create(allEditors[i], { extraPlugins: [SimpleUploadAdapter] });
+            ClassicEditor
+                .create(allEditors[i], { extraPlugins: [SimpleUploadAdapter] })
+                .then(function (editor) {
+                    window.vehicleEditCkEditors.push(editor);
+                });
         }
     });
 </script>
@@ -1451,6 +1648,140 @@
 {{-- *********************
      PAGAMENTOS (CRUD) — sem alterações, mas recalcula saldo no fim
      ********************* --}}
+<script>
+    (function () {
+        const form = document.getElementById('vehicle-edit-form');
+        if (!form) return;
+
+        const submitButtons = Array.from(document.querySelectorAll('button[type="submit"][form="vehicle-edit-form"], #vehicle-edit-form button[type="submit"]'));
+        let isSubmitting = false;
+
+        function setLoadingState(loading) {
+            submitButtons.forEach(function (button) {
+                button.disabled = loading;
+                if (button.classList.contains('floating-save-btn')) {
+                    button.classList.toggle('is-loading', loading);
+                }
+            });
+        }
+
+        function showAjaxAlert(type, message) {
+            const existing = document.getElementById('vehicle-ajax-alert');
+            if (existing) existing.remove();
+
+            const alert = document.createElement('div');
+            alert.id = 'vehicle-ajax-alert';
+            alert.className = 'alert alert-' + type;
+            alert.style.position = 'fixed';
+            alert.style.right = '24px';
+            alert.style.bottom = '86px';
+            alert.style.zIndex = '1200';
+            alert.style.maxWidth = '420px';
+            alert.style.boxShadow = '0 6px 18px rgba(0,0,0,.2)';
+            alert.textContent = message;
+            document.body.appendChild(alert);
+
+            setTimeout(function () {
+                if (alert && alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 3500);
+        }
+
+        function refreshPaymentsPanels() {
+            return $.get(window.location.href).done(function (html) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const panelIds = ['supplier-payments-panel', 'generic-payments-panel'];
+
+                panelIds.forEach(function (panelId) {
+                    const currentPanel = document.getElementById(panelId);
+                    const freshPanel = doc.getElementById(panelId);
+                    if (currentPanel && freshPanel) {
+                        currentPanel.innerHTML = freshPanel.innerHTML;
+                    }
+                });
+            });
+        }
+
+        function clearPaymentEntryFields() {
+            const inputIds = [
+                'supplier_payment_date',
+                'supplier_payment_amount',
+                'supplier_payment_method_id',
+                'generic_payment_expense_label',
+                'generic_payment_date',
+                'generic_payment_amount',
+                'generic_payment_method_id'
+            ];
+
+            inputIds.forEach(function (id) {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                if (el.tagName === 'SELECT') {
+                    el.selectedIndex = 0;
+                    if (window.jQuery && $(el).hasClass('select2-hidden-accessible')) {
+                        $(el).trigger('change');
+                    }
+                } else {
+                    el.value = '';
+                }
+            });
+        }
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            if (isSubmitting) return;
+
+            isSubmitting = true;
+            setLoadingState(true);
+
+            if (window.vehicleEditCkEditors && window.vehicleEditCkEditors.length > 0) {
+                window.vehicleEditCkEditors.forEach(function (editor) {
+                    if (editor && editor.sourceElement) {
+                        editor.sourceElement.value = editor.getData();
+                    }
+                });
+            }
+
+            const formData = new FormData(form);
+
+            $.ajax({
+                url: form.action,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).done(function (response) {
+                showAjaxAlert('success', response.message || 'Atualizado com sucesso');
+                refreshPaymentsPanels();
+                clearPaymentEntryFields();
+            }).fail(function (xhr) {
+                let message = 'Ocorreu um erro ao gravar.';
+
+                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    const firstKey = Object.keys(xhr.responseJSON.errors)[0];
+                    if (firstKey && xhr.responseJSON.errors[firstKey] && xhr.responseJSON.errors[firstKey][0]) {
+                        message = xhr.responseJSON.errors[firstKey][0];
+                    }
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+
+                showAjaxAlert('danger', message);
+            }).always(function () {
+                isSubmitting = false;
+                setLoadingState(false);
+            });
+        });
+    })();
+</script>
+
 <script>
     var uploadedPaymentComprovantMap = {}
     Dropzone.options.paymentComprovantDropzone = {

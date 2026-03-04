@@ -193,6 +193,39 @@ class UpdateVehicleRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'supplier_payment_date' => [
+                'nullable',
+                'date_format:' . config('panel.date_format'),
+            ],
+            'supplier_payment_amount' => [
+                'nullable',
+                'numeric',
+                'min:0.01',
+            ],
+            'supplier_payment_method_id' => [
+                'nullable',
+                'integer',
+                'exists:payment_methods,id',
+            ],
+            'generic_payment_expense_label' => [
+                'nullable',
+                'string',
+                'max:191',
+            ],
+            'generic_payment_date' => [
+                'nullable',
+                'date_format:' . config('panel.date_format'),
+            ],
+            'generic_payment_amount' => [
+                'nullable',
+                'numeric',
+                'min:0.01',
+            ],
+            'generic_payment_method_id' => [
+                'nullable',
+                'integer',
+                'exists:payment_methods,id',
+            ],
         ];
     }
 
@@ -207,6 +240,33 @@ class UpdateVehicleRequest extends FormRequest
             $incomingSaleDate = $this->input('sale_date');
             if (ConsignmentRules::shouldBlockSale($vehicle, $incomingSaleDate)) {
                 $validator->errors()->add('sale_date', 'Nao e possivel vender com consignacao ativa.');
+            }
+
+            $date = $this->input('supplier_payment_date');
+            $amount = $this->input('supplier_payment_amount');
+            $method = $this->input('supplier_payment_method_id');
+            $filledCount = collect([$date, $amount, $method])->filter(fn ($v) => $v !== null && $v !== '')->count();
+
+            if ($filledCount > 0 && $filledCount < 3) {
+                $validator->errors()->add(
+                    'supplier_payment_amount',
+                    'Para registar um pagamento faseado, preencha data, valor e meio de pagamento.'
+                );
+            }
+
+            $genericDescription = $this->input('generic_payment_expense_label');
+            $genericDate = $this->input('generic_payment_date');
+            $genericAmount = $this->input('generic_payment_amount');
+            $genericMethod = $this->input('generic_payment_method_id');
+            $genericFilledCount = collect([$genericDescription, $genericDate, $genericAmount, $genericMethod])
+                ->filter(fn ($v) => $v !== null && $v !== '')
+                ->count();
+
+            if ($genericFilledCount > 0 && $genericFilledCount < 4) {
+                $validator->errors()->add(
+                    'generic_payment_amount',
+                    'Para registar um pagamento generico, preencha despesa, data, valor e meio de pagamento.'
+                );
             }
         });
     }
