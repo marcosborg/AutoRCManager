@@ -61,6 +61,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('vehicles/sync-csv/parse', 'VehicleController@showCsvSyncParse')->name('vehicles.syncCsvParseForm');
     Route::post('vehicles/sync-csv/parse', 'VehicleController@parseCsvSync')->name('vehicles.syncCsvParse');
     Route::post('vehicles/sync-csv', 'VehicleController@syncCsv')->name('vehicles.syncCsv');
+    Route::delete('vehicles/{vehicle}/supplier-payments/{payment}', 'VehicleController@destroySupplierPayment')->name('vehicles.supplier-payments.destroy');
+    Route::delete('vehicles/{vehicle}/generic-payments/{payment}', 'VehicleController@destroyGenericPayment')->name('vehicles.generic-payments.destroy');
     Route::resource('vehicles', 'VehicleController');
     Route::get('vehicles/{vehicle}/timeline', 'VehicleTimelineController@show')->name('vehicles.timeline');
     Route::get('vehicles/{vehicle}/timeline/export/pdf', 'VehicleTimelineExportController@exportPdf')->name('vehicles.timeline.export.pdf');

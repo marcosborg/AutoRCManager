@@ -15,6 +15,8 @@ use App\Models\PaymentStatus;
 use App\Models\PickupState;
 use App\Models\Suplier;
 use App\Models\Vehicle;
+use App\Models\VehicleGenericPayment;
+use App\Models\VehicleSupplierPayment;
 use App\Models\GeneralState;
 use App\Models\PaymentMethod;
 use App\Services\VehicleCsvSyncService;
@@ -443,6 +445,40 @@ class VehicleController extends Controller
         }
 
         return response(null, Response::HTTP_NO_CONTENT);
+    }
+
+    public function destroySupplierPayment(Request $request, Vehicle $vehicle, int $payment)
+    {
+        abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if(! $this->canViewFinancialSensitive(), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $supplierPayment = VehicleSupplierPayment::where('vehicle_id', $vehicle->id)->findOrFail($payment);
+        $supplierPayment->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Pagamento ao fornecedor removido com sucesso',
+            ]);
+        }
+
+        return redirect()->back()->with('message', 'Pagamento ao fornecedor removido com sucesso');
+    }
+
+    public function destroyGenericPayment(Request $request, Vehicle $vehicle, int $payment)
+    {
+        abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if(! $this->canViewFinancialSensitive(), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $genericPayment = VehicleGenericPayment::where('vehicle_id', $vehicle->id)->findOrFail($payment);
+        $genericPayment->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Pagamento generico removido com sucesso',
+            ]);
+        }
+
+        return redirect()->back()->with('message', 'Pagamento generico removido com sucesso');
     }
 
     public function storeCKEditorImages(Request $request)

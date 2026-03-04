@@ -351,6 +351,7 @@
                                                         <th>Data</th>
                                                         <th>Valor</th>
                                                         <th>Meio</th>
+                                                        <th>Ações</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -359,10 +360,19 @@
                                                             <td>{{ $supplierPayment->paid_at }}</td>
                                                             <td>{{ number_format((float) $supplierPayment->amount, 2, ',', '.') }} EUR</td>
                                                             <td>{{ $supplierPayment->payment_method->name ?? '-' }}</td>
+                                                            <td>
+                                                                <button
+                                                                    type="button"
+                                                                    class="btn btn-xs btn-danger js-delete-payment"
+                                                                    data-delete-url="{{ route('admin.vehicles.supplier-payments.destroy', [$vehicle->id, $supplierPayment->id]) }}"
+                                                                >
+                                                                    Eliminar
+                                                                </button>
+                                                            </td>
                                                         </tr>
                                                     @empty
                                                         <tr>
-                                                            <td colspan="3">Sem pagamentos registados.</td>
+                                                            <td colspan="4">Sem pagamentos registados.</td>
                                                         </tr>
                                                     @endforelse
                                                 </tbody>
@@ -416,6 +426,7 @@
                                                         <th>Data</th>
                                                         <th>Valor</th>
                                                         <th>Meio</th>
+                                                        <th>Ações</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -425,10 +436,19 @@
                                                             <td>{{ $genericPayment->paid_at }}</td>
                                                             <td>{{ number_format((float) $genericPayment->amount, 2, ',', '.') }} EUR</td>
                                                             <td>{{ $genericPayment->payment_method->name ?? '-' }}</td>
+                                                            <td>
+                                                                <button
+                                                                    type="button"
+                                                                    class="btn btn-xs btn-danger js-delete-payment"
+                                                                    data-delete-url="{{ route('admin.vehicles.generic-payments.destroy', [$vehicle->id, $genericPayment->id]) }}"
+                                                                >
+                                                                    Eliminar
+                                                                </button>
+                                                            </td>
                                                         </tr>
                                                     @empty
                                                         <tr>
-                                                            <td colspan="4">Sem pagamentos genericos registados.</td>
+                                                            <td colspan="5">Sem pagamentos genericos registados.</td>
                                                         </tr>
                                                     @endforelse
                                                 </tbody>
@@ -1730,6 +1750,9 @@
             });
         }
 
+        window.showVehicleAjaxAlert = showAjaxAlert;
+        window.refreshVehiclePaymentsPanels = refreshPaymentsPanels;
+
         form.addEventListener('submit', function (event) {
             event.preventDefault();
             if (isSubmitting) return;
@@ -1777,6 +1800,40 @@
             }).always(function () {
                 isSubmitting = false;
                 setLoadingState(false);
+            });
+        });
+
+        document.addEventListener('click', function (event) {
+            const target = event.target.closest('.js-delete-payment');
+            if (!target) return;
+
+            event.preventDefault();
+
+            const deleteUrl = target.getAttribute('data-delete-url');
+            if (!deleteUrl) return;
+
+            if (!confirm('Tens a certeza que queres eliminar este pagamento?')) {
+                return;
+            }
+
+            $.ajax({
+                url: deleteUrl,
+                method: 'POST',
+                data: { _method: 'DELETE' },
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).done(function (response) {
+                showAjaxAlert('success', response.message || 'Pagamento removido com sucesso');
+                refreshPaymentsPanels();
+            }).fail(function (xhr) {
+                let message = 'Não foi possível eliminar o pagamento.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                showAjaxAlert('danger', message);
             });
         });
     })();
