@@ -491,190 +491,165 @@
                             </div>
                         </div>
 
-                        <h4>Documentos da viatura</h4>
-                        <hr>
                         @php
                             $hasAllDocuments = (int) ($vehicle->purchase_and_sale_agreement ?? 0) === 1
                                 && (int) ($vehicle->copy_of_the_citizen_card ?? 0) === 1
                                 && (int) ($vehicle->tax_identification_card ?? 0) === 1
                                 && (int) ($vehicle->copy_of_the_stamp_duty_receipt ?? 0) === 1
-                                && (int) ($vehicle->vehicle_registration_document ?? 0) === 1
                                 && (int) ($vehicle->vehicle_ownership_title ?? 0) === 1
-                                && (int) ($vehicle->vehicle_keys ?? 0) === 1
-                                && (int) ($vehicle->vehicle_manuals ?? 0) === 1
                                 && (int) ($vehicle->release_of_reservation_or_mortgage ?? 0) === 1
                                 && (int) ($vehicle->leasing_agreement ?? 0) === 1;
                         @endphp
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="checkbox" style="margin-top: 0;">
-                                    <label for="has_all_documents_toggle" style="font-weight: 600;">
-                                        <input type="checkbox" id="has_all_documents_toggle" {{ $hasAllDocuments ? 'checked' : '' }}>
-                                        Possui todos os documentos
-                                    </label>
+
+                        @can('vehicle_documents_area_access')
+                            <h4>Documentos da viatura</h4>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="checkbox" style="margin-top: 0;">
+                                        <label for="has_all_documents_toggle" style="font-weight: 600;">
+                                            <input type="checkbox" id="has_all_documents_toggle" {{ $hasAllDocuments ? 'checked' : '' }}>
+                                            Possui todos os documentos
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('purchase_and_sale_agreement') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="purchase_and_sale_agreement" value="0">
-                                        <input type="checkbox" name="purchase_and_sale_agreement" id="purchase_and_sale_agreement" value="1" {{ $vehicle->purchase_and_sale_agreement || old('purchase_and_sale_agreement', 0) == 1 ? 'checked' : '' }}>
-                                        <label for="purchase_and_sale_agreement" style="font-weight: 400">{{ trans('cruds.vehicle.fields.purchase_and_sale_agreement') }}</label>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group {{ $errors->has('purchase_and_sale_agreement') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="purchase_and_sale_agreement" value="0">
+                                            <input type="checkbox" name="purchase_and_sale_agreement" id="purchase_and_sale_agreement" value="1" {{ $vehicle->purchase_and_sale_agreement || old('purchase_and_sale_agreement', 0) == 1 ? 'checked' : '' }}>
+                                            <label for="purchase_and_sale_agreement" style="font-weight: 400">{{ trans('cruds.vehicle.fields.purchase_and_sale_agreement') }}</label>
+                                        </div>
                                     </div>
-                                    @if($errors->has('purchase_and_sale_agreement'))
-                                        <span class="help-block" role="alert">{{ $errors->first('purchase_and_sale_agreement') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.purchase_and_sale_agreement_helper') }}</span>
+                                    <div class="form-group {{ $errors->has('copy_of_the_citizen_card') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="copy_of_the_citizen_card" value="0">
+                                            <input type="checkbox" name="copy_of_the_citizen_card" id="copy_of_the_citizen_card" value="1" {{ $vehicle->copy_of_the_citizen_card || old('copy_of_the_citizen_card', 0) == 1 ? 'checked' : '' }}>
+                                            <label for="copy_of_the_citizen_card" style="font-weight: 400">{{ trans('cruds.vehicle.fields.copy_of_the_citizen_card') }}</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group {{ $errors->has('tax_identification_card') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="tax_identification_card" value="0">
+                                            <input type="checkbox" name="tax_identification_card" id="tax_identification_card" value="1" {{ $vehicle->tax_identification_card || old('tax_identification_card', 0) == 1 ? 'checked' : '' }}>
+                                            <label for="tax_identification_card" style="font-weight: 400">{{ trans('cruds.vehicle.fields.tax_identification_card') }}</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group {{ $errors->has('copy_of_the_stamp_duty_receipt') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="copy_of_the_stamp_duty_receipt" value="0">
+                                            <input type="checkbox" name="copy_of_the_stamp_duty_receipt" id="copy_of_the_stamp_duty_receipt" value="1" {{ $vehicle->copy_of_the_stamp_duty_receipt || old('copy_of_the_stamp_duty_receipt', 0) == 1 ? 'checked' : '' }}>
+                                            <label for="copy_of_the_stamp_duty_receipt" style="font-weight: 400">{{ trans('cruds.vehicle.fields.copy_of_the_stamp_duty_receipt') }}</label>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form-group {{ $errors->has('copy_of_the_citizen_card') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="copy_of_the_citizen_card" value="0">
-                                        <input type="checkbox" name="copy_of_the_citizen_card" id="copy_of_the_citizen_card" value="1" {{ $vehicle->copy_of_the_citizen_card || old('copy_of_the_citizen_card', 0) == 1 ? 'checked' : '' }}>
-                                        <label for="copy_of_the_citizen_card" style="font-weight: 400">{{ trans('cruds.vehicle.fields.copy_of_the_citizen_card') }}</label>
+                                <div class="col-md-3">
+                                    <div class="form-group {{ $errors->has('vehicle_ownership_title') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="vehicle_ownership_title" value="0">
+                                            <input type="checkbox" name="vehicle_ownership_title" id="vehicle_ownership_title" value="1" {{ $vehicle->vehicle_ownership_title || old('vehicle_ownership_title', 0) == 1 ? 'checked' : '' }}>
+                                            <label for="vehicle_ownership_title" style="font-weight: 400">DUA</label>
+                                        </div>
                                     </div>
-                                    @if($errors->has('copy_of_the_citizen_card'))
-                                        <span class="help-block" role="alert">{{ $errors->first('copy_of_the_citizen_card') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.copy_of_the_citizen_card_helper') }}</span>
+                                    <div class="form-group {{ $errors->has('release_of_reservation_or_mortgage') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="release_of_reservation_or_mortgage" value="0">
+                                            <input type="checkbox" name="release_of_reservation_or_mortgage" id="release_of_reservation_or_mortgage" value="1" {{ $vehicle->release_of_reservation_or_mortgage || old('release_of_reservation_or_mortgage', 0) == 1 ? 'checked' : '' }}>
+                                            <label for="release_of_reservation_or_mortgage" style="font-weight: 400">Extinção Reserva / Hipotéca</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group {{ $errors->has('leasing_agreement') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="leasing_agreement" value="0">
+                                            <input type="checkbox" name="leasing_agreement" id="leasing_agreement" value="1" {{ $vehicle->leasing_agreement || old('leasing_agreement', 0) == 1 ? 'checked' : '' }}>
+                                            <label for="leasing_agreement" style="font-weight: 400">{{ trans('cruds.vehicle.fields.leasing_agreement') }}</label>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form-group {{ $errors->has('tax_identification_card') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="tax_identification_card" value="0">
-                                        <input type="checkbox" name="tax_identification_card" id="tax_identification_card" value="1" {{ $vehicle->tax_identification_card || old('tax_identification_card', 0) == 1 ? 'checked' : '' }}>
-                                        <label for="tax_identification_card" style="font-weight: 400">{{ trans('cruds.vehicle.fields.tax_identification_card') }}</label>
+                                <div class="col-md-6">
+                                    <div class="form-group {{ $errors->has('documents') ? 'has-error' : '' }}">
+                                        <label for="documents">DUA / Inspeção</label>
+                                        <div class="needsclick dropzone" id="documents-dropzone"></div>
                                     </div>
-                                    @if($errors->has('tax_identification_card'))
-                                        <span class="help-block" role="alert">{{ $errors->first('tax_identification_card') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.tax_identification_card_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('copy_of_the_stamp_duty_receipt') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="copy_of_the_stamp_duty_receipt" value="0">
-                                        <input type="checkbox" name="copy_of_the_stamp_duty_receipt" id="copy_of_the_stamp_duty_receipt" value="1" {{ $vehicle->copy_of_the_stamp_duty_receipt || old('copy_of_the_stamp_duty_receipt', 0) == 1 ? 'checked' : '' }}>
-                                        <label for="copy_of_the_stamp_duty_receipt" style="font-weight: 400">{{ trans('cruds.vehicle.fields.copy_of_the_stamp_duty_receipt') }}</label>
+                                    <div class="form-group {{ $errors->has('additional_items') ? 'has-error' : '' }}">
+                                        <label for="additional_items">Outros documentos</label>
+                                        <textarea class="form-control ckeditor" name="additional_items" id="additional_items">{!! old('additional_items', $vehicle->additional_items) !!}</textarea>
+                                        @if($errors->has('additional_items'))
+                                            <span class="help-block" role="alert">{{ $errors->first('additional_items') }}</span>
+                                        @endif
                                     </div>
-                                    @if($errors->has('copy_of_the_stamp_duty_receipt'))
-                                        <span class="help-block" role="alert">{{ $errors->first('copy_of_the_stamp_duty_receipt') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.copy_of_the_stamp_duty_receipt_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('vehicle_registration_document') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="vehicle_registration_document" value="0">
-                                        <input type="checkbox" name="vehicle_registration_document" id="vehicle_registration_document" value="1" {{ $vehicle->vehicle_registration_document || old('vehicle_registration_document', 0) == 1 ? 'checked' : '' }}>
-                                        <label for="vehicle_registration_document" style="font-weight: 400">{{ trans('cruds.vehicle.fields.vehicle_registration_document') }}</label>
-                                    </div>
-                                    @if($errors->has('vehicle_registration_document'))
-                                        <span class="help-block" role="alert">{{ $errors->first('vehicle_registration_document') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.vehicle_registration_document_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('vehicle_ownership_title') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="vehicle_ownership_title" value="0">
-                                        <input type="checkbox" name="vehicle_ownership_title" id="vehicle_ownership_title" value="1" {{ $vehicle->vehicle_ownership_title || old('vehicle_ownership_title', 0) == 1 ? 'checked' : '' }}>
-                                        <label for="vehicle_ownership_title" style="font-weight: 400">{{ trans('cruds.vehicle.fields.vehicle_ownership_title') }}</label>
-                                    </div>
-                                    @if($errors->has('vehicle_ownership_title'))
-                                        <span class="help-block" role="alert">{{ $errors->first('vehicle_ownership_title') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.vehicle_ownership_title_helper') }}</span>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('vehicle_keys') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="vehicle_keys" value="0">
-                                        <input type="checkbox" name="vehicle_keys" id="vehicle_keys" value="1" {{ $vehicle->vehicle_keys || old('vehicle_keys', 0) == 1 ? 'checked' : '' }}>
-                                        <label for="vehicle_keys" style="font-weight: 400">{{ trans('cruds.vehicle.fields.vehicle_keys') }}</label>
+                        @endcan
+
+                        @can('vehicle_others_area_access')
+                            <h4>Outros</h4>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group {{ $errors->has('elements_with_vehicle') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="elements_with_vehicle" value="0">
+                                            <input type="checkbox" name="elements_with_vehicle" id="elements_with_vehicle" value="1" {{ (string) old('elements_with_vehicle', $vehicle->elements_with_vehicle) === '1' ? 'checked' : '' }}>
+                                            <label for="elements_with_vehicle" style="font-weight: 400">Acessórios</label>
+                                        </div>
                                     </div>
-                                    @if($errors->has('vehicle_keys'))
-                                        <span class="help-block" role="alert">{{ $errors->first('vehicle_keys') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.vehicle_keys_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('vehicle_manuals') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="vehicle_manuals" value="0">
-                                        <input type="checkbox" name="vehicle_manuals" id="vehicle_manuals" value="1" {{ $vehicle->vehicle_manuals || old('vehicle_manuals', 0) == 1 ? 'checked' : '' }}>
-                                        <label for="vehicle_manuals" style="font-weight: 400">{{ trans('cruds.vehicle.fields.vehicle_manuals') }}</label>
+                                    <div class="form-group {{ $errors->has('first_key') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="first_key" value="0">
+                                            <input type="checkbox" name="first_key" id="first_key" value="1" {{ (string) old('first_key', $vehicle->first_key) === '1' ? 'checked' : '' }}>
+                                            <label for="first_key" style="font-weight: 400">1.ª chave</label>
+                                        </div>
                                     </div>
-                                    @if($errors->has('vehicle_manuals'))
-                                        <span class="help-block" role="alert">{{ $errors->first('vehicle_manuals') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.vehicle_manuals_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('release_of_reservation_or_mortgage') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="release_of_reservation_or_mortgage" value="0">
-                                        <input type="checkbox" name="release_of_reservation_or_mortgage" id="release_of_reservation_or_mortgage" value="1" {{ $vehicle->release_of_reservation_or_mortgage || old('release_of_reservation_or_mortgage', 0) == 1 ? 'checked' : '' }}>
-                                        <label for="release_of_reservation_or_mortgage" style="font-weight: 400">{{ trans('cruds.vehicle.fields.release_of_reservation_or_mortgage') }}</label>
+                                    <div class="form-group {{ $errors->has('key') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="key" value="0">
+                                            <input type="checkbox" name="key" id="key" value="1" {{ (string) old('key', $vehicle->key) === '1' ? 'checked' : '' }}>
+                                            <label for="key" style="font-weight: 400">2.ª chave</label>
+                                        </div>
                                     </div>
-                                    @if($errors->has('release_of_reservation_or_mortgage'))
-                                        <span class="help-block" role="alert">{{ $errors->first('release_of_reservation_or_mortgage') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.release_of_reservation_or_mortgage_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('leasing_agreement') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="leasing_agreement" value="0">
-                                        <input type="checkbox" name="leasing_agreement" id="leasing_agreement" value="1" {{ $vehicle->leasing_agreement || old('leasing_agreement', 0) == 1 ? 'checked' : '' }}>
-                                        <label for="leasing_agreement" style="font-weight: 400">{{ trans('cruds.vehicle.fields.leasing_agreement') }}</label>
+                                    <div class="form-group {{ $errors->has('vehicle_manuals') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="vehicle_manuals" value="0">
+                                            <input type="checkbox" name="vehicle_manuals" id="vehicle_manuals" value="1" {{ $vehicle->vehicle_manuals || old('vehicle_manuals', 0) == 1 ? 'checked' : '' }}>
+                                            <label for="vehicle_manuals" style="font-weight: 400">Manuais do veículo</label>
+                                        </div>
                                     </div>
-                                    @if($errors->has('leasing_agreement'))
-                                        <span class="help-block" role="alert">{{ $errors->first('leasing_agreement') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.leasing_agreement_helper') }}</span>
                                 </div>
-                                <div class="form-group {{ $errors->has('cables') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="cables" value="0">
-                                        <input type="checkbox" name="cables" id="cables" value="1" {{ $vehicle->cables || old('cables', 0) == 1 ? 'checked' : '' }}>
-                                        <label for="cables" style="font-weight: 400">{{ trans('cruds.vehicle.fields.cables') }}</label>
+                                <div class="col-md-3">
+                                    <div class="form-group {{ $errors->has('cables') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="cables" value="0">
+                                            <input type="checkbox" name="cables" id="cables" value="1" {{ $vehicle->cables || old('cables', 0) == 1 ? 'checked' : '' }}>
+                                            <label for="cables" style="font-weight: 400">{{ trans('cruds.vehicle.fields.cables') }}</label>
+                                        </div>
                                     </div>
-                                    @if($errors->has('cables'))
-                                        <span class="help-block" role="alert">{{ $errors->first('cables') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.cables_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('cables_2') ? 'has-error' : '' }}">
-                                    <div>
-                                        <input type="hidden" name="cables_2" value="0">
-                                        <input type="checkbox" name="cables_2" id="cables_2" value="1" {{ $vehicle->cables_2 || old('cables_2', 0) === 1 ? 'checked' : '' }}>
-                                        <label for="cables_2" style="font-weight: 400">{{ trans('cruds.vehicle.fields.cables_2') }}</label>
+                                    <div class="form-group {{ $errors->has('cables_2') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="cables_2" value="0">
+                                            <input type="checkbox" name="cables_2" id="cables_2" value="1" {{ $vehicle->cables_2 || old('cables_2', 0) == 1 ? 'checked' : '' }}>
+                                            <label for="cables_2" style="font-weight: 400">{{ trans('cruds.vehicle.fields.cables_2') }}</label>
+                                        </div>
                                     </div>
-                                    @if($errors->has('cables_2'))
-                                        <span class="help-block" role="alert">{{ $errors->first('cables_2') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.cables_2_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('date') ? 'has-error' : '' }}">
-                                    <label for="date">{{ trans('cruds.vehicle.fields.date') }}</label>
-                                    <input class="form-control date" type="text" name="date" id="date" value="{{ old('date', $vehicle->date) }}">
-                                    @if($errors->has('date'))
-                                        <span class="help-block" role="alert">{{ $errors->first('date') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.date_helper') }}</span>
+                                    <div class="form-group {{ $errors->has('scuts') ? 'has-error' : '' }}">
+                                        <div>
+                                            <input type="hidden" name="scuts" value="0">
+                                            <input type="checkbox" name="scuts" id="scuts" value="1" {{ (string) old('scuts', $vehicle->scuts) === '1' ? 'checked' : '' }}>
+                                            <label for="scuts" style="font-weight: 400">Alerta Portagens</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group {{ $errors->has('date') ? 'has-error' : '' }}">
+                                        <label for="date">{{ trans('cruds.vehicle.fields.date') }}</label>
+                                        <input class="form-control date" type="text" name="date" id="date" value="{{ old('date', $vehicle->date) }}">
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group {{ $errors->has('documents') ? 'has-error' : '' }}">
-                                    <label for="documents">{{ trans('cruds.vehicle.fields.documents') }}</label>
-                                    <div class="needsclick dropzone" id="documents-dropzone">
-                                    </div>
-                                    @if($errors->has('documents'))
-                                        <span class="help-block" role="alert">{{ $errors->first('documents') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.documents_helper') }}</span>
-                                </div>
-                            </div>
-                        </div>
+                        @endcan
 
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <div class="form-group {{ $errors->has('pending') ? 'has-error' : '' }}">
                                     <label for="pending">{{ trans('cruds.vehicle.fields.pending') }}</label>
                                     <textarea class="form-control ckeditor" name="pending" id="pending">{!! old('pending', $vehicle->pending) !!}</textarea>
@@ -682,16 +657,6 @@
                                         <span class="help-block" role="alert">{{ $errors->first('pending') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.pending_helper') }}</span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group {{ $errors->has('additional_items') ? 'has-error' : '' }}">
-                                    <label for="additional_items">{{ trans('cruds.vehicle.fields.additional_items') }}</label>
-                                    <textarea class="form-control ckeditor" name="additional_items" id="additional_items">{!! old('additional_items', $vehicle->additional_items) !!}</textarea>
-                                    @if($errors->has('additional_items'))
-                                        <span class="help-block" role="alert">{{ $errors->first('additional_items') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.additional_items_helper') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -768,15 +733,6 @@
                                         <span class="help-block" role="alert">{{ $errors->first('withdrawal_authorization_file') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.withdrawal_authorization_file_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('withdrawal_documents') ? 'has-error' : '' }}">
-                                    <label for="withdrawal_documents">{{ trans('cruds.vehicle.fields.withdrawal_documents') }}</label>
-                                    <div class="needsclick dropzone" id="withdrawal_documents-dropzone">
-                                    </div>
-                                    @if($errors->has('withdrawal_documents'))
-                                        <span class="help-block" role="alert">{{ $errors->first('withdrawal_documents') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.withdrawal_documents_helper') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -865,6 +821,79 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.client_helper') }}</span>
                                 </div>
+                                <div class="form-group {{ $errors->has('client_payment_date') ? 'has-error' : '' }}">
+                                    <label for="client_payment_date">Data pagamento cliente</label>
+                                    <input class="form-control date" type="text" name="client_payment_date" id="client_payment_date" value="{{ old('client_payment_date') }}">
+                                    @if($errors->has('client_payment_date'))
+                                        <span class="help-block" role="alert">{{ $errors->first('client_payment_date') }}</span>
+                                    @endif
+                                </div>
+                                <div class="form-group {{ $errors->has('client_payment_amount') ? 'has-error' : '' }}">
+                                    <label for="client_payment_amount">Valor pagamento cliente</label>
+                                    <input class="form-control" type="number" name="client_payment_amount" id="client_payment_amount" value="{{ old('client_payment_amount') }}" step="0.01" min="0.01">
+                                    @if($errors->has('client_payment_amount'))
+                                        <span class="help-block" role="alert">{{ $errors->first('client_payment_amount') }}</span>
+                                    @endif
+                                </div>
+                                <div class="form-group {{ $errors->has('client_payment_method_id') ? 'has-error' : '' }}">
+                                    <label for="client_payment_method_id">Meio de pagamento cliente</label>
+                                    <select class="form-control select2" name="client_payment_method_id" id="client_payment_method_id">
+                                        @foreach($payment_methods as $id => $entry)
+                                            <option value="{{ $id }}" {{ old('client_payment_method_id') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if($errors->has('client_payment_method_id'))
+                                        <span class="help-block" role="alert">{{ $errors->first('client_payment_method_id') }}</span>
+                                    @endif
+                                </div>
+                                <div class="panel panel-default" id="client-payments-panel">
+                                    <div class="panel-heading">Pagamentos do cliente final</div>
+                                    <div class="panel-body" style="padding: 10px;">
+                                        <div style="margin-bottom: 8px;">
+                                            <strong>Total final:</strong> {{ number_format((float) ($salesFinalTotal ?? 0), 2, ',', '.') }} EUR
+                                            <br>
+                                            <strong>Total recebido:</strong> {{ number_format((float) ($clientPaymentsTotal ?? 0), 2, ',', '.') }} EUR
+                                        </div>
+                                        <div class="form-group" style="margin-bottom: 10px;">
+                                            <label for="balance-3">Em dívida</label>
+                                            <input class="form-control" type="text" id="balance-3" value="{{ number_format((float) ($clientPaymentsOutstanding ?? 0), 2, ',', '.') }} €" readonly>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table id="table-department-3" class="table table-bordered table-striped table-condensed">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Data</th>
+                                                        <th>Meio</th>
+                                                        <th>Valor</th>
+                                                        <th>Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @forelse(($clientPayments ?? collect()) as $clientPayment)
+                                                        <tr data-total-raw="{{ (float) $clientPayment->amount }}">
+                                                            <td>{{ $clientPayment->paid_at }}</td>
+                                                            <td>{{ $clientPayment->payment_method->name ?? '-' }}</td>
+                                                            <td>{{ number_format((float) $clientPayment->amount, 2, ',', '.') }} EUR</td>
+                                                            <td>
+                                                                <button
+                                                                    type="button"
+                                                                    class="btn btn-xs btn-danger js-delete-payment"
+                                                                    data-delete-url="{{ route('admin.vehicles.client-payments.destroy', [$vehicle->id, $clientPayment->id]) }}"
+                                                                >
+                                                                    Eliminar
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td colspan="4">Sem pagamentos de cliente registados.</td>
+                                                        </tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="form-group {{ $errors->has('payment_comprovant') ? 'has-error' : '' }}">
                                     <label for="payment_comprovant">{{ trans('cruds.vehicle.fields.payment_comprovant') }}</label>
                                     <div class="needsclick dropzone" id="payment_comprovant-dropzone">
@@ -892,14 +921,6 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.client_registration_helper') }}</span>
                                 </div>
-                                <div class="form-group {{ $errors->has('chekin_documents') ? 'has-error' : '' }}">
-                                    <label for="chekin_documents">{{ trans('cruds.vehicle.fields.chekin_documents') }}</label>
-                                    <input class="form-control" type="text" name="chekin_documents" id="chekin_documents" value="{{ old('chekin_documents', $vehicle->chekin_documents) }}">
-                                    @if($errors->has('chekin_documents'))
-                                        <span class="help-block" role="alert">{{ $errors->first('chekin_documents') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.chekin_documents_helper') }}</span>
-                                </div>
                                 <div class="form-group {{ $errors->has('chekin_date') ? 'has-error' : '' }}">
                                     <label for="chekin_date">{{ trans('cruds.vehicle.fields.chekin_date') }}</label>
                                     <input class="form-control date" type="text" name="chekin_date" id="chekin_date" value="{{ old('chekin_date', $vehicle->chekin_date) }}">
@@ -923,54 +944,6 @@
                                         <span class="help-block" role="alert">{{ $errors->first('sele_chekout') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.sele_chekout_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('first_key') ? 'has-error' : '' }}">
-                                    <label for="first_key">{{ trans('cruds.vehicle.fields.first_key') }}</label>
-                                    <input class="form-control" type="text" name="first_key" id="first_key" value="{{ old('first_key', $vehicle->first_key) }}">
-                                    @if($errors->has('first_key'))
-                                        <span class="help-block" role="alert">{{ $errors->first('first_key') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.first_key_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('scuts') ? 'has-error' : '' }}">
-                                    <label for="scuts">{{ trans('cruds.vehicle.fields.scuts') }}</label>
-                                    <input class="form-control" type="text" name="scuts" id="scuts" value="{{ old('scuts', $vehicle->scuts) }}">
-                                    @if($errors->has('scuts'))
-                                        <span class="help-block" role="alert">{{ $errors->first('scuts') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.scuts_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('key') ? 'has-error' : '' }}">
-                                    <label for="key">{{ trans('cruds.vehicle.fields.key') }}</label>
-                                    <input class="form-control" type="text" name="key" id="key" value="{{ old('key', $vehicle->key) }}">
-                                    @if($errors->has('key'))
-                                        <span class="help-block" role="alert">{{ $errors->first('key') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.key_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('manuals') ? 'has-error' : '' }}">
-                                    <label for="manuals">{{ trans('cruds.vehicle.fields.manuals') }}</label>
-                                    <input class="form-control" type="text" name="manuals" id="manuals" value="{{ old('manuals', $vehicle->manuals) }}">
-                                    @if($errors->has('manuals'))
-                                        <span class="help-block" role="alert">{{ $errors->first('manuals') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.manuals_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('elements_with_vehicle') ? 'has-error' : '' }}">
-                                    <label for="elements_with_vehicle">{{ trans('cruds.vehicle.fields.elements_with_vehicle') }}</label>
-                                    <input class="form-control" type="text" name="elements_with_vehicle" id="elements_with_vehicle" value="{{ old('elements_with_vehicle', $vehicle->elements_with_vehicle) }}">
-                                    @if($errors->has('elements_with_vehicle'))
-                                        <span class="help-block" role="alert">{{ $errors->first('elements_with_vehicle') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.elements_with_vehicle_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('local') ? 'has-error' : '' }}">
-                                    <label for="local">{{ trans('cruds.vehicle.fields.local') }}</label>
-                                    <input class="form-control" type="text" name="local" id="local" value="{{ old('local', $vehicle->local) }}">
-                                    @if($errors->has('local'))
-                                        <span class="help-block" role="alert">{{ $errors->first('local') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.local_helper') }}</span>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -1011,12 +984,6 @@
                                             </div>
                                             <div class="checkbox">
                                                 <label style="font-weight: 400">
-                                                    <input type="checkbox" disabled {{ $vehicle->vehicle_keys ? 'checked' : '' }}>
-                                                    {{ trans('cruds.vehicle.fields.vehicle_keys') }}
-                                                </label>
-                                            </div>
-                                            <div class="checkbox">
-                                                <label style="font-weight: 400">
                                                     <input type="checkbox" disabled {{ $vehicle->cables ? 'checked' : '' }}>
                                                     {{ trans('cruds.vehicle.fields.cables') }}
                                                 </label>
@@ -1027,28 +994,13 @@
                                                     {{ trans('cruds.vehicle.fields.cables_2') }}
                                                 </label>
                                             </div>
-                                            <div>
-                                                <strong>{{ trans('cruds.vehicle.fields.first_key') }}:</strong> {{ $vehicle->first_key ?? '-' }}
-                                            </div>
-                                            <div>
-                                                <strong>{{ trans('cruds.vehicle.fields.key') }}:</strong> {{ $vehicle->key ?? '-' }}
-                                            </div>
-                                            <div>
-                                                <strong>{{ trans('cruds.vehicle.fields.manuals') }}:</strong> {{ $vehicle->manuals ?? '-' }}
-                                            </div>
                                         </div>
                                         <div class="col-md-6">
                                             <h5><strong>Documentos</strong></h5>
                                             <div class="checkbox">
                                                 <label style="font-weight: 400">
-                                                    <input type="checkbox" disabled {{ $vehicle->vehicle_registration_document ? 'checked' : '' }}>
-                                                    {{ trans('cruds.vehicle.fields.vehicle_registration_document') }}
-                                                </label>
-                                            </div>
-                                            <div class="checkbox">
-                                                <label style="font-weight: 400">
                                                     <input type="checkbox" disabled {{ $vehicle->vehicle_ownership_title ? 'checked' : '' }}>
-                                                    {{ trans('cruds.vehicle.fields.vehicle_ownership_title') }}
+                                                    DUA
                                                 </label>
                                             </div>
                                             <div class="checkbox">
@@ -1067,6 +1019,18 @@
                                                 <label style="font-weight: 400">
                                                     <input type="checkbox" disabled {{ $vehicle->copy_of_the_stamp_duty_receipt ? 'checked' : '' }}>
                                                     {{ trans('cruds.vehicle.fields.copy_of_the_stamp_duty_receipt') }}
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label style="font-weight: 400">
+                                                    <input type="checkbox" disabled {{ $vehicle->release_of_reservation_or_mortgage ? 'checked' : '' }}>
+                                                    Extinção Reserva / Hipotéca
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label style="font-weight: 400">
+                                                    <input type="checkbox" disabled {{ $vehicle->leasing_agreement ? 'checked' : '' }}>
+                                                    {{ trans('cruds.vehicle.fields.leasing_agreement') }}
                                                 </label>
                                             </div>
                                             <div style="margin-top: 10px;">
@@ -1170,10 +1134,7 @@
             'copy_of_the_citizen_card',
             'tax_identification_card',
             'copy_of_the_stamp_duty_receipt',
-            'vehicle_registration_document',
             'vehicle_ownership_title',
-            'vehicle_keys',
-            'vehicle_manuals',
             'release_of_reservation_or_mortgage',
             'leasing_agreement'
         ];
@@ -1506,50 +1467,6 @@
     }
 </script>
 
-<script>
-    var uploadedWithdrawalDocumentsMap = {}
-    Dropzone.options.withdrawalDocumentsDropzone = {
-        url: '{{ route('admin.vehicles.storeMedia') }}',
-        maxFilesize: 2000,
-        addRemoveLinks: true,
-        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-        params: { size: 2000 },
-        success: function (file, response) {
-            $('form').append('<input type="hidden" name="withdrawal_documents[]" value="' + response.name + '">')
-            uploadedWithdrawalDocumentsMap[file.name] = response.name
-        },
-        removedfile: function (file) {
-            file.previewElement.remove()
-            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedWithdrawalDocumentsMap[file.name]
-            $('form').find('input[name="withdrawal_documents[]"][value="' + name + '"]').remove()
-        },
-        init: function () {
-            @if(isset($vehicle) && $vehicle->withdrawal_documents)
-                var files = {!! json_encode($vehicle->withdrawal_documents) !!}
-                for (var i in files) {
-                    const currentFile = files[i]
-                    this.options.addedfile.call(this, currentFile)
-                    currentFile.previewElement.classList.add('dz-complete')
-                    currentFile.previewElement.style.cursor = 'pointer'
-                    currentFile.previewElement.addEventListener('click', function (e) {
-                        if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
-                            return
-                        }
-                        window.open(currentFile.original_url, '_blank')
-                    })
-                    $('form').append('<input type="hidden" name="withdrawal_documents[]" value="' + currentFile.file_name + '">')
-                }
-            @endif
-        },
-        error: function (file, response) {
-            var message = $.type(response) === 'string' ? response : response.errors.file
-            file.previewElement.classList.add('dz-error')
-            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
-            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
-        }
-    }
-</script>
-
 {{-- *********************
      TOTAL FINAL & SALDO (parser robusto)
      ********************* --}}
@@ -1712,7 +1629,7 @@
             return $.get(window.location.href).done(function (html) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
-                const panelIds = ['supplier-payments-panel', 'generic-payments-panel'];
+                const panelIds = ['supplier-payments-panel', 'generic-payments-panel', 'client-payments-panel'];
 
                 panelIds.forEach(function (panelId) {
                     const currentPanel = document.getElementById(panelId);
@@ -1721,6 +1638,10 @@
                         currentPanel.innerHTML = freshPanel.innerHTML;
                     }
                 });
+
+                if (typeof setFinalTotalAndBalance === 'function') {
+                    setFinalTotalAndBalance();
+                }
             });
         }
 
@@ -1732,7 +1653,10 @@
                 'generic_payment_expense_label',
                 'generic_payment_date',
                 'generic_payment_amount',
-                'generic_payment_method_id'
+                'generic_payment_method_id',
+                'client_payment_date',
+                'client_payment_amount',
+                'client_payment_method_id'
             ];
 
             inputIds.forEach(function (id) {

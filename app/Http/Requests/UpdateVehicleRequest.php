@@ -226,6 +226,20 @@ class UpdateVehicleRequest extends FormRequest
                 'integer',
                 'exists:payment_methods,id',
             ],
+            'client_payment_date' => [
+                'nullable',
+                'date_format:' . config('panel.date_format'),
+            ],
+            'client_payment_amount' => [
+                'nullable',
+                'numeric',
+                'min:0.01',
+            ],
+            'client_payment_method_id' => [
+                'nullable',
+                'integer',
+                'exists:payment_methods,id',
+            ],
         ];
     }
 
@@ -266,6 +280,20 @@ class UpdateVehicleRequest extends FormRequest
                 $validator->errors()->add(
                     'generic_payment_amount',
                     'Para registar um pagamento generico, preencha despesa, data, valor e meio de pagamento.'
+                );
+            }
+
+            $clientDate = $this->input('client_payment_date');
+            $clientAmount = $this->input('client_payment_amount');
+            $clientMethod = $this->input('client_payment_method_id');
+            $clientFilledCount = collect([$clientDate, $clientAmount, $clientMethod])
+                ->filter(fn ($v) => $v !== null && $v !== '')
+                ->count();
+
+            if ($clientFilledCount > 0 && $clientFilledCount < 3) {
+                $validator->errors()->add(
+                    'client_payment_amount',
+                    'Para registar um pagamento de cliente, preencha data, valor e meio de pagamento.'
                 );
             }
         });

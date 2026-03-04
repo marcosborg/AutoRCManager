@@ -492,14 +492,6 @@
                                 </tr>
                                 <tr>
                                     <th>
-                                        {{ trans('cruds.vehicle.fields.chekin_documents') }}
-                                    </th>
-                                    <td>
-                                        {{ $vehicle->chekin_documents }}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>
                                         {{ trans('cruds.vehicle.fields.chekin_date') }}
                                     </th>
                                     <td>

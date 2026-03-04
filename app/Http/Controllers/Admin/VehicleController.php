@@ -15,6 +15,7 @@ use App\Models\PaymentStatus;
 use App\Models\PickupState;
 use App\Models\Suplier;
 use App\Models\Vehicle;
+use App\Models\VehicleClientPayment;
 use App\Models\VehicleGenericPayment;
 use App\Models\VehicleSupplierPayment;
 use App\Models\GeneralState;
@@ -217,6 +218,7 @@ class VehicleController extends Controller
             'client',
             'supplier_payments.payment_method',
             'generic_payments.payment_method',
+            'client_payments.payment_method',
         ];
         $vehicle->load($relations);
 
@@ -239,6 +241,12 @@ class VehicleController extends Controller
             return sprintf('%s-%09d', Carbon::createFromFormat(config('panel.date_format'), $payment->paid_at)->format('Ymd'), $payment->id);
         })->values();
         $genericPaymentsTotal = (float) $vehicle->generic_payments->sum('amount');
+        $clientPayments = $vehicle->client_payments->sortByDesc(function ($payment) {
+            return sprintf('%s-%09d', Carbon::createFromFormat(config('panel.date_format'), $payment->paid_at)->format('Ymd'), $payment->id);
+        })->values();
+        $clientPaymentsTotal = (float) $vehicle->client_payments->sum('amount');
+        $salesFinalTotal = $this->calculateSalesFinalTotal($vehicle);
+        $clientPaymentsOutstanding = $salesFinalTotal - $clientPaymentsTotal;
 
         return view('admin.vehicles.edit', compact(
             'purchase_categories',
@@ -261,7 +269,11 @@ class VehicleController extends Controller
             'supplierPaymentsTotal',
             'supplierPaymentsOutstanding',
             'genericPayments',
-            'genericPaymentsTotal'
+            'genericPaymentsTotal',
+            'clientPayments',
+            'clientPaymentsTotal',
+            'salesFinalTotal',
+            'clientPaymentsOutstanding',
         ));
     }
 
@@ -283,6 +295,7 @@ class VehicleController extends Controller
             $this->createSupplierPaymentLine($request, $vehicle);
             $this->createGenericPaymentLine($request, $vehicle);
         }
+        $this->createClientPaymentLine($request, $vehicle);
 
         if (count($vehicle->documents) > 0) {
             foreach ($vehicle->documents as $media) {
@@ -365,20 +378,6 @@ class VehicleController extends Controller
         foreach ($request->input('withdrawal_authorization_file', []) as $file) {
             if (count($media) === 0 || !in_array($file, $media)) {
                 $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('withdrawal_authorization_file');
-            }
-        }
-
-        if (count($vehicle->withdrawal_documents) > 0) {
-            foreach ($vehicle->withdrawal_documents as $media) {
-                if (!in_array($media->file_name, $request->input('withdrawal_documents', []))) {
-                    $media->delete();
-                }
-            }
-        }
-        $media = $vehicle->withdrawal_documents->pluck('file_name')->toArray();
-        foreach ($request->input('withdrawal_documents', []) as $file) {
-            if (count($media) === 0 || !in_array($file, $media)) {
-                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('withdrawal_documents');
             }
         }
 
@@ -479,6 +478,22 @@ class VehicleController extends Controller
         }
 
         return redirect()->back()->with('message', 'Pagamento generico removido com sucesso');
+    }
+
+    public function destroyClientPayment(Request $request, Vehicle $vehicle, int $payment)
+    {
+        abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $clientPayment = VehicleClientPayment::where('vehicle_id', $vehicle->id)->findOrFail($payment);
+        $clientPayment->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Pagamento de cliente removido com sucesso',
+            ]);
+        }
+
+        return redirect()->back()->with('message', 'Pagamento de cliente removido com sucesso');
     }
 
     public function storeCKEditorImages(Request $request)
@@ -859,6 +874,32 @@ class VehicleController extends Controller
         ]);
     }
 
+    private function createClientPaymentLine(UpdateVehicleRequest $request, Vehicle $vehicle): void
+    {
+        $date = $request->input('client_payment_date');
+        $amount = $request->input('client_payment_amount');
+        $paymentMethodId = $request->input('client_payment_method_id');
+
+        if ($date === null || $date === '' || $amount === null || $amount === '' || $paymentMethodId === null || $paymentMethodId === '') {
+            return;
+        }
+
+        $vehicle->client_payments()->create([
+            'paid_at' => $date,
+            'amount' => (float) $amount,
+            'payment_method_id' => (int) $paymentMethodId,
+        ]);
+    }
+
+    private function calculateSalesFinalTotal(Vehicle $vehicle): float
+    {
+        return (float) ($vehicle->pvp ?? 0)
+            + (float) ($vehicle->sales_iuc ?? 0)
+            + (float) ($vehicle->sales_tow ?? 0)
+            + (float) ($vehicle->sales_transfer ?? 0)
+            + (float) ($vehicle->sales_others ?? 0);
+    }
+
     private function vehicleHasAllDocuments(Vehicle $vehicle): bool
     {
         foreach ($this->documentBooleanFields() as $field) {
@@ -877,10 +918,7 @@ class VehicleController extends Controller
             'copy_of_the_citizen_card',
             'tax_identification_card',
             'copy_of_the_stamp_duty_receipt',
-            'vehicle_registration_document',
             'vehicle_ownership_title',
-            'vehicle_keys',
-            'vehicle_manuals',
             'release_of_reservation_or_mortgage',
             'leasing_agreement',
         ];
