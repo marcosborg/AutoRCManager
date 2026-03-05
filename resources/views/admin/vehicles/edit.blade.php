@@ -205,10 +205,15 @@
                             </div>
                         </div>
 
-                        @can('financial_sensitive_access')
-                        <h4>Aquisição da viatura</h4>
-                        @endcan
-                        <hr>
+                        @if(
+                            auth()->user()->can('financial_sensitive_access')
+                            || auth()->user()->can('suplier_access')
+                            || auth()->user()->can('suplier_show')
+                            || auth()->user()->can('suplier_edit')
+                        )
+                            <h4>Aquisição da viatura</h4>
+                            <hr>
+                        @endif
                         <div class="row">
                             @can('financial_sensitive_access')
                             <div class="col-md-3">
@@ -458,6 +463,24 @@
                                 </div>
                             </div>
 @endcan
+                            @cannot('financial_sensitive_access')
+                                @canany(['suplier_access', 'suplier_show', 'suplier_edit'])
+                                    <div class="col-md-3">
+                                        <div class="form-group {{ $errors->has('suplier') ? 'has-error' : '' }}">
+                                            <label for="suplier_id">{{ trans('cruds.vehicle.fields.suplier') }}</label>
+                                            <select class="form-control select2" name="suplier_id" id="suplier_id">
+                                                @foreach($supliers as $id => $entry)
+                                                    <option value="{{ $id }}" {{ (old('suplier_id') ? old('suplier_id') : $vehicle->suplier->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                                @endforeach
+                                            </select>
+                                            @if($errors->has('suplier'))
+                                                <span class="help-block" role="alert">{{ $errors->first('suplier') }}</span>
+                                            @endif
+                                            <span class="help-block">{{ trans('cruds.vehicle.fields.suplier_helper') }}</span>
+                                        </div>
+                                    </div>
+                                @endcanany
+                            @endcannot
                             <div class="col-md-6">
                                 <div class="form-group {{ $errors->has('inicial') ? 'has-error' : '' }}">
                                     <label for="inicial">{{ trans('cruds.vehicle.fields.inicial') }}</label>
