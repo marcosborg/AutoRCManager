@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('repair_parts')) {
+            return;
+        }
+
         Schema::create('repair_parts', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('repair_id');
@@ -32,4 +36,3 @@ return new class extends Migration
         Schema::dropIfExists('repair_parts');
     }
 };
-

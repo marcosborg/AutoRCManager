@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (! Schema::hasTable('repairs')) {
+            return;
+        }
+
         Schema::table('repairs', function (Blueprint $table) {
             if (! Schema::hasColumn('repairs', 'work_performed')) {
                 $table->text('work_performed')->nullable()->after('obs_2');
@@ -20,6 +24,10 @@ return new class extends Migration {
 
     public function down(): void
     {
+        if (! Schema::hasTable('repairs')) {
+            return;
+        }
+
         Schema::table('repairs', function (Blueprint $table) {
             if (Schema::hasColumn('repairs', 'materials_used')) {
                 $table->dropColumn('materials_used');

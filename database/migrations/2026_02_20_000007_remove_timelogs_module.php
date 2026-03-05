@@ -8,14 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $permissionIds = DB::table('permissions')
-            ->where('title', 'repair_timelogs')
-            ->orWhere('title', 'like', 'timelog_%')
-            ->pluck('id');
+        if (Schema::hasTable('permissions')) {
+            $permissionIds = DB::table('permissions')
+                ->where('title', 'repair_timelogs')
+                ->orWhere('title', 'like', 'timelog_%')
+                ->pluck('id');
 
-        if ($permissionIds->isNotEmpty()) {
-            DB::table('permission_role')->whereIn('permission_id', $permissionIds)->delete();
-            DB::table('permissions')->whereIn('id', $permissionIds)->delete();
+            if ($permissionIds->isNotEmpty()) {
+                if (Schema::hasTable('permission_role')) {
+                    DB::table('permission_role')->whereIn('permission_id', $permissionIds)->delete();
+                }
+
+                DB::table('permissions')->whereIn('id', $permissionIds)->delete();
+            }
         }
 
         if (Schema::hasTable('timelogs')) {
@@ -28,4 +33,3 @@ return new class extends Migration
         // Timelogs module intentionally removed.
     }
 };
-

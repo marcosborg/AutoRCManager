@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (! Schema::hasTable('timelogs') || ! Schema::hasTable('repairs')) {
+            return;
+        }
+
         Schema::table('timelogs', function (Blueprint $table) {
             if (! Schema::hasColumn('timelogs', 'repair_id')) {
                 $table->unsignedBigInteger('repair_id')->nullable()->after('id');
@@ -17,6 +21,10 @@ return new class extends Migration {
 
     public function down(): void
     {
+        if (! Schema::hasTable('timelogs')) {
+            return;
+        }
+
         Schema::table('timelogs', function (Blueprint $table) {
             if (Schema::hasColumn('timelogs', 'repair_id')) {
                 $table->dropForeign(['repair_id']);

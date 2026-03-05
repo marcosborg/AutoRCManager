@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('repairs')) {
+            return;
+        }
+
         Schema::table('repairs', function (Blueprint $table) {
             if (! Schema::hasColumn('repairs', 'repair_started_at')) {
                 $table->dateTime('repair_started_at')->nullable()->after('timestamp');
@@ -21,6 +25,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (! Schema::hasTable('repairs')) {
+            return;
+        }
+
         Schema::table('repairs', function (Blueprint $table) {
             if (Schema::hasColumn('repairs', 'repair_finished_at')) {
                 $table->dropColumn('repair_finished_at');
@@ -32,4 +40,3 @@ return new class extends Migration
         });
     }
 };
-
