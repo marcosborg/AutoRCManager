@@ -87,7 +87,10 @@ Route::prefix('mobile')->group(function () {
         Route::post('workshop/repairs/{repair}/work/start', [WorkshopApiController::class, 'startWork']);
         Route::post('workshop/repairs/{repair}/work/finish', [WorkshopApiController::class, 'finishWork']);
         Route::post('workshop/repairs/{repair}/parts', [WorkshopApiController::class, 'addPart']);
+        Route::patch('workshop/repairs/{repair}/parts/{part}', [WorkshopApiController::class, 'updatePart']);
         Route::delete('workshop/repairs/{repair}/parts/{part}', [WorkshopApiController::class, 'deletePart']);
+        Route::post('workshop/repairs/{repair}/media', [WorkshopApiController::class, 'uploadMedia']);
+        Route::delete('workshop/repairs/{repair}/media/{mediaId}', [WorkshopApiController::class, 'deleteMedia']);
 
         Route::get('workshop/vehicles', [WorkshopApiController::class, 'vehicles']);
         Route::post('workshop/vehicles/{vehicle}/interventions', [WorkshopApiController::class, 'newIntervention']);

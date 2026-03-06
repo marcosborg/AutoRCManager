@@ -12,6 +12,7 @@ use App\Models\Vehicle;
 use Carbon\Carbon;
 use Gate;
 use Illuminate\Http\Request;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
 
 class WorkshopApiController extends Controller
@@ -30,7 +31,7 @@ class WorkshopApiController extends Controller
         abort_if(Gate::denies('repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $query = Repair::query()
-            ->with(['vehicle:id,license,brand_id,model', 'vehicle.brand:id,name', 'repair_state:id,name'])
+            ->with(['vehicle:id,license,foreign_license,brand_id,model', 'vehicle.brand:id,name', 'repair_state:id,name'])
             ->whereNotNull('vehicle_id')
             ->whereHas('vehicle')
             ->orderByDesc('id');
@@ -63,13 +64,7 @@ class WorkshopApiController extends Controller
     {
         abort_if(Gate::denies('repair_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $repair->load([
-            'vehicle:id,license,foreign_license,brand_id,model',
-            'vehicle.brand:id,name',
-            'repair_state:id,name',
-            'parts',
-            'workLogs.user:id,name',
-        ]);
+        $repair->load($this->repairDetailRelations());
 
         return response()->json([
             'data' => $this->repairDetailPayload($repair),
@@ -80,18 +75,40 @@ class WorkshopApiController extends Controller
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $data = $request->validate([
+        $rules = [
             'repair_state_id' => ['nullable', 'integer', 'exists:repair_states,id'],
+            'name' => ['nullable', 'string', 'max:191'],
+            'kilometers' => ['nullable', 'integer'],
+            'obs_1' => ['nullable', 'string'],
+            'obs_2' => ['nullable', 'string'],
             'work_performed' => ['nullable', 'string'],
             'materials_used' => ['nullable', 'string'],
             'expected_completion_date' => ['nullable', 'date'],
-        ]);
+            'timestamp' => ['nullable', 'date'],
+        ];
+
+        foreach ($this->checklistFieldDefinitions() as $field) {
+            $rules[$field['key']] = ['nullable', 'boolean'];
+            $rules[$field['key'] . '_text'] = ['nullable', 'string'];
+        }
+
+        $data = $request->validate($rules);
+
+        if (array_key_exists('expected_completion_date', $data) && $data['expected_completion_date']) {
+            $data['expected_completion_date'] = Carbon::parse($data['expected_completion_date'])
+                ->format(config('panel.date_format'));
+        }
+
+        if (array_key_exists('timestamp', $data) && $data['timestamp']) {
+            $data['timestamp'] = Carbon::parse($data['timestamp'])
+                ->format(config('panel.date_format') . ' ' . config('panel.time_format'));
+        }
 
         $repair->update($data);
-        $repair->refresh();
+        $repair->refresh()->load($this->repairDetailRelations());
 
         return response()->json([
-            'data' => $this->repairDetailPayload($repair->load(['vehicle', 'repair_state', 'parts', 'workLogs.user'])),
+            'data' => $this->repairDetailPayload($repair),
         ]);
     }
 
@@ -106,7 +123,7 @@ class WorkshopApiController extends Controller
         }
 
         return response()->json([
-            'data' => $this->repairDetailPayload($repair->fresh(['vehicle', 'repair_state', 'parts', 'workLogs.user'])),
+            'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
         ]);
     }
 
@@ -116,7 +133,7 @@ class WorkshopApiController extends Controller
 
         if (! $repair->getRawOriginal('repair_started_at')) {
             return response()->json([
-                'message' => 'Inicie a reparação antes de finalizar.',
+                'message' => 'Inicie a reparacao antes de finalizar.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -126,7 +143,7 @@ class WorkshopApiController extends Controller
         }
 
         return response()->json([
-            'data' => $this->repairDetailPayload($repair->fresh(['vehicle', 'repair_state', 'parts', 'workLogs.user'])),
+            'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
         ]);
     }
 
@@ -148,7 +165,7 @@ class WorkshopApiController extends Controller
         }
 
         return response()->json([
-            'data' => $this->repairDetailPayload($repair->fresh(['vehicle', 'repair_state', 'parts', 'workLogs.user'])),
+            'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
         ]);
     }
 
@@ -164,7 +181,7 @@ class WorkshopApiController extends Controller
 
         if (! $openLog) {
             return response()->json([
-                'message' => 'Não existe trabalho em curso para este mecânico.',
+                'message' => 'Nao existe trabalho em curso para este mecanico.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -176,7 +193,7 @@ class WorkshopApiController extends Controller
         ]);
 
         return response()->json([
-            'data' => $this->repairDetailPayload($repair->fresh(['vehicle', 'repair_state', 'parts', 'workLogs.user'])),
+            'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
         ]);
     }
 
@@ -195,8 +212,31 @@ class WorkshopApiController extends Controller
         $repair->parts()->create($data);
 
         return response()->json([
-            'data' => $this->repairDetailPayload($repair->fresh(['vehicle', 'repair_state', 'parts', 'workLogs.user'])),
+            'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
         ], Response::HTTP_CREATED);
+    }
+
+    public function updatePart(Request $request, Repair $repair, RepairPart $part)
+    {
+        abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        if ((int) $part->repair_id !== (int) $repair->id) {
+            return response()->json(['message' => 'Peca invalida para esta intervencao.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $data = $request->validate([
+            'supplier' => ['nullable', 'string', 'max:191'],
+            'invoice_number' => ['nullable', 'string', 'max:191'],
+            'part_date' => ['nullable', 'date'],
+            'part_name' => ['nullable', 'string', 'max:191'],
+            'amount' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $part->update($data);
+
+        return response()->json([
+            'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
+        ]);
     }
 
     public function deletePart(Repair $repair, RepairPart $part)
@@ -204,13 +244,49 @@ class WorkshopApiController extends Controller
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ((int) $part->repair_id !== (int) $repair->id) {
-            return response()->json(['message' => 'Peça inválida para esta intervenção.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            return response()->json(['message' => 'Peca invalida para esta intervencao.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $part->delete();
 
         return response()->json([
-            'data' => $this->repairDetailPayload($repair->fresh(['vehicle', 'repair_state', 'parts', 'workLogs.user'])),
+            'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
+        ]);
+    }
+
+    public function uploadMedia(Request $request, Repair $repair)
+    {
+        abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'collection' => ['required', 'in:checkin,checkout'],
+            'file' => ['required', 'image', 'max:8192'],
+        ]);
+
+        $repair->addMediaFromRequest('file')->toMediaCollection($data['collection']);
+
+        return response()->json([
+            'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
+        ], Response::HTTP_CREATED);
+    }
+
+    public function deleteMedia(Repair $repair, int $mediaId)
+    {
+        abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $media = $repair->media()
+            ->whereIn('collection_name', ['checkin', 'checkout'])
+            ->where('id', $mediaId)
+            ->first();
+
+        if (! $media) {
+            return response()->json(['message' => 'Ficheiro nao encontrado.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $media->delete();
+
+        return response()->json([
+            'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
         ]);
     }
 
@@ -250,7 +326,7 @@ class WorkshopApiController extends Controller
 
         if (RepairRules::hasOpenRepairs($vehicle->id)) {
             return response()->json([
-                'message' => 'Já existe uma intervenção aberta para esta viatura.',
+                'message' => 'Ja existe uma intervencao aberta para esta viatura.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -294,10 +370,45 @@ class WorkshopApiController extends Controller
 
     private function repairDetailPayload(Repair $repair): array
     {
-        $repair->loadMissing(['vehicle.brand', 'repair_state', 'parts', 'workLogs.user']);
+        $repair->loadMissing($this->repairDetailRelations());
 
         $totalPartsAmount = (float) $repair->parts->sum('amount');
         $totalWorkMinutes = (int) $repair->workLogs->sum('duration_minutes');
+
+        $vehicleRepairs = collect();
+        $canCreateNewIntervention = false;
+        if ($repair->vehicle_id) {
+            $vehicleRepairs = Repair::with('repair_state')
+                ->where('vehicle_id', $repair->vehicle_id)
+                ->orderByDesc('created_at')
+                ->get();
+
+            $currentIsOpen = $repair->repair_state_id === null || (int) $repair->repair_state_id !== 3;
+            $canCreateNewIntervention = ! RepairRules::hasOpenRepairs($repair->vehicle_id) || ! $currentIsOpen;
+        }
+
+        $mechanicTotals = $repair->workLogs
+            ->groupBy('user_id')
+            ->map(function ($logs) {
+                $minutes = (int) $logs->sum(function ($log) {
+                    if ($log->duration_minutes !== null) {
+                        return (int) $log->duration_minutes;
+                    }
+
+                    if ($log->finished_at) {
+                        return Carbon::parse((string) $log->started_at)->diffInMinutes(Carbon::parse((string) $log->finished_at));
+                    }
+
+                    return Carbon::parse((string) $log->started_at)->diffInMinutes(now());
+                });
+
+                return [
+                    'user_id' => (int) $logs->first()->user_id,
+                    'name' => $logs->first()->user?->name ?? 'Desconhecido',
+                    'minutes' => $minutes,
+                ];
+            })
+            ->values();
 
         return [
             'id' => $repair->id,
@@ -307,14 +418,39 @@ class WorkshopApiController extends Controller
                 'foreign_license' => $repair->vehicle?->foreign_license,
                 'brand' => $repair->vehicle?->brand?->name,
                 'model' => $repair->vehicle?->model,
+                'version' => $repair->vehicle?->version,
+                'transmission' => $repair->vehicle?->transmission,
+                'engine_displacement' => $repair->vehicle?->engine_displacement,
+                'year' => $repair->vehicle?->year,
+                'month' => $repair->vehicle?->month,
+                'license_date' => $repair->vehicle?->license_date,
+                'color' => $repair->vehicle?->color,
+                'fuel' => $repair->vehicle?->fuel,
+                'kilometers' => $repair->vehicle?->kilometers,
+                'inspec_b' => $repair->vehicle?->inspec_b,
+                'general_state' => $repair->vehicle?->general_state?->name,
                 'initial_photos' => $repair->vehicle
-                    ? $repair->vehicle->inicial->map(fn ($media) => [
+                    ? $repair->vehicle->inicial->map(fn (Media $media) => [
                         'id' => $media->id,
                         'url' => url($media->getUrl()),
                         'thumb' => url($media->getUrl('thumb')),
                     ])->values()
                     : [],
             ],
+            'name' => $repair->name,
+            'kilometers' => $repair->kilometers,
+            'obs_1' => $repair->obs_1,
+            'obs_2' => $repair->obs_2,
+            'checklist_percentage' => $repair->checklist_percentage,
+            'checklist' => collect($this->checklistFieldDefinitions())->map(function (array $field) use ($repair) {
+                return [
+                    'key' => $field['key'],
+                    'label' => $field['label'],
+                    'group' => $field['group'],
+                    'checked' => (bool) ($repair->{$field['key']} ?? false),
+                    'note' => $repair->{$field['key'] . '_text'} ?? null,
+                ];
+            })->values(),
             'repair_state_id' => $repair->repair_state_id,
             'repair_state' => $repair->repair_state?->name ?? 'Aberta',
             'timestamp' => $repair->getRawOriginal('timestamp'),
@@ -324,6 +460,16 @@ class WorkshopApiController extends Controller
             'work_performed' => $repair->work_performed,
             'materials_used' => $repair->materials_used,
             'expected_completion_date' => $repair->getRawOriginal('expected_completion_date'),
+            'checkin_photos' => $repair->checkin->map(fn (Media $media) => [
+                'id' => $media->id,
+                'url' => url($media->getUrl()),
+                'thumb' => url($media->getUrl('thumb')),
+            ])->values(),
+            'checkout_photos' => $repair->checkout->map(fn (Media $media) => [
+                'id' => $media->id,
+                'url' => url($media->getUrl()),
+                'thumb' => url($media->getUrl('thumb')),
+            ])->values(),
             'parts' => $repair->parts
                 ->sortByDesc('id')
                 ->values()
@@ -348,6 +494,81 @@ class WorkshopApiController extends Controller
                     'duration_minutes' => (int) ($log->duration_minutes ?? 0),
                 ]),
             'work_total_minutes' => $totalWorkMinutes,
+            'mechanic_totals' => $mechanicTotals,
+            'can_create_new_intervention' => $canCreateNewIntervention,
+            'vehicle_repairs' => $vehicleRepairs->map(function (Repair $item) use ($repair) {
+                return [
+                    'id' => $item->id,
+                    'opened_at' => optional($item->created_at)->format('Y-m-d H:i'),
+                    'state' => $item->repair_state?->name ?? 'Aberta',
+                    'expected_completion_date' => $item->getRawOriginal('expected_completion_date'),
+                    'checklist_percentage' => $item->checklist_percentage,
+                    'is_current' => (int) $item->id === (int) $repair->id,
+                ];
+            })->values(),
+        ];
+    }
+
+    private function repairDetailRelations(): array
+    {
+        return [
+            'vehicle:id,license,foreign_license,brand_id,model,version,transmission,engine_displacement,year,month,license_date,color,fuel,kilometers,inspec_b,general_state_id',
+            'vehicle.brand:id,name',
+            'vehicle.general_state:id,name',
+            'repair_state:id,name',
+            'parts',
+            'workLogs.user:id,name',
+        ];
+    }
+
+    private function checklistFieldDefinitions(): array
+    {
+        return [
+            ['key' => 'front_windshield', 'label' => 'Para-brisas dianteiro', 'group' => 'Exterior'],
+            ['key' => 'front_lights', 'label' => 'Luzes dianteiras', 'group' => 'Exterior'],
+            ['key' => 'rear_lights', 'label' => 'Luzes traseiras', 'group' => 'Exterior'],
+            ['key' => 'horn_functionality', 'label' => 'Funcionalidade da buzina', 'group' => 'Exterior'],
+            ['key' => 'wiper_blades_water_level', 'label' => 'Escovas / nivel de agua', 'group' => 'Exterior'],
+            ['key' => 'brake_clutch_oil_level', 'label' => 'Nivel oleo travoes/embraiagem', 'group' => 'Mecanica'],
+            ['key' => 'electrical_systems', 'label' => 'Sistemas eletricos', 'group' => 'Mecanica'],
+            ['key' => 'engine_coolant_level', 'label' => 'Nivel liquido refrigeracao', 'group' => 'Mecanica'],
+            ['key' => 'engine_oil_level', 'label' => 'Nivel oleo motor', 'group' => 'Mecanica'],
+            ['key' => 'filters_air_cabin_oil_fuel', 'label' => 'Filtros ar/habitaculo/oleo/combustivel', 'group' => 'Mecanica'],
+            ['key' => 'check_leaks_engine_gearbox_steering', 'label' => 'Fugas motor/caixa/direcao', 'group' => 'Mecanica'],
+            ['key' => 'brake_pads_disks', 'label' => 'Pastilhas/discos travao', 'group' => 'Mecanica'],
+            ['key' => 'shock_absorbers', 'label' => 'Amortecedores', 'group' => 'Mecanica'],
+            ['key' => 'tire_condition', 'label' => 'Estado pneus', 'group' => 'Mecanica'],
+            ['key' => 'battery', 'label' => 'Bateria', 'group' => 'Mecanica'],
+            ['key' => 'spare_tire_vest_triangle_tools', 'label' => 'Pneu suplente/colete/triangulo/ferramentas', 'group' => 'Seguranca'],
+            ['key' => 'check_clearance', 'label' => 'Verificar folgas', 'group' => 'Exterior'],
+            ['key' => 'check_shields', 'label' => 'Verificar escudos', 'group' => 'Exterior'],
+            ['key' => 'paint_condition', 'label' => 'Estado da pintura', 'group' => 'Exterior'],
+            ['key' => 'dents', 'label' => 'Mossas', 'group' => 'Exterior'],
+            ['key' => 'diverse_strips', 'label' => 'Frisos diversos', 'group' => 'Exterior'],
+            ['key' => 'diverse_plastics_check_scratches', 'label' => 'Plasticos diversos / riscos', 'group' => 'Exterior'],
+            ['key' => 'wheels', 'label' => 'Jantes', 'group' => 'Exterior'],
+            ['key' => 'bolts_paint', 'label' => 'Parafusos / pintura', 'group' => 'Exterior'],
+            ['key' => 'seat_belts', 'label' => 'Cintos seguranca', 'group' => 'Interior'],
+            ['key' => 'radio', 'label' => 'Radio', 'group' => 'Interior'],
+            ['key' => 'air_conditioning', 'label' => 'Ar condicionado', 'group' => 'Interior'],
+            ['key' => 'front_rear_window_functionality', 'label' => 'Funcionalidade vidros frente/tras', 'group' => 'Interior'],
+            ['key' => 'seats_upholstery', 'label' => 'Bancos / estofos', 'group' => 'Interior'],
+            ['key' => 'sun_visors', 'label' => 'Palas de sol', 'group' => 'Interior'],
+            ['key' => 'carpets', 'label' => 'Tapetes', 'group' => 'Interior'],
+            ['key' => 'trunk_shelf', 'label' => 'Chapeleira', 'group' => 'Interior'],
+            ['key' => 'buttons', 'label' => 'Botoes', 'group' => 'Interior'],
+            ['key' => 'door_panels', 'label' => 'Paineis de porta', 'group' => 'Interior'],
+            ['key' => 'locks', 'label' => 'Fechaduras', 'group' => 'Interior'],
+            ['key' => 'interior_covers_headlights_taillights', 'label' => 'Forros interiores/farois/faroins', 'group' => 'Interior'],
+            ['key' => 'open_close_doors_remote_control_all_functions', 'label' => 'Abrir/fechar portas/comando/funcoes', 'group' => 'Interior'],
+            ['key' => 'turn_on_ac_check_glass', 'label' => 'Ligar AC e verificar vidros', 'group' => 'Interior'],
+            ['key' => 'check_engine_lift_hood', 'label' => 'Verificar motor com capot aberto', 'group' => 'Mecanica'],
+            ['key' => 'connect_vehicle_to_scanner_check_errors', 'label' => 'Scanner e erros', 'group' => 'Diagnostico'],
+            ['key' => 'check_chassis_confirm_with_registration', 'label' => 'Confirmar chassis com livrete', 'group' => 'Documentacao'],
+            ['key' => 'manufacturer_plate', 'label' => 'Chapa fabricante', 'group' => 'Documentacao'],
+            ['key' => 'check_chassis_stickers', 'label' => 'Autocolantes chassis', 'group' => 'Documentacao'],
+            ['key' => 'check_gearbox_oil', 'label' => 'Verificar oleo caixa', 'group' => 'Mecanica'],
         ];
     }
 }
+
