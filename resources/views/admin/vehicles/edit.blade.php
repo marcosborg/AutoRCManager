@@ -1107,10 +1107,10 @@
     var uploadedDocumentsMap = {}
     Dropzone.options.documentsDropzone = {
         url: '{{ route('admin.vehicles.storeMedia') }}',
-        maxFilesize: 2000, // MB
+        maxFilesize: 10, // MB
         addRemoveLinks: true,
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-        params: { size: 2000 },
+        params: { size: 10 },
         success: function (file, response) {
             $('form').append('<input type="hidden" name="documents[]" value="' + response.name + '">')
             uploadedDocumentsMap[file.name] = response.name
@@ -1252,11 +1252,11 @@
     var uploadedPhotosMap = {}
     Dropzone.options.photosDropzone = {
         url: '{{ route('admin.vehicles.storeMedia') }}',
-        maxFilesize: 20,
+        maxFilesize: 10,
         acceptedFiles: '.jpeg,.jpg,.png,.gif',
         addRemoveLinks: true,
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-        params: { size: 20, width: 4096, height: 4096 },
+        params: { size: 10, width: 4096, height: 4096 },
         success: function (file, response) {
             $('form').append('<input type="hidden" name="photos[]" value="' + response.name + '">')
             uploadedPhotosMap[file.name] = response.name
@@ -1307,10 +1307,10 @@
     var uploadedInvoiceMap = {}
     Dropzone.options.invoiceDropzone = {
         url: '{{ route('admin.vehicles.storeMedia') }}',
-        maxFilesize: 20,
+        maxFilesize: 10,
         addRemoveLinks: true,
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-        params: { size: 20 },
+        params: { size: 10 },
         success: function (file, response) {
             $('form').append('<input type="hidden" name="invoice[]" value="' + response.name + '">')
             uploadedInvoiceMap[file.name] = response.name
@@ -1351,10 +1351,10 @@
     var uploadedPdfsMap = {}
     Dropzone.options.pdfsDropzone = {
         url: '{{ route('admin.vehicles.storeMedia') }}',
-        maxFilesize: 20,
+        maxFilesize: 10,
         addRemoveLinks: true,
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-        params: { size: 20 },
+        params: { size: 10 },
         success: function (file, response) {
             $('form').append('<input type="hidden" name="pdfs[]" value="' + response.name + '">')
             uploadedPdfsMap[file.name] = response.name
@@ -1395,11 +1395,11 @@
     var uploadedInicialMap = {}
     Dropzone.options.inicialDropzone = {
         url: '{{ route('admin.vehicles.storeMedia') }}',
-        maxFilesize: 2000,
+        maxFilesize: 10,
         acceptedFiles: '.jpeg,.jpg,.png,.gif',
         addRemoveLinks: true,
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-        params: { size: 2000, width: 4096, height: 4096 },
+        params: { size: 10, width: 4096, height: 4096 },
         success: function (file, response) {
             $('form').append('<input type="hidden" name="inicial[]" value="' + response.name + '">')
             uploadedInicialMap[file.name] = response.name
@@ -1450,10 +1450,10 @@
     var uploadedWithdrawalAuthorizationFileMap = {}
     Dropzone.options.withdrawalAuthorizationFileDropzone = {
         url: '{{ route('admin.vehicles.storeMedia') }}',
-        maxFilesize: 2000,
+        maxFilesize: 10,
         addRemoveLinks: true,
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-        params: { size: 2000 },
+        params: { size: 10 },
         success: function (file, response) {
             $('form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + response.name + '">')
             uploadedWithdrawalAuthorizationFileMap[file.name] = response.name
@@ -1790,10 +1790,10 @@
     var uploadedPaymentComprovantMap = {}
     Dropzone.options.paymentComprovantDropzone = {
         url: '{{ route('admin.vehicles.storeMedia') }}',
-        maxFilesize: 5,
+        maxFilesize: 10,
         addRemoveLinks: true,
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-        params: { size: 5 },
+        params: { size: 10 },
         success: function (file, response) {
             $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + response.name + '">')
             uploadedPaymentComprovantMap[file.name] = response.name
