@@ -280,6 +280,15 @@
                                     @endif
                                     <span class="help-block">Notas internas da aquisicao.</span>
                                 </div>
+                                <div class="panel panel-default" id="acquisition-expenses-panel">
+                                    <div class="panel-body" style="padding: 10px;">
+                                        <strong>Total despesas aquisicao:</strong>
+                                        <span id="acquisition-expenses-total" data-base-total="{{ (float) ($acquisitionExpensesTotal ?? 0) }}">
+                                            {{ number_format((float) ($acquisitionExpensesTotal ?? 0), 2, ',', '.') }}
+                                        </span>
+                                        EUR
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('suplier') ? 'has-error' : '' }}">
@@ -345,7 +354,11 @@
                                         <div style="margin-bottom: 8px;">
                                             <strong>Compra:</strong> {{ number_format((float) ($vehicle->purchase_price ?? 0), 2, ',', '.') }} EUR
                                             <br>
-                                            <strong>Total pago:</strong> {{ number_format((float) ($supplierPaymentsTotal ?? 0), 2, ',', '.') }} EUR
+                                            <strong>Total pago:</strong>
+                                            <span id="supplier-payments-total" data-base-total="{{ (float) ($supplierPaymentsTotal ?? 0) }}">
+                                                {{ number_format((float) ($supplierPaymentsTotal ?? 0), 2, ',', '.') }}
+                                            </span>
+                                            EUR
                                             <br>
                                             <strong>Em divida:</strong> {{ number_format((float) ($supplierPaymentsOutstanding ?? 0), 2, ',', '.') }} EUR
                                         </div>
@@ -421,7 +434,11 @@
                                     <div class="panel-heading">Pagamentos genericos da viatura</div>
                                     <div class="panel-body" style="padding: 10px;">
                                         <div style="margin-bottom: 8px;">
-                                            <strong>Total acumulado:</strong> {{ number_format((float) ($genericPaymentsTotal ?? 0), 2, ',', '.') }} EUR
+                                            <strong>Total acumulado:</strong>
+                                            <span id="generic-payments-total" data-base-total="{{ (float) ($genericPaymentsTotal ?? 0) }}">
+                                                {{ number_format((float) ($genericPaymentsTotal ?? 0), 2, ',', '.') }}
+                                            </span>
+                                            EUR
                                         </div>
                                         <div class="table-responsive">
                                             <table class="table table-bordered table-striped table-condensed">
@@ -1616,6 +1633,44 @@
         const submitButtons = Array.from(document.querySelectorAll('button[type="submit"][form="vehicle-edit-form"], #vehicle-edit-form button[type="submit"]'));
         let isSubmitting = false;
 
+        function parseLocaleNumber(value) {
+            if (value === null || typeof value === 'undefined') return 0;
+            const normalized = String(value).trim().replace(/[^\d,.\-]/g, '').replace(/\./g, '').replace(',', '.');
+            const parsed = parseFloat(normalized);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function formatLocaleNumber(value) {
+            return new Intl.NumberFormat('pt-PT', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value || 0);
+        }
+
+        function getBaseTotal(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return 0;
+
+            if (el.dataset.baseTotal) {
+                return parseLocaleNumber(el.dataset.baseTotal);
+            }
+
+            return parseLocaleNumber(el.textContent);
+        }
+
+        function refreshAcquisitionExpensesTotal() {
+            const supplierBaseTotal = getBaseTotal('supplier-payments-total');
+            const genericBaseTotal = getBaseTotal('generic-payments-total');
+            const supplierDraft = parseLocaleNumber(document.getElementById('supplier_payment_amount')?.value);
+            const genericDraft = parseLocaleNumber(document.getElementById('generic_payment_amount')?.value);
+            const total = supplierBaseTotal + genericBaseTotal + supplierDraft + genericDraft;
+
+            const totalEl = document.getElementById('acquisition-expenses-total');
+            if (totalEl) {
+                totalEl.textContent = formatLocaleNumber(total);
+            }
+        }
+
         function setLoadingState(loading) {
             submitButtons.forEach(function (button) {
                 button.disabled = loading;
@@ -1652,7 +1707,7 @@
             return $.get(window.location.href).done(function (html) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
-                const panelIds = ['supplier-payments-panel', 'generic-payments-panel', 'client-payments-panel'];
+                const panelIds = ['acquisition-expenses-panel', 'supplier-payments-panel', 'generic-payments-panel', 'client-payments-panel'];
 
                 panelIds.forEach(function (panelId) {
                     const currentPanel = document.getElementById(panelId);
@@ -1665,6 +1720,8 @@
                 if (typeof setFinalTotalAndBalance === 'function') {
                     setFinalTotalAndBalance();
                 }
+
+                refreshAcquisitionExpensesTotal();
             });
         }
 
@@ -1700,6 +1757,16 @@
         window.showVehicleAjaxAlert = showAjaxAlert;
         window.refreshVehiclePaymentsPanels = refreshPaymentsPanels;
 
+        ['supplier_payment_amount', 'generic_payment_amount'].forEach(function (id) {
+            const input = document.getElementById(id);
+            if (!input) return;
+
+            input.addEventListener('input', refreshAcquisitionExpensesTotal);
+            input.addEventListener('change', refreshAcquisitionExpensesTotal);
+        });
+
+        refreshAcquisitionExpensesTotal();
+
         form.addEventListener('submit', function (event) {
             event.preventDefault();
             if (isSubmitting) return;
@@ -1731,6 +1798,7 @@
                 showAjaxAlert('success', response.message || 'Atualizado com sucesso');
                 refreshPaymentsPanels();
                 clearPaymentEntryFields();
+                refreshAcquisitionExpensesTotal();
             }).fail(function (xhr) {
                 let message = 'Ocorreu um erro ao gravar.';
 

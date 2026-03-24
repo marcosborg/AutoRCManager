@@ -241,6 +241,7 @@ class VehicleController extends Controller
             return sprintf('%s-%09d', Carbon::createFromFormat(config('panel.date_format'), $payment->paid_at)->format('Ymd'), $payment->id);
         })->values();
         $genericPaymentsTotal = (float) $vehicle->generic_payments->sum('amount');
+        $acquisitionExpensesTotal = $supplierPaymentsTotal + $genericPaymentsTotal;
         $clientPayments = $vehicle->client_payments->sortByDesc(function ($payment) {
             return sprintf('%s-%09d', Carbon::createFromFormat(config('panel.date_format'), $payment->paid_at)->format('Ymd'), $payment->id);
         })->values();
@@ -270,6 +271,7 @@ class VehicleController extends Controller
             'supplierPaymentsOutstanding',
             'genericPayments',
             'genericPaymentsTotal',
+            'acquisitionExpensesTotal',
             'clientPayments',
             'clientPaymentsTotal',
             'salesFinalTotal',
