@@ -287,6 +287,9 @@
                                             {{ number_format((float) ($acquisitionExpensesTotal ?? 0), 2, ',', '.') }}
                                         </span>
                                         EUR
+                                        <div class="text-muted" style="margin-top: 6px;">
+                                            Inclui compra, IVA da compra, IUC, comissoes, reboque e despesas livres registadas.
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1659,11 +1662,14 @@
         }
 
         function refreshAcquisitionExpensesTotal() {
-            const supplierBaseTotal = getBaseTotal('supplier-payments-total');
+            const purchasePrice = parseLocaleNumber(document.getElementById('purchase_price')?.value);
+            const purchaseVatValue = parseLocaleNumber(document.getElementById('purchase_vat_value')?.value);
+            const iucPrice = parseLocaleNumber(document.getElementById('iuc_price')?.value);
+            const commission = parseLocaleNumber(document.getElementById('commission')?.value);
+            const towPrice = parseLocaleNumber(document.getElementById('tow_price')?.value);
             const genericBaseTotal = getBaseTotal('generic-payments-total');
-            const supplierDraft = parseLocaleNumber(document.getElementById('supplier_payment_amount')?.value);
             const genericDraft = parseLocaleNumber(document.getElementById('generic_payment_amount')?.value);
-            const total = supplierBaseTotal + genericBaseTotal + supplierDraft + genericDraft;
+            const total = purchasePrice + purchaseVatValue + iucPrice + commission + towPrice + genericBaseTotal + genericDraft;
 
             const totalEl = document.getElementById('acquisition-expenses-total');
             if (totalEl) {
@@ -1757,7 +1763,7 @@
         window.showVehicleAjaxAlert = showAjaxAlert;
         window.refreshVehiclePaymentsPanels = refreshPaymentsPanels;
 
-        ['supplier_payment_amount', 'generic_payment_amount'].forEach(function (id) {
+        ['purchase_price', 'purchase_vat_value', 'iuc_price', 'commission', 'tow_price', 'generic_payment_amount'].forEach(function (id) {
             const input = document.getElementById(id);
             if (!input) return;
 

@@ -389,4 +389,18 @@ class Vehicle extends Model implements HasMedia
     {
         return $this->hasMany(VehicleClientPayment::class, 'vehicle_id');
     }
+
+    public function getAcquisitionExpensesTotalAttribute(): float
+    {
+        $genericPaymentsTotal = $this->relationLoaded('generic_payments')
+            ? (float) $this->generic_payments->sum('amount')
+            : (float) $this->generic_payments()->sum('amount');
+
+        return (float) ($this->purchase_price ?? 0)
+            + (float) ($this->purchase_vat_value ?? 0)
+            + (float) ($this->iuc_price ?? 0)
+            + (float) ($this->commission ?? 0)
+            + (float) ($this->tow_price ?? 0)
+            + $genericPaymentsTotal;
+    }
 }
