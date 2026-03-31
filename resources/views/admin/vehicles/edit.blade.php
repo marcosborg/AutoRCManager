@@ -1638,7 +1638,30 @@
 
         function parseLocaleNumber(value) {
             if (value === null || typeof value === 'undefined') return 0;
-            const normalized = String(value).trim().replace(/[^\d,.\-]/g, '').replace(/\./g, '').replace(',', '.');
+            let normalized = String(value).trim().replace(/[^\d,.\-]/g, '');
+            if (normalized === '') return 0;
+
+            const hasComma = normalized.includes(',');
+            const hasDot = normalized.includes('.');
+
+            if (hasComma && hasDot) {
+                if (normalized.lastIndexOf(',') > normalized.lastIndexOf('.')) {
+                    normalized = normalized.replace(/\./g, '').replace(',', '.');
+                } else {
+                    normalized = normalized.replace(/,/g, '');
+                }
+            } else if (hasComma) {
+                normalized = normalized.replace(/\./g, '').replace(',', '.');
+            } else if (hasDot) {
+                const matches = normalized.match(/\./g);
+                if (matches && matches.length > 1) {
+                    const lastDotIndex = normalized.lastIndexOf('.');
+                    const digits = normalized.replace(/\./g, '');
+                    const decimalDigits = normalized.length - lastDotIndex - 1;
+                    normalized = digits.slice(0, digits.length - decimalDigits) + '.' + digits.slice(digits.length - decimalDigits);
+                }
+            }
+
             const parsed = parseFloat(normalized);
             return Number.isFinite(parsed) ? parsed : 0;
         }
