@@ -14,6 +14,7 @@ Auth::routes(['register' => false]);
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'middleware' => ['auth']], function () {
     Route::get('/', 'HomeController@index')->name('home');
     Route::get('dashboard', 'DashboardController@index')->name('dashboard');
+    Route::get('approvals', 'ApprovalController@index')->name('approvals.index');
     Route::get('gps-positions', 'GpsController@latest')->name('gps.positions');
     // Permissions
     Route::delete('permissions/destroy', 'PermissionsController@massDestroy')->name('permissions.massDestroy');
@@ -73,6 +74,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     // Vehicle Groups
     Route::delete('vehicle-groups/destroy', 'VehicleGroupController@massDestroy')->name('vehicle-groups.massDestroy');
+    Route::post('vehicle-groups/{vehicleGroup}/approve', 'VehicleGroupController@approveLot')->name('vehicle-groups.approve');
+    Route::post('vehicle-groups/{vehicleGroup}/payments', 'VehicleGroupController@storePayment')->name('vehicle-groups.payments.store');
+    Route::post('vehicle-groups/{vehicleGroup}/payments/{payment}/approve', 'VehicleGroupController@approvePayment')->name('vehicle-groups.payments.approve');
+    Route::post('vehicle-groups/{vehicleGroup}/payments/{payment}/reject', 'VehicleGroupController@rejectPayment')->name('vehicle-groups.payments.reject');
     Route::resource('vehicle-groups', 'VehicleGroupController');
 
     // Suplier

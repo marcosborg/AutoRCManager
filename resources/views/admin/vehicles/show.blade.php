@@ -20,6 +20,7 @@
                                 </a>
                             @endcan
                         </div>
+                        @include('admin.vehicles.partials.lotFinancialStatus')
                         <table class="table table-bordered table-striped">
                             <tbody>
                                 <tr>

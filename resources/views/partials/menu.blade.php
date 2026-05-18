@@ -232,8 +232,16 @@
                         <i class="fa-fw fas fa-object-group">
 
                         </i>
-                        <span>{{ trans('cruds.vehicleGroup.title') }}</span>
+                        <span>Lotes</span>
 
+                    </a>
+                </li>
+            @endcan
+            @can('vehicle_lot_approve')
+                <li class="{{ request()->is("admin/approvals") ? "active" : "" }}">
+                    <a href="{{ route("admin.approvals.index") }}">
+                        <i class="fa-fw fas fa-check-circle"></i>
+                        <span>Aprovacoes Rafael</span>
                     </a>
                 </li>
             @endcan

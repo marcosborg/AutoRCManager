@@ -11,7 +11,7 @@ class MassDestroyVehicleGroupRequest extends FormRequest
 {
     public function authorize()
     {
-        abort_if(Gate::denies('vehicle_group_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if(Gate::denies('vehicle_group_delete') && Gate::denies('vehicle_lot_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         return true;
     }

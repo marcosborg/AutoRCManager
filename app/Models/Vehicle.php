@@ -355,6 +355,16 @@ class Vehicle extends Model implements HasMedia
         return $this->belongsToMany(VehicleGroup::class, 'vehicle_group_vehicle');
     }
 
+    public function lot_items()
+    {
+        return $this->hasMany(VehicleLotItem::class, 'vehicle_id');
+    }
+
+    public function latest_lot_item()
+    {
+        return $this->hasOne(VehicleLotItem::class, 'vehicle_id')->latestOfMany();
+    }
+
     public function ownerships()
     {
         return $this->hasMany(VehicleOwnership::class, 'vehicle_id');

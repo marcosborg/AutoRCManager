@@ -1,275 +1,188 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('content')
-    <div class="content">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                Grupo: {{ $vehicleGroup->name }}
-                @if($vehicleGroup->wholesale_pvp > 0)
-                    <span class="label label-success" style="margin-left: 10px;">
-                        PVP atacado: &euro; {{ number_format($vehicleGroup->wholesale_pvp, 2, ',', '.') }}
-                    </span>
-                @endif
-
-                @can('vehicle_group_edit')
-                    <a href="{{ route('admin.vehicle-groups.edit', $vehicleGroup->id) }}" class="btn btn-xs btn-info pull-right">
-                        Editar grupo
-                    </a>
-                @endcan
-            </div>
-            <div class="panel-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h4>Clientes</h4>
-                        @if($vehicleGroup->clients->isEmpty())
-                            <p class="text-muted">Sem clientes associados.</p>
-                        @else
-                            @foreach($vehicleGroup->clients as $client)
-                                <span class="label label-info" style="display: inline-block; margin-bottom: 5px; margin-right: 5px;">
-                                    {{ $client->name }}
-                                </span>
-                            @endforeach
-                        @endif
-                    </div>
-                    <div class="col-md-6">
-                        <h4>Viaturas</h4>
-                        @if($vehicleGroup->vehicles->isEmpty())
-                            <p class="text-muted">Nenhuma viatura no grupo.</p>
-                        @else
-                            @foreach($vehicleGroup->vehicles as $vehicle)
-                                <a href="{{ route('admin.vehicles.show', $vehicle->id) }}" class="label label-primary" style="display: inline-block; margin-bottom: 5px; margin-right: 5px;">
-                                    {{ $vehicle->license ?? $vehicle->foreign_license ?? 'Sem matricula' }}
-                                    @if($vehicle->brand || $vehicle->model)
-                                        <small>{{ $vehicle->brand->name ?? '' }} {{ $vehicle->model }}</small>
-                                    @endif
-                                </a>
-                            @endforeach
-                        @endif
-                    </div>
-                </div>
-            </div>
+<div class="content">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            Lote: {{ $vehicleGroup->name }}
+            @canany(['vehicle_group_edit', 'vehicle_lot_edit'])
+                <a href="{{ route('admin.vehicle-groups.edit', $vehicleGroup->id) }}" class="btn btn-xs btn-info pull-right">Editar lote</a>
+            @endcanany
         </div>
-
-        <div class="row">
-            <div class="col-md-4">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <strong>Aquisicao</strong>
-                    </div>
-                    <div class="panel-body">
-                        <div class="d-flex justify-content-between border-bottom py-1">
-                            <span><strong>Preco total de compra</strong></span>
-                            <span><strong>â‚¬{{ number_format($financial['purchasePrice'], 2, ',', '.') }}</strong></span>
-                        </div>
-
-                        <hr>
-
-                        @forelse ($operationsByDepartment['aquisition'] as $op)
-                            <div class="d-flex justify-content-between border-bottom py-1">
-                                <span>
-                                    {{ $op->account_item->name ?? 'Item' }}
-                                    @if($op->vehicle)
-                                        <small class="text-muted">({{ $op->vehicle->license ?? 'Sem matricula' }})</small>
-                                    @endif
-                                </span>
-                                <span>â‚¬{{ number_format($op->total, 2, ',', '.') }}</span>
-                            </div>
-                        @empty
-                            <p class="text-muted">Sem pagamentos registados.</p>
-                        @endforelse
-
-                        <hr>
-
-                        <div class="d-flex justify-content-between py-1">
-                            <span><strong>Total pago</strong></span>
-                            <span><strong>â‚¬{{ number_format($financial['purchaseTotal'], 2, ',', '.') }}</strong></span>
-                        </div>
-                        <div class="d-flex justify-content-between py-1">
-                            <span><strong>Saldo por pagar</strong></span>
-                            <span><strong>â‚¬{{ number_format($financial['purchaseBalance'], 2, ',', '.') }}</strong></span>
-                        </div>
-                    </div>
-                </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-3"><strong>Cliente:</strong> {{ $vehicleGroup->customer->name ?? '-' }}</div>
+                <div class="col-md-2"><strong>Tipo:</strong> {{ $vehicleGroup->type === 'unitario' ? 'Discriminado' : 'Global' }}</div>
+                <div class="col-md-2"><strong>Estado:</strong> {{ $vehicleGroup->status }}</div>
+                <div class="col-md-3"><strong>Distribuicao:</strong> {{ $vehicleGroup->distribution_mode === 'equal' ? 'Igual' : 'Proporcional' }}</div>
+                <div class="col-md-2"><strong>Valor:</strong> &euro;{{ number_format($financial['target'], 2, ',', '.') }}</div>
             </div>
-
-            <div class="col-md-4">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <strong>Venda</strong>
-                    </div>
-                    <div class="panel-body">
-                        <div class="d-flex justify-content-between border-bottom py-1">
-                            <span><strong>Valor final alvo</strong></span>
-                            <span><strong>â‚¬{{ number_format($financial['finalSalesTarget'], 2, ',', '.') }}</strong></span>
-                        </div>
-
-                        <hr>
-
-                        @forelse ($operationsByDepartment['sale'] as $op)
-                            <div class="d-flex justify-content-between border-bottom py-1">
-                                <span>
-                                    {{ $op->account_item->name ?? 'Item' }}
-                                    @if($op->vehicle)
-                                        <small class="text-muted">({{ $op->vehicle->license ?? 'Sem matricula' }})</small>
-                                    @endif
-                                </span>
-                                <span>â‚¬{{ number_format($op->total, 2, ',', '.') }}</span>
-                            </div>
-                        @empty
-                            <p class="text-muted">Nenhum recebimento registado.</p>
-                        @endforelse
-
-                        <hr>
-
-                        <div class="d-flex justify-content-between py-1">
-                            <span><strong>Total recebido</strong></span>
-                            <span><strong>â‚¬{{ number_format($financial['saleTotal'], 2, ',', '.') }}</strong></span>
-                        </div>
-                        <div class="d-flex justify-content-between py-1">
-                            <span><strong>Saldo por receber</strong></span>
-                            <span><strong>â‚¬{{ number_format($financial['saleBalance'], 2, ',', '.') }}</strong></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <strong>ReconciliaÃ§Ã£o</strong>
-                    </div>
-                    <div class="panel-body">
-                        <div class="d-flex justify-content-between border-bottom py-1">
-                            <span>Investimento (compra)</span>
-                            <span>â‚¬{{ number_format($financial['purchaseTotal'], 2, ',', '.') }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between border-bottom py-1">
-                            <span>Investimento (oficina)</span>
-                            <span>â‚¬{{ number_format($financial['garageTotal'], 2, ',', '.') }}</span>
-                        </div>
-                        <hr>
-
-                        <div class="d-flex justify-content-between border-bottom py-1">
-                            <span><strong>Total investido</strong></span>
-                            <span><strong>â‚¬{{ number_format($financial['invested'], 2, ',', '.') }}</strong></span>
-                        </div>
-                        <div class="d-flex justify-content-between border-bottom py-1">
-                            <span>Valor final de venda (alvo)</span>
-                            <span>â‚¬{{ number_format($financial['finalSalesTarget'], 2, ',', '.') }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between border-bottom py-1">
-                            <span>Total recebido</span>
-                            <span>â‚¬{{ number_format($financial['saleTotal'], 2, ',', '.') }}</span>
-                        </div>
-
-                        <hr>
-
-                        <div class="d-flex justify-content-between border-bottom py-1">
-                            <span><strong>Lucro / prejuÃ­zo</strong></span>
-                            <span>
-                                <strong class="{{ $financial['profit'] >= 0 ? 'text-success' : 'text-danger' }}">
-                                    â‚¬{{ number_format($financial['profit'], 2, ',', '.') }}
-                                </strong>
-                            </span>
-                        </div>
-                        <div class="d-flex justify-content-between py-1">
-                            <span><strong>ROI</strong></span>
-                            <span><strong>{{ number_format($financial['roi'], 2, ',', '.') }}%</strong></span>
-                        </div>
-                        <div class="d-flex justify-content-between py-1">
-                            <span><em>Lucro teÃ³rico</em></span>
-                            <span><em>â‚¬{{ number_format($financial['theoreticalProfit'], 2, ',', '.') }}</em></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <strong>Oficina</strong>
-                    </div>
-                    <div class="panel-body">
-                        @forelse ($operationsByDepartment['garage'] as $op)
-                            <div class="d-flex justify-content-between border-bottom py-1">
-                                <span>
-                                    {{ $op->account_item->name ?? 'Item' }}
-                                    @if($op->vehicle)
-                                        <small class="text-muted">({{ $op->vehicle->license ?? 'Sem matricula' }})</small>
-                                    @endif
-                                </span>
-                                <span>â‚¬{{ number_format($op->total, 2, ',', '.') }}</span>
-                            </div>
-                        @empty
-                            <p class="text-muted">Nenhuma operaÃ§Ã£o registada.</p>
-                        @endforelse
-
-                        <hr>
-
-                        <div class="d-flex justify-content-between py-1">
-                            <span><strong>Total oficina</strong></span>
-                            <span><strong>â‚¬{{ number_format($financial['garageTotal'], 2, ',', '.') }}</strong></span>
-                        </div>
-                    </div>
-                </div>
-
-                </div>
-
-            <div class="col-md-6">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <strong>Detalhe por viatura</strong>
-                    </div>
-                    <div class="panel-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Viatura</th>
-                                        <th>Alvo venda</th>
-                                        <th>Recebido</th>
-                                        <th>Investido</th>
-                                        <th>Lucro</th>
-                                        <th>Saldo venda</th>
-                                        <th>M.O. (min)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($vehicleBreakdown as $row)
-                                        <tr>
-                                            <td>
-                                                {{ $row['vehicle']->license ?? 'Sem matricula' }}
-                                                <div class="text-muted small">
-                                                    {{ $row['vehicle']->brand->name ?? '' }} {{ $row['vehicle']->model }}
-                                                </div>
-                                            </td>
-                                            <td>â‚¬{{ number_format($row['sale_target'], 2, ',', '.') }}</td>
-                                            <td>â‚¬{{ number_format($row['sale_total'], 2, ',', '.') }}</td>
-                                            <td>â‚¬{{ number_format($row['invested'], 2, ',', '.') }}</td>
-                                            <td class="{{ $row['profit'] >= 0 ? 'text-success' : 'text-danger' }}">
-                                                â‚¬{{ number_format($row['profit'], 2, ',', '.') }}
-                                            </td>
-                                            <td>â‚¬{{ number_format($row['sale_balance'], 2, ',', '.') }}</td>
-                                            <td>{{ $row['minutes'] }}</td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="text-muted">Sem viaturas para apresentar.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @if($canApproveLots && !$vehicleGroup->approved_at)
+                <hr>
+                <form method="POST" action="{{ route('admin.vehicle-groups.approve', $vehicleGroup->id) }}">
+                    @csrf
+                    <button class="btn btn-success" type="submit">Aprovar lote</button>
+                </form>
+            @elseif($vehicleGroup->approved_at)
+                <hr>
+                <div><strong>Aprovado por:</strong> {{ $vehicleGroup->approver->name ?? '-' }} em {{ $vehicleGroup->approved_at }}</div>
+            @endif
+            @if($vehicleGroup->notes)
+                <hr>
+                <div><strong>Observacoes:</strong> {{ $vehicleGroup->notes }}</div>
+            @endif
         </div>
     </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="panel panel-default"><div class="panel-heading">Total venda</div><div class="panel-body"><h4>&euro;{{ number_format($financial['target'], 2, ',', '.') }}</h4></div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="panel panel-default"><div class="panel-heading">Recebido aprovado</div><div class="panel-body"><h4>&euro;{{ number_format($financial['paid'], 2, ',', '.') }}</h4></div></div>
+        </div>
+        <div class="col-md-2">
+            <div class="panel panel-default"><div class="panel-heading">Faturado</div><div class="panel-body"><h4>&euro;{{ number_format($financial['invoiced'], 2, ',', '.') }}</h4></div></div>
+        </div>
+        <div class="col-md-2">
+            <div class="panel panel-default"><div class="panel-heading">Caixa</div><div class="panel-body"><h4>&euro;{{ number_format($financial['cash'], 2, ',', '.') }}</h4></div></div>
+        </div>
+        <div class="col-md-2">
+            <div class="panel panel-default"><div class="panel-heading">Por receber</div><div class="panel-body"><h4>&euro;{{ number_format($financial['balance'], 2, ',', '.') }}</h4></div></div>
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Viaturas do lote</div>
+        <div class="panel-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Viatura</th>
+                        <th>Estado operacional</th>
+                        <th>Original</th>
+                        <th>Ajustado</th>
+                        <th>Alocado</th>
+                        <th>Recebido</th>
+                        <th>Faturado</th>
+                        <th>Caixa</th>
+                        <th>Estado financeiro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($vehicleGroup->items as $item)
+                        <tr>
+                            <td>
+                                <a href="{{ route('admin.vehicles.show', $item->vehicle_id) }}">
+                                    {{ $item->vehicle->license ?? $item->vehicle->foreign_license ?? ('#' . $item->vehicle_id) }}
+                                </a>
+                                <div class="text-muted small">{{ $item->vehicle->brand->name ?? '' }} {{ $item->vehicle->model ?? '' }}</div>
+                            </td>
+                            <td>{{ $item->vehicle->general_state->name ?? '-' }}</td>
+                            <td>&euro;{{ number_format($item->original_price ?? 0, 2, ',', '.') }}</td>
+                            <td>&euro;{{ number_format($item->adjusted_price ?? 0, 2, ',', '.') }}</td>
+                            <td>&euro;{{ number_format($item->allocated_amount ?? 0, 2, ',', '.') }}</td>
+                            <td>&euro;{{ number_format($item->paid_amount ?? 0, 2, ',', '.') }}</td>
+                            <td>&euro;{{ number_format($item->invoiced_amount ?? 0, 2, ',', '.') }}</td>
+                            <td>&euro;{{ number_format($item->cash_amount ?? 0, 2, ',', '.') }}</td>
+                            <td>{{ $item->status }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="9" class="text-muted">Sem viaturas.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if($canCreateLotPayments)
+        <div class="panel panel-default">
+            <div class="panel-heading">Submeter pagamento</div>
+            <div class="panel-body">
+                <form method="POST" action="{{ route('admin.vehicle-groups.payments.store', $vehicleGroup->id) }}" enctype="multipart/form-data">
+                    @csrf
+                    <div class="row">
+                        <div class="col-md-2">
+                            <label>Data</label>
+                            <input class="form-control date" name="paid_at" value="{{ old('paid_at', now()->format(config('panel.date_format'))) }}" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label>Metodo</label>
+                            <select class="form-control select2" name="payment_method_id" required>
+                                @foreach($paymentMethods as $id => $name)
+                                    <option value="{{ $id }}" {{ old('payment_method_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2"><label>Recebido</label><input class="form-control" type="number" name="amount" value="{{ old('amount') }}" step="0.01" min="0.01" required></div>
+                        <div class="col-md-2"><label>Faturado</label><input class="form-control" type="number" name="invoiced_amount" value="{{ old('invoiced_amount', 0) }}" step="0.01" min="0" required></div>
+                        <div class="col-md-2"><label>Caixa</label><input class="form-control" type="number" name="cash_amount" value="{{ old('cash_amount', 0) }}" step="0.01" min="0" required></div>
+                        <div class="col-md-2"><label>Comprovativo</label><input class="form-control" type="file" name="proof_file"></div>
+                    </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>Notas</label>
+                        <textarea class="form-control" name="notes">{{ old('notes') }}</textarea>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Submeter para aprovacao</button>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Pagamentos</div>
+        <div class="panel-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Metodo</th>
+                        <th>Recebido</th>
+                        <th>Faturado</th>
+                        <th>Caixa</th>
+                        <th>Estado</th>
+                        <th>Criado por</th>
+                        <th>Comprovativo</th>
+                        <th>&nbsp;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($vehicleGroup->payments as $payment)
+                        <tr>
+                            <td>{{ $payment->paid_at }}</td>
+                            <td>{{ $payment->payment_method->name ?? '-' }}</td>
+                            <td>&euro;{{ number_format($payment->amount, 2, ',', '.') }}</td>
+                            <td>&euro;{{ number_format($payment->invoiced_amount, 2, ',', '.') }}</td>
+                            <td>&euro;{{ number_format($payment->cash_amount, 2, ',', '.') }}</td>
+                            <td>{{ $payment->approval_status }}</td>
+                            <td>{{ $payment->creator->name ?? '-' }}</td>
+                            <td>
+                                @foreach($payment->proof_file as $media)
+                                    <a href="{{ $media->getUrl() }}" target="_blank">{{ trans('global.view_file') }}</a>
+                                @endforeach
+                            </td>
+                            <td>
+                                @if($canApproveLots && $payment->approval_status === \App\Models\LotPayment::STATUS_PENDING)
+                                    <form method="POST" action="{{ route('admin.vehicle-groups.payments.approve', [$vehicleGroup->id, $payment->id]) }}" style="display:inline-block">
+                                        @csrf
+                                        <button class="btn btn-xs btn-success" type="submit">Aprovar</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('admin.vehicle-groups.payments.reject', [$vehicleGroup->id, $payment->id]) }}" style="display:inline-block">
+                                        @csrf
+                                        <input type="hidden" name="rejection_reason" value="Rejeitado no detalhe do lote">
+                                        <button class="btn btn-xs btn-danger" type="submit">Rejeitar</button>
+                                    </form>
+                                @elseif($payment->approval_status === \App\Models\LotPayment::STATUS_REJECTED)
+                                    <span class="text-muted">{{ $payment->rejection_reason }}</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="9" class="text-muted">Sem pagamentos.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 @endsection
-
-
-
-
-

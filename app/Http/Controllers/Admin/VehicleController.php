@@ -20,6 +20,7 @@ use App\Models\VehicleGenericPayment;
 use App\Models\VehicleSupplierPayment;
 use App\Models\GeneralState;
 use App\Models\PaymentMethod;
+use App\Services\VehicleLotService;
 use App\Services\VehicleCsvSyncService;
 use Gate;
 use Illuminate\Support\Carbon;
@@ -187,7 +188,7 @@ class VehicleController extends Controller
         return redirect()->route('admin.vehicles.edit', $vehicle->id)->with('message', 'Criado com sucesso');
     }
 
-    public function edit(Vehicle $vehicle)
+    public function edit(Vehicle $vehicle, VehicleLotService $lotService)
     {
         abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
@@ -227,6 +228,7 @@ class VehicleController extends Controller
         $financialTotalRevenue = 0.0;
         $financialBalance = 0.0;
         $showWorkshopSection = $this->isWorkshopState($vehicle);
+        $vehicleFinancialStatus = $lotService->financialStatusForVehicle($vehicle);
 
         $purchase_categories = collect();
         $sale_categories = collect();
@@ -266,6 +268,7 @@ class VehicleController extends Controller
             'financialTotalRevenue',
             'financialBalance',
             'showWorkshopSection',
+            'vehicleFinancialStatus',
             'supplierPayments',
             'supplierPaymentsTotal',
             'supplierPaymentsOutstanding',
@@ -406,7 +409,7 @@ class VehicleController extends Controller
         return redirect()->back()->with('message', 'Atualizado com sucesso');
     }
 
-    public function show(Vehicle $vehicle)
+    public function show(Vehicle $vehicle, VehicleLotService $lotService)
     {
         abort_if(Gate::denies('vehicle_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
@@ -417,6 +420,7 @@ class VehicleController extends Controller
         $financialTotalRevenue = 0.0;
         $financialBalance = 0.0;
         $showWorkshopSection = $this->isWorkshopState($vehicle);
+        $vehicleFinancialStatus = $lotService->financialStatusForVehicle($vehicle);
 
         return view('admin.vehicles.show', compact(
             'vehicle',
@@ -425,6 +429,8 @@ class VehicleController extends Controller
             'financialTotalRevenue',
             'financialBalance',
             'showWorkshopSection'
+            ,
+            'vehicleFinancialStatus'
         ));
     }
 

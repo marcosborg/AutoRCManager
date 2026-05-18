@@ -36,6 +36,7 @@
                     {{ trans('global.edit') }} {{ trans('cruds.vehicle.title_singular') }}
                 </div>
                 <div class="panel-body">
+                    @include('admin.vehicles.partials.lotFinancialStatus')
                     <form id="vehicle-edit-form" method="POST" action="{{ route('admin.vehicles.update', [$vehicle->id]) }}" enctype="multipart/form-data">
                         @method('PUT')
                         @csrf
