@@ -7,6 +7,7 @@ use App\Domain\Consignments\ConsignmentRules;
 use Gate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Validator;
 
 class UpdateVehicleRequest extends FormRequest
@@ -76,6 +77,9 @@ class UpdateVehicleRequest extends FormRequest
                 'nullable',
             ],
             'documents' => [
+                'array',
+            ],
+            'additional_documents' => [
                 'array',
             ],
             'photos' => [
@@ -255,6 +259,9 @@ class UpdateVehicleRequest extends FormRequest
                 return;
             }
 
+            $this->validateUniqueNormalizedLicense($validator, 'license', (int) $vehicle->id);
+            $this->validateUniqueNormalizedLicense($validator, 'foreign_license', (int) $vehicle->id);
+
             $incomingSaleDate = $this->input('sale_date');
             if (ConsignmentRules::shouldBlockSale($vehicle, $incomingSaleDate)) {
                 $validator->errors()->add('sale_date', 'Nao e possivel vender com consignacao ativa.');
@@ -301,5 +308,43 @@ class UpdateVehicleRequest extends FormRequest
                 );
             }
         });
+    }
+
+    private function validateUniqueNormalizedLicense(Validator $validator, string $field, int $currentVehicleId): void
+    {
+        $normalizedLicense = $this->normalizeLicense((string) $this->input($field, ''));
+
+        if ($normalizedLicense === '') {
+            return;
+        }
+
+        $existingVehicle = Vehicle::withTrashed()
+            ->where('id', '!=', $currentVehicleId)
+            ->where(function ($query) use ($normalizedLicense) {
+                $query
+                    ->whereRaw("REPLACE(REPLACE(UPPER(license), '-', ''), ' ', '') = ?", [$normalizedLicense])
+                    ->orWhereRaw("REPLACE(REPLACE(UPPER(foreign_license), '-', ''), ' ', '') = ?", [$normalizedLicense]);
+            })
+            ->first(['id', 'license', 'foreign_license', 'deleted_at']);
+
+        if (! $existingVehicle) {
+            return;
+        }
+
+        $validator->errors()->add(
+            $field,
+            sprintf(
+                'Ja existe uma viatura com esta matricula: #%d %s.',
+                $existingVehicle->id,
+                $existingVehicle->license ?: $existingVehicle->foreign_license ?: ''
+            )
+        );
+    }
+
+    private function normalizeLicense(string $license): string
+    {
+        $license = Str::upper(trim($license));
+
+        return preg_replace('/[\s-]+/', '', $license) ?? '';
     }
 }

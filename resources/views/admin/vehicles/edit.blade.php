@@ -617,11 +617,11 @@
                                         <label for="documents">DUA / Inspeção</label>
                                         <div class="needsclick dropzone" id="documents-dropzone"></div>
                                     </div>
-                                    <div class="form-group {{ $errors->has('additional_items') ? 'has-error' : '' }}">
-                                        <label for="additional_items">Outros documentos</label>
-                                        <textarea class="form-control ckeditor" name="additional_items" id="additional_items">{!! old('additional_items', $vehicle->additional_items) !!}</textarea>
-                                        @if($errors->has('additional_items'))
-                                            <span class="help-block" role="alert">{{ $errors->first('additional_items') }}</span>
+                                    <div class="form-group {{ $errors->has('additional_documents') ? 'has-error' : '' }}">
+                                        <label for="additional_documents-dropzone">Outros documentos</label>
+                                        <div class="needsclick dropzone" id="additional_documents-dropzone"></div>
+                                        @if($errors->has('additional_documents'))
+                                            <span class="help-block" role="alert">{{ $errors->first('additional_documents') }}</span>
                                         @endif
                                     </div>
                                 </div>
@@ -1094,6 +1094,11 @@
                                                 @endforeach
                                             </div>
                                             <div style="margin-top: 5px;">
+                                                @foreach($vehicle->additional_documents as $media)
+                                                    <a href="{{ $media->getUrl() }}" target="_blank">{{ trans('global.view_file') }}</a>
+                                                @endforeach
+                                            </div>
+                                            <div style="margin-top: 5px;">
                                                 @foreach($vehicle->pdfs as $media)
                                                     <a href="{{ $media->getUrl() }}" target="_blank">{{ trans('global.view_file') }}</a>
                                                 @endforeach
@@ -1167,6 +1172,50 @@
                         window.open(currentFile.original_url, '_blank')
                     })
                     $('form').append('<input type="hidden" name="documents[]" value="' + currentFile.file_name + '">')
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
+    }
+</script>
+
+<script>
+    var uploadedAdditionalDocumentsMap = {}
+    Dropzone.options.additionalDocumentsDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 10, // MB
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 10 },
+        success: function (file, response) {
+            $('form').append('<input type="hidden" name="additional_documents[]" value="' + response.name + '">')
+            uploadedAdditionalDocumentsMap[file.name] = response.name
+        },
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedAdditionalDocumentsMap[file.name]
+            $('form').find('input[name="additional_documents[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->additional_documents)
+                var files = {!! json_encode($vehicle->additional_documents) !!}
+                for (var i in files) {
+                    const currentFile = files[i]
+                    this.options.addedfile.call(this, currentFile)
+                    currentFile.previewElement.classList.add('dz-complete')
+                    currentFile.previewElement.style.cursor = 'pointer'
+                    currentFile.previewElement.addEventListener('click', function (e) {
+                        if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
+                            return
+                        }
+                        window.open(currentFile.original_url, '_blank')
+                    })
+                    $('form').append('<input type="hidden" name="additional_documents[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },

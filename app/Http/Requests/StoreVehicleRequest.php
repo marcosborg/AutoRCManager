@@ -6,6 +6,8 @@ use App\Models\Vehicle;
 use Gate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Validator;
 
 class StoreVehicleRequest extends FormRequest
 {
@@ -74,6 +76,9 @@ class StoreVehicleRequest extends FormRequest
                 'nullable',
             ],
             'documents' => [
+                'array',
+            ],
+            'additional_documents' => [
                 'array',
             ],
             'photos' => [
@@ -196,5 +201,50 @@ class StoreVehicleRequest extends FormRequest
                 'string',
             ],
         ];
+    }
+
+    public function withValidator(Validator $validator)
+    {
+        $validator->after(function (Validator $validator) {
+            $this->validateUniqueNormalizedLicense($validator, 'license');
+            $this->validateUniqueNormalizedLicense($validator, 'foreign_license');
+        });
+    }
+
+    private function validateUniqueNormalizedLicense(Validator $validator, string $field): void
+    {
+        $normalizedLicense = $this->normalizeLicense((string) $this->input($field, ''));
+
+        if ($normalizedLicense === '') {
+            return;
+        }
+
+        $existingVehicle = Vehicle::withTrashed()
+            ->where(function ($query) use ($normalizedLicense) {
+                $query
+                    ->whereRaw("REPLACE(REPLACE(UPPER(license), '-', ''), ' ', '') = ?", [$normalizedLicense])
+                    ->orWhereRaw("REPLACE(REPLACE(UPPER(foreign_license), '-', ''), ' ', '') = ?", [$normalizedLicense]);
+            })
+            ->first(['id', 'license', 'foreign_license', 'deleted_at']);
+
+        if (! $existingVehicle) {
+            return;
+        }
+
+        $validator->errors()->add(
+            $field,
+            sprintf(
+                'Ja existe uma viatura com esta matricula: #%d %s.',
+                $existingVehicle->id,
+                $existingVehicle->license ?: $existingVehicle->foreign_license ?: ''
+            )
+        );
+    }
+
+    private function normalizeLicense(string $license): string
+    {
+        $license = Str::upper(trim($license));
+
+        return preg_replace('/[\s-]+/', '', $license) ?? '';
     }
 }

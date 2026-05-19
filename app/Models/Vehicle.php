@@ -25,6 +25,7 @@ class Vehicle extends Model implements HasMedia
 
     protected $appends = [
         'documents',
+        'additional_documents',
         'photos',
         'invoice',
         'is_invoiced',
@@ -196,6 +197,11 @@ class Vehicle extends Model implements HasMedia
     public function getDocumentsAttribute()
     {
         return $this->getMedia('documents');
+    }
+
+    public function getAdditionalDocumentsAttribute()
+    {
+        return $this->getMedia('additional_documents');
     }
 
     public function getPdfsAttribute()

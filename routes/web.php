@@ -45,6 +45,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('clients/parse-csv-import', 'ClientController@parseCsvImport')->name('clients.parseCsvImport');
     Route::post('clients/process-csv-import', 'ClientController@processCsvImport')->name('clients.processCsvImport');
     Route::get('clients/{client}/reconciliation', [App\Http\Controllers\Admin\ClientController::class, 'reconciliation'])->name('clients.reconciliation');
+    Route::get('clients/{client}/payments/{payment}', 'ClientController@showPayment')->name('clients.payments.show');
+    Route::post('clients/{client}/payments', 'ClientController@storePayment')->name('clients.payments.store');
+    Route::post('clients/{client}/charges', 'ClientController@storeCharge')->name('clients.charges.store');
     Route::resource('clients', 'ClientController');
 
     // Brand

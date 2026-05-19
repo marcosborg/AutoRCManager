@@ -336,6 +336,20 @@ class VehicleController extends Controller
             }
         }
 
+        if (count($vehicle->additional_documents) > 0) {
+            foreach ($vehicle->additional_documents as $media) {
+                if (!in_array($media->file_name, $request->input('additional_documents', []))) {
+                    $media->delete();
+                }
+            }
+        }
+        $media = $vehicle->additional_documents->pluck('file_name')->toArray();
+        foreach ($request->input('additional_documents', []) as $file) {
+            if (count($media) === 0 || !in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('additional_documents');
+            }
+        }
+
         if (count($vehicle->photos) > 0) {
             foreach ($vehicle->photos as $media) {
                 if (!in_array($media->file_name, $request->input('photos', []))) {

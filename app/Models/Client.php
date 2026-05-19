@@ -66,4 +66,14 @@ class Client extends Model
         return $this->belongsToMany(VehicleGroup::class, 'client_vehicle_group');
     }
 
+    public function payments()
+    {
+        return $this->hasMany(ClientPayment::class, 'client_id');
+    }
+
+    public function charges()
+    {
+        return $this->hasMany(ClientCharge::class, 'client_id');
+    }
+
 }

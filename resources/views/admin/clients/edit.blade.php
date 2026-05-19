@@ -7,9 +7,6 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         {{ trans('global.edit') }} {{ trans('cruds.client.title_singular') }}
-                        <a href="{{ route('admin.clients.reconciliation', $client->id) }}" class="btn btn-xs btn-primary pull-right">
-                            Reconcilia&ccedil;&atilde;o de contas
-                        </a>
                     </div>
                     <div class="panel-body">
                         <form method="POST" action="{{ route('admin.clients.update', [$client->id]) }}"
@@ -254,55 +251,407 @@
         </div>
 
 
-        {{-- Lista de viaturas deste cliente --}}
-        @if($client->vehicles->count())
-            <hr>
-            <h4>Viaturas adquiridas por este cliente</h4>
+        @php
+            $formatMoney = function ($value) {
+                return number_format((float) $value, 2, ',', '.') . ' EUR';
+            };
+            $accountTotals = $currentAccount['totals'] ?? ['debit' => 0, 'credit' => 0, 'balance' => 0];
+            $vehicleRows = $currentAccount['vehicleRows'] ?? collect();
+            $lotRows = $currentAccount['lotRows'] ?? collect();
+            $chargeRows = $currentAccount['chargeRows'] ?? collect();
+            $receiptRows = $currentAccount['receiptRows'] ?? collect();
+        @endphp
 
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    Histórico de viaturas
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Conta corrente
+            </div>
+            <div class="panel-body">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active">
+                        <a href="#client-account-overview" aria-controls="client-account-overview" role="tab" data-toggle="tab">Conta corrente</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#client-account-receipts" aria-controls="client-account-receipts" role="tab" data-toggle="tab">Recebimentos</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#client-account-charges" aria-controls="client-account-charges" role="tab" data-toggle="tab">Outros d&eacute;bitos</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#client-account-payment" aria-controls="client-account-payment" role="tab" data-toggle="tab">Novo pagamento</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" style="padding-top: 15px;">
+                    <div role="tabpanel" class="tab-pane active" id="client-account-overview">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="well well-sm">
+                            <div><strong>D&eacute;bito total</strong></div>
+                            <div class="lead">{{ $formatMoney($accountTotals['debit'] ?? 0) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="well well-sm">
+                            <div><strong>Cr&eacute;dito total</strong></div>
+                            <div class="lead">{{ $formatMoney($accountTotals['credit'] ?? 0) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="well well-sm">
+                            <div><strong>Saldo</strong></div>
+                            <div class="lead {{ ($accountTotals['balance'] ?? 0) > 0 ? 'text-danger' : 'text-success' }}">
+                                {{ $formatMoney($accountTotals['balance'] ?? 0) }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="panel-body">
-                    <table class="table table-bordered table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Matrícula</th>
-                                <th>Marca</th>
-                                <th>Modelo</th>
-                                <th>Ano</th>
-                                <th>Estado</th>
-                                <th>Data de venda</th>
-                                <th style="width: 180px;">&nbsp;</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($client->vehicles as $vehicle)
+
+                <div class="table-responsive">
+                    <h4>Viaturas</h4>
+                    @if($vehicleRows->isEmpty())
+                        <p><em>Este cliente ainda n&atilde;o tem viaturas registadas como adquiridas.</em></p>
+                    @else
+                        <table class="table table-bordered table-striped table-hover">
+                            <thead>
                                 <tr>
-                                    <td>{{ $vehicle->id }}</td>
-                                    <td>{{ $vehicle->license ?: $vehicle->foreign_license }}</td>
-                                    <td>{{ $vehicle->brand->name ?? '' }}</td>
-                                    <td>{{ $vehicle->model }}</td>
-                                    <td>{{ $vehicle->year }}</td>
-                                    <td>{{ $vehicle->general_state->name ?? '' }}</td>
-                                    <td>{{ $vehicle->sale_date }}</td>
-                                    <td>
-                                        <a href="{{ route('admin.vehicles.edit', $vehicle->id) }}" class="btn btn-xs btn-primary">
-                                            Editar
-                                        </a>
-                                    </td>
+                                    <th>Viatura</th>
+                                    <th>Estado</th>
+                                    <th>Data venda</th>
+                                    <th>Lote</th>
+                                    <th class="text-right">D&eacute;bito</th>
+                                    <th class="text-right">Cr&eacute;dito</th>
+                                    <th class="text-right">Saldo</th>
+                                    <th style="width: 110px;">A&ccedil;&atilde;o</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach($vehicleRows as $row)
+                                    @php
+                                        $vehicle = $row['vehicle'];
+                                        $vehicleName = trim(($vehicle->license ?: $vehicle->foreign_license ?: 'Sem matricula') . ' - ' . ($vehicle->brand->name ?? '') . ' - ' . ($vehicle->model ?? ''));
+                                    @endphp
+                                    <tr>
+                                        <td>
+                                            {{ $vehicleName }}
+                                            @if(! $row['counts_in_totals'])
+                                                <br><small class="text-muted">N&atilde;o soma nos totais gerais porque pertence a lote.</small>
+                                            @endif
+                                        </td>
+                                        <td>{{ $vehicle->general_state->name ?? '' }}</td>
+                                        <td>{{ $vehicle->sale_date }}</td>
+                                        <td>
+                                            @forelse($row['lots'] as $lot)
+                                                <a href="{{ route('admin.vehicle-groups.show', $lot->id) }}" class="label label-default" style="display: inline-block; margin-bottom: 2px;">
+                                                    Pertence ao lote {{ $lot->name }}
+                                                </a>
+                                            @empty
+                                                <span class="text-muted">Individual</span>
+                                            @endforelse
+                                        </td>
+                                        <td class="text-right">
+                                            @if($row['counts_in_totals'])
+                                                {{ $formatMoney($row['debit']) }}
+                                            @else
+                                                <span class="text-muted">Valor no lote</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-right">
+                                            @if($row['counts_in_totals'])
+                                                {{ $formatMoney($row['credit']) }}
+                                            @else
+                                                <span class="text-muted">Valor no lote</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-right">
+                                            @if($row['counts_in_totals'])
+                                                <span class="{{ $row['balance'] > 0 ? 'text-danger' : 'text-success' }}">
+                                                    {{ $formatMoney($row['balance']) }}
+                                                </span>
+                                            @else
+                                                <span class="text-muted">Valor no lote</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <a href="{{ route('admin.vehicles.edit', $vehicle->id) }}" class="btn btn-xs btn-primary">
+                                                Abrir
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+
+                <div class="table-responsive">
+                    <h4>Lotes</h4>
+                    @if($lotRows->isEmpty())
+                        <p><em>Este cliente ainda n&atilde;o tem lotes adquiridos.</em></p>
+                    @else
+                        <table class="table table-bordered table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Lote</th>
+                                    <th>Tipo</th>
+                                    <th class="text-center">N.&ordm; viaturas</th>
+                                    <th class="text-right">D&eacute;bito</th>
+                                    <th class="text-right">Cr&eacute;dito aprovado</th>
+                                    <th class="text-right">Saldo</th>
+                                    <th style="width: 110px;">A&ccedil;&atilde;o</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($lotRows as $row)
+                                    @php
+                                        $lot = $row['lot'];
+                                        $typeLabel = $lot->type === 'unitario' ? 'Discriminado' : 'Global';
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $lot->name }}</td>
+                                        <td>{{ $typeLabel }}</td>
+                                        <td class="text-center">{{ $row['vehicles_count'] }}</td>
+                                        <td class="text-right">{{ $formatMoney($row['debit']) }}</td>
+                                        <td class="text-right">{{ $formatMoney($row['credit']) }}</td>
+                                        <td class="text-right">
+                                            <span class="{{ $row['balance'] > 0 ? 'text-danger' : 'text-success' }}">
+                                                {{ $formatMoney($row['balance']) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ route('admin.vehicle-groups.show', $lot->id) }}" class="btn btn-xs btn-primary">
+                                                Abrir
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+
+                <div class="table-responsive">
+                    <h4>Outros d&eacute;bitos</h4>
+                    @if($chargeRows->isEmpty())
+                        <p><em>Este cliente ainda n&atilde;o tem outros d&eacute;bitos registados.</em></p>
+                    @else
+                        <table class="table table-bordered table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descri&ccedil;&atilde;o</th>
+                                    <th class="text-right">D&eacute;bito</th>
+                                    <th>Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($chargeRows as $chargeRow)
+                                    <tr>
+                                        <td>{{ $chargeRow['charged_at'] }}</td>
+                                        <td>{{ $chargeRow['description'] }}</td>
+                                        <td class="text-right">{{ $formatMoney($chargeRow['amount']) }}</td>
+                                        <td>{{ $chargeRow['notes'] }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+                    </div>
+
+                    <div role="tabpanel" class="tab-pane" id="client-account-receipts">
+                        <h4>Recebimentos</h4>
+                        @if($receiptRows->isEmpty())
+                            <p><em>Este cliente ainda n&atilde;o tem recebimentos registados.</em></p>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Origem</th>
+                                            <th>Refer&ecirc;ncia</th>
+                                            <th>M&eacute;todo</th>
+                                            <th>Estado</th>
+                                            <th class="text-right">Valor</th>
+                                            <th>Notas</th>
+                                            <th style="width: 110px;">A&ccedil;&atilde;o</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($receiptRows as $receipt)
+                                            <tr>
+                                                <td>{{ $receipt['date'] }}</td>
+                                                <td>{{ $receipt['source'] }}</td>
+                                                <td>{{ $receipt['reference'] }}</td>
+                                                <td>{{ $receipt['payment_method'] }}</td>
+                                                <td>
+                                                    <span class="{{ $receipt['counts_in_balance'] ? 'text-success' : 'text-muted' }}">
+                                                        {{ $receipt['status'] }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-right">{{ $formatMoney($receipt['amount']) }}</td>
+                                                <td>{{ $receipt['notes'] }}</td>
+                                                <td>
+                                                    @if($receipt['url'])
+                                                        <a href="{{ $receipt['url'] }}" class="btn btn-xs btn-primary">Abrir</a>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div role="tabpanel" class="tab-pane" id="client-account-charges">
+                        <h4>Outros d&eacute;bitos</h4>
+
+                        <form method="POST" action="{{ route('admin.clients.charges.store', $client->id) }}">
+                            @csrf
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <div class="form-group {{ $errors->has('charged_at') ? 'has-error' : '' }}">
+                                        <label class="required" for="client_charge_charged_at">Data</label>
+                                        <input class="form-control" type="date" name="charged_at" id="client_charge_charged_at" value="{{ old('charged_at', now()->format('Y-m-d')) }}" required>
+                                        @if($errors->has('charged_at'))
+                                            <span class="help-block" role="alert">{{ $errors->first('charged_at') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group {{ $errors->has('description') ? 'has-error' : '' }}">
+                                        <label class="required" for="client_charge_description">Descri&ccedil;&atilde;o</label>
+                                        <input class="form-control" type="text" name="description" id="client_charge_description" value="{{ old('description') }}" required>
+                                        @if($errors->has('description'))
+                                            <span class="help-block" role="alert">{{ $errors->first('description') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group {{ $errors->has('charge_amount') ? 'has-error' : '' }}">
+                                        <label class="required" for="client_charge_amount">Valor a debitar</label>
+                                        <input class="form-control" type="number" name="charge_amount" id="client_charge_amount" value="{{ old('charge_amount') }}" step="0.01" min="0.01" required>
+                                        @if($errors->has('charge_amount'))
+                                            <span class="help-block" role="alert">{{ $errors->first('charge_amount') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>D&eacute;bitos gerais</label>
+                                        <input class="form-control" type="text" value="{{ $formatMoney($accountTotals['client_charge_debit'] ?? 0) }}" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group {{ $errors->has('charge_notes') ? 'has-error' : '' }}">
+                                <label for="client_charge_notes">Notas</label>
+                                <textarea class="form-control" name="charge_notes" id="client_charge_notes" rows="3">{{ old('charge_notes') }}</textarea>
+                                @if($errors->has('charge_notes'))
+                                    <span class="help-block" role="alert">{{ $errors->first('charge_notes') }}</span>
+                                @endif
+                            </div>
+                            <button class="btn btn-warning" type="submit">Registar d&eacute;bito</button>
+                        </form>
+
+                        <hr>
+
+                        @if($chargeRows->isEmpty())
+                            <p><em>Este cliente ainda n&atilde;o tem outros d&eacute;bitos registados.</em></p>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Descri&ccedil;&atilde;o</th>
+                                            <th class="text-right">Valor</th>
+                                            <th>Notas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($chargeRows as $chargeRow)
+                                            <tr>
+                                                <td>{{ $chargeRow['charged_at'] }}</td>
+                                                <td>{{ $chargeRow['description'] }}</td>
+                                                <td class="text-right">{{ $formatMoney($chargeRow['amount']) }}</td>
+                                                <td>{{ $chargeRow['notes'] }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div role="tabpanel" class="tab-pane" id="client-account-payment">
+                        <h4>Novo pagamento</h4>
+                        <form method="POST" action="{{ route('admin.clients.payments.store', $client->id) }}" enctype="multipart/form-data">
+                            @csrf
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <div class="form-group {{ $errors->has('paid_at') ? 'has-error' : '' }}">
+                                        <label class="required" for="client_payment_paid_at">Data</label>
+                                        <input class="form-control" type="date" name="paid_at" id="client_payment_paid_at" value="{{ old('paid_at', now()->format('Y-m-d')) }}" required>
+                                        @if($errors->has('paid_at'))
+                                            <span class="help-block" role="alert">{{ $errors->first('paid_at') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group {{ $errors->has('payment_method_id') ? 'has-error' : '' }}">
+                                        <label for="client_payment_method_id" style="display: block;">M&eacute;todo</label>
+                                        <select class="form-control select2" name="payment_method_id" id="client_payment_method_id" style="width: 100%;">
+                                            @foreach($paymentMethods as $id => $entry)
+                                                <option value="{{ $id }}" {{ old('payment_method_id') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                            @endforeach
+                                        </select>
+                                        @if($errors->has('payment_method_id'))
+                                            <span class="help-block" role="alert">{{ $errors->first('payment_method_id') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group {{ $errors->has('amount') ? 'has-error' : '' }}">
+                                        <label class="required" for="client_payment_amount">Valor</label>
+                                        <input class="form-control" type="number" name="amount" id="client_payment_amount" value="{{ old('amount') }}" step="0.01" min="0.01" required>
+                                        @if($errors->has('amount'))
+                                            <span class="help-block" role="alert">{{ $errors->first('amount') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group {{ $errors->has('proof_file') ? 'has-error' : '' }}">
+                                        <label for="client_payment_proof_file">Comprovativo</label>
+                                        <input class="form-control" type="file" name="proof_file" id="client_payment_proof_file">
+                                        @if($errors->has('proof_file'))
+                                            <span class="help-block" role="alert">{{ $errors->first('proof_file') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Saldo atual</label>
+                                        <input class="form-control" type="text" value="{{ $formatMoney($accountTotals['balance'] ?? 0) }}" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group {{ $errors->has('notes') ? 'has-error' : '' }}">
+                                <label for="client_payment_notes">Notas</label>
+                                <textarea class="form-control" name="notes" id="client_payment_notes" rows="3">{{ old('notes') }}</textarea>
+                                @if($errors->has('notes'))
+                                    <span class="help-block" role="alert">{{ $errors->first('notes') }}</span>
+                                @endif
+                            </div>
+                            <button class="btn btn-success" type="submit">Registar pagamento</button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        @else
-            <hr>
-            <p><em>Este cliente ainda não tem viaturas registadas como adquiridas.</em></p>
-        @endif
+        </div>
 
     </div>
 @endsection
-<script>console.log({!! $client !!})</script>
