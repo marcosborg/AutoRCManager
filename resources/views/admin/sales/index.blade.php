@@ -36,6 +36,7 @@
                                 <th>{{ trans('cruds.vehicle.fields.kilometers') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.inspec_b') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.pvp') }}</th>
+                                <th>Faturado</th>
                                 <th>&nbsp;</th>
                             </tr>
                             <tr>
@@ -58,6 +59,13 @@
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td>
+                                    <select class="search" strict="true">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        <option value="1">Sim</option>
+                                        <option value="0">Nao</option>
+                                    </select>
+                                </td>
                                 <td></td>
                             </tr>
                         </thead>
@@ -119,6 +127,7 @@
                 { data: 'kilometers', name: 'kilometers' },
                 { data: 'inspec_b', name: 'inspec_b' },
                 { data: 'pvp', name: 'pvp' },
+                { data: 'is_invoiced', name: 'is_invoiced' },
                 { data: 'actions', name: '{{ trans('global.actions') }}', orderable: false, searchable: false }
             ],
             columnDefs: [
@@ -144,7 +153,7 @@
 
         // Filtros de cabeçalho
         let visibleColumnsIndexes = null;
-        $('.datatable thead').on('input', '.search', function () {
+        $('.datatable thead').on('input change', '.search', function () {
             let strict = $(this).attr('strict') || false
             let value = strict && this.value ? "^" + this.value + "$" : this.value
 

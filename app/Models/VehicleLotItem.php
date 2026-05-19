@@ -18,6 +18,8 @@ class VehicleLotItem extends Model
         'vehicle_id',
         'original_price',
         'adjusted_price',
+        'registration_amount',
+        'tow_amount',
         'discount',
         'allocated_amount',
         'paid_amount',
@@ -29,6 +31,8 @@ class VehicleLotItem extends Model
     protected $casts = [
         'original_price' => 'float',
         'adjusted_price' => 'float',
+        'registration_amount' => 'float',
+        'tow_amount' => 'float',
         'discount' => 'float',
         'allocated_amount' => 'float',
         'paid_amount' => 'float',
@@ -48,6 +52,8 @@ class VehicleLotItem extends Model
 
     public function getSaleTargetAttribute(): float
     {
-        return (float) ($this->adjusted_price ?? $this->allocated_amount ?? $this->original_price ?? 0);
+        return (float) ($this->adjusted_price ?? $this->allocated_amount ?? $this->original_price ?? 0)
+            + (float) ($this->registration_amount ?? 0)
+            + (float) ($this->tow_amount ?? 0);
     }
 }

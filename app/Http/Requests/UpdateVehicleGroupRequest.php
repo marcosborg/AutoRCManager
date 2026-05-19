@@ -2,10 +2,9 @@
 
 namespace App\Http\Requests;
 
-use App\Models\VehicleGroup;
 use Gate;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Response;
+use Illuminate\Validation\Validator;
 
 class UpdateVehicleGroupRequest extends FormRequest
 {
@@ -28,16 +27,17 @@ class UpdateVehicleGroupRequest extends FormRequest
             ],
             'type' => [
                 'required',
-                'in:unitario,lote',
+                'in:lote,unitario',
             ],
             'total_amount' => [
                 'nullable',
+                'required_if:type,lote',
                 'numeric',
                 'min:0',
             ],
             'distribution_mode' => [
-                'required',
-                'in:proportional,equal',
+                'nullable',
+                'in:global',
             ],
             'notes' => [
                 'nullable',
@@ -65,16 +65,41 @@ class UpdateVehicleGroupRequest extends FormRequest
             'items' => [
                 'array',
             ],
-            'items.*.original_price' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
             'items.*.adjusted_price' => [
                 'nullable',
                 'numeric',
                 'min:0',
             ],
+            'items.*.registration_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'items.*.tow_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($this->input('type') !== 'unitario') {
+                return;
+            }
+
+            foreach ((array) $this->input('vehicles', []) as $vehicleId) {
+                $value = $this->input("items.{$vehicleId}.adjusted_price");
+
+                if ($value === null || $value === '') {
+                    $validator->errors()->add(
+                        "items.{$vehicleId}.adjusted_price",
+                        'Indique o preco da viatura no lote discriminado.'
+                    );
+                }
+            }
+        });
     }
 }

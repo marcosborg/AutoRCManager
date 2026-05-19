@@ -103,10 +103,12 @@ class VehicleGroupController extends Controller
         $canCreateLotPayments = Gate::allows('vehicle_lot_payment_create') || Gate::allows('vehicle_group_edit');
 
         $financial = [
-            'target' => (float) $vehicleGroup->items->sum(fn ($item) => $item->sale_target),
-            'paid' => (float) $vehicleGroup->items->sum('paid_amount'),
-            'invoiced' => (float) $vehicleGroup->items->sum('invoiced_amount'),
-            'cash' => (float) $vehicleGroup->items->sum('cash_amount'),
+            'target' => (float) $vehicleGroup->effective_total,
+            'paid' => (float) $vehicleGroup->approved_paid_total,
+            'invoiced' => (float) $vehicleGroup->approved_invoiced_total,
+            'bank' => (float) $vehicleGroup->approved_bank_total,
+            'cash' => (float) $vehicleGroup->approved_cash_total,
+            'cash_2' => (float) $vehicleGroup->approved_cash_2_total,
             'pending' => (float) $vehicleGroup->payments->where('approval_status', LotPayment::STATUS_PENDING)->sum('amount'),
         ];
         $financial['balance'] = max(0, $financial['target'] - $financial['paid']);
@@ -148,25 +150,25 @@ class VehicleGroupController extends Controller
             'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
             'paid_at' => ['required', 'date_format:' . config('panel.date_format')],
             'amount' => ['required', 'numeric', 'min:0.01'],
-            'invoiced_amount' => ['required', 'numeric', 'min:0'],
-            'cash_amount' => ['required', 'numeric', 'min:0'],
+            'invoiced_amount' => ['nullable', 'numeric', 'min:0'],
+            'bank_amount' => ['nullable', 'numeric', 'min:0'],
+            'cash_amount' => ['nullable', 'numeric', 'min:0'],
+            'cash_2_amount' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
             'proof_file' => ['nullable', 'file', 'max:10240'],
         ]);
 
         $amount = round((float) $data['amount'], 2);
-        $split = round((float) $data['invoiced_amount'] + (float) $data['cash_amount'], 2);
-        if (abs($amount - $split) > 0.01) {
-            return back()->withErrors(['amount' => 'O valor recebido tem de ser igual a faturado + caixa.'])->withInput();
-        }
+        $split = round(
+            (float) ($data['invoiced_amount'] ?? 0)
+            + (float) ($data['bank_amount'] ?? 0)
+            + (float) ($data['cash_amount'] ?? 0)
+            + (float) ($data['cash_2_amount'] ?? 0),
+            2
+        );
 
-        $methodName = optional(PaymentMethod::find($data['payment_method_id']))->name;
-        $isCash = $methodName && str_contains(strtolower($methodName), 'dinheiro');
-        if (! $request->hasFile('proof_file') && ! $isCash) {
-            return back()->withErrors(['proof_file' => 'Comprovativo obrigatorio para pagamentos que nao sejam dinheiro.'])->withInput();
-        }
-        if ($isCash && empty(trim((string) ($data['notes'] ?? '')))) {
-            return back()->withErrors(['notes' => 'Pagamentos em dinheiro exigem nota curta.'])->withInput();
+        if (abs($amount - $split) > 0.01) {
+            return back()->withErrors(['amount' => 'O valor recebido tem de ser igual a faturado + banco + caixa 1 + caixa 2.'])->withInput();
         }
 
         $payment = LotPayment::create([
@@ -174,8 +176,10 @@ class VehicleGroupController extends Controller
             'payment_method_id' => $data['payment_method_id'],
             'paid_at' => $data['paid_at'],
             'amount' => $data['amount'],
-            'invoiced_amount' => $data['invoiced_amount'],
-            'cash_amount' => $data['cash_amount'],
+            'invoiced_amount' => $data['invoiced_amount'] ?? 0,
+            'bank_amount' => $data['bank_amount'] ?? 0,
+            'cash_amount' => $data['cash_amount'] ?? 0,
+            'cash_2_amount' => $data['cash_2_amount'] ?? 0,
             'approval_status' => LotPayment::STATUS_PENDING,
             'created_by' => auth()->id(),
             'notes' => $data['notes'] ?? null,
@@ -253,7 +257,7 @@ class VehicleGroupController extends Controller
 
     private function lotPayload(array $validated): array
     {
-        $total = $validated['total_amount'] ?? $validated['wholesale_pvp'] ?? null;
+        $total = $validated['total_amount'] ?? $validated['wholesale_pvp'] ?? 0;
 
         return [
             'customer_id' => $validated['customer_id'] ?? null,
@@ -261,7 +265,7 @@ class VehicleGroupController extends Controller
             'type' => $validated['type'] ?? 'lote',
             'wholesale_pvp' => $total,
             'total_amount' => $total,
-            'distribution_mode' => $validated['distribution_mode'] ?? 'proportional',
+            'distribution_mode' => 'global',
             'notes' => $validated['notes'] ?? null,
         ];
     }

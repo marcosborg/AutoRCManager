@@ -104,6 +104,10 @@ class UpdateVehicleRequest extends FormRequest
             'invoice' => [
                 'array',
             ],
+            'is_invoiced' => [
+                'nullable',
+                'boolean',
+            ],
             'inicial' => [
                 'array',
             ],

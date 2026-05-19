@@ -36,6 +36,7 @@
                                 <th>{{ trans('cruds.vehicle.fields.fuel') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.inspec_b') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.pvp') }}</th>
+                                <th>Faturado</th>
                                 <th>{{ trans('cruds.vehicle.fields.suplier') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.client') }}</th>
                                 <th>Documentos</th>
@@ -68,6 +69,13 @@
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td>
+                                    <select class="search" strict="true">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        <option value="1">Sim</option>
+                                        <option value="0">Nao</option>
+                                    </select>
+                                </td>
                                 <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
@@ -154,6 +162,7 @@ $(function () {
         { data: 'fuel', name: 'fuel' },
         { data: 'inspec_b', name: 'inspec_b' },
         { data: 'pvp', name: 'pvp' },
+        { data: 'is_invoiced', name: 'is_invoiced' },
         { data: 'suplier_name', name: 'suplier.name' },
         { data: 'client_name', name: 'client.name' },
         { data: 'chekin_documents', name: 'chekin_documents' },
@@ -194,7 +203,7 @@ $(function () {
 
   // Filtros do cabeçalho
   let visibleColumnsIndexes = null;
-  $('.datatable thead').on('input', '.search', function () {
+  $('.datatable thead').on('input change', '.search', function () {
       let strict = $(this).attr('strict') || false
       let value = strict && this.value ? "^" + this.value + "$" : this.value
 

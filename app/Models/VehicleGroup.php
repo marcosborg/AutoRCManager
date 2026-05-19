@@ -79,7 +79,11 @@ class VehicleGroup extends Model
 
     public function getEffectiveTotalAttribute(): float
     {
-        return (float) ($this->total_amount ?? $this->wholesale_pvp ?? 0);
+        $itemExtras = $this->relationLoaded('items')
+            ? (float) $this->items->sum(fn (VehicleLotItem $item): float => (float) ($item->registration_amount ?? 0) + (float) ($item->tow_amount ?? 0))
+            : (float) $this->items()->sum('registration_amount') + (float) $this->items()->sum('tow_amount');
+
+        return (float) ($this->total_amount ?? $this->wholesale_pvp ?? 0) + $itemExtras;
     }
 
     public function getApprovedPaidTotalAttribute(): float
@@ -101,5 +105,19 @@ class VehicleGroup extends Model
         return (float) $this->payments()
             ->where('approval_status', LotPayment::STATUS_APPROVED)
             ->sum('cash_amount');
+    }
+
+    public function getApprovedBankTotalAttribute(): float
+    {
+        return (float) $this->payments()
+            ->where('approval_status', LotPayment::STATUS_APPROVED)
+            ->sum('bank_amount');
+    }
+
+    public function getApprovedCash2TotalAttribute(): float
+    {
+        return (float) $this->payments()
+            ->where('approval_status', LotPayment::STATUS_APPROVED)
+            ->sum('cash_2_amount');
     }
 }

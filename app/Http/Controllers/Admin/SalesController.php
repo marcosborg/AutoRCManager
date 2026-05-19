@@ -104,6 +104,24 @@ class SalesController extends Controller
             $table->editColumn('pvp', function ($row) {
                 return $row->pvp ? $row->pvp : '';
             });
+            $table->editColumn('is_invoiced', function ($row) {
+                return $row->is_invoiced ? 'Sim' : 'Nao';
+            });
+            $table->filterColumn('is_invoiced', function ($query, $keyword) {
+                $value = mb_strtolower(trim((string) $keyword, " \t\n\r\0\x0B^$"));
+                $truthy = ['sim', '1', 'true', 'yes', 'y'];
+                $falsy = ['nao', 'nÃ£o', 'não', '0', 'false', 'no', 'n'];
+
+                if (in_array($value, $truthy, true)) {
+                    $query->where('is_invoiced', true);
+                    return;
+                }
+
+                if (in_array($value, $falsy, true)) {
+                    $query->where('is_invoiced', false);
+                    return;
+                }
+            });
             $table->addColumn('client_name', function ($row) {
                 return $row->client ? $row->client->name : '';
             });

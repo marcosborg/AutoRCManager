@@ -28,7 +28,9 @@
                         <th>Metodo</th>
                         <th>Recebido</th>
                         <th>Faturado</th>
-                        <th>Caixa</th>
+                        <th>Banco</th>
+                        <th>Caixa 1</th>
+                        <th>Caixa 2</th>
                         <th>Criado por</th>
                         <th>Comprovativo</th>
                         <th>&nbsp;</th>
@@ -42,7 +44,9 @@
                             <td>{{ $payment->payment_method->name ?? '-' }}</td>
                             <td>&euro;{{ number_format($payment->amount, 2, ',', '.') }}</td>
                             <td>&euro;{{ number_format($payment->invoiced_amount, 2, ',', '.') }}</td>
+                            <td>&euro;{{ number_format($payment->bank_amount, 2, ',', '.') }}</td>
                             <td>&euro;{{ number_format($payment->cash_amount, 2, ',', '.') }}</td>
+                            <td>&euro;{{ number_format($payment->cash_2_amount, 2, ',', '.') }}</td>
                             <td>{{ $payment->creator->name ?? '-' }}</td>
                             <td>
                                 @foreach($payment->proof_file as $media)

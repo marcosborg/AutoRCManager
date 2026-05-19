@@ -102,6 +102,10 @@ class StoreVehicleRequest extends FormRequest
             'invoice' => [
                 'array',
             ],
+            'is_invoiced' => [
+                'nullable',
+                'boolean',
+            ],
             'inicial' => [
                 'array',
             ],

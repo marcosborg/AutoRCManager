@@ -816,6 +816,17 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.pvp_helper') }}</span>
                                 </div>
+                                <div class="form-group {{ $errors->has('is_invoiced') ? 'has-error' : '' }}">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="is_invoiced" id="is_invoiced" value="1" {{ old('is_invoiced', $vehicle->is_invoiced) ? 'checked' : '' }}>
+                                            Faturado
+                                        </label>
+                                    </div>
+                                    @if($errors->has('is_invoiced'))
+                                        <span class="help-block" role="alert">{{ $errors->first('is_invoiced') }}</span>
+                                    @endif
+                                </div>
                                 <div class="form-group">
                                     <label for="final_total">Total final</label>
                                     <input class="form-control" type="text" name="final_total" id="final_total"

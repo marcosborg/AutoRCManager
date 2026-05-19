@@ -41,7 +41,9 @@ class LotPayment extends Model implements HasMedia
         'paid_at',
         'amount',
         'invoiced_amount',
+        'bank_amount',
         'cash_amount',
+        'cash_2_amount',
         'approval_status',
         'created_by',
         'confirmed_by',
@@ -55,7 +57,9 @@ class LotPayment extends Model implements HasMedia
     protected $casts = [
         'amount' => 'float',
         'invoiced_amount' => 'float',
+        'bank_amount' => 'float',
         'cash_amount' => 'float',
+        'cash_2_amount' => 'float',
     ];
 
     protected function serializeDate(DateTimeInterface $date): string

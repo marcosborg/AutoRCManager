@@ -6,7 +6,6 @@ use App\Models\LotPayment;
 use App\Models\Vehicle;
 use App\Models\VehicleGroup;
 use App\Models\VehicleLotItem;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class VehicleLotService
@@ -15,18 +14,21 @@ class VehicleLotService
     {
         DB::transaction(function () use ($lot, $vehicleIds, $itemData): void {
             $vehicleIds = array_values(array_unique(array_map('intval', $vehicleIds)));
+            $isDiscriminated = $lot->type === 'unitario';
+            $subtotal = 0.0;
 
             $lot->vehicles()->sync($vehicleIds);
 
             foreach ($vehicleIds as $vehicleId) {
-                $vehicle = Vehicle::find($vehicleId);
-                if (! $vehicle) {
-                    continue;
-                }
+                $price = $isDiscriminated
+                    ? $this->decimalOrZero($itemData[$vehicleId]['adjusted_price'] ?? null)
+                    : null;
+                $registrationAmount = $this->decimalOrZero($itemData[$vehicleId]['registration_amount'] ?? null);
+                $towAmount = $this->decimalOrZero($itemData[$vehicleId]['tow_amount'] ?? null);
 
-                $data = $itemData[$vehicleId] ?? [];
-                $original = $this->decimalOrNull($data['original_price'] ?? null);
-                $adjusted = $this->decimalOrNull($data['adjusted_price'] ?? null);
+                if ($isDiscriminated) {
+                    $subtotal += $price;
+                }
 
                 VehicleLotItem::withTrashed()->updateOrCreate(
                     [
@@ -34,10 +36,16 @@ class VehicleLotService
                         'vehicle_id' => $vehicleId,
                     ],
                     [
-                        'original_price' => $original ?? (float) ($vehicle->pvp ?? 0),
-                        'adjusted_price' => $adjusted,
-                        'discount' => max(0, (float) (($original ?? $vehicle->pvp ?? 0) - ($adjusted ?? $original ?? $vehicle->pvp ?? 0))),
-                        'status' => 'open',
+                        'original_price' => 0,
+                        'adjusted_price' => $price,
+                        'registration_amount' => $registrationAmount,
+                        'tow_amount' => $towAmount,
+                        'discount' => 0,
+                        'allocated_amount' => 0,
+                        'paid_amount' => 0,
+                        'invoiced_amount' => 0,
+                        'cash_amount' => 0,
+                        'status' => 'in_lot',
                         'deleted_at' => null,
                     ]
                 );
@@ -47,6 +55,13 @@ class VehicleLotService
                 ->whereNotIn('vehicle_id', $vehicleIds)
                 ->delete();
 
+            if ($isDiscriminated) {
+                $lot->updateQuietly([
+                    'total_amount' => round($subtotal, 2),
+                    'wholesale_pvp' => round($subtotal, 2),
+                ]);
+            }
+
             $this->recalculate($lot->fresh(['items.vehicle', 'payments']));
         });
     }
@@ -54,10 +69,6 @@ class VehicleLotService
     public function recalculate(VehicleGroup $lot): void
     {
         $lot->loadMissing(['items.vehicle', 'payments']);
-        $items = $lot->items;
-
-        $this->distributeAmounts($lot, $items);
-        $this->distributeApprovedPayments($lot, $items);
         $this->refreshLotStatus($lot);
     }
 
@@ -95,14 +106,12 @@ class VehicleLotService
 
     public function financialStatusForVehicle(Vehicle $vehicle): array
     {
-        $item = VehicleLotItem::with(['lot.payments' => function ($query) {
-            $query->where('approval_status', LotPayment::STATUS_APPROVED);
-        }, 'lot.customer'])
+        $item = VehicleLotItem::with(['lot.payments', 'lot.customer'])
             ->where('vehicle_id', $vehicle->id)
             ->latest('id')
             ->first();
 
-        if (! $item || ! $item->lot || ! $item->lot->approved_at) {
+        if (! $item || ! $item->lot) {
             return [
                 'status' => 'disponivel',
                 'label' => 'Disponivel',
@@ -115,144 +124,28 @@ class VehicleLotService
             ];
         }
 
-        $target = (float) $item->sale_target;
-        $paid = (float) $item->paid_amount;
-        $invoiced = (float) $item->invoiced_amount;
-        $cash = (float) $item->cash_amount;
+        $lot = $item->lot;
+        $target = (float) $lot->effective_total;
+        $paid = (float) $lot->approved_paid_total;
+        $invoiced = (float) $lot->approved_invoiced_total;
+        $bank = (float) $lot->approved_bank_total;
+        $cash = (float) $lot->approved_cash_total;
+        $cash2 = (float) $lot->approved_cash_2_total;
         $balance = max(0, $target - $paid);
+        $itemPrice = $lot->type === 'unitario' ? (float) ($item->adjusted_price ?? 0) : null;
+        $itemRegistration = (float) ($item->registration_amount ?? 0);
+        $itemTow = (float) ($item->tow_amount ?? 0);
 
-        $status = 'vendida_nao_paga';
-        $label = 'Vendida nao paga';
+        $status = $lot->approved_at ? 'em_lote' : 'lote_por_aprovar';
+        $label = $lot->approved_at ? 'Pertence a lote' : 'Pertence a lote por aprovar';
 
-        if ($paid > 0 && $paid + 0.01 < $target) {
-            $status = 'parcialmente_paga';
-            $label = 'Parcialmente paga';
-        }
-
-        if ($target > 0 && $paid + 0.01 >= $target) {
-            $status = 'paga';
-            $label = 'Paga';
-        }
-
-        if ($target > 0 && $invoiced + 0.01 >= $target) {
-            $status = 'faturada';
-            $label = 'Faturada';
-        }
-
-        if ($vehicle->sele_chekout) {
-            $status = 'entregue';
-            $label = 'Entregue';
-        }
-
-        return compact('status', 'label', 'target', 'paid', 'invoiced', 'cash', 'balance') + ['lot' => $item->lot];
-    }
-
-    private function distributeAmounts(VehicleGroup $lot, Collection $items): void
-    {
-        if ($items->isEmpty()) {
-            return;
-        }
-
-        if ($lot->type === 'unitario') {
-            foreach ($items as $item) {
-                $target = (float) ($item->adjusted_price ?? $item->original_price ?? 0);
-                $item->update(['allocated_amount' => round($target, 2)]);
-            }
-            return;
-        }
-
-        $total = (float) ($lot->total_amount ?? $lot->wholesale_pvp ?? 0);
-        if ($total <= 0) {
-            foreach ($items as $item) {
-                $item->update(['allocated_amount' => round((float) ($item->adjusted_price ?? $item->original_price ?? 0), 2)]);
-            }
-            return;
-        }
-
-        $weights = $items->map(fn (VehicleLotItem $item): float => max((float) ($item->adjusted_price ?? $item->original_price ?? $item->vehicle?->pvp ?? 0), 0));
-        $weightSum = (float) $weights->sum();
-
-        if ($lot->distribution_mode === 'equal' || $weightSum <= 0) {
-            $weights = $items->map(fn (): float => 1.0);
-            $weightSum = (float) $weights->sum();
-        }
-
-        $allocated = 0.0;
-        foreach ($items->values() as $index => $item) {
-            $amount = $index === $items->count() - 1
-                ? $total - $allocated
-                : round($total * ((float) $weights[$index] / $weightSum), 2);
-            $allocated += $amount;
-            $item->update(['allocated_amount' => round($amount, 2)]);
-        }
-    }
-
-    private function distributeApprovedPayments(VehicleGroup $lot, Collection $items): void
-    {
-        foreach ($items as $item) {
-            $item->update([
-                'paid_amount' => 0,
-                'invoiced_amount' => 0,
-                'cash_amount' => 0,
-            ]);
-        }
-
-        $payments = $lot->payments()
-            ->where('approval_status', LotPayment::STATUS_APPROVED)
-            ->get();
-
-        foreach ($payments as $payment) {
-            $this->spreadPaymentValue($items, (float) $payment->amount, 'paid_amount');
-            $this->spreadPaymentValue($items, (float) $payment->invoiced_amount, 'invoiced_amount');
-            $this->spreadPaymentValue($items, (float) $payment->cash_amount, 'cash_amount');
-        }
-
-        foreach ($items as $item) {
-            $target = (float) $item->sale_target;
-            $status = 'open';
-            if ($target > 0 && $item->paid_amount + 0.01 >= $target) {
-                $status = 'paid';
-            } elseif ($item->paid_amount > 0) {
-                $status = 'partial';
-            }
-            if ($target > 0 && $item->invoiced_amount + 0.01 >= $target) {
-                $status = 'invoiced';
-            }
-            $item->update(['status' => $status]);
-        }
-    }
-
-    private function spreadPaymentValue(Collection $items, float $value, string $field): void
-    {
-        if ($value <= 0 || $items->isEmpty()) {
-            return;
-        }
-
-        $targetSum = (float) $items->sum(fn (VehicleLotItem $item): float => max((float) $item->sale_target, 0));
-        if ($targetSum <= 0) {
-            $targetSum = (float) $items->count();
-        }
-
-        $allocated = 0.0;
-        foreach ($items->values() as $index => $item) {
-            $weight = max((float) $item->sale_target, 0);
-            if ($weight <= 0) {
-                $weight = 1.0;
-            }
-
-            $amount = $index === $items->count() - 1
-                ? $value - $allocated
-                : round($value * ($weight / $targetSum), 2);
-            $allocated += $amount;
-            $item->update([$field => round((float) $item->{$field} + $amount, 2)]);
-        }
+        return compact('status', 'label', 'target', 'paid', 'invoiced', 'bank', 'cash', 'cash2', 'balance', 'itemPrice', 'itemRegistration', 'itemTow') + ['lot' => $lot];
     }
 
     private function refreshLotStatus(VehicleGroup $lot): void
     {
-        $lot->load('items');
-        $target = (float) $lot->items->sum(fn (VehicleLotItem $item): float => $item->sale_target);
-        $paid = (float) $lot->items->sum('paid_amount');
+        $target = (float) $lot->effective_total;
+        $paid = (float) $lot->approved_paid_total;
 
         $status = 'open';
         if ($paid > 0 && $paid + 0.01 < $target) {
@@ -265,10 +158,10 @@ class VehicleLotService
         $lot->updateQuietly(['status' => $status]);
     }
 
-    private function decimalOrNull($value): ?float
+    private function decimalOrZero($value): float
     {
         if ($value === null || $value === '') {
-            return null;
+            return 0.0;
         }
 
         return (float) str_replace(',', '.', (string) $value);

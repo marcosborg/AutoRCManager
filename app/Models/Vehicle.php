@@ -27,6 +27,7 @@ class Vehicle extends Model implements HasMedia
         'documents',
         'photos',
         'invoice',
+        'is_invoiced',
         'inicial',
         'pdfs',
         'withdrawal_authorization_file',
@@ -98,6 +99,7 @@ class Vehicle extends Model implements HasMedia
         'total_price',
         'minimum_price',
         'pvp',
+        'is_invoiced',
         'sales_iuc',
         'sales_tow',
         'sales_transfer',
@@ -132,6 +134,7 @@ class Vehicle extends Model implements HasMedia
 
     protected $casts = [
         'purchase_has_vat' => 'boolean',
+        'is_invoiced' => 'boolean',
     ];
 
     protected function serializeDate(DateTimeInterface $date)
@@ -250,6 +253,11 @@ class Vehicle extends Model implements HasMedia
     public function getInvoiceAttribute()
     {
         return $this->getMedia('invoice');
+    }
+
+    public function getIsInvoicedAttribute($value): bool
+    {
+        return (bool) $value;
     }
 
     public function getInicialAttribute()
