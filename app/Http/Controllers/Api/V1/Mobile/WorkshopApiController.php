@@ -201,7 +201,7 @@ class WorkshopApiController extends Controller
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $data = $request->validate([
+        $request->validate([
             'supplier' => ['nullable', 'string', 'max:191'],
             'invoice_number' => ['nullable', 'string', 'max:191'],
             'part_date' => ['nullable', 'date'],
@@ -284,6 +284,26 @@ class WorkshopApiController extends Controller
         }
 
         $media->delete();
+
+        return response()->json([
+            'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
+        ]);
+    }
+
+    public function storeSignatures(Request $request, Repair $repair)
+    {
+        abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'receptionist_signature' => ['required', 'image', 'max:2048'],
+            'client_signature' => ['required', 'image', 'max:2048'],
+        ]);
+
+        $repair->clearMediaCollection('receptionist_signature');
+        $repair->clearMediaCollection('client_signature');
+
+        $repair->addMediaFromRequest('receptionist_signature')->toMediaCollection('receptionist_signature');
+        $repair->addMediaFromRequest('client_signature')->toMediaCollection('client_signature');
 
         return response()->json([
             'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
@@ -470,6 +490,8 @@ class WorkshopApiController extends Controller
                 'url' => url($media->getUrl()),
                 'thumb' => url($media->getUrl('thumb')),
             ])->values(),
+            'receptionist_signature' => $this->mediaPayload($repair->getFirstMedia('receptionist_signature')),
+            'client_signature' => $this->mediaPayload($repair->getFirstMedia('client_signature')),
             'parts' => $repair->parts
                 ->sortByDesc('id')
                 ->values()
@@ -506,6 +528,19 @@ class WorkshopApiController extends Controller
                     'is_current' => (int) $item->id === (int) $repair->id,
                 ];
             })->values(),
+        ];
+    }
+
+    private function mediaPayload(?Media $media): ?array
+    {
+        if (! $media) {
+            return null;
+        }
+
+        return [
+            'id' => $media->id,
+            'url' => url($media->getUrl()),
+            'thumb' => url($media->getUrl('thumb')),
         ];
     }
 
@@ -571,4 +606,3 @@ class WorkshopApiController extends Controller
         ];
     }
 }
-
