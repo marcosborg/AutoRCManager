@@ -14,6 +14,7 @@ Auth::routes(['register' => false]);
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'middleware' => ['auth']], function () {
     Route::get('/', 'HomeController@index')->name('home');
     Route::get('dashboard', 'DashboardController@index')->name('dashboard');
+    Route::post('system-shutdown', 'SystemShutdownController@store')->name('system-shutdown.store');
     Route::get('approvals', 'ApprovalController@index')->name('approvals.index');
     Route::get('gps-positions', 'GpsController@latest')->name('gps.positions');
     // Permissions

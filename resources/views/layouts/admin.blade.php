@@ -67,6 +67,11 @@
 
                 <div class="navbar-custom-menu">
                     <ul class="nav navbar-nav">
+                        <li>
+                            <a href="#" data-toggle="modal" data-target="#system-shutdown-modal" title="Desligar sistema" style="background:#dd4b39;color:#fff;">
+                                <i class="fa fa-power-off"></i>
+                            </a>
+                        </li>
                         <li class="dropdown notifications-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="Mudancas de estado por verificar">
                                 <i class="fa fa-circle-o"></i>
@@ -162,6 +167,34 @@
             </nav>
         </header>
 
+        <div class="modal fade" id="system-shutdown-modal" tabindex="-1" role="dialog" aria-labelledby="system-shutdown-title">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form method="POST" action="{{ route('admin.system-shutdown.store') }}" id="system-shutdown-form">
+                        {{ csrf_field() }}
+                        <div class="modal-header" style="background:#dd4b39;color:#fff;">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h4 class="modal-title" id="system-shutdown-title">Desligar sistema</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>Esta acao coloca o backoffice, API e app em baixo.</p>
+                            <p>Para voltar a ligar sera necessario remover <code>storage/framework/down</code> no cPanel ou correr <code>php artisan up</code>.</p>
+                            <div class="form-group">
+                                <label for="system-shutdown-confirmation">Escreva DESLIGAR para confirmar</label>
+                                <input type="text" class="form-control" name="confirmation" id="system-shutdown-confirmation" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger" id="system-shutdown-submit" disabled>Desligar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         @include('partials.menu')
 
         <div class="content-wrapper" style="min-height: 960px;">
@@ -217,6 +250,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.5.1/min/dropzone.min.js"></script>
     <script src="{{ asset('js/main.js') }}"></script>
     <script>
+        $(function () {
+            var $shutdownInput = $('#system-shutdown-confirmation');
+            var $shutdownSubmit = $('#system-shutdown-submit');
+
+            $shutdownInput.on('input', function () {
+                $shutdownSubmit.prop('disabled', $shutdownInput.val() !== 'DESLIGAR');
+            });
+
+            $('#system-shutdown-modal').on('hidden.bs.modal', function () {
+                $shutdownInput.val('');
+                $shutdownSubmit.prop('disabled', true);
+            });
+        });
+
         $(function() {
   let copyButtonTrans = '{{ trans('global.datatables.copy') }}'
   let csvButtonTrans = '{{ trans('global.datatables.csv') }}'
