@@ -59,6 +59,30 @@
                                 </tr>
                                 <tr>
                                     <th>
+                                        {{ trans('cruds.repair.fields.fuel_level_in_percentage') }}
+                                    </th>
+                                    <td>
+                                        {{ $repair->fuel_level_in_percentage !== null ? $repair->fuel_level_in_percentage . '%' : '-' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        {{ trans('cruds.repair.fields.kilometers_out') }}
+                                    </th>
+                                    <td>
+                                        {{ $repair->kilometers_out ?? '-' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        {{ trans('cruds.repair.fields.fuel_level_percentage') }}
+                                    </th>
+                                    <td>
+                                        {{ $repair->fuel_level_percentage !== null ? $repair->fuel_level_percentage . '%' : '-' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
                                         {{ trans('cruds.repair.fields.front_windshield') }}
                                     </th>
                                     <td>

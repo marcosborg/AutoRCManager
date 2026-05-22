@@ -27,6 +27,24 @@ class UpdateRepairRequest extends FormRequest
                 'min:-2147483648',
                 'max:2147483647',
             ],
+            'kilometers_out' => [
+                'nullable',
+                'integer',
+                'min:0',
+                'max:2147483647',
+            ],
+            'fuel_level_in_percentage' => [
+                'nullable',
+                'integer',
+                'min:0',
+                'max:100',
+            ],
+            'fuel_level_percentage' => [
+                'nullable',
+                'integer',
+                'min:0',
+                'max:100',
+            ],
             'front_windshield_text' => [
                 'string',
                 'nullable',

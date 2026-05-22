@@ -56,6 +56,30 @@
                             @endif
                             <span class="help-block">{{ trans('cruds.repair.fields.kilometers_helper') }}</span>
                         </div>
+                        <div class="form-group {{ $errors->has('fuel_level_in_percentage') ? 'has-error' : '' }}">
+                            <label for="fuel_level_in_percentage">{{ trans('cruds.repair.fields.fuel_level_in_percentage') }}</label>
+                            <input class="form-control" type="number" name="fuel_level_in_percentage" id="fuel_level_in_percentage" value="{{ old('fuel_level_in_percentage', '') }}" min="0" max="100" step="1">
+                            @if($errors->has('fuel_level_in_percentage'))
+                                <span class="help-block" role="alert">{{ $errors->first('fuel_level_in_percentage') }}</span>
+                            @endif
+                            <span class="help-block">{{ trans('cruds.repair.fields.fuel_level_in_percentage_helper') }}</span>
+                        </div>
+                        <div class="form-group {{ $errors->has('kilometers_out') ? 'has-error' : '' }}">
+                            <label for="kilometers_out">{{ trans('cruds.repair.fields.kilometers_out') }}</label>
+                            <input class="form-control" type="number" name="kilometers_out" id="kilometers_out" value="{{ old('kilometers_out', '') }}" min="0" step="1">
+                            @if($errors->has('kilometers_out'))
+                                <span class="help-block" role="alert">{{ $errors->first('kilometers_out') }}</span>
+                            @endif
+                            <span class="help-block">{{ trans('cruds.repair.fields.kilometers_out_helper') }}</span>
+                        </div>
+                        <div class="form-group {{ $errors->has('fuel_level_percentage') ? 'has-error' : '' }}">
+                            <label for="fuel_level_percentage">{{ trans('cruds.repair.fields.fuel_level_percentage') }}</label>
+                            <input class="form-control" type="number" name="fuel_level_percentage" id="fuel_level_percentage" value="{{ old('fuel_level_percentage', '') }}" min="0" max="100" step="1">
+                            @if($errors->has('fuel_level_percentage'))
+                                <span class="help-block" role="alert">{{ $errors->first('fuel_level_percentage') }}</span>
+                            @endif
+                            <span class="help-block">{{ trans('cruds.repair.fields.fuel_level_percentage_helper') }}</span>
+                        </div>
                         <div class="form-group {{ $errors->has('repair_state') ? 'has-error' : '' }}">
                             <label for="repair_state_id">{{ trans('cruds.repair.fields.repair_state') }}</label>
                             <select class="form-control select2" name="repair_state_id" id="repair_state_id">
