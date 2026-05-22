@@ -32,7 +32,7 @@ class WorkshopApiController extends Controller
         abort_if(Gate::denies('repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $query = Repair::query()
-            ->with(['vehicle:id,license,foreign_license,brand_id,model', 'vehicle.brand:id,name', 'vehicle.media', 'repair_state:id,name'])
+            ->with(['media', 'vehicle:id,license,foreign_license,brand_id,model', 'vehicle.brand:id,name', 'vehicle.media', 'repair_state:id,name'])
             ->whereNotNull('vehicle_id')
             ->whereHas('vehicle')
             ->orderByDesc('id');
@@ -388,7 +388,7 @@ class WorkshopApiController extends Controller
             'repair_started_at' => $startedAt,
             'repair_finished_at' => $finishedAt,
             'repair_duration_minutes' => $repair->repair_duration_minutes,
-            'cover_photo' => $this->vehicleCoverPhotoPayload($repair),
+            'cover_photo' => $this->repairCoverPhotoPayload($repair),
         ];
     }
 
@@ -555,8 +555,13 @@ class WorkshopApiController extends Controller
         return $payload;
     }
 
-    private function vehicleCoverPhotoPayload(Repair $repair): ?array
+    private function repairCoverPhotoPayload(Repair $repair): ?array
     {
+        $workshopMedia = $repair->checkin->first() ?: $repair->getFirstMedia('checkin');
+        if ($workshopMedia) {
+            return $this->mediaPayload($workshopMedia);
+        }
+
         if (! $repair->vehicle) {
             return null;
         }
