@@ -148,6 +148,10 @@ class StoreVehicleRequest extends FormRequest
                 'date_format:' . config('panel.date_format'),
                 'nullable',
             ],
+            'chekout_date' => [
+                'date_format:' . config('panel.date_format'),
+                'nullable',
+            ],
             'sale_date' => [
                 'date_format:' . config('panel.date_format'),
                 'nullable',

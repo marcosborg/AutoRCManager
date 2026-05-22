@@ -241,6 +241,14 @@
                                 </tr>
                                 <tr>
                                     <th>
+                                        {{ trans('cruds.vehicle.fields.chekout_date') }}
+                                    </th>
+                                    <td>
+                                        {{ $vehicle->chekout_date }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
                                         {{ trans('cruds.vehicle.fields.documents') }}
                                     </th>
                                     <td>

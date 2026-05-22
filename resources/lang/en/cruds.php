@@ -271,6 +271,8 @@ return [
             'chekin_documents_helper'                   => ' ',
             'chekin_date'                               => 'Chekin Date',
             'chekin_date_helper'                        => ' ',
+            'chekout_date'                              => 'Checkout Date',
+            'chekout_date_helper'                       => ' ',
             'sale_date'                                 => 'Sale Date',
             'sale_date_helper'                          => ' ',
             'sele_chekout'                              => 'Sele Chekout',

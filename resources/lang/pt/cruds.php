@@ -271,6 +271,8 @@ return [
             'chekin_documents_helper'                   => ' ',
             'chekin_date'                               => 'Data de Check-in',
             'chekin_date_helper'                        => ' ',
+            'chekout_date'                              => 'Data de saída',
+            'chekout_date_helper'                       => ' ',
             'sale_date'                                 => 'Data de Venda',
             'sale_date_helper'                          => ' ',
             'sele_chekout'                              => 'Check-out de Venda',

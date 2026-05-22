@@ -688,6 +688,14 @@
                                         <label for="date">{{ trans('cruds.vehicle.fields.date') }}</label>
                                         <input class="form-control date" type="text" name="date" id="date" value="{{ old('date', $vehicle->date) }}">
                                     </div>
+                                    <div class="form-group {{ $errors->has('chekout_date') ? 'has-error' : '' }}">
+                                        <label for="chekout_date">{{ trans('cruds.vehicle.fields.chekout_date') }}</label>
+                                        <input class="form-control date" type="text" name="chekout_date" id="chekout_date" value="{{ old('chekout_date', $vehicle->chekout_date) }}">
+                                        @if($errors->has('chekout_date'))
+                                            <span class="help-block" role="alert">{{ $errors->first('chekout_date') }}</span>
+                                        @endif
+                                        <span class="help-block">{{ trans('cruds.vehicle.fields.chekout_date_helper') }}</span>
+                                    </div>
                                 </div>
                             </div>
                         @endcan

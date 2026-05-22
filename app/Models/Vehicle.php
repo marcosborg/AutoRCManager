@@ -45,6 +45,7 @@ class Vehicle extends Model implements HasMedia
         'withdrawal_authorization_date',
         'pickup_state_date',
         'chekin_date',
+        'chekout_date',
         'sale_date',
         'sele_chekout',
         'created_at',
@@ -111,6 +112,7 @@ class Vehicle extends Model implements HasMedia
         'client_registration',
         'chekin_documents',
         'chekin_date',
+        'chekout_date',
         'sale_date',
         'sele_chekout',
         'first_key',
@@ -341,6 +343,16 @@ class Vehicle extends Model implements HasMedia
     public function setChekinDateAttribute($value)
     {
         $this->attributes['chekin_date'] = $value ? Carbon::createFromFormat(config('panel.date_format'), $value)->format('Y-m-d') : null;
+    }
+
+    public function getChekoutDateAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format(config('panel.date_format')) : null;
+    }
+
+    public function setChekoutDateAttribute($value)
+    {
+        $this->attributes['chekout_date'] = $value ? Carbon::createFromFormat(config('panel.date_format'), $value)->format('Y-m-d') : null;
     }
 
     public function getSaleDateAttribute($value)
