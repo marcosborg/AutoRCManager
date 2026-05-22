@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Mobile;
 
 use App\Domain\Repairs\RepairRules;
+use App\Domain\Repairs\RepairStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Repair;
 use App\Models\RepairPart;
@@ -39,7 +40,9 @@ class WorkshopApiController extends Controller
         $status = $request->query('status');
         if ($status === 'open') {
             $query->where(function ($q) {
-                $q->whereNull('repair_state_id')->orWhere('repair_state_id', '!=', 3);
+                $q->where(function ($stateQuery) {
+                    $stateQuery->whereNull('repair_state_id')->orWhere('repair_state_id', '!=', RepairStatus::CLOSED_ID);
+                })->whereNull('repair_finished_at');
             });
         }
 
@@ -201,12 +204,12 @@ class WorkshopApiController extends Controller
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $request->validate([
+        $data = $request->validate([
             'supplier' => ['nullable', 'string', 'max:191'],
             'invoice_number' => ['nullable', 'string', 'max:191'],
-            'part_date' => ['nullable', 'date'],
+            'part_date' => ['required', 'date'],
             'part_name' => ['required', 'string', 'max:191'],
-            'amount' => ['required', 'numeric', 'min:0'],
+            'amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $repair->parts()->create($data);
@@ -227,8 +230,8 @@ class WorkshopApiController extends Controller
         $data = $request->validate([
             'supplier' => ['nullable', 'string', 'max:191'],
             'invoice_number' => ['nullable', 'string', 'max:191'],
-            'part_date' => ['nullable', 'date'],
-            'part_name' => ['nullable', 'string', 'max:191'],
+            'part_date' => ['required', 'date'],
+            'part_name' => ['required', 'string', 'max:191'],
             'amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -380,7 +383,7 @@ class WorkshopApiController extends Controller
             ]))),
             'state' => $repair->repair_state?->name ?? 'Aberta',
             'repair_state_id' => $repair->repair_state_id,
-            'is_open' => $repair->repair_state_id === null || (int) $repair->repair_state_id !== 3,
+            'is_open' => RepairStatus::isOpen($repair->repair_state_id, $finishedAt),
             'timestamp' => $repair->getRawOriginal('timestamp'),
             'repair_started_at' => $startedAt,
             'repair_finished_at' => $finishedAt,
@@ -403,7 +406,7 @@ class WorkshopApiController extends Controller
                 ->orderByDesc('created_at')
                 ->get();
 
-            $currentIsOpen = $repair->repair_state_id === null || (int) $repair->repair_state_id !== 3;
+            $currentIsOpen = RepairStatus::isOpen($repair->repair_state_id, $repair->getRawOriginal('repair_finished_at'));
             $canCreateNewIntervention = ! RepairRules::hasOpenRepairs($repair->vehicle_id) || ! $currentIsOpen;
         }
 
@@ -490,8 +493,8 @@ class WorkshopApiController extends Controller
                 'url' => url($media->getUrl()),
                 'thumb' => url($media->getUrl('thumb')),
             ])->values(),
-            'receptionist_signature' => $this->mediaPayload($repair->getFirstMedia('receptionist_signature')),
-            'client_signature' => $this->mediaPayload($repair->getFirstMedia('client_signature')),
+            'receptionist_signature' => $this->mediaPayload($repair->getFirstMedia('receptionist_signature'), true),
+            'client_signature' => $this->mediaPayload($repair->getFirstMedia('client_signature'), true),
             'parts' => $repair->parts
                 ->sortByDesc('id')
                 ->values()
@@ -501,7 +504,7 @@ class WorkshopApiController extends Controller
                     'invoice_number' => $part->invoice_number,
                     'part_date' => $part->getRawOriginal('part_date'),
                     'part_name' => $part->part_name,
-                    'amount' => (float) $part->amount,
+                    'amount' => $part->amount !== null ? (float) $part->amount : null,
                 ]),
             'parts_total' => $totalPartsAmount,
             'work_logs' => $repair->workLogs
@@ -531,17 +534,24 @@ class WorkshopApiController extends Controller
         ];
     }
 
-    private function mediaPayload(?Media $media): ?array
+    private function mediaPayload(?Media $media, bool $includeDataUrl = false): ?array
     {
         if (! $media) {
             return null;
         }
 
-        return [
+        $payload = [
             'id' => $media->id,
             'url' => url($media->getUrl()),
             'thumb' => url($media->getUrl('thumb')),
         ];
+
+        if ($includeDataUrl && is_file($media->getPath())) {
+            $mimeType = $media->mime_type ?: 'image/png';
+            $payload['data_url'] = 'data:' . $mimeType . ';base64,' . base64_encode((string) file_get_contents($media->getPath()));
+        }
+
+        return $payload;
     }
 
     private function repairDetailRelations(): array

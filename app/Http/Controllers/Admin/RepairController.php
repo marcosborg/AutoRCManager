@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domain\Repairs\RepairRules;
+use App\Domain\Repairs\RepairStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\CsvImportTrait;
 use App\Http\Controllers\Traits\MediaUploadingTrait;
@@ -401,7 +402,7 @@ class RepairController extends Controller
                 $latest = $sorted->first();
 
                 $isOpen = function ($item) {
-                    return $item->repair_state_id === null || (int) $item->repair_state_id !== 3;
+                    return RepairStatus::isOpen($item->repair_state_id, $item->getRawOriginal('repair_finished_at'));
                 };
 
                 $openRepair = $sorted->first($isOpen);
@@ -526,7 +527,7 @@ class RepairController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $currentIsOpen = $repair->repair_state_id === null || (int) $repair->repair_state_id !== 3;
+        $currentIsOpen = RepairStatus::isOpen($repair->repair_state_id, $repair->getRawOriginal('repair_finished_at'));
         $canCreateNewIntervention = ! RepairRules::hasOpenRepairs($repair->vehicle_id) || ! $currentIsOpen;
         $repairParts = old('repair_parts', $repair->parts
             ->sortBy('part_date')

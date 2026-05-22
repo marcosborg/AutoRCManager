@@ -247,6 +247,10 @@ class UpdateRepairRequest extends FormRequest
                 'date_format:' . config('panel.date_format') . ' ' . config('panel.time_format'),
                 'nullable',
             ],
+            'repair_started_at' => [
+                'date_format:' . config('panel.date_format') . ' ' . config('panel.time_format'),
+                'nullable',
+            ],
             'name' => [
                 'string',
                 'nullable',

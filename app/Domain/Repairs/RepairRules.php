@@ -10,9 +10,9 @@ final class RepairRules
     {
         return Repair::query()
             ->where('vehicle_id', $vehicleId)
-            ->get(['repair_state_id'])
+            ->get(['repair_state_id', 'repair_finished_at'])
             ->contains(function ($repair) {
-                return RepairStatus::isOpen($repair->repair_state_id);
+                return RepairStatus::isOpen($repair->repair_state_id, $repair->getRawOriginal('repair_finished_at'));
             });
     }
 }

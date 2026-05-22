@@ -194,7 +194,7 @@
                     @if(optional($vehicle)->inicial && $vehicle->inicial->count())
                         <div style="display:flex; flex-wrap:wrap; gap:8px;">
                             @foreach($vehicle->inicial as $media)
-                                <a href="{{ $media->getUrl() }}" target="_blank" rel="noopener noreferrer" title="Abrir foto original">
+                                <a href="{{ $media->getUrl() }}" data-lightbox="repair-initial-gallery" data-title="Foto inicial da viatura" title="Abrir foto">
                                     <img
                                         src="{{ $media->getUrl('thumb') }}"
                                         alt="Inicial photo"
@@ -203,7 +203,7 @@
                                 </a>
                             @endforeach
                         </div>
-                        <p class="help-block" style="margin-top:8px;">Clique numa miniatura para abrir a foto original.</p>
+                        <p class="help-block" style="margin-top:8px;">Clique numa miniatura para abrir a galeria.</p>
                     @else
                         <p class="text-muted">Sem fotos iniciais de aquisicao para esta viatura.</p>
                     @endif
@@ -1652,6 +1652,14 @@
                                             @endif
                                             <span class="help-block">{{ trans('cruds.repair.fields.timestamp_helper') }}</span>
                                         </div>
+                                        <div class="form-group {{ $errors->has('repair_started_at') ? 'has-error' : '' }}">
+                                            <label for="repair_started_at">Inicio da reparacao</label>
+                                            <input class="form-control datetime" type="text" name="repair_started_at" id="repair_started_at" value="{{ old('repair_started_at', $repair->repair_started_at) }}">
+                                            @if($errors->has('repair_started_at'))
+                                            <span class="help-block" role="alert">{{ $errors->first('repair_started_at') }}</span>
+                                            @endif
+                                            <span class="help-block">Permite ajustar o inicio real quando a viatura ja estava em oficina.</span>
+                                        </div>
                                         <div class="form-group {{ $errors->has('name') ? 'has-error' : '' }}">
                                             <label for="name">{{ trans('cruds.repair.fields.name') }}</label>
                                             <input class="form-control" type="text" name="name" id="name" value="{{ old('name', $repair->name) }}">
@@ -1701,6 +1709,53 @@
 </form>
 @endsection
 @section('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
+<script>
+    if (window.lightbox) {
+        lightbox.option({
+            resizeDuration: 150,
+            wrapAround: true,
+            albumLabel: 'Foto %1 de %2'
+        });
+    }
+
+    function attachRepairLightbox(file, galleryName, title) {
+        if (!file || !file.previewElement) {
+            return;
+        }
+
+        const preview = file.previewElement;
+        const img = preview.querySelector('img');
+        if (!img || img.closest('[data-lightbox]')) {
+            return;
+        }
+
+        const fullUrl = file.original_url || file.url || file.preview || file.preview_url || img.src;
+        if (!fullUrl) {
+            return;
+        }
+
+        const link = document.createElement('a');
+        link.href = fullUrl;
+        link.setAttribute('data-lightbox', galleryName);
+        link.setAttribute('data-title', title || file.name || 'Foto');
+        link.className = 'repair-lightbox-thumb';
+
+        img.style.cursor = 'pointer';
+        img.parentNode.insertBefore(link, img);
+        link.appendChild(img);
+
+        preview.addEventListener('click', function (event) {
+            if (event.target && event.target.classList && event.target.classList.contains('dz-remove')) {
+                return;
+            }
+            if (event.target.closest && event.target.closest('[data-lightbox]')) {
+                return;
+            }
+            link.click();
+        });
+    }
+</script>
 <script>
     var uploadedCheckinMap = {}
 Dropzone.options.checkinDropzone = {
@@ -1719,6 +1774,9 @@ Dropzone.options.checkinDropzone = {
     success: function (file, response) {
       $('form').append('<input type="hidden" name="checkin[]" value="' + response.name + '">')
       uploadedCheckinMap[file.name] = response.name
+      setTimeout(function () {
+        attachRepairLightbox(file, 'repair-checkin-gallery', 'Check-in')
+      }, 100)
     },
     removedfile: function (file) {
       console.log(file)
@@ -1740,6 +1798,7 @@ Dropzone.options.checkinDropzone = {
           this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
           file.previewElement.classList.add('dz-complete')
           $('form').append('<input type="hidden" name="checkin[]" value="' + file.file_name + '">')
+          attachRepairLightbox(file, 'repair-checkin-gallery', 'Check-in')
         }
 @endif
     },
@@ -1780,6 +1839,9 @@ Dropzone.options.checkoutDropzone = {
     success: function (file, response) {
       $('form').append('<input type="hidden" name="checkout[]" value="' + response.name + '">')
       uploadedCheckoutMap[file.name] = response.name
+      setTimeout(function () {
+        attachRepairLightbox(file, 'repair-checkout-gallery', 'Check-out')
+      }, 100)
     },
     removedfile: function (file) {
       console.log(file)
@@ -1801,6 +1863,7 @@ Dropzone.options.checkoutDropzone = {
           this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
           file.previewElement.classList.add('dz-complete')
           $('form').append('<input type="hidden" name="checkout[]" value="' + file.file_name + '">')
+          attachRepairLightbox(file, 'repair-checkout-gallery', 'Check-out')
         }
 @endif
     },
@@ -1902,6 +1965,7 @@ Dropzone.options.checkoutDropzone = {
 
 @endsection
 @section('styles')
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css" rel="stylesheet">
     <style>
         #progress-container {
             position: sticky;
@@ -1915,6 +1979,10 @@ Dropzone.options.checkoutDropzone = {
         .wrapper {
             position: relative;
             overflow: visible !important;
+        }
+
+        .repair-lightbox-thumb {
+            cursor: pointer;
         }
 
     </style>
