@@ -93,6 +93,7 @@ Route::prefix('mobile')->group(function () {
         Route::post('workshop/repairs/{repair}/media', [WorkshopApiController::class, 'uploadMedia']);
         Route::delete('workshop/repairs/{repair}/media/{mediaId}', [WorkshopApiController::class, 'deleteMedia']);
 
+        Route::get('workshop/garage-vehicles', [WorkshopApiController::class, 'garageVehicles']);
         Route::get('workshop/vehicles', [WorkshopApiController::class, 'vehicles']);
         Route::post('workshop/vehicles/{vehicle}/interventions', [WorkshopApiController::class, 'newIntervention']);
     });

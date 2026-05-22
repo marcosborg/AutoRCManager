@@ -396,6 +396,15 @@
                                             >
                                                 Finalizar reparacao
                                             </button>
+                                            @if($repair->getRawOriginal('repair_finished_at'))
+                                                <button
+                                                    class="btn btn-sm btn-warning"
+                                                    type="submit"
+                                                    form="reopen-repair-form"
+                                                >
+                                                    Reabrir intervencao
+                                                </button>
+                                            @endif
                                         </div>
 
                                         <hr>
@@ -1729,6 +1738,9 @@
     @csrf
 </form>
 <form id="finish-repair-form" method="POST" action="{{ route('admin.repairs.finish', $repair->id) }}" style="display:none;">
+    @csrf
+</form>
+<form id="reopen-repair-form" method="POST" action="{{ route('admin.repairs.reopen', $repair->id) }}" style="display:none;">
     @csrf
 </form>
 <form id="start-work-form" method="POST" action="{{ route('admin.repairs.work.start', $repair->id) }}" style="display:none;">

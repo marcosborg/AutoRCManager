@@ -321,7 +321,13 @@ class WorkshopApiController extends Controller
         abort_if(Gate::denies('repair_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $search = trim((string) $request->query('search', ''));
-        $query = Vehicle::query()->with('brand:id,name')->orderByDesc('id');
+        $query = Vehicle::query()
+            ->with([
+                'brand:id,name',
+                'media',
+                'repairs' => fn ($q) => $q->with('media')->orderByDesc('created_at'),
+            ])
+            ->orderByDesc('id');
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
@@ -341,8 +347,48 @@ class WorkshopApiController extends Controller
                     'foreign_license' => $vehicle->foreign_license,
                     'brand' => $vehicle->brand?->name,
                     'model' => $vehicle->model,
+                    'cover_photo' => $this->vehicleCoverPhotoPayload($vehicle),
                 ];
             }),
+        ]);
+    }
+
+    public function garageVehicles(Request $request)
+    {
+        abort_if(Gate::denies('repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $search = trim((string) $request->query('search', ''));
+        $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
+        $query = Vehicle::query()
+            ->select(['id', 'license', 'foreign_license', 'brand_id', 'model', 'kilometers', 'updated_at'])
+            ->with([
+                'brand:id,name',
+                'media',
+                'repairs' => fn ($q) => $q->with(['repair_state:id,name', 'media'])->orderByDesc('created_at'),
+            ])
+            ->withMax('repairs', 'created_at')
+            ->whereHas('repairs')
+            ->orderByDesc('repairs_max_created_at')
+            ->orderByDesc('id');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('license', 'like', '%' . $search . '%')
+                    ->orWhere('foreign_license', 'like', '%' . $search . '%')
+                    ->orWhere('model', 'like', '%' . $search . '%');
+            });
+        }
+
+        $vehicles = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $vehicles->getCollection()->map(fn (Vehicle $vehicle) => $this->garageVehiclePayload($vehicle)),
+            'meta' => [
+                'current_page' => $vehicles->currentPage(),
+                'last_page' => $vehicles->lastPage(),
+                'per_page' => $vehicles->perPage(),
+                'total' => $vehicles->total(),
+            ],
         ]);
     }
 
@@ -392,6 +438,32 @@ class WorkshopApiController extends Controller
             'repair_finished_at' => $finishedAt,
             'repair_duration_minutes' => $repair->repair_duration_minutes,
             'cover_photo' => $this->repairCoverPhotoPayload($repair),
+        ];
+    }
+
+    private function garageVehiclePayload(Vehicle $vehicle): array
+    {
+        $repairs = $vehicle->repairs->values();
+        $coverPhoto = $this->vehicleCoverPhotoPayload($vehicle);
+
+        return [
+            'id' => $vehicle->id,
+            'license' => $vehicle->license,
+            'foreign_license' => $vehicle->foreign_license,
+            'brand' => $vehicle->brand?->name,
+            'model' => $vehicle->model,
+            'kilometers' => $vehicle->kilometers !== null ? (int) $vehicle->kilometers : null,
+            'cover_photo' => $coverPhoto,
+            'repairs' => $repairs->map(fn (Repair $repair) => [
+                'id' => $repair->id,
+                'state' => $repair->repair_state?->name ?? 'Aberta',
+                'is_open' => RepairStatus::isOpen($repair->repair_state_id, $repair->getRawOriginal('repair_finished_at')),
+                'timestamp' => $repair->getRawOriginal('timestamp'),
+                'repair_started_at' => $repair->getRawOriginal('repair_started_at'),
+                'repair_finished_at' => $repair->getRawOriginal('repair_finished_at'),
+                'repair_duration_minutes' => $repair->repair_duration_minutes,
+                'checklist_percentage' => $repair->checklist_percentage,
+            ])->values(),
         ];
     }
 
@@ -572,9 +644,53 @@ class WorkshopApiController extends Controller
             return null;
         }
 
-        $media = $repair->vehicle->inicial->first() ?: $repair->vehicle->getFirstMedia('inicial');
+        $vehicleRepairMedia = $this->vehicleRepairPhoto($repair->vehicle, (int) $repair->id);
+        if ($vehicleRepairMedia) {
+            return $this->mediaPayload($vehicleRepairMedia);
+        }
+
+        $media = $this->vehicleReceptionPhoto($repair->vehicle);
 
         return $this->mediaPayload($media);
+    }
+
+    private function vehicleCoverPhotoPayload(Vehicle $vehicle): ?array
+    {
+        $repairs = $vehicle->relationLoaded('repairs')
+            ? $vehicle->repairs
+            : $vehicle->repairs()->with('media')->orderByDesc('created_at')->get();
+
+        $repairMedia = $this->vehicleRepairPhoto($vehicle);
+        if ($repairMedia) {
+            return $this->mediaPayload($repairMedia);
+        }
+
+        return $this->mediaPayload($this->vehicleReceptionPhoto($vehicle));
+    }
+
+    private function vehicleRepairPhoto(Vehicle $vehicle, ?int $exceptRepairId = null): ?Media
+    {
+        $repairs = $vehicle->relationLoaded('repairs')
+            ? $vehicle->repairs
+            : $vehicle->repairs()->with('media')->orderByDesc('created_at')->get();
+
+        foreach ($repairs as $repair) {
+            if ($exceptRepairId && (int) $repair->id === $exceptRepairId) {
+                continue;
+            }
+
+            $media = $repair->checkin->first() ?: $repair->getFirstMedia('checkin');
+            if ($media) {
+                return $media;
+            }
+        }
+
+        return null;
+    }
+
+    private function vehicleReceptionPhoto(Vehicle $vehicle): ?Media
+    {
+        return $vehicle->inicial->first() ?: $vehicle->getFirstMedia('inicial');
     }
 
     private function repairDetailRelations(): array
@@ -583,6 +699,7 @@ class WorkshopApiController extends Controller
             'vehicle:id,license,foreign_license,brand_id,model,version,transmission,engine_displacement,year,month,license_date,color,fuel,kilometers,inspec_b,general_state_id',
             'vehicle.brand:id,name',
             'vehicle.general_state:id,name',
+            'vehicle.media',
             'repair_state:id,name',
             'parts',
             'workLogs.user:id,name',

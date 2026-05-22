@@ -3,21 +3,40 @@
 namespace App\Observers;
 
 use App\Domain\Repairs\RepairStatus;
+use App\Models\GeneralState;
 use App\Models\Repair;
 
 class RepairObserver
 {
-    public function updating(Repair $repair)
+    public function created(Repair $repair): void
     {
-        // Verifica se o estado da reparação foi alterado
-        if ($repair->isDirty('repair_state_id') && $repair->repair_state_id == RepairStatus::CLOSED_ID) {
-            // Se foi para o estado 3, atualizar o estado geral da viatura para 2
-            $vehicle = $repair->vehicle;
+        $this->moveVehicleToWorkshop($repair);
+    }
 
-            if ($vehicle) {
-                $vehicle->general_state_id = 2;
-                $vehicle->save();
-            }
+    public function updating(Repair $repair): void
+    {
+        if ($repair->isDirty('repair_state_id') && $repair->repair_state_id == RepairStatus::CLOSED_ID) {
+            $this->moveVehicleToWorkshop($repair);
         }
+    }
+
+    private function moveVehicleToWorkshop(Repair $repair): void
+    {
+        $vehicle = $repair->vehicle;
+        if (! $vehicle) {
+            return;
+        }
+
+        $workshopStateId = GeneralState::query()
+            ->whereRaw('LOWER(name) = ?', ['oficina'])
+            ->orderBy('id')
+            ->value('id');
+
+        if (! $workshopStateId || (int) $vehicle->general_state_id === (int) $workshopStateId) {
+            return;
+        }
+
+        $vehicle->general_state_id = $workshopStateId;
+        $vehicle->save();
     }
 }

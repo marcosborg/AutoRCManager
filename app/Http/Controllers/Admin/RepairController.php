@@ -664,6 +664,24 @@ class RepairController extends Controller
             ->with('message', 'Reparacao finalizada com sucesso.');
     }
 
+    public function reopenRepair(Repair $repair)
+    {
+        abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        if (! $repair->getRawOriginal('repair_finished_at')) {
+            return redirect()
+                ->route('admin.repairs.edit', $repair->id)
+                ->with('message', 'A intervencao ja esta aberta.');
+        }
+
+        $repair->repair_finished_at = null;
+        $repair->save();
+
+        return redirect()
+            ->route('admin.repairs.edit', $repair->id)
+            ->with('message', 'Intervencao reaberta com sucesso.');
+    }
+
     public function startWork(Repair $repair)
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');

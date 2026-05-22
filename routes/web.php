@@ -122,6 +122,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repairs/{repair}/new-intervention', 'RepairController@newIntervention')->name('repairs.newIntervention');
     Route::post('repairs/{repair}/start', 'RepairController@startRepair')->name('repairs.start');
     Route::post('repairs/{repair}/finish', 'RepairController@finishRepair')->name('repairs.finish');
+    Route::post('repairs/{repair}/reopen', 'RepairController@reopenRepair')->name('repairs.reopen');
     Route::post('repairs/{repair}/work/start', 'RepairController@startWork')->name('repairs.work.start');
     Route::post('repairs/{repair}/work/finish', 'RepairController@finishWork')->name('repairs.work.finish');
     Route::resource('repairs', 'RepairController');
