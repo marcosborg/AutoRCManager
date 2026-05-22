@@ -17,6 +17,12 @@ class VehicleStateTransfer extends Model
         'snapshot' => 'array',
     ];
 
+    protected $dates = [
+        'checked_at',
+        'created_at',
+        'updated_at',
+    ];
+
     protected $fillable = [
         'vehicle_id',
         'from_general_state_id',
@@ -24,6 +30,8 @@ class VehicleStateTransfer extends Model
         'fuel_level',
         'snapshot',
         'user_id',
+        'checked_at',
+        'checked_by_id',
     ];
 
     protected function serializeDate(DateTimeInterface $date)
@@ -49,5 +57,10 @@ class VehicleStateTransfer extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function checked_by()
+    {
+        return $this->belongsTo(User::class, 'checked_by_id');
     }
 }

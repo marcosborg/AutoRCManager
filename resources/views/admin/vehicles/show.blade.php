@@ -57,6 +57,14 @@
                                 </tr>
                                 <tr>
                                     <th>
+                                        {{ trans('cruds.vehicle.fields.our_registration') }}
+                                    </th>
+                                    <td>
+                                        {{ $vehicle->our_registration }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
                                         {{ trans('cruds.vehicle.fields.brand') }}
                                     </th>
                                     <td>

@@ -37,6 +37,104 @@
                     <span class="sr-only">{{ trans('global.toggleNavigation') }}</span>
                 </a>
 
+                @php
+                    $calendarAlertTasks = collect();
+                    $uncheckedStateTransfers = collect();
+                    try {
+                        if (\Illuminate\Support\Facades\Schema::hasTable('calendar_tasks')) {
+                            $calendarAlertTasks = \App\Models\CalendarTask::query()
+                                ->whereNull('completed_at')
+                                ->where('created_by_id', auth()->id())
+                                ->whereDate('due_date', '<=', now()->addDays(3)->toDateString())
+                                ->orderBy('due_date')
+                                ->limit(10)
+                                ->get();
+                        }
+
+                        if (\Illuminate\Support\Facades\Schema::hasTable('vehicle_state_transfers')
+                            && \Illuminate\Support\Facades\Schema::hasColumn('vehicle_state_transfers', 'checked_at')) {
+                            $uncheckedStateTransfers = \App\Models\VehicleStateTransfer::with(['vehicle', 'from_general_state', 'to_general_state'])
+                                ->whereNull('checked_at')
+                                ->orderByDesc('created_at')
+                                ->limit(10)
+                                ->get();
+                        }
+                    } catch (\Throwable $exception) {
+                        $calendarAlertTasks = collect();
+                        $uncheckedStateTransfers = collect();
+                    }
+                @endphp
+
+                <div class="navbar-custom-menu">
+                    <ul class="nav navbar-nav">
+                        <li class="dropdown notifications-menu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="Mudancas de estado por verificar">
+                                <i class="fa fa-circle-o"></i>
+                                @if($uncheckedStateTransfers->count())
+                                    <span class="label label-danger">{{ $uncheckedStateTransfers->count() }}</span>
+                                @endif
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="header">
+                                    {{ $uncheckedStateTransfers->count() ? $uncheckedStateTransfers->count() . ' mudancas de estado por verificar' : 'Sem mudancas por verificar' }}
+                                </li>
+                                <li>
+                                    <ul class="menu">
+                                        @forelse($uncheckedStateTransfers as $transfer)
+                                            <li>
+                                                <a href="{{ route('admin.vehicle-state-transfers.index') }}">
+                                                    <i class="fa fa-circle text-red"></i>
+                                                    {{ $transfer->vehicle->license ?? 'Viatura #' . $transfer->vehicle_id }}:
+                                                    {{ $transfer->from_general_state->name ?? '-' }} &rarr; {{ $transfer->to_general_state->name ?? '-' }}
+                                                </a>
+                                            </li>
+                                        @empty
+                                            <li>
+                                                <a href="{{ route('admin.vehicle-state-transfers.index') }}">
+                                                    <i class="fa fa-check text-green"></i> Sem alertas de estados.
+                                                </a>
+                                            </li>
+                                        @endforelse
+                                    </ul>
+                                </li>
+                                <li class="footer"><a href="{{ route('admin.vehicle-state-transfers.index') }}">Ver historico de estados</a></li>
+                            </ul>
+                        </li>
+                        <li class="dropdown notifications-menu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="Tarefas do calendario">
+                                <i class="fa fa-bell-o"></i>
+                                @if($calendarAlertTasks->count())
+                                    <span class="label label-warning">{{ $calendarAlertTasks->count() }}</span>
+                                @endif
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="header">
+                                    {{ $calendarAlertTasks->count() ? $calendarAlertTasks->count() . ' tarefas pendentes' : 'Sem tarefas pendentes' }}
+                                </li>
+                                <li>
+                                    <ul class="menu">
+                                        @forelse($calendarAlertTasks as $task)
+                                            <li>
+                                                <a href="{{ route('admin.systemCalendar') }}#task-{{ $task->id }}">
+                                                    <i class="fa fa-calendar text-yellow"></i>
+                                                    <strong>{{ $task->due_date }}</strong> - {{ $task->title }}
+                                                </a>
+                                            </li>
+                                        @empty
+                                            <li>
+                                                <a href="{{ route('admin.systemCalendar') }}">
+                                                    <i class="fa fa-check text-green"></i> Sem alertas de calendario.
+                                                </a>
+                                            </li>
+                                        @endforelse
+                                    </ul>
+                                </li>
+                                <li class="footer"><a href="{{ route('admin.systemCalendar') }}">Abrir calendario</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
                 @if(count(config('panel.available_languages', [])) > 1)
                     <div class="navbar-custom-menu">
                         <ul class="nav navbar-nav">

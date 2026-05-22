@@ -31,6 +31,10 @@ class StoreVehicleRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'our_registration' => [
+                'nullable',
+                'in:ARC,RRS,GER',
+            ],
             'model' => [
                 'string',
                 'nullable',

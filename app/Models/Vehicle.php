@@ -57,6 +57,7 @@ class Vehicle extends Model implements HasMedia
         'general_state_id',
         'license',
         'foreign_license',
+        'our_registration',
         'brand_id',
         'model',
         'version',

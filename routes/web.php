@@ -144,6 +144,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('general-states/ckmedia', 'GeneralStateController@storeCKEditorImages')->name('general-states.storeCKEditorImages');
     Route::resource('general-states', 'GeneralStateController');
     Route::get('vehicle-state-transfers', 'VehicleStateTransferController@index')->name('vehicle-state-transfers.index');
+    Route::post('vehicle-state-transfers/{transfer}/check', 'VehicleStateTransferController@check')->name('vehicle-state-transfers.check');
     // Audit Logs
     Route::resource('audit-logs', 'AuditLogsController', ['except' => ['create', 'store', 'edit', 'update', 'destroy']]);
 
@@ -164,6 +165,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('appreciations', 'AppreciationController');
     
     Route::get('system-calendar', 'SystemCalendarController@index')->name('systemCalendar');
+    Route::post('system-calendar/tasks', 'SystemCalendarController@storeTask')->name('systemCalendar.tasks.store');
+    Route::post('system-calendar/tasks/{task}/complete', 'SystemCalendarController@completeTask')->name('systemCalendar.tasks.complete');
+    Route::delete('system-calendar/tasks/{task}', 'SystemCalendarController@destroyTask')->name('systemCalendar.tasks.destroy');
     Route::get('global-search', 'GlobalSearchController@search')->name('globalSearch');
     Route::get('messenger', 'MessengerController@index')->name('messenger.index');
     Route::get('messenger/create', 'MessengerController@createTopic')->name('messenger.createTopic');

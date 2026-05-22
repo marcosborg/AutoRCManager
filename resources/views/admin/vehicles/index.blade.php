@@ -30,6 +30,7 @@
                                 <th>{{ trans('cruds.vehicle.fields.general_state') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.license') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.foreign_license') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.our_registration') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.brand') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.model') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.month') }}</th>
@@ -56,6 +57,14 @@
                                 </td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td>
+                                    <select class="search" strict="true">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        <option value="ARC">ARC</option>
+                                        <option value="RRS">RRS</option>
+                                        <option value="GER">GER</option>
+                                    </select>
+                                </td>
                                 <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
@@ -156,6 +165,7 @@ $(function () {
         { data: 'general_state_name', name: 'general_state.name' },
         { data: 'license', name: 'license' },
         { data: 'foreign_license', name: 'foreign_license' },
+        { data: 'our_registration', name: 'our_registration' },
         { data: 'brand_name', name: 'brand.name' },
         { data: 'model', name: 'model' },
         { data: 'month', name: 'month' },

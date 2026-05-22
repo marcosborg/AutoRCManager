@@ -2,44 +2,115 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\VehiclePosition;
-use Illuminate\Support\Facades\Log;
-use Throwable;
+use App\Models\CalendarTask;
+use App\Models\Client;
+use App\Models\GeneralState;
+use App\Models\Vehicle;
+use App\Models\VehicleStateTransfer;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 class HomeController
 {
     public function index()
     {
-        $positions = collect();
+        $today = Carbon::today();
+        $startOfMonth = $today->copy()->startOfMonth()->format('Y-m-d');
+        $endOfMonth = $today->copy()->endOfMonth()->format('Y-m-d');
+        $startOfYear = $today->copy()->startOfYear()->format('Y-m-d');
+        $endOfYear = $today->copy()->endOfYear()->format('Y-m-d');
 
-        try {
-            $latestIds = VehiclePosition::query()
-                ->selectRaw('MAX(id) as id')
-                ->groupBy('tracker_id')
-                ->pluck('id');
+        $tasksToday = Schema::hasTable('calendar_tasks')
+            ? CalendarTask::query()
+                ->where('created_by_id', auth()->id())
+                ->whereNull('completed_at')
+                ->whereDate('due_date', '<=', $today->format('Y-m-d'))
+                ->orderBy('due_date')
+                ->get()
+            : collect();
 
-            $positions = VehiclePosition::query()
-                ->whereIn('id', $latestIds)
-                ->orderBy('tracker_id')
-                ->orderByDesc('reported_at')
-                ->get([
-                    'id',
-                    'tracker_id',
-                    'latitude',
-                    'longitude',
-                    'speed_kph',
-                    'fix_valid',
-                    'voltage',
-                    'reported_at',
-                    'created_at',
+        $stateChanges = VehicleStateTransfer::with(['vehicle.brand', 'from_general_state', 'to_general_state', 'user'])
+            ->when(Schema::hasColumn('vehicle_state_transfers', 'checked_at'), fn ($query) => $query->whereNull('checked_at'))
+            ->orderByDesc('created_at')
+            ->limit(8)
+            ->get();
+
+        $soldThisMonth = Vehicle::with(['brand', 'client'])
+            ->whereNotNull('sale_date')
+            ->whereBetween('sale_date', [$startOfMonth, $endOfMonth])
+            ->orderByDesc('sale_date')
+            ->get();
+
+        $soldThisYear = Vehicle::query()
+            ->whereNotNull('sale_date')
+            ->whereBetween('sale_date', [$startOfYear, $endOfYear])
+            ->get();
+
+        $latestSoldVehicles = Vehicle::with(['brand', 'client'])
+            ->whereNotNull('sale_date')
+            ->orderByDesc('sale_date')
+            ->orderByDesc('id')
+            ->limit(8)
+            ->get();
+
+        $adjudicationStateId = GeneralState::query()
+            ->whereRaw('LOWER(name) = ?', ['adjudicação'])
+            ->orWhereRaw('LOWER(name) = ?', ['adjudicacao'])
+            ->orderBy('id')
+            ->value('id');
+
+        $latestAdjudications = $adjudicationStateId
+            ? VehicleStateTransfer::with(['vehicle.brand', 'vehicle.client', 'from_general_state', 'to_general_state'])
+                ->where('to_general_state_id', $adjudicationStateId)
+                ->whereHas('vehicle', fn ($query) => $query->where('general_state_id', $adjudicationStateId))
+                ->whereNotExists(function ($query) {
+                    $query->selectRaw('1')
+                        ->from('vehicle_state_transfers as later_transfers')
+                        ->whereColumn('later_transfers.vehicle_id', 'vehicle_state_transfers.vehicle_id')
+                        ->whereColumn('later_transfers.id', '>', 'vehicle_state_transfers.id');
+                })
+                ->orderByDesc('created_at')
+                ->limit(8)
+                ->get()
+            : collect();
+
+        if ($latestAdjudications->isEmpty() && $adjudicationStateId) {
+            $latestAdjudications = Vehicle::with(['brand', 'client'])
+                ->where('general_state_id', $adjudicationStateId)
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
+                ->limit(8)
+                ->get()
+                ->map(fn (Vehicle $vehicle) => (object) [
+                    'vehicle' => $vehicle,
+                    'created_at' => $vehicle->updated_at,
                 ]);
-        } catch (Throwable $exception) {
-            Log::channel('gps')->warning('Erro ao obter posicoes para o dashboard.', [
-                'erro' => $exception->getMessage(),
-            ]);
-            $positions = collect();
         }
 
-        return view('home', compact('positions'));
+        $business = [
+            'month_count' => $soldThisMonth->count(),
+            'month_total' => $soldThisMonth->sum(fn (Vehicle $vehicle) => $this->salesTotal($vehicle)),
+            'year_count' => $soldThisYear->count(),
+            'year_total' => $soldThisYear->sum(fn (Vehicle $vehicle) => $this->salesTotal($vehicle)),
+            'stock_count' => Vehicle::query()->whereNull('sale_date')->count(),
+            'clients_count' => Client::query()->count(),
+        ];
+
+        return view('home', compact(
+            'tasksToday',
+            'stateChanges',
+            'business',
+            'latestSoldVehicles',
+            'latestAdjudications'
+        ));
+    }
+
+    private function salesTotal(Vehicle $vehicle): float
+    {
+        return (float) ($vehicle->pvp ?? 0)
+            + (float) ($vehicle->sales_iuc ?? 0)
+            + (float) ($vehicle->sales_tow ?? 0)
+            + (float) ($vehicle->sales_transfer ?? 0)
+            + (float) ($vehicle->sales_others ?? 0);
     }
 }

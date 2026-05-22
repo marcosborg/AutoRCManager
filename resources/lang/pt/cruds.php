@@ -295,6 +295,8 @@ return [
             'client_amount_paid_helper'                 => ' ',
             'foreign_license'                           => 'Matricula estrangeira',
             'foreign_license_helper'                    => ' ',
+            'our_registration'                          => 'Nosso registo',
+            'our_registration_helper'                   => ' ',
             'general_state'                             => 'Estado geral',
             'general_state_helper'                      => ' ',
             'payment_comprovant'                        => 'Comprovativos de pagamento',

@@ -81,6 +81,9 @@ class SalesController extends Controller
             $table->editColumn('foreign_license', function ($row) {
                 return $row->foreign_license ? $row->foreign_license : '';
             });
+            $table->editColumn('our_registration', function ($row) {
+                return $row->our_registration ? $row->our_registration : '';
+            });
             $table->addColumn('brand_name', function ($row) {
                 return $row->brand ? $row->brand->name : '';
             });
