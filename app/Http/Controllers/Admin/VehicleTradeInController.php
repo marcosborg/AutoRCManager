@@ -1,0 +1,242 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\GeneralState;
+use App\Models\Vehicle;
+use App\Models\VehicleTradeIn;
+use Gate;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
+
+class VehicleTradeInController extends Controller
+{
+    public function pending()
+    {
+        abort_if(! $this->canConvertTradeIns(), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $tradeIns = VehicleTradeIn::with(['sold_vehicle.brand', 'sold_vehicle.client', 'created_by', 'media'])
+            ->where('status', VehicleTradeIn::STATUS_PENDING)
+            ->orderByDesc('created_at')
+            ->paginate(50);
+
+        return view('admin.vehicleTradeIns.pending', compact('tradeIns'));
+    }
+
+    public function store(Request $request, Vehicle $vehicle)
+    {
+        abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate($this->rules());
+        $normalizedLicense = VehicleTradeIn::normalizeLicense($data['license']);
+        $this->validateLicenseIsAvailable($normalizedLicense, 'license');
+
+        $tradeIn = $vehicle->trade_ins()->create($this->payload($data, $normalizedLicense) + [
+            'created_by_id' => $request->user()?->id,
+            'status' => VehicleTradeIn::STATUS_PENDING,
+        ]);
+
+        $this->attachFiles($request, $tradeIn);
+
+        return redirect()
+            ->route('admin.vehicles.edit', $vehicle)
+            ->with('message', 'Pedido de retoma criado. Aguardando conversao em viatura.');
+    }
+
+    public function convert(Request $request, VehicleTradeIn $tradeIn)
+    {
+        abort_if(! $this->canConvertTradeIns(), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if($tradeIn->status !== VehicleTradeIn::STATUS_PENDING, Response::HTTP_UNPROCESSABLE_ENTITY, 'Retoma ja tratada.');
+
+        $this->validateLicenseIsAvailable($tradeIn->normalized_license, 'license', $tradeIn->id);
+        $stockStateId = $this->stockStateId();
+        if (! $stockStateId) {
+            throw ValidationException::withMessages(['general_state_id' => 'Nao foi encontrado estado de stock para criar a viatura.']);
+        }
+
+        DB::transaction(function () use ($request, $tradeIn, $stockStateId) {
+            $vehicle = Vehicle::create([
+                'license' => $tradeIn->license,
+                'general_state_id' => $stockStateId,
+                'purchase_price' => $tradeIn->amount,
+                'client_id' => $tradeIn->sold_vehicle?->client_id,
+                'acquisition_notes' => trim('Retoma da viatura #' . $tradeIn->sold_vehicle_id . '. ' . ($tradeIn->notes ?: '')),
+            ]);
+
+            $this->copyDocumentsToVehicle($tradeIn, $vehicle);
+
+            $tradeIn->update([
+                'status' => VehicleTradeIn::STATUS_CONVERTED,
+                'converted_by_id' => $request->user()?->id,
+                'created_vehicle_id' => $vehicle->id,
+                'converted_at' => now(),
+            ]);
+        });
+
+        return redirect()
+            ->route('admin.vehicle-trade-ins.pending')
+            ->with('message', 'Retoma convertida em viatura de stock.');
+    }
+
+    public function reject(Request $request, VehicleTradeIn $tradeIn)
+    {
+        abort_if(! $this->canConvertTradeIns(), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if($tradeIn->status !== VehicleTradeIn::STATUS_PENDING, Response::HTTP_UNPROCESSABLE_ENTITY, 'Retoma ja tratada.');
+
+        $data = $request->validate([
+            'rejection_reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $tradeIn->update([
+            'status' => VehicleTradeIn::STATUS_REJECTED,
+            'rejection_reason' => $data['rejection_reason'],
+            'rejected_at' => now(),
+        ]);
+
+        return back()->with('message', 'Retoma rejeitada.');
+    }
+
+    private function rules(): array
+    {
+        return [
+            'license' => ['required', 'string', 'max:50'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'notes' => ['nullable', 'string'],
+            'has_registration_title' => ['nullable', 'boolean'],
+            'has_purchase_sale_rgpd' => ['nullable', 'boolean'],
+            'has_seller_identification' => ['nullable', 'boolean'],
+            'has_ipo' => ['nullable', 'boolean'],
+            'has_two_keys' => ['nullable', 'boolean'],
+            'has_charging_cable_mode_2' => ['nullable', 'boolean'],
+            'has_charging_cable_mode_3' => ['nullable', 'boolean'],
+            'has_manuals' => ['nullable', 'boolean'],
+            'has_internal_invoice' => ['nullable', 'boolean'],
+            'has_finance_mod_2' => ['nullable', 'boolean'],
+            'has_promissory_note' => ['nullable', 'boolean'],
+            'has_reservation_extinction_authorization' => ['nullable', 'boolean'],
+            'registration_title.*' => ['nullable', 'file', 'max:10240'],
+            'purchase_sale_rgpd.*' => ['nullable', 'file', 'max:10240'],
+            'seller_identification.*' => ['nullable', 'file', 'max:10240'],
+            'ipo.*' => ['nullable', 'file', 'max:10240'],
+            'keys.*' => ['nullable', 'file', 'max:10240'],
+            'charging_kit.*' => ['nullable', 'file', 'max:10240'],
+            'manuals.*' => ['nullable', 'file', 'max:10240'],
+            'internal_invoice.*' => ['nullable', 'file', 'max:10240'],
+            'finance_mod_2.*' => ['nullable', 'file', 'max:10240'],
+            'promissory_note.*' => ['nullable', 'file', 'max:10240'],
+            'reservation_extinction_authorization.*' => ['nullable', 'file', 'max:10240'],
+            'other_documents.*' => ['nullable', 'file', 'max:10240'],
+        ];
+    }
+
+    private function payload(array $data, string $normalizedLicense): array
+    {
+        $checkboxes = [
+            'has_registration_title',
+            'has_purchase_sale_rgpd',
+            'has_seller_identification',
+            'has_ipo',
+            'has_two_keys',
+            'has_charging_cable_mode_2',
+            'has_charging_cable_mode_3',
+            'has_manuals',
+            'has_internal_invoice',
+            'has_finance_mod_2',
+            'has_promissory_note',
+            'has_reservation_extinction_authorization',
+        ];
+
+        $payload = [
+            'license' => trim($data['license']),
+            'normalized_license' => $normalizedLicense,
+            'amount' => $data['amount'],
+            'notes' => $data['notes'] ?? null,
+        ];
+
+        foreach ($checkboxes as $checkbox) {
+            $payload[$checkbox] = (bool) ($data[$checkbox] ?? false);
+        }
+
+        return $payload;
+    }
+
+    private function validateLicenseIsAvailable(string $normalizedLicense, string $field, ?int $ignoreTradeInId = null): void
+    {
+        if ($normalizedLicense === '') {
+            throw ValidationException::withMessages([$field => 'Matricula invalida.']);
+        }
+
+        $vehicleExists = Vehicle::withTrashed()
+            ->whereRaw("REPLACE(REPLACE(UPPER(license), '-', ''), ' ', '') = ?", [$normalizedLicense])
+            ->orWhereRaw("REPLACE(REPLACE(UPPER(foreign_license), '-', ''), ' ', '') = ?", [$normalizedLicense])
+            ->exists();
+
+        if ($vehicleExists) {
+            throw ValidationException::withMessages([$field => 'Ja existe uma viatura com esta matricula.']);
+        }
+
+        $tradeInExists = VehicleTradeIn::query()
+            ->where('normalized_license', $normalizedLicense)
+            ->when($ignoreTradeInId, fn ($query) => $query->where('id', '!=', $ignoreTradeInId))
+            ->whereIn('status', [VehicleTradeIn::STATUS_PENDING, VehicleTradeIn::STATUS_CONVERTED])
+            ->exists();
+
+        if ($tradeInExists) {
+            throw ValidationException::withMessages([$field => 'Ja existe uma retoma pendente ou convertida com esta matricula.']);
+        }
+    }
+
+    private function attachFiles(Request $request, VehicleTradeIn $tradeIn): void
+    {
+        foreach (array_keys(VehicleTradeIn::DOCUMENT_COLLECTIONS) as $collection) {
+            foreach ((array) $request->file($collection, []) as $file) {
+                $tradeIn->addMedia($file)->toMediaCollection($collection);
+            }
+        }
+    }
+
+    private function copyDocumentsToVehicle(VehicleTradeIn $tradeIn, Vehicle $vehicle): void
+    {
+        $targets = [
+            'purchase_sale_rgpd' => 'additional_documents',
+            'ipo' => 'documents',
+            'internal_invoice' => 'invoice',
+            'reservation_extinction_authorization' => 'withdrawal_authorization_file',
+        ];
+
+        foreach ($targets as $source => $target) {
+            foreach ($tradeIn->getMedia($source) as $media) {
+                $vehicle->addMedia($media->getPath())
+                    ->preservingOriginal()
+                    ->usingName($media->name)
+                    ->usingFileName($media->file_name)
+                    ->toMediaCollection($target);
+            }
+        }
+    }
+
+    private function stockStateId(): ?int
+    {
+        return GeneralState::query()
+            ->whereRaw('LOWER(name) = ?', ['em stock disponível'])
+            ->orWhereRaw('LOWER(name) = ?', ['em stock disponivel'])
+            ->orWhereRaw('LOWER(name) = ?', ['stand'])
+            ->orderByRaw("CASE WHEN LOWER(name) IN ('em stock disponível', 'em stock disponivel') THEN 0 ELSE 1 END")
+            ->value('id');
+    }
+
+    private function canConvertTradeIns(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        return $user->roles()
+            ->whereIn('title', ['Admin', 'Gestão', 'Gestao', 'Stand'])
+            ->exists();
+    }
+}

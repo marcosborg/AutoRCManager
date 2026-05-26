@@ -432,6 +432,16 @@ class Vehicle extends Model implements HasMedia
         return $this->hasMany(VehicleClientPayment::class, 'vehicle_id');
     }
 
+    public function trade_ins()
+    {
+        return $this->hasMany(VehicleTradeIn::class, 'sold_vehicle_id');
+    }
+
+    public function source_trade_in()
+    {
+        return $this->hasOne(VehicleTradeIn::class, 'created_vehicle_id');
+    }
+
     public function getAcquisitionExpensesTotalAttribute(): float
     {
         $genericPaymentsTotal = $this->relationLoaded('generic_payments')

@@ -931,6 +931,8 @@
                                             <strong>Total final:</strong> {{ number_format((float) ($salesFinalTotal ?? 0), 2, ',', '.') }} EUR
                                             <br>
                                             <strong>Total recebido:</strong> {{ number_format((float) ($clientPaymentsTotal ?? 0), 2, ',', '.') }} EUR
+                                            <br>
+                                            <strong>Retomas convertidas:</strong> {{ number_format((float) ($tradeInsConvertedTotal ?? 0), 2, ',', '.') }} EUR
                                         </div>
                                         <div class="form-group" style="margin-bottom: 10px;">
                                             <label for="balance-3">Em dívida</label>
@@ -1042,6 +1044,7 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.sale_notes_helper') }}</span>
                                 </div>
+                                @include('admin.vehicles.partials.tradeIns')
                             </div>
                         </div>
 
@@ -1150,6 +1153,9 @@
                                 {{ trans('global.save') }}
                             </button>
                         </div>
+                    </form>
+                    <form id="vehicle-trade-in-create-form" method="POST" action="{{ route('admin.vehicles.trade-ins.store', $vehicle) }}" enctype="multipart/form-data">
+                        @csrf
                     </form>
                     <button type="submit" form="vehicle-edit-form" class="btn btn-danger floating-save-btn">
                         {{ trans('global.save') }}

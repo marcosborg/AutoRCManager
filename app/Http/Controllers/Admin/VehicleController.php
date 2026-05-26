@@ -18,6 +18,7 @@ use App\Models\Vehicle;
 use App\Models\VehicleClientPayment;
 use App\Models\VehicleGenericPayment;
 use App\Models\VehicleSupplierPayment;
+use App\Models\VehicleTradeIn;
 use App\Models\GeneralState;
 use App\Models\PaymentMethod;
 use App\Services\VehicleLotService;
@@ -242,6 +243,10 @@ class VehicleController extends Controller
             'supplier_payments.payment_method',
             'generic_payments.payment_method',
             'client_payments.payment_method',
+            'trade_ins.media',
+            'trade_ins.created_by',
+            'trade_ins.converted_by',
+            'trade_ins.created_vehicle',
         ];
         $vehicle->load($relations);
 
@@ -271,7 +276,11 @@ class VehicleController extends Controller
         })->values();
         $clientPaymentsTotal = (float) $vehicle->client_payments->sum('amount');
         $salesFinalTotal = $this->calculateSalesFinalTotal($vehicle);
-        $clientPaymentsOutstanding = $salesFinalTotal - $clientPaymentsTotal;
+        $tradeInsConvertedTotal = (float) $vehicle->trade_ins
+            ->where('status', VehicleTradeIn::STATUS_CONVERTED)
+            ->sum('amount');
+        $clientPaymentsOutstanding = $salesFinalTotal - $clientPaymentsTotal - $tradeInsConvertedTotal;
+        $canConvertTradeIns = $this->canConvertTradeIns();
 
         return view('admin.vehicles.edit', compact(
             'purchase_categories',
@@ -300,7 +309,9 @@ class VehicleController extends Controller
             'clientPayments',
             'clientPaymentsTotal',
             'salesFinalTotal',
+            'tradeInsConvertedTotal',
             'clientPaymentsOutstanding',
+            'canConvertTradeIns',
         ));
     }
 
@@ -943,6 +954,18 @@ class VehicleController extends Controller
             + (float) ($vehicle->sales_tow ?? 0)
             + (float) ($vehicle->sales_transfer ?? 0)
             + (float) ($vehicle->sales_others ?? 0);
+    }
+
+    private function canConvertTradeIns(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        return $user->roles()
+            ->whereIn('title', ['Admin', 'Gestão', 'Gestao', 'Stand'])
+            ->exists();
     }
 
     private function vehicleHasAllDocuments(Vehicle $vehicle): bool

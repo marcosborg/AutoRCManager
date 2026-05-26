@@ -40,6 +40,9 @@
                 @php
                     $calendarAlertTasks = collect();
                     $uncheckedStateTransfers = collect();
+                    $pendingTradeIns = collect();
+                    $canConvertTradeIns = auth()->check()
+                        && auth()->user()->roles()->whereIn('title', ['Admin', 'Gestão', 'Gestao', 'Stand'])->exists();
                     try {
                         if (\Illuminate\Support\Facades\Schema::hasTable('calendar_tasks')) {
                             $calendarAlertTasks = \App\Models\CalendarTask::query()
@@ -59,9 +62,18 @@
                                 ->limit(10)
                                 ->get();
                         }
+
+                        if ($canConvertTradeIns && \Illuminate\Support\Facades\Schema::hasTable('vehicle_trade_ins')) {
+                            $pendingTradeIns = \App\Models\VehicleTradeIn::with(['sold_vehicle'])
+                                ->where('status', \App\Models\VehicleTradeIn::STATUS_PENDING)
+                                ->orderByDesc('created_at')
+                                ->limit(10)
+                                ->get();
+                        }
                     } catch (\Throwable $exception) {
                         $calendarAlertTasks = collect();
                         $uncheckedStateTransfers = collect();
+                        $pendingTradeIns = collect();
                     }
                 @endphp
 
@@ -72,6 +84,40 @@
                                 <i class="fa fa-power-off"></i>
                             </a>
                         </li>
+                        @if($canConvertTradeIns)
+                            <li class="dropdown notifications-menu">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="Retomas pendentes">
+                                    <i class="fa fa-exchange"></i>
+                                    @if($pendingTradeIns->count())
+                                        <span class="label label-warning">{{ $pendingTradeIns->count() }}</span>
+                                    @endif
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li class="header">
+                                        {{ $pendingTradeIns->count() ? $pendingTradeIns->count() . ' retomas pendentes' : 'Sem retomas pendentes' }}
+                                    </li>
+                                    <li>
+                                        <ul class="menu">
+                                            @forelse($pendingTradeIns as $tradeIn)
+                                                <li>
+                                                    <a href="{{ route('admin.vehicle-trade-ins.pending') }}">
+                                                        <i class="fa fa-exchange text-yellow"></i>
+                                                        {{ $tradeIn->license }} - venda {{ $tradeIn->sold_vehicle->license ?? $tradeIn->sold_vehicle->foreign_license ?? ('#' . $tradeIn->sold_vehicle_id) }}
+                                                    </a>
+                                                </li>
+                                            @empty
+                                                <li>
+                                                    <a href="{{ route('admin.vehicle-trade-ins.pending') }}">
+                                                        <i class="fa fa-check text-green"></i> Sem retomas pendentes.
+                                                    </a>
+                                                </li>
+                                            @endforelse
+                                        </ul>
+                                    </li>
+                                    <li class="footer"><a href="{{ route('admin.vehicle-trade-ins.pending') }}">Ver retomas pendentes</a></li>
+                                </ul>
+                            </li>
+                        @endif
                         <li class="dropdown notifications-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="Mudancas de estado por verificar">
                                 <i class="fa fa-circle-o"></i>
