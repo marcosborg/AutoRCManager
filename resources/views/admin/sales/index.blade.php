@@ -38,6 +38,7 @@
                                 <th>{{ trans('cruds.vehicle.fields.inspec_b') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.pvp') }}</th>
                                 <th>Faturado</th>
+                                <th>Retoma</th>
                                 <th>&nbsp;</th>
                             </tr>
                             <tr>
@@ -68,6 +69,13 @@
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td>
+                                    <select class="search" strict="true">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        <option value="1">Sim</option>
+                                        <option value="0">Nao</option>
+                                    </select>
+                                </td>
                                 <td>
                                     <select class="search" strict="true">
                                         <option value>{{ trans('global.all') }}</option>
@@ -138,6 +146,7 @@
                 { data: 'inspec_b', name: 'inspec_b' },
                 { data: 'pvp', name: 'pvp' },
                 { data: 'is_invoiced', name: 'is_invoiced' },
+                { data: 'source_trade_in', name: 'source_trade_in' },
                 { data: 'actions', name: '{{ trans('global.actions') }}', orderable: false, searchable: false }
             ],
             columnDefs: [

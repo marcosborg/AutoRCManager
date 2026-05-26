@@ -108,6 +108,8 @@ class Vehicle extends Model implements HasMedia
         'sales_transfer',
         'sales_others',
         'client_id',
+        'client_payment_method_info_id',
+        'client_financed_amount',
         'client_amount_paid',
         'payment_notes',
         'client_registration',
@@ -329,6 +331,11 @@ class Vehicle extends Model implements HasMedia
     public function client()
     {
         return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    public function client_payment_method_info()
+    {
+        return $this->belongsTo(PaymentMethod::class, 'client_payment_method_info_id');
     }
 
     public function getPaymentComprovantAttribute()

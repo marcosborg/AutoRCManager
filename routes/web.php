@@ -69,6 +69,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('vehicles/{vehicle}/supplier-payments/{payment}', 'VehicleController@destroySupplierPayment')->name('vehicles.supplier-payments.destroy');
     Route::delete('vehicles/{vehicle}/generic-payments/{payment}', 'VehicleController@destroyGenericPayment')->name('vehicles.generic-payments.destroy');
     Route::delete('vehicles/{vehicle}/client-payments/{payment}', 'VehicleController@destroyClientPayment')->name('vehicles.client-payments.destroy');
+    Route::get('vehicle-trade-ins', 'VehicleTradeInController@index')->name('vehicle-trade-ins.index');
     Route::get('vehicle-trade-ins/pending', 'VehicleTradeInController@pending')->name('vehicle-trade-ins.pending');
     Route::post('vehicles/{vehicle}/trade-ins', 'VehicleTradeInController@store')->name('vehicles.trade-ins.store');
     Route::post('vehicle-trade-ins/{tradeIn}/convert', 'VehicleTradeInController@convert')->name('vehicle-trade-ins.convert');
@@ -152,6 +153,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('general-states/destroy', 'GeneralStateController@massDestroy')->name('general-states.massDestroy');
     Route::post('general-states/media', 'GeneralStateController@storeMedia')->name('general-states.storeMedia');
     Route::post('general-states/ckmedia', 'GeneralStateController@storeCKEditorImages')->name('general-states.storeCKEditorImages');
+    Route::post('general-states/reorder', 'GeneralStateController@reorder')->name('general-states.reorder');
     Route::resource('general-states', 'GeneralStateController');
     Route::get('vehicle-state-transfers', 'VehicleStateTransferController@index')->name('vehicle-state-transfers.index');
     Route::post('vehicle-state-transfers/{transfer}/check', 'VehicleStateTransferController@check')->name('vehicle-state-transfers.check');

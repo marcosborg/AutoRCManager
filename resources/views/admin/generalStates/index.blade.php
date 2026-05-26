@@ -24,6 +24,9 @@
                                     <th width="10">
 
                                     </th>
+                                    <th width="60">
+                                        Ordem
+                                    </th>
                                     <th>
                                         {{ trans('cruds.generalState.fields.id') }}
                                     </th>
@@ -44,11 +47,20 @@
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="general-states-sortable">
                                 @foreach($generalStates as $key => $generalState)
                                     <tr data-entry-id="{{ $generalState->id }}">
                                         <td>
 
+                                        </td>
+                                        <td>
+                                            @can('general_state_edit')
+                                                <span class="general-state-drag-handle" title="Arrastar para ordenar">
+                                                    <i class="fa fa-bars"></i>
+                                                </span>
+                                            @else
+                                                {{ $key + 1 }}
+                                            @endcan
                                         </td>
                                         <td>
                                             {{ $generalState->id ?? '' }}
@@ -140,7 +152,9 @@
 
   $.extend(true, $.fn.dataTable.defaults, {
     orderCellsTop: true,
-    order: [[ 1, 'desc' ]],
+    ordering: false,
+    paging: false,
+    searching: false,
     pageLength: 100,
   });
   let table = $('.datatable-GeneralState:not(.ajaxTable)').DataTable({ buttons: dtButtons })
@@ -148,8 +162,83 @@
       $($.fn.dataTable.tables(true)).DataTable()
           .columns.adjust();
   });
+
+  @can('general_state_edit')
+  const tbody = document.getElementById('general-states-sortable');
+  let draggedRow = null;
+
+  tbody.querySelectorAll('tr[data-entry-id]').forEach(function(row) {
+    const handle = row.querySelector('.general-state-drag-handle');
+    if (!handle) return;
+
+    handle.addEventListener('mousedown', function() {
+      row.setAttribute('draggable', 'true');
+    });
+
+    row.addEventListener('dragstart', function(event) {
+      draggedRow = row;
+      row.classList.add('general-state-row-dragging');
+      event.dataTransfer.effectAllowed = 'move';
+    });
+
+    row.addEventListener('dragend', function() {
+      row.classList.remove('general-state-row-dragging');
+      row.removeAttribute('draggable');
+      draggedRow = null;
+      saveGeneralStateOrder();
+    });
+
+    row.addEventListener('dragover', function(event) {
+      event.preventDefault();
+      if (!draggedRow || draggedRow === row) return;
+
+      const rect = row.getBoundingClientRect();
+      const insertAfter = event.clientY > rect.top + rect.height / 2;
+      tbody.insertBefore(draggedRow, insertAfter ? row.nextSibling : row);
+    });
+  });
+
+  function saveGeneralStateOrder() {
+    const order = Array.from(tbody.querySelectorAll('tr[data-entry-id]')).map(function(row) {
+      return row.getAttribute('data-entry-id');
+    });
+
+    $.ajax({
+      headers: {'x-csrf-token': _token},
+      method: 'POST',
+      url: "{{ route('admin.general-states.reorder') }}",
+      data: { order: order }
+    }).done(function() {
+      tbody.querySelectorAll('tr[data-entry-id]').forEach(function(row, index) {
+        const positionCell = row.children[6];
+        if (positionCell) {
+          positionCell.textContent = index + 1;
+        }
+      });
+    }).fail(function() {
+      alert('Nao foi possivel guardar a ordem.');
+      window.location.reload();
+    });
+  }
+  @endcan
   
 })
 
 </script>
+@endsection
+
+@section('styles')
+@parent
+<style>
+    .general-state-drag-handle {
+        cursor: move;
+        display: inline-block;
+        padding: 4px 8px;
+        color: #555;
+    }
+
+    .general-state-row-dragging {
+        opacity: .45;
+    }
+</style>
 @endsection

@@ -7,6 +7,7 @@ use App\Models\GeneralState;
 use App\Models\Vehicle;
 use App\Models\VehicleTradeIn;
 use Gate;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -14,16 +15,48 @@ use Symfony\Component\HttpFoundation\Response;
 
 class VehicleTradeInController extends Controller
 {
-    public function pending()
+    public function index(Request $request)
     {
         abort_if(! $this->canConvertTradeIns(), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $tradeIns = VehicleTradeIn::with(['sold_vehicle.brand', 'sold_vehicle.client', 'created_by', 'media'])
-            ->where('status', VehicleTradeIn::STATUS_PENDING)
-            ->orderByDesc('created_at')
-            ->paginate(50);
+        $dateField = $this->dateFieldForStatus($request->query('status'));
+        $dateStart = $this->parseDateFilter($request->query('date_start'));
+        $dateEnd = $this->parseDateFilter($request->query('date_end'));
 
-        return view('admin.vehicleTradeIns.pending', compact('tradeIns'));
+        $tradeIns = VehicleTradeIn::with(['sold_vehicle.brand', 'sold_vehicle.client', 'created_by', 'media'])
+            ->with(['converted_by', 'created_vehicle.brand'])
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
+            ->when(! $request->filled('status') && $request->boolean('pending'), fn ($query) => $query->where('status', VehicleTradeIn::STATUS_PENDING))
+            ->when($dateStart, fn ($query) => $query->whereDate($dateField, '>=', $dateStart))
+            ->when($dateEnd, fn ($query) => $query->whereDate($dateField, '<=', $dateEnd))
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = trim((string) $request->search);
+                $normalized = VehicleTradeIn::normalizeLicense($search);
+
+                $query->where(function ($subQuery) use ($search, $normalized) {
+                    $subQuery->where('license', 'like', '%' . $search . '%')
+                        ->orWhere('normalized_license', 'like', '%' . $normalized . '%')
+                        ->orWhereHas('sold_vehicle', function ($vehicleQuery) use ($search, $normalized) {
+                            $vehicleQuery
+                                ->where('license', 'like', '%' . $search . '%')
+                                ->orWhere('foreign_license', 'like', '%' . $search . '%')
+                                ->orWhereRaw("REPLACE(REPLACE(UPPER(license), '-', ''), ' ', '') LIKE ?", ['%' . $normalized . '%'])
+                                ->orWhereRaw("REPLACE(REPLACE(UPPER(foreign_license), '-', ''), ' ', '') LIKE ?", ['%' . $normalized . '%']);
+                        })
+                        ->orWhereHas('created_vehicle', function ($vehicleQuery) use ($search, $normalized) {
+                            $vehicleQuery
+                                ->where('license', 'like', '%' . $search . '%')
+                                ->orWhere('foreign_license', 'like', '%' . $search . '%')
+                                ->orWhereRaw("REPLACE(REPLACE(UPPER(license), '-', ''), ' ', '') LIKE ?", ['%' . $normalized . '%'])
+                                ->orWhereRaw("REPLACE(REPLACE(UPPER(foreign_license), '-', ''), ' ', '') LIKE ?", ['%' . $normalized . '%']);
+                        });
+                });
+            })
+            ->orderByDesc('created_at')
+            ->paginate(50)
+            ->appends($request->query());
+
+        return view('admin.vehicleTradeIns.index', compact('tradeIns', 'dateField'));
     }
 
     public function store(Request $request, Vehicle $vehicle)
@@ -77,7 +110,7 @@ class VehicleTradeInController extends Controller
         });
 
         return redirect()
-            ->route('admin.vehicle-trade-ins.pending')
+            ->route('admin.vehicle-trade-ins.index', ['status' => VehicleTradeIn::STATUS_PENDING])
             ->with('message', 'Retoma convertida em viatura de stock.');
     }
 
@@ -238,5 +271,32 @@ class VehicleTradeInController extends Controller
         return $user->roles()
             ->whereIn('title', ['Admin', 'Gestão', 'Gestao', 'Stand'])
             ->exists();
+    }
+
+    public function pending()
+    {
+        return redirect()->route('admin.vehicle-trade-ins.index', ['status' => VehicleTradeIn::STATUS_PENDING]);
+    }
+
+    private function dateFieldForStatus(?string $status): string
+    {
+        return match ($status) {
+            VehicleTradeIn::STATUS_CONVERTED => 'converted_at',
+            VehicleTradeIn::STATUS_REJECTED => 'rejected_at',
+            default => 'created_at',
+        };
+    }
+
+    private function parseDateFilter(mixed $value): ?string
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m-d', trim($value))->format('Y-m-d');
+        } catch (\Throwable $exception) {
+            return null;
+        }
     }
 }

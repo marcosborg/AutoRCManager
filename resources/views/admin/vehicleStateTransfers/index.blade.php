@@ -8,6 +8,14 @@
                     {{ trans('cruds.vehicleStateTransfer.title') }}
                 </div>
                 <div class="panel-body">
+                    <form method="GET" action="{{ route('admin.vehicle-state-transfers.index') }}" class="form-inline" style="margin-bottom: 15px;">
+                        <div class="form-group">
+                            <label for="license">Matrícula</label>
+                            <input class="form-control" type="text" name="license" id="license" value="{{ $license ?? '' }}" placeholder="Pesquisar matrícula">
+                        </div>
+                        <button class="btn btn-primary" type="submit">Filtrar</button>
+                        <a class="btn btn-default" href="{{ route('admin.vehicle-state-transfers.index') }}">Limpar</a>
+                    </form>
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped">
                             <thead>

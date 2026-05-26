@@ -256,6 +256,16 @@ class UpdateVehicleRequest extends FormRequest
                 'integer',
                 'exists:payment_methods,id',
             ],
+            'client_payment_method_info_id' => [
+                'nullable',
+                'integer',
+                'exists:payment_methods,id',
+            ],
+            'client_financed_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
         ];
     }
 

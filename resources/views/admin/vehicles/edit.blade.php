@@ -924,6 +924,26 @@
                                         <span class="help-block" role="alert">{{ $errors->first('client_payment_method_id') }}</span>
                                     @endif
                                 </div>
+                                <div class="form-group {{ $errors->has('client_payment_method_info_id') ? 'has-error' : '' }}">
+                                    <label for="client_payment_method_info_id">Meio de pagamento cliente informativo</label>
+                                    <select class="form-control select2" name="client_payment_method_info_id" id="client_payment_method_info_id">
+                                        @foreach($payment_methods as $id => $entry)
+                                            <option value="{{ $id }}" {{ (string) old('client_payment_method_info_id', $vehicle->client_payment_method_info_id) === (string) $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if($errors->has('client_payment_method_info_id'))
+                                        <span class="help-block" role="alert">{{ $errors->first('client_payment_method_info_id') }}</span>
+                                    @endif
+                                    <span class="help-block">Informativo. Nao cria pagamento.</span>
+                                </div>
+                                <div class="form-group {{ $errors->has('client_financed_amount') ? 'has-error' : '' }}">
+                                    <label for="client_financed_amount">Montante financiado</label>
+                                    <input class="form-control" type="number" name="client_financed_amount" id="client_financed_amount" value="{{ old('client_financed_amount', $vehicle->client_financed_amount) }}" step="0.01" min="0">
+                                    @if($errors->has('client_financed_amount'))
+                                        <span class="help-block" role="alert">{{ $errors->first('client_financed_amount') }}</span>
+                                    @endif
+                                    <span class="help-block">Informativo. Nao entra no total recebido.</span>
+                                </div>
                                 <div class="panel panel-default" id="client-payments-panel">
                                     <div class="panel-heading">Pagamentos do cliente final</div>
                                     <div class="panel-body" style="padding: 10px;">

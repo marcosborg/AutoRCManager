@@ -21,7 +21,9 @@ class GeneralStateController extends Controller
     {
         abort_if(Gate::denies('general_state_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $generalStates = GeneralState::all();
+        $generalStates = GeneralState::orderByRaw('COALESCE(position, 999999)')
+            ->orderBy('id')
+            ->get();
 
         return view('admin.generalStates.index', compact('generalStates'));
     }
@@ -83,6 +85,22 @@ class GeneralStateController extends Controller
         }
 
         return response(null, Response::HTTP_NO_CONTENT);
+    }
+
+    public function reorder(Request $request)
+    {
+        abort_if(Gate::denies('general_state_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'order' => ['required', 'array'],
+            'order.*' => ['integer', 'exists:general_states,id'],
+        ]);
+
+        foreach (array_values($data['order']) as $index => $id) {
+            GeneralState::whereKey($id)->update(['position' => $index + 1]);
+        }
+
+        return response()->json(['message' => 'Ordem atualizada.']);
     }
 
     public function storeCKEditorImages(Request $request)

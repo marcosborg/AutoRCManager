@@ -32,8 +32,6 @@ class SalesController extends Controller
         abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ($request->ajax()) {
-            $query = Vehicle::with(['general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client'])->select(sprintf('%s.*', (new Vehicle)->table));
-
             $query = Vehicle::with([
                 'general_state',
                 'brand',
@@ -41,7 +39,8 @@ class SalesController extends Controller
                 'payment_status',
                 'carrier',
                 'pickup_state',
-                'client'
+                'client',
+                'source_trade_in',
             ])->select(sprintf('%s.*', (new Vehicle)->table));
 
             // pega do path (/{general_state_id?}) ou da query (?general_state_id=)
@@ -122,6 +121,24 @@ class SalesController extends Controller
 
                 if (in_array($value, $falsy, true)) {
                     $query->where('is_invoiced', false);
+                    return;
+                }
+            });
+            $table->editColumn('source_trade_in', function ($row) {
+                return $row->source_trade_in ? 'Sim' : 'Nao';
+            });
+            $table->filterColumn('source_trade_in', function ($query, $keyword) {
+                $value = mb_strtolower(trim((string) $keyword, " \t\n\r\0\x0B^$"));
+                $truthy = ['sim', '1', 'true', 'yes', 'y'];
+                $falsy = ['nao', 'nÃƒÂ£o', 'nÃ£o', '0', 'false', 'no', 'n'];
+
+                if (in_array($value, $truthy, true)) {
+                    $query->whereHas('source_trade_in');
+                    return;
+                }
+
+                if (in_array($value, $falsy, true)) {
+                    $query->whereDoesntHave('source_trade_in');
                     return;
                 }
             });

@@ -100,21 +100,21 @@
                                         <ul class="menu">
                                             @forelse($pendingTradeIns as $tradeIn)
                                                 <li>
-                                                    <a href="{{ route('admin.vehicle-trade-ins.pending') }}">
+                                                    <a href="{{ route('admin.vehicle-trade-ins.index', ['status' => \App\Models\VehicleTradeIn::STATUS_PENDING]) }}">
                                                         <i class="fa fa-exchange text-yellow"></i>
                                                         {{ $tradeIn->license }} - venda {{ $tradeIn->sold_vehicle->license ?? $tradeIn->sold_vehicle->foreign_license ?? ('#' . $tradeIn->sold_vehicle_id) }}
                                                     </a>
                                                 </li>
                                             @empty
                                                 <li>
-                                                    <a href="{{ route('admin.vehicle-trade-ins.pending') }}">
+                                                    <a href="{{ route('admin.vehicle-trade-ins.index', ['status' => \App\Models\VehicleTradeIn::STATUS_PENDING]) }}">
                                                         <i class="fa fa-check text-green"></i> Sem retomas pendentes.
                                                     </a>
                                                 </li>
                                             @endforelse
                                         </ul>
                                     </li>
-                                    <li class="footer"><a href="{{ route('admin.vehicle-trade-ins.pending') }}">Ver retomas pendentes</a></li>
+                                    <li class="footer"><a href="{{ route('admin.vehicle-trade-ins.index', ['status' => \App\Models\VehicleTradeIn::STATUS_PENDING]) }}">Ver retomas pendentes</a></li>
                                 </ul>
                             </li>
                         @endif
