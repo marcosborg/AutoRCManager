@@ -286,6 +286,30 @@
                                 </a>
                             </li>
                         @endcan
+                        @can('part_order_access')
+                            <li class="{{ request()->is("admin/part-orders") || request()->is("admin/part-orders/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.part-orders.index") }}">
+                                    <i class="fa-fw fas fa-shopping-cart"></i>
+                                    <span>Encomendas de Peças</span>
+                                </a>
+                            </li>
+                        @endcan
+                        @can('part_payment_access')
+                            <li class="{{ request()->is("admin/part-payments") || request()->is("admin/part-payments/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.part-payments.index") }}">
+                                    <i class="fa-fw fas fa-money-bill"></i>
+                                    <span>Pagamentos de Peças</span>
+                                </a>
+                            </li>
+                        @endcan
+                        @can('part_receipt_access')
+                            <li class="{{ request()->is("admin/part-receipts") || request()->is("admin/part-receipts/*") ? "active" : "" }}">
+                                <a href="{{ route("admin.part-receipts.index") }}">
+                                    <i class="fa-fw fas fa-box-open"></i>
+                                    <span>Receções de Peças</span>
+                                </a>
+                            </li>
+                        @endcan
                         @can('create_car_for_repair_access')
                             <li class="{{ request()->is("admin/create-car-for-repairs") || request()->is("admin/create-car-for-repairs/*") ? "active" : "" }}">
                                 <a href="{{ route("admin.create-car-for-repairs.index") }}">

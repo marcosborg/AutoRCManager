@@ -128,6 +128,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repairs/{repair}/work/finish', 'RepairController@finishWork')->name('repairs.work.finish');
     Route::resource('repairs', 'RepairController');
     Route::get('repair-parts-report', 'RepairPartsReportController@index')->name('repair-parts-report.index');
+    Route::post('part-orders/{partOrder}/items/{item}/quotes', 'PartOrderController@storeQuote')->name('part-orders.items.quotes.store');
+    Route::post('part-orders/{partOrder}/items/{item}/quotes/{quote}/select', 'PartOrderController@selectQuote')->name('part-orders.items.quotes.select');
+    Route::resource('part-orders', 'PartOrderController');
+    Route::resource('part-payments', 'PartPaymentController');
+    Route::resource('part-receipts', 'PartReceiptController');
 
     // Create Car For Repair
     Route::get('create-car-for-repairs', 'CreateCarForRepairController@index')->name('create-car-for-repairs.index');

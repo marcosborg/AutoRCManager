@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Models\CalendarTask;
 use App\Models\Client;
 use App\Models\GeneralState;
+use App\Models\PartOrder;
+use App\Models\PartOrderItem;
+use App\Models\PartPayment;
 use App\Models\Vehicle;
 use App\Models\VehicleStateTransfer;
 use Carbon\Carbon;
@@ -96,10 +99,43 @@ class HomeController
             'clients_count' => Client::query()->count(),
         ];
 
+        $partOrderStats = Schema::hasTable('part_orders')
+            ? [
+                'delayed_orders' => PartOrder::query()
+                    ->where(function ($query) use ($today) {
+                        $query->where('status', 'delayed')
+                            ->orWhere(function ($subQuery) use ($today) {
+                                $subQuery->whereDate('expected_delivery_date', '<', $today->format('Y-m-d'))
+                                    ->whereNull('actual_delivery_date')
+                                    ->whereNotIn('status', ['received', 'cancelled']);
+                            });
+                    })
+                    ->count(),
+                'pending_items' => PartOrderItem::query()
+                    ->whereNotIn('status', ['received', 'installed', 'returned'])
+                    ->count(),
+                'overdue_payments' => PartPayment::query()
+                    ->whereDate('due_date', '<', $today->format('Y-m-d'))
+                    ->whereNotIn('payment_status', ['paid', 'cancelled'])
+                    ->count(),
+                'vehicles_waiting_parts' => PartOrder::query()
+                    ->whereNotNull('vehicle_id')
+                    ->whereIn('status', ['requesting_quotes', 'ordered', 'partially_received', 'delayed'])
+                    ->distinct('vehicle_id')
+                    ->count('vehicle_id'),
+            ]
+            : [
+                'delayed_orders' => 0,
+                'pending_items' => 0,
+                'overdue_payments' => 0,
+                'vehicles_waiting_parts' => 0,
+            ];
+
         return view('home', compact(
             'tasksToday',
             'stateChanges',
             'business',
+            'partOrderStats',
             'latestSoldVehicles',
             'latestAdjudications'
         ));

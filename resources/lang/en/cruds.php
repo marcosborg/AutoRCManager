@@ -990,4 +990,17 @@ return [
         'title_singular' => 'Create Car For Repair',
     ],
 
+    'partOrder' => [
+        'title'          => 'Part Orders',
+        'title_singular' => 'Part Order',
+    ],
+    'partPayment' => [
+        'title'          => 'Part Payments',
+        'title_singular' => 'Part Payment',
+    ],
+    'partReceipt' => [
+        'title'          => 'Part Receipts',
+        'title_singular' => 'Part Receipt',
+    ],
+
 ];

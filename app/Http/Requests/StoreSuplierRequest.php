@@ -21,6 +21,14 @@ class StoreSuplierRequest extends FormRequest
                 'string',
                 'required',
             ],
+            'email' => ['nullable', 'email', 'max:191'],
+            'phone' => ['nullable', 'string', 'max:191'],
+            'mobile' => ['nullable', 'string', 'max:191'],
+            'address' => ['nullable', 'string'],
+            'nif' => ['nullable', 'string', 'max:191'],
+            'average_delivery_days' => ['nullable', 'integer', 'min:0'],
+            'active' => ['nullable', 'boolean'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }

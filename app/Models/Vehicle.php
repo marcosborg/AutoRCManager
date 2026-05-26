@@ -417,6 +417,11 @@ class Vehicle extends Model implements HasMedia
         return $this->hasMany(VehicleSupplierPayment::class, 'vehicle_id');
     }
 
+    public function part_orders()
+    {
+        return $this->hasMany(PartOrder::class, 'vehicle_id');
+    }
+
     public function generic_payments()
     {
         return $this->hasMany(VehicleGenericPayment::class, 'vehicle_id');

@@ -34,6 +34,7 @@ class Repair extends Model implements HasMedia
 
     protected $fillable = [
         'vehicle_id',
+        'work_type',
         'obs_1',
         'kilometers',
         'front_windshield',
@@ -330,6 +331,11 @@ class Repair extends Model implements HasMedia
     public function parts()
     {
         return $this->hasMany(RepairPart::class, 'repair_id');
+    }
+
+    public function part_orders()
+    {
+        return $this->hasMany(PartOrder::class, 'repair_id');
     }
 
     public function workLogs()

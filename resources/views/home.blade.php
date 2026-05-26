@@ -84,6 +84,45 @@
         </div>
     </div>
 
+    <div class="dashboard-metrics">
+        <a href="{{ route('admin.part-orders.index', ['delayed' => 1]) }}">
+            <div class="small-box bg-red">
+                <div class="inner">
+                    <h3>{{ $partOrderStats['delayed_orders'] ?? 0 }}</h3>
+                    <p>Encomendas atrasadas</p>
+                </div>
+                <div class="icon"><i class="fa fa-exclamation-triangle"></i></div>
+            </div>
+        </a>
+        <a href="{{ route('admin.part-orders.index') }}">
+            <div class="small-box bg-blue">
+                <div class="inner">
+                    <h3>{{ $partOrderStats['pending_items'] ?? 0 }}</h3>
+                    <p>Peças pendentes</p>
+                </div>
+                <div class="icon"><i class="fa fa-cogs"></i></div>
+            </div>
+        </a>
+        <a href="{{ route('admin.part-payments.index', ['overdue' => 1]) }}">
+            <div class="small-box bg-maroon">
+                <div class="inner">
+                    <h3>{{ $partOrderStats['overdue_payments'] ?? 0 }}</h3>
+                    <p>Pagamentos vencidos</p>
+                </div>
+                <div class="icon"><i class="fa fa-credit-card"></i></div>
+            </div>
+        </a>
+        <a href="{{ route('admin.part-orders.index') }}">
+            <div class="small-box bg-orange">
+                <div class="inner">
+                    <h3>{{ $partOrderStats['vehicles_waiting_parts'] ?? 0 }}</h3>
+                    <p>Viaturas à espera de peças</p>
+                </div>
+                <div class="icon"><i class="fa fa-wrench"></i></div>
+            </div>
+        </a>
+    </div>
+
     <div class="row">
         <div class="col-md-6">
             <div class="panel panel-default">

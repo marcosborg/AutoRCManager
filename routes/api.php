@@ -96,5 +96,14 @@ Route::prefix('mobile')->group(function () {
         Route::get('workshop/garage-vehicles', [WorkshopApiController::class, 'garageVehicles']);
         Route::get('workshop/vehicles', [WorkshopApiController::class, 'vehicles']);
         Route::post('workshop/vehicles/{vehicle}/interventions', [WorkshopApiController::class, 'newIntervention']);
+
+        Route::get('workshop/part-order-suppliers', [\App\Http\Controllers\Api\V1\Mobile\PartOrderApiController::class, 'suppliers']);
+        Route::post('workshop/part-order-suppliers', [\App\Http\Controllers\Api\V1\Mobile\PartOrderApiController::class, 'storeSupplier']);
+        Route::get('workshop/part-orders', [\App\Http\Controllers\Api\V1\Mobile\PartOrderApiController::class, 'index']);
+        Route::post('workshop/part-orders', [\App\Http\Controllers\Api\V1\Mobile\PartOrderApiController::class, 'store']);
+        Route::get('workshop/part-orders/{partOrder}', [\App\Http\Controllers\Api\V1\Mobile\PartOrderApiController::class, 'show']);
+        Route::post('workshop/part-orders/{partOrder}/items', [\App\Http\Controllers\Api\V1\Mobile\PartOrderApiController::class, 'storeItem']);
+        Route::patch('workshop/part-orders/{partOrder}/items/{item}', [\App\Http\Controllers\Api\V1\Mobile\PartOrderApiController::class, 'updateItem']);
+        Route::delete('workshop/part-orders/{partOrder}/items/{item}', [\App\Http\Controllers\Api\V1\Mobile\PartOrderApiController::class, 'destroyItem']);
     });
 });

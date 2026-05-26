@@ -20,6 +20,7 @@
                             @endif
                             <span class="help-block">{{ trans('cruds.suplier.fields.name_helper') }}</span>
                         </div>
+                        @include('admin.supliers.partials.extended-fields')
                         <div class="form-group">
                             <button class="btn btn-danger" type="submit">
                                 {{ trans('global.save') }}

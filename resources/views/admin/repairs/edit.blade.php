@@ -1596,9 +1596,10 @@
                                         </div>
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
-                                                Peças (lançamento administrativo)
+                                                Peças e serviços usados
                                             </div>
                                             <div class="panel-body">
+                                                <p class="text-muted">Lançamento manual do material usado na reparação. Não está ligado às encomendas de peças.</p>
                                                 <div class="table-responsive">
                                                     <table class="table table-bordered" id="repair-parts-table">
                                                         <thead>
@@ -1662,6 +1663,47 @@
                                                 @if($errors->has('repair_parts'))
                                                     <span class="help-block" role="alert">{{ $errors->first('repair_parts') }}</span>
                                                 @endif
+                                            </div>
+                                        </div>
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                Encomendas de peças
+                                                @can('part_order_create')
+                                                    <a class="btn btn-xs btn-success pull-right" href="{{ route('admin.part-orders.create', ['repair_id' => $repair->id]) }}">Nova encomenda</a>
+                                                @endcan
+                                            </div>
+                                            <div class="panel-body">
+                                                <p class="text-muted">Pedidos e follow-up de encomendas associados a esta intervenção ou viatura.</p>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered table-striped">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>ID</th>
+                                                                <th>Fornecedor</th>
+                                                                <th>Estado</th>
+                                                                <th>Prevista</th>
+                                                                <th>Recebida</th>
+                                                                <th>Peças</th>
+                                                                <th></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @forelse(($partOrders ?? collect()) as $order)
+                                                                <tr>
+                                                                    <td>#{{ $order->id }}</td>
+                                                                    <td>{{ $order->suplier->name ?? '-' }}</td>
+                                                                    <td>@include('admin.partOrders.partials.badge', ['value' => $order->status, 'label' => App\Models\PartOrder::STATUS_SELECT[$order->status] ?? $order->status])</td>
+                                                                    <td>{{ optional($order->expected_delivery_date)->format('Y-m-d') ?: '-' }}</td>
+                                                                    <td>{{ optional($order->actual_delivery_date)->format('Y-m-d') ?: '-' }}</td>
+                                                                    <td>{{ $order->items->pluck('description')->take(3)->implode(', ') }}</td>
+                                                                    <td><a class="btn btn-xs btn-primary" href="{{ route('admin.part-orders.edit', $order) }}">Abrir</a></td>
+                                                                </tr>
+                                                            @empty
+                                                                <tr><td colspan="7" class="text-center text-muted">Sem encomendas associadas.</td></tr>
+                                                            @endforelse
+                                                        </tbody>
+                                                    </table>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="form-group {{ $errors->has('checkout') ? 'has-error' : '' }}">

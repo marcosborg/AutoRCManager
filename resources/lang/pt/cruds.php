@@ -990,4 +990,17 @@ return [
         'title_singular' => 'Criar carro para reparação',
     ],
 
+    'partOrder' => [
+        'title'          => 'Encomendas de Pecas',
+        'title_singular' => 'Encomenda de Pecas',
+    ],
+    'partPayment' => [
+        'title'          => 'Pagamentos de Pecas',
+        'title_singular' => 'Pagamento de Pecas',
+    ],
+    'partReceipt' => [
+        'title'          => 'Rececoes de Pecas',
+        'title_singular' => 'Rececao de Pecas',
+    ],
+
 ];

@@ -9,6 +9,7 @@ use App\Models\Repair;
 use App\Models\RepairPart;
 use App\Models\RepairState;
 use App\Models\RepairWorkLog;
+use App\Models\PartOrder;
 use App\Models\Vehicle;
 use Carbon\Carbon;
 use Gate;
@@ -80,6 +81,7 @@ class WorkshopApiController extends Controller
 
         $rules = [
             'repair_state_id' => ['nullable', 'integer', 'exists:repair_states,id'],
+            'work_type' => ['nullable', 'in:workshop,paint'],
             'name' => ['nullable', 'string', 'max:191'],
             'kilometers' => ['nullable', 'integer'],
             'kilometers_out' => ['nullable', 'integer', 'min:0'],
@@ -396,6 +398,10 @@ class WorkshopApiController extends Controller
     {
         abort_if(Gate::denies('repair_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        $data = $request->validate([
+            'work_type' => ['nullable', 'in:workshop,paint'],
+        ]);
+
         if (RepairRules::hasOpenRepairs($vehicle->id)) {
             return response()->json([
                 'message' => 'Ja existe uma intervencao aberta para esta viatura.',
@@ -404,6 +410,7 @@ class WorkshopApiController extends Controller
 
         $repair = Repair::create([
             'vehicle_id' => $vehicle->id,
+            'work_type' => $data['work_type'] ?? 'workshop',
             'kilometers' => is_numeric($vehicle->kilometers) ? (int) $vehicle->kilometers : null,
             'timestamp' => now(),
         ]);
@@ -412,6 +419,7 @@ class WorkshopApiController extends Controller
             'data' => [
                 'id' => $repair->id,
                 'vehicle_id' => $repair->vehicle_id,
+                'work_type' => $repair->work_type,
                 'timestamp' => $repair->getRawOriginal('timestamp'),
             ],
         ], Response::HTTP_CREATED);
@@ -486,6 +494,14 @@ class WorkshopApiController extends Controller
             $canCreateNewIntervention = ! RepairRules::hasOpenRepairs($repair->vehicle_id) || ! $currentIsOpen;
         }
 
+        $vehiclePartOrders = $repair->vehicle_id
+            ? PartOrder::with(['items', 'suplier'])
+                ->where('vehicle_id', $repair->vehicle_id)
+                ->orderByDesc('id')
+                ->limit(30)
+                ->get()
+            : collect();
+
         $mechanicTotals = $repair->workLogs
             ->groupBy('user_id')
             ->map(function ($logs) {
@@ -543,8 +559,9 @@ class WorkshopApiController extends Controller
             'fuel_level_percentage' => $repair->fuel_level_percentage !== null ? (int) $repair->fuel_level_percentage : null,
             'obs_1' => $repair->obs_1,
             'obs_2' => $repair->obs_2,
-            'checklist_percentage' => $repair->checklist_percentage,
-            'checklist' => collect($this->checklistFieldDefinitions())->map(function (array $field) use ($repair) {
+            'work_type' => $repair->work_type ?: 'workshop',
+            'checklist_percentage' => $this->visibleChecklistPercentage($repair),
+            'checklist' => $this->visibleChecklistDefinitions($repair)->map(function (array $field) use ($repair) {
                 return [
                     'key' => $field['key'],
                     'label' => $field['label'],
@@ -610,6 +627,24 @@ class WorkshopApiController extends Controller
                     'is_current' => (int) $item->id === (int) $repair->id,
                 ];
             })->values(),
+            'part_orders' => $vehiclePartOrders->map(fn (PartOrder $order) => [
+                'id' => $order->id,
+                'repair_id' => $order->repair_id,
+                'supplier' => $order->suplier?->name,
+                'status' => $order->status,
+                'status_label' => PartOrder::STATUS_SELECT[$order->status] ?? $order->status,
+                'received_badge' => match ($order->status) {
+                    'received' => 'chegou',
+                    'partially_received' => 'parcial',
+                    'delayed' => 'atrasado',
+                    default => 'pendente',
+                },
+                'priority' => $order->priority,
+                'expected_delivery_date' => optional($order->expected_delivery_date)->format('Y-m-d'),
+                'actual_delivery_date' => optional($order->actual_delivery_date)->format('Y-m-d'),
+                'items_count' => $order->items->count(),
+                'items_summary' => $order->items->pluck('description')->take(3)->implode(', '),
+            ])->values(),
         ];
     }
 
@@ -704,6 +739,29 @@ class WorkshopApiController extends Controller
             'parts',
             'workLogs.user:id,name',
         ];
+    }
+
+    private function visibleChecklistDefinitions(Repair $repair)
+    {
+        $definitions = collect($this->checklistFieldDefinitions());
+
+        if (($repair->work_type ?: 'workshop') === 'paint') {
+            return $definitions->where('group', 'Exterior')->values();
+        }
+
+        return $definitions;
+    }
+
+    private function visibleChecklistPercentage(Repair $repair): int
+    {
+        $definitions = $this->visibleChecklistDefinitions($repair);
+        if ($definitions->isEmpty()) {
+            return 0;
+        }
+
+        $checked = $definitions->filter(fn (array $field) => (bool) ($repair->{$field['key']} ?? false))->count();
+
+        return (int) round(($checked / $definitions->count()) * 100);
     }
 
     private function checklistFieldDefinitions(): array

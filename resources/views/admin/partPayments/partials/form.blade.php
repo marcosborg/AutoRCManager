@@ -1,0 +1,17 @@
+@php($payment = $partPayment ?? null)
+<div class="row">
+    <div class="col-md-4"><div class="form-group"><label class="required">Encomenda</label><select class="form-control select2" name="part_order_id" required><option value="">Selecionar</option>@foreach($partOrders as $id => $label)<option value="{{ $id }}" {{ (string) old('part_order_id', $selectedOrderId) === (string) $id ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div></div>
+    <div class="col-md-4"><div class="form-group"><label>Fornecedor</label><select class="form-control select2" name="suplier_id"><option value="">-</option>@foreach($supliers as $id => $label)<option value="{{ $id }}" {{ (string) old('suplier_id', $payment->suplier_id ?? '') === (string) $id ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div></div>
+    <div class="col-md-4"><div class="form-group"><label>Pago por</label><select class="form-control select2" name="paid_by_id"><option value="">-</option>@foreach($users as $id => $label)<option value="{{ $id }}" {{ (string) old('paid_by_id', $payment->paid_by_id ?? auth()->id()) === (string) $id ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div></div>
+</div>
+<div class="row">
+    <div class="col-md-2"><div class="form-group"><label>Método</label><select class="form-control" name="payment_method"><option value="">-</option>@foreach(App\Models\PartPayment::METHOD_SELECT as $key => $label)<option value="{{ $key }}" {{ old('payment_method', $payment->payment_method ?? '') === $key ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div></div>
+    <div class="col-md-2"><div class="form-group"><label>Condição</label><select class="form-control" name="payment_condition"><option value="">-</option>@foreach(App\Models\PartPayment::CONDITION_SELECT as $key => $label)<option value="{{ $key }}" {{ old('payment_condition', $payment->payment_condition ?? '') === $key ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div></div>
+    <div class="col-md-2"><div class="form-group"><label class="required">Valor</label><input class="form-control" type="number" step="0.01" min="0" name="amount" value="{{ old('amount', $payment->amount ?? '') }}" required></div></div>
+    <div class="col-md-2"><div class="form-group"><label>Data pagamento</label><input class="form-control" type="date" name="payment_date" value="{{ old('payment_date', optional($payment?->payment_date)->format('Y-m-d')) }}"></div></div>
+    <div class="col-md-2"><div class="form-group"><label>Vencimento</label><input class="form-control" type="date" name="due_date" value="{{ old('due_date', optional($payment?->due_date)->format('Y-m-d')) }}"></div></div>
+    <div class="col-md-2"><div class="form-group"><label>Estado</label><select class="form-control" name="payment_status">@foreach(App\Models\PartPayment::STATUS_SELECT as $key => $label)<option value="{{ $key }}" {{ old('payment_status', $payment->payment_status ?? 'pending') === $key ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div></div>
+</div>
+<div class="form-group"><label>Referência</label><input class="form-control" name="reference" value="{{ old('reference', $payment->reference ?? '') }}"></div>
+<div class="form-group"><label>Notas</label><textarea class="form-control" name="notes">{{ old('notes', $payment->notes ?? '') }}</textarea></div>
+<button class="btn btn-danger" type="submit">{{ trans('global.save') }}</button>

@@ -13,6 +13,7 @@ use App\Http\Requests\UpdateRepairRequest;
 use App\Models\Repair;
 use App\Models\RepairWorkLog;
 use App\Models\RepairState;
+use App\Models\PartOrder;
 use App\Models\Vehicle;
 use App\Models\Brand;
 use Gate;
@@ -577,6 +578,16 @@ class RepairController extends Controller
 
         $totalMechanicMinutes = (int) $mechanicTotals->sum('minutes');
 
+        $partOrders = PartOrder::with(['items', 'suplier'])
+            ->where(function ($query) use ($repair) {
+                $query->where('repair_id', $repair->id);
+                if ($repair->vehicle_id) {
+                    $query->orWhere('vehicle_id', $repair->vehicle_id);
+                }
+            })
+            ->orderByDesc('id')
+            ->get();
+
         return view('admin.repairs.edit', compact(
             'brands',
             'repair',
@@ -589,7 +600,8 @@ class RepairController extends Controller
             'workLogs',
             'currentUserOpenWork',
             'mechanicTotals',
-            'totalMechanicMinutes'
+            'totalMechanicMinutes',
+            'partOrders'
         ));
     }
 

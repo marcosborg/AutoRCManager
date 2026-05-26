@@ -67,7 +67,9 @@ class SuplierController extends Controller
 
     public function store(StoreSuplierRequest $request)
     {
-        $suplier = Suplier::create($request->all());
+        $data = $request->validated();
+        $data['active'] = $request->boolean('active');
+        $suplier = Suplier::create($data);
 
         return redirect()->route('admin.supliers.index');
     }
@@ -81,7 +83,9 @@ class SuplierController extends Controller
 
     public function update(UpdateSuplierRequest $request, Suplier $suplier)
     {
-        $suplier->update($request->all());
+        $data = $request->validated();
+        $data['active'] = $request->boolean('active');
+        $suplier->update($data);
 
         return redirect()->route('admin.supliers.index');
     }
