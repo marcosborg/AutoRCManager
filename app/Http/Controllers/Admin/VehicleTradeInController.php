@@ -64,6 +64,12 @@ class VehicleTradeInController extends Controller
     {
         abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        if (! $request->boolean('create_trade_in_confirmed')) {
+            return redirect()
+                ->route('admin.vehicles.edit', $vehicle)
+                ->with('message', 'Edicao da viatura mantida. A retoma so e criada pelo botao proprio de confirmacao.');
+        }
+
         $data = $request->validate($this->rules());
         $normalizedLicense = VehicleTradeIn::normalizeLicense($data['license']);
         $this->validateLicenseIsAvailable($normalizedLicense, 'license');

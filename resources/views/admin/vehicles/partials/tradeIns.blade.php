@@ -17,6 +17,7 @@
         @endif
     </div>
     <div class="panel-body" style="padding: 10px;">
+        <input form="vehicle-trade-in-create-form" type="hidden" name="create_trade_in_confirmed" id="create_trade_in_confirmed" value="0">
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group {{ $errors->has('license') ? 'has-error' : '' }}">
@@ -114,7 +115,7 @@
             </div>
         </div>
 
-        <button class="btn btn-warning btn-sm" form="vehicle-trade-in-create-form" type="submit">
+        <button class="btn btn-warning btn-sm" id="create-trade-in-button" type="button">
             Criar retoma e viatura em stock
         </button>
 

@@ -1381,6 +1381,24 @@
 
 <script>
     $(function () {
+        $('#create-trade-in-button').on('click', function () {
+            if (!confirm('Criar retoma e criar uma nova viatura em stock?')) {
+                return;
+            }
+
+            $('#create_trade_in_confirmed').val('1');
+            var form = document.getElementById('vehicle-trade-in-create-form');
+            if (form.requestSubmit) {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        });
+    });
+</script>
+
+<script>
+    $(function () {
         $('#create-financial-institution').on('click', function () {
             var name = window.prompt('Nome da financeira');
 
