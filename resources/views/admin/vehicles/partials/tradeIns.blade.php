@@ -58,9 +58,17 @@
             <div class="panel-heading">Anexos da retoma</div>
             <div class="panel-body" style="padding: 8px;">
                 @foreach($tradeInUploads as $collection => $label)
-                    <div class="form-group">
-                        <label>{{ $label }}</label>
-                        <input class="form-control" form="vehicle-trade-in-create-form" type="file" name="{{ $collection }}[]" multiple>
+                    @php($requiredUpload = in_array($collection, ['purchase_sale_rgpd', 'internal_invoice'], true))
+                    <div class="form-group {{ $errors->has($collection) || $errors->has($collection . '.*') ? 'has-error' : '' }}">
+                        <label>
+                            {{ $label }}
+                            @if($requiredUpload)
+                                <span class="text-danger">*</span>
+                            @endif
+                        </label>
+                        <input class="form-control" form="vehicle-trade-in-create-form" type="file" name="{{ $collection }}[]" multiple {{ $requiredUpload ? 'required' : '' }}>
+                        @if($errors->has($collection))<span class="help-block">{{ $errors->first($collection) }}</span>@endif
+                        @if($errors->has($collection . '.*'))<span class="help-block">{{ $errors->first($collection . '.*') }}</span>@endif
                     </div>
                 @endforeach
             </div>
