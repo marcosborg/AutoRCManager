@@ -47,7 +47,7 @@
                         ? \App\Models\Role::orderBy('title')->get(['id', 'title'])
                         : collect();
                     $canConvertTradeIns = auth()->check()
-                        && \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Gestão', 'Gestao', 'Stand']);
+                        && \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Gestão', 'Gestao']);
                     try {
                         if (\Illuminate\Support\Facades\Schema::hasTable('calendar_tasks')) {
                             $calendarAlertTasks = \App\Models\CalendarTask::query()

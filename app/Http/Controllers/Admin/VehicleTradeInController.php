@@ -290,7 +290,7 @@ class VehicleTradeInController extends Controller
             return false;
         }
 
-        return RolePreview::hasAnyEffectiveRole($user, ['Admin', 'Gestão', 'Gestao', 'Stand']);
+        return RolePreview::hasAnyEffectiveRole($user, ['Admin', 'Gestão', 'Gestao']);
     }
 
     public function pending()

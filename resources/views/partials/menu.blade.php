@@ -245,7 +245,7 @@
                     </a>
                 </li>
             @endcan
-            @if(auth()->check() && \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Gestão', 'Gestao', 'Stand']))
+            @if(auth()->check() && \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Gestão', 'Gestao']))
                 <li class="{{ request()->is("admin/vehicle-trade-ins") || request()->is("admin/vehicle-trade-ins/*") ? "active" : "" }}">
                     <a href="{{ route('admin.vehicle-trade-ins.index', ['status' => \App\Models\VehicleTradeIn::STATUS_CONVERTED]) }}">
                         <i class="fa-fw fas fa-exchange-alt"></i>

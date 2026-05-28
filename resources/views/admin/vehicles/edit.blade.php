@@ -728,81 +728,83 @@
                             </div>
                         </div>
 
-                        <h4>Levantamento da viatura</h4>
-                        <hr>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('carrier') ? 'has-error' : '' }}">
-                                    <label for="carrier_id">{{ trans('cruds.vehicle.fields.carrier') }}</label>
-                                    <select class="form-control select2" name="carrier_id" id="carrier_id">
-                                        @foreach($carriers as $id => $entry)
-                                        <option value="{{ $id }}" {{ (old('carrier_id') ? old('carrier_id') : $vehicle->carrier->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
-                                        @endforeach
-                                    </select>
-                                    @if($errors->has('carrier'))
-                                        <span class="help-block" role="alert">{{ $errors->first('carrier') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.carrier_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('storage_location') ? 'has-error' : '' }}">
-                                    <label for="storage_location">{{ trans('cruds.vehicle.fields.storage_location') }}</label>
-                                    <input class="form-control" type="text" name="storage_location" id="storage_location" value="{{ old('storage_location', $vehicle->storage_location) }}">
-                                    @if($errors->has('storage_location'))
-                                        <span class="help-block" role="alert">{{ $errors->first('storage_location') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.storage_location_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('withdrawal_authorization') ? 'has-error' : '' }}">
-                                    <label for="withdrawal_authorization">{{ trans('cruds.vehicle.fields.withdrawal_authorization') }}</label>
-                                    <input class="form-control" type="text" name="withdrawal_authorization" id="withdrawal_authorization" value="{{ old('withdrawal_authorization', $vehicle->withdrawal_authorization) }}">
-                                    @if($errors->has('withdrawal_authorization'))
-                                        <span class="help-block" role="alert">{{ $errors->first('withdrawal_authorization') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.withdrawal_authorization_helper') }}</span>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('withdrawal_authorization_date') ? 'has-error' : '' }}">
-                                    <label for="withdrawal_authorization_date">{{ trans('cruds.vehicle.fields.withdrawal_authorization_date') }}</label>
-                                    <input class="form-control date" type="text" name="withdrawal_authorization_date" id="withdrawal_authorization_date" value="{{ old('withdrawal_authorization_date', $vehicle->withdrawal_authorization_date) }}">
-                                    @if($errors->has('withdrawal_authorization_date'))
-                                        <span class="help-block" role="alert">{{ $errors->first('withdrawal_authorization_date') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.withdrawal_authorization_date_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('pickup_state') ? 'has-error' : '' }}">
-                                    <label for="pickup_state_id">{{ trans('cruds.vehicle.fields.pickup_state') }}</label>
-                                    <select class="form-control select2" name="pickup_state_id" id="pickup_state_id">
-                                        @foreach($pickup_states as $id => $entry)
-                                        <option value="{{ $id }}" {{ (old('pickup_state_id') ? old('pickup_state_id') : $vehicle->pickup_state->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
-                                        @endforeach
-                                    </select>
-                                    @if($errors->has('pickup_state'))
-                                        <span class="help-block" role="alert">{{ $errors->first('pickup_state') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.pickup_state_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('pickup_state_date') ? 'has-error' : '' }}">
-                                    <label for="pickup_state_date">{{ trans('cruds.vehicle.fields.pickup_state_date') }}</label>
-                                    <input class="form-control date" type="text" name="pickup_state_date" id="pickup_state_date" value="{{ old('pickup_state_date', $vehicle->pickup_state_date) }}">
-                                    @if($errors->has('pickup_state_date'))
-                                        <span class="help-block" role="alert">{{ $errors->first('pickup_state_date') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.pickup_state_date_helper') }}</span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group {{ $errors->has('withdrawal_authorization_file') ? 'has-error' : '' }}">
-                                    <label for="withdrawal_authorization_file">{{ trans('cruds.vehicle.fields.withdrawal_authorization_file') }}</label>
-                                    <div class="needsclick dropzone" id="withdrawal_authorization_file-dropzone">
+                        @unless(\App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Stand']))
+                            <h4>Levantamento da viatura</h4>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group {{ $errors->has('carrier') ? 'has-error' : '' }}">
+                                        <label for="carrier_id">{{ trans('cruds.vehicle.fields.carrier') }}</label>
+                                        <select class="form-control select2" name="carrier_id" id="carrier_id">
+                                            @foreach($carriers as $id => $entry)
+                                            <option value="{{ $id }}" {{ (old('carrier_id') ? old('carrier_id') : $vehicle->carrier->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                            @endforeach
+                                        </select>
+                                        @if($errors->has('carrier'))
+                                            <span class="help-block" role="alert">{{ $errors->first('carrier') }}</span>
+                                        @endif
+                                        <span class="help-block">{{ trans('cruds.vehicle.fields.carrier_helper') }}</span>
                                     </div>
-                                    @if($errors->has('withdrawal_authorization_file'))
-                                        <span class="help-block" role="alert">{{ $errors->first('withdrawal_authorization_file') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.withdrawal_authorization_file_helper') }}</span>
+                                    <div class="form-group {{ $errors->has('storage_location') ? 'has-error' : '' }}">
+                                        <label for="storage_location">{{ trans('cruds.vehicle.fields.storage_location') }}</label>
+                                        <input class="form-control" type="text" name="storage_location" id="storage_location" value="{{ old('storage_location', $vehicle->storage_location) }}">
+                                        @if($errors->has('storage_location'))
+                                            <span class="help-block" role="alert">{{ $errors->first('storage_location') }}</span>
+                                        @endif
+                                        <span class="help-block">{{ trans('cruds.vehicle.fields.storage_location_helper') }}</span>
+                                    </div>
+                                    <div class="form-group {{ $errors->has('withdrawal_authorization') ? 'has-error' : '' }}">
+                                        <label for="withdrawal_authorization">{{ trans('cruds.vehicle.fields.withdrawal_authorization') }}</label>
+                                        <input class="form-control" type="text" name="withdrawal_authorization" id="withdrawal_authorization" value="{{ old('withdrawal_authorization', $vehicle->withdrawal_authorization) }}">
+                                        @if($errors->has('withdrawal_authorization'))
+                                            <span class="help-block" role="alert">{{ $errors->first('withdrawal_authorization') }}</span>
+                                        @endif
+                                        <span class="help-block">{{ trans('cruds.vehicle.fields.withdrawal_authorization_helper') }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group {{ $errors->has('withdrawal_authorization_date') ? 'has-error' : '' }}">
+                                        <label for="withdrawal_authorization_date">{{ trans('cruds.vehicle.fields.withdrawal_authorization_date') }}</label>
+                                        <input class="form-control date" type="text" name="withdrawal_authorization_date" id="withdrawal_authorization_date" value="{{ old('withdrawal_authorization_date', $vehicle->withdrawal_authorization_date) }}">
+                                        @if($errors->has('withdrawal_authorization_date'))
+                                            <span class="help-block" role="alert">{{ $errors->first('withdrawal_authorization_date') }}</span>
+                                        @endif
+                                        <span class="help-block">{{ trans('cruds.vehicle.fields.withdrawal_authorization_date_helper') }}</span>
+                                    </div>
+                                    <div class="form-group {{ $errors->has('pickup_state') ? 'has-error' : '' }}">
+                                        <label for="pickup_state_id">{{ trans('cruds.vehicle.fields.pickup_state') }}</label>
+                                        <select class="form-control select2" name="pickup_state_id" id="pickup_state_id">
+                                            @foreach($pickup_states as $id => $entry)
+                                            <option value="{{ $id }}" {{ (old('pickup_state_id') ? old('pickup_state_id') : $vehicle->pickup_state->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                            @endforeach
+                                        </select>
+                                        @if($errors->has('pickup_state'))
+                                            <span class="help-block" role="alert">{{ $errors->first('pickup_state') }}</span>
+                                        @endif
+                                        <span class="help-block">{{ trans('cruds.vehicle.fields.pickup_state_helper') }}</span>
+                                    </div>
+                                    <div class="form-group {{ $errors->has('pickup_state_date') ? 'has-error' : '' }}">
+                                        <label for="pickup_state_date">{{ trans('cruds.vehicle.fields.pickup_state_date') }}</label>
+                                        <input class="form-control date" type="text" name="pickup_state_date" id="pickup_state_date" value="{{ old('pickup_state_date', $vehicle->pickup_state_date) }}">
+                                        @if($errors->has('pickup_state_date'))
+                                            <span class="help-block" role="alert">{{ $errors->first('pickup_state_date') }}</span>
+                                        @endif
+                                        <span class="help-block">{{ trans('cruds.vehicle.fields.pickup_state_date_helper') }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group {{ $errors->has('withdrawal_authorization_file') ? 'has-error' : '' }}">
+                                        <label for="withdrawal_authorization_file">{{ trans('cruds.vehicle.fields.withdrawal_authorization_file') }}</label>
+                                        <div class="needsclick dropzone" id="withdrawal_authorization_file-dropzone">
+                                        </div>
+                                        @if($errors->has('withdrawal_authorization_file'))
+                                            <span class="help-block" role="alert">{{ $errors->first('withdrawal_authorization_file') }}</span>
+                                        @endif
+                                        <span class="help-block">{{ trans('cruds.vehicle.fields.withdrawal_authorization_file_helper') }}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        @endunless
                         @php
                             $pvp = (float) ($vehicle->pvp ?? 0);
                             $sales_iuc = (float) ($vehicle->sales_iuc ?? 0);
