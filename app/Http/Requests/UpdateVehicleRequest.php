@@ -197,6 +197,15 @@ class UpdateVehicleRequest extends FormRequest
                 'nullable',
                 'numeric',
             ],
+            'iuc_price' => [
+                'nullable',
+                'numeric',
+            ],
+            'mes_iuc' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
             'purchase_has_vat' => [
                 'nullable',
                 'boolean',
@@ -278,15 +287,18 @@ class UpdateVehicleRequest extends FormRequest
     {
         $validator->after(function (Validator $validator) {
             $vehicle = $this->route('vehicle');
-            if (! $vehicle) {
+            $currentVehicleId = $vehicle instanceof Vehicle ? (int) $vehicle->getKey() : (int) $vehicle;
+
+            if (! $currentVehicleId) {
                 return;
             }
 
-            $this->validateUniqueNormalizedLicense($validator, 'license', (int) $vehicle->id);
-            $this->validateUniqueNormalizedLicense($validator, 'foreign_license', (int) $vehicle->id);
+            $boundVehicle = $vehicle instanceof Vehicle ? $vehicle : Vehicle::find($currentVehicleId);
+            $this->validateUniqueNormalizedLicense($validator, 'license', $currentVehicleId, $boundVehicle);
+            $this->validateUniqueNormalizedLicense($validator, 'foreign_license', $currentVehicleId, $boundVehicle);
 
             $incomingSaleDate = $this->input('sale_date');
-            if (ConsignmentRules::shouldBlockSale($vehicle, $incomingSaleDate)) {
+            if ($boundVehicle && ConsignmentRules::shouldBlockSale($boundVehicle, $incomingSaleDate)) {
                 $validator->errors()->add('sale_date', 'Nao e possivel vender com consignacao ativa.');
             }
 
@@ -333,12 +345,23 @@ class UpdateVehicleRequest extends FormRequest
         });
     }
 
-    private function validateUniqueNormalizedLicense(Validator $validator, string $field, int $currentVehicleId): void
+    private function validateUniqueNormalizedLicense(Validator $validator, string $field, int $currentVehicleId, ?Vehicle $currentVehicle): void
     {
         $normalizedLicense = $this->normalizeLicense((string) $this->input($field, ''));
 
         if ($normalizedLicense === '') {
             return;
+        }
+
+        if ($currentVehicle) {
+            $currentLicenses = [
+                $this->normalizeLicense((string) $currentVehicle->license),
+                $this->normalizeLicense((string) $currentVehicle->foreign_license),
+            ];
+
+            if (in_array($normalizedLicense, $currentLicenses, true)) {
+                return;
+            }
         }
 
         $existingVehicle = Vehicle::withTrashed()
@@ -351,6 +374,10 @@ class UpdateVehicleRequest extends FormRequest
             ->first(['id', 'license', 'foreign_license', 'deleted_at']);
 
         if (! $existingVehicle) {
+            return;
+        }
+
+        if ((int) $existingVehicle->id === $currentVehicleId) {
             return;
         }
 

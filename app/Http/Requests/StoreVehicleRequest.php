@@ -196,6 +196,15 @@ class StoreVehicleRequest extends FormRequest
                 'nullable',
                 'numeric',
             ],
+            'iuc_price' => [
+                'nullable',
+                'numeric',
+            ],
+            'mes_iuc' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
             'purchase_has_vat' => [
                 'nullable',
                 'boolean',

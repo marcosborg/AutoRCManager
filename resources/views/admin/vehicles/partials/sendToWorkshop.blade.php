@@ -49,7 +49,7 @@
                 <textarea class="form-control" form="vehicle-send-to-workshop-form" name="obs_1" id="workshop_obs_1" rows="3">{{ old('obs_1') }}</textarea>
                 @if($errors->has('obs_1'))<span class="help-block">{{ $errors->first('obs_1') }}</span>@endif
             </div>
-            <button class="btn btn-primary btn-sm" form="vehicle-send-to-workshop-form" type="submit">
+            <button class="btn btn-primary btn-sm" id="send-to-workshop-button" type="button">
                 Enviar para oficina
             </button>
         @endif
@@ -65,6 +65,23 @@
 
         $fuelSlider.on('input change', function () {
             $fuelValue.text($(this).val() + '%');
+        });
+
+        $('#send-to-workshop-button').on('click', function () {
+            var form = document.getElementById('vehicle-send-to-workshop-form');
+            if (!form) {
+                return;
+            }
+
+            if (form.reportValidity && !form.reportValidity()) {
+                return;
+            }
+
+            if (form.requestSubmit) {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
         });
     });
 </script>

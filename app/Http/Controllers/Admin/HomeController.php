@@ -131,13 +131,28 @@ class HomeController
                 'vehicles_waiting_parts' => 0,
             ];
 
+        $currentIucMonthLabel = $this->iucMonthLabel($today);
+        $iucDueVehicles = Schema::hasColumn('vehicles', 'mes_iuc')
+            ? Vehicle::with(['brand', 'general_state'])
+                ->where(function ($query) use ($today) {
+                    foreach ($this->iucMonthSearchValues($today) as $monthValue) {
+                        $query->orWhereRaw('UPPER(TRIM(mes_iuc)) = ?', [$monthValue]);
+                    }
+                })
+                ->orderByRaw('COALESCE(NULLIF(license, ""), foreign_license, id)')
+                ->limit(50)
+                ->get()
+            : collect();
+
         return view('home', compact(
             'tasksToday',
             'stateChanges',
             'business',
             'partOrderStats',
             'latestSoldVehicles',
-            'latestAdjudications'
+            'latestAdjudications',
+            'iucDueVehicles',
+            'currentIucMonthLabel'
         ));
     }
 
@@ -148,5 +163,62 @@ class HomeController
             + (float) ($vehicle->sales_tow ?? 0)
             + (float) ($vehicle->sales_transfer ?? 0)
             + (float) ($vehicle->sales_others ?? 0);
+    }
+
+    private function iucMonthLabel(Carbon $date): string
+    {
+        return $this->ptMonths()[(int) $date->format('n')];
+    }
+
+    private function iucMonthSearchValues(Carbon $date): array
+    {
+        $month = (int) $date->format('n');
+        $values = [
+            (string) $month,
+            $date->format('m'),
+            $this->ptMonths()[$month],
+            $this->ptMonthsWithAccents()[$month],
+        ];
+
+        return array_values(array_unique(array_map(
+            fn ($value) => mb_strtoupper(trim((string) $value), 'UTF-8'),
+            $values
+        )));
+    }
+
+    private function ptMonths(): array
+    {
+        return [
+            1 => 'Janeiro',
+            2 => 'Fevereiro',
+            3 => 'Marco',
+            4 => 'Abril',
+            5 => 'Maio',
+            6 => 'Junho',
+            7 => 'Julho',
+            8 => 'Agosto',
+            9 => 'Setembro',
+            10 => 'Outubro',
+            11 => 'Novembro',
+            12 => 'Dezembro',
+        ];
+    }
+
+    private function ptMonthsWithAccents(): array
+    {
+        return [
+            1 => 'Janeiro',
+            2 => 'Fevereiro',
+            3 => 'Março',
+            4 => 'Abril',
+            5 => 'Maio',
+            6 => 'Junho',
+            7 => 'Julho',
+            8 => 'Agosto',
+            9 => 'Setembro',
+            10 => 'Outubro',
+            11 => 'Novembro',
+            12 => 'Dezembro',
+        ];
     }
 }

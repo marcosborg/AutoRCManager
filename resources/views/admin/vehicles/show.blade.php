@@ -312,6 +312,22 @@
                                     </tr>
                                     <tr>
                                         <th>
+                                            {{ trans('cruds.vehicle.fields.iuc_price') }}
+                                        </th>
+                                        <td>
+                                            {{ $vehicle->iuc_price }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            {{ trans('cruds.vehicle.fields.mes_iuc') }}
+                                        </th>
+                                        <td>
+                                            {{ $vehicle->mes_iuc }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
                                             Notas da aquisicao
                                         </th>
                                         <td>

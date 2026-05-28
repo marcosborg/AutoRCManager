@@ -200,6 +200,45 @@
     </div>
 
     <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    IUC a pagamento em {{ $currentIucMonthLabel ?? 'este mes' }}
+                    <span class="label label-info pull-right">{{ $iucDueVehicles->count() ?? 0 }}</span>
+                </div>
+                <div class="panel-body table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Matricula</th>
+                                <th>Viatura</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($iucDueVehicles as $vehicle)
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('admin.vehicles.edit', $vehicle->id) }}">
+                                            {{ $vehicle->license ?? $vehicle->foreign_license ?? 'Sem matricula' }}
+                                        </a>
+                                    </td>
+                                    <td>{{ $vehicle->brand->name ?? '' }} {{ $vehicle->model ?? '' }}</td>
+                                    <td>{{ $vehicle->general_state->name ?? '-' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">Sem viaturas com IUC a pagamento neste mes.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
         <div class="col-md-7">
             <div class="panel panel-default">
                 <div class="panel-heading">Ultimas viaturas vendidas</div>

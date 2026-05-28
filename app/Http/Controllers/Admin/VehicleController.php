@@ -932,6 +932,7 @@ class VehicleController extends Controller
             'purchase_vat_value',
             'commission',
             'iuc_price',
+            'mes_iuc',
             'tow_price',
             'iuc_paid_date',
             'iuc_paid_value',

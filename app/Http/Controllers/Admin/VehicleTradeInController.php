@@ -11,6 +11,7 @@ use Gate;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -70,25 +71,32 @@ class VehicleTradeInController extends Controller
                 ->with('message', 'Edicao da viatura mantida. A retoma so e criada pelo botao proprio de confirmacao.');
         }
 
-        $data = $request->validate($this->rules());
-        $normalizedLicense = VehicleTradeIn::normalizeLicense($data['license']);
-        $this->validateLicenseIsAvailable($normalizedLicense, 'license');
+        $validator = Validator::make($request->all(), $this->rules());
+        if ($validator->fails()) {
+            throw (new ValidationException($validator))->errorBag('trade_in');
+        }
+
+        $data = $validator->validated();
+        $normalizedLicense = VehicleTradeIn::normalizeLicense($data['trade_in_license']);
+        $this->validateLicenseIsAvailable($normalizedLicense, 'trade_in_license');
         $stockStateId = $this->stockStateId();
         if (! $stockStateId) {
-            throw ValidationException::withMessages(['general_state_id' => 'Nao foi encontrado estado de stock para criar a viatura.']);
+            $validator = Validator::make([], []);
+            $validator->errors()->add('general_state_id', 'Nao foi encontrado estado de stock para criar a viatura.');
+            throw (new ValidationException($validator))->errorBag('trade_in');
         }
 
         DB::transaction(function () use ($request, $vehicle, $data, $normalizedLicense, $stockStateId) {
             $createdVehicle = Vehicle::create([
-                'license' => trim($data['license']),
+                'license' => trim($data['trade_in_license']),
                 'general_state_id' => $stockStateId,
-                'brand_id' => $data['brand_id'],
-                'model' => $data['model'],
-                'year' => $data['year'],
-                'kilometers' => $data['kilometers'],
-                'purchase_price' => $data['amount'],
+                'brand_id' => $data['trade_in_brand_id'],
+                'model' => $data['trade_in_model'],
+                'year' => $data['trade_in_year'],
+                'kilometers' => $data['trade_in_kilometers'],
+                'purchase_price' => $data['trade_in_amount'],
                 'client_id' => $vehicle->client_id,
-                'acquisition_notes' => trim('Retoma da viatura #' . $vehicle->id . '. ' . ($data['notes'] ?? '')),
+                'acquisition_notes' => trim('Retoma da viatura #' . $vehicle->id . '. ' . ($data['trade_in_notes'] ?? '')),
             ]);
 
             $tradeIn = $vehicle->trade_ins()->create($this->payload($data, $normalizedLicense) + [
@@ -148,13 +156,13 @@ class VehicleTradeInController extends Controller
     private function rules(): array
     {
         return [
-            'license' => ['required', 'string', 'max:50'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'brand_id' => ['required', 'integer', 'exists:brands,id'],
-            'model' => ['required', 'string', 'max:255'],
-            'year' => ['required', 'integer', 'min:1900', 'max:' . (now()->year + 1)],
-            'kilometers' => ['required', 'integer', 'min:0'],
-            'notes' => ['nullable', 'string'],
+            'trade_in_license' => ['required', 'string', 'max:50'],
+            'trade_in_amount' => ['required', 'numeric', 'min:0.01'],
+            'trade_in_brand_id' => ['required', 'integer', 'exists:brands,id'],
+            'trade_in_model' => ['required', 'string', 'max:255'],
+            'trade_in_year' => ['required', 'integer', 'min:1900', 'max:' . (now()->year + 1)],
+            'trade_in_kilometers' => ['required', 'integer', 'min:0'],
+            'trade_in_notes' => ['nullable', 'string'],
             'has_registration_title' => ['nullable', 'boolean'],
             'has_purchase_sale_rgpd' => ['nullable', 'boolean'],
             'has_seller_identification' => ['nullable', 'boolean'],
@@ -204,10 +212,10 @@ class VehicleTradeInController extends Controller
         ];
 
         $payload = [
-            'license' => trim($data['license']),
+            'license' => trim($data['trade_in_license']),
             'normalized_license' => $normalizedLicense,
-            'amount' => $data['amount'],
-            'notes' => $data['notes'] ?? null,
+            'amount' => $data['trade_in_amount'],
+            'notes' => $data['trade_in_notes'] ?? null,
         ];
 
         foreach ($checkboxes as $checkbox) {
@@ -220,7 +228,9 @@ class VehicleTradeInController extends Controller
     private function validateLicenseIsAvailable(string $normalizedLicense, string $field, ?int $ignoreTradeInId = null): void
     {
         if ($normalizedLicense === '') {
-            throw ValidationException::withMessages([$field => 'Matricula invalida.']);
+            $validator = Validator::make([], []);
+            $validator->errors()->add($field, 'Matricula invalida.');
+            throw (new ValidationException($validator))->errorBag('trade_in');
         }
 
         $vehicleExists = Vehicle::withTrashed()
@@ -229,7 +239,9 @@ class VehicleTradeInController extends Controller
             ->exists();
 
         if ($vehicleExists) {
-            throw ValidationException::withMessages([$field => 'Ja existe uma viatura com esta matricula.']);
+            $validator = Validator::make([], []);
+            $validator->errors()->add($field, 'Ja existe uma viatura com esta matricula.');
+            throw (new ValidationException($validator))->errorBag('trade_in');
         }
 
         $tradeInExists = VehicleTradeIn::query()
@@ -239,7 +251,9 @@ class VehicleTradeInController extends Controller
             ->exists();
 
         if ($tradeInExists) {
-            throw ValidationException::withMessages([$field => 'Ja existe uma retoma pendente ou convertida com esta matricula.']);
+            $validator = Validator::make([], []);
+            $validator->errors()->add($field, 'Ja existe uma retoma pendente ou convertida com esta matricula.');
+            throw (new ValidationException($validator))->errorBag('trade_in');
         }
     }
 

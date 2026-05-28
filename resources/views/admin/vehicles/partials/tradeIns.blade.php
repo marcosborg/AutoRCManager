@@ -7,6 +7,7 @@
         'has_reservation_extinction_authorization' => 'Autorizacao do cliente para extincao de reserva',
     ];
     $tradeInUploads = \App\Models\VehicleTradeIn::DOCUMENT_COLLECTIONS;
+    $tradeInErrors = $errors->getBag('trade_in');
 @endphp
 
 <div class="panel panel-default" id="vehicle-trade-ins-panel">
@@ -20,51 +21,51 @@
         <input form="vehicle-trade-in-create-form" type="hidden" name="create_trade_in_confirmed" id="create_trade_in_confirmed" value="0">
         <div class="row">
             <div class="col-md-6">
-                <div class="form-group {{ $errors->has('license') ? 'has-error' : '' }}">
+                <div class="form-group {{ $tradeInErrors->has('trade_in_license') ? 'has-error' : '' }}">
                     <label for="trade_in_license">Matricula da retoma</label>
-                    <input class="form-control" form="vehicle-trade-in-create-form" type="text" name="license" id="trade_in_license" value="{{ old('license') }}" required>
-                    @if($errors->has('license'))<span class="help-block">{{ $errors->first('license') }}</span>@endif
+                    <input class="form-control" form="vehicle-trade-in-create-form" type="text" name="trade_in_license" id="trade_in_license" value="{{ old('trade_in_license') }}" required>
+                    @if($tradeInErrors->has('trade_in_license'))<span class="help-block">{{ $tradeInErrors->first('trade_in_license') }}</span>@endif
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="form-group {{ $errors->has('amount') ? 'has-error' : '' }}">
+                <div class="form-group {{ $tradeInErrors->has('trade_in_amount') ? 'has-error' : '' }}">
                     <label for="trade_in_amount">Valor da retoma</label>
-                    <input class="form-control" form="vehicle-trade-in-create-form" type="number" name="amount" id="trade_in_amount" value="{{ old('amount') }}" step="0.01" min="0.01" required>
-                    @if($errors->has('amount'))<span class="help-block">{{ $errors->first('amount') }}</span>@endif
+                    <input class="form-control" form="vehicle-trade-in-create-form" type="number" name="trade_in_amount" id="trade_in_amount" value="{{ old('trade_in_amount') }}" step="0.01" min="0.01" required>
+                    @if($tradeInErrors->has('trade_in_amount'))<span class="help-block">{{ $tradeInErrors->first('trade_in_amount') }}</span>@endif
                 </div>
             </div>
         </div>
         <div class="row">
             <div class="col-md-3">
-                <div class="form-group {{ $errors->has('brand_id') ? 'has-error' : '' }}">
+                <div class="form-group {{ $tradeInErrors->has('trade_in_brand_id') ? 'has-error' : '' }}">
                     <label for="trade_in_brand_id">Marca</label>
-                    <select class="form-control select2" form="vehicle-trade-in-create-form" name="brand_id" id="trade_in_brand_id" required style="width: 100%;">
+                    <select class="form-control select2" form="vehicle-trade-in-create-form" name="trade_in_brand_id" id="trade_in_brand_id" required style="width: 100%;">
                         @foreach($brands as $id => $entry)
-                            <option value="{{ $id }}" {{ (string) old('brand_id') === (string) $id ? 'selected' : '' }}>{{ $entry }}</option>
+                            <option value="{{ $id }}" {{ (string) old('trade_in_brand_id') === (string) $id ? 'selected' : '' }}>{{ $entry }}</option>
                         @endforeach
                     </select>
-                    @if($errors->has('brand_id'))<span class="help-block">{{ $errors->first('brand_id') }}</span>@endif
+                    @if($tradeInErrors->has('trade_in_brand_id'))<span class="help-block">{{ $tradeInErrors->first('trade_in_brand_id') }}</span>@endif
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="form-group {{ $errors->has('model') ? 'has-error' : '' }}">
+                <div class="form-group {{ $tradeInErrors->has('trade_in_model') ? 'has-error' : '' }}">
                     <label for="trade_in_model">Modelo</label>
-                    <input class="form-control" form="vehicle-trade-in-create-form" type="text" name="model" id="trade_in_model" value="{{ old('model') }}" required>
-                    @if($errors->has('model'))<span class="help-block">{{ $errors->first('model') }}</span>@endif
+                    <input class="form-control" form="vehicle-trade-in-create-form" type="text" name="trade_in_model" id="trade_in_model" value="{{ old('trade_in_model') }}" required>
+                    @if($tradeInErrors->has('trade_in_model'))<span class="help-block">{{ $tradeInErrors->first('trade_in_model') }}</span>@endif
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="form-group {{ $errors->has('year') ? 'has-error' : '' }}">
+                <div class="form-group {{ $tradeInErrors->has('trade_in_year') ? 'has-error' : '' }}">
                     <label for="trade_in_year">Ano</label>
-                    <input class="form-control" form="vehicle-trade-in-create-form" type="number" name="year" id="trade_in_year" value="{{ old('year') }}" min="1900" max="{{ now()->year + 1 }}" required>
-                    @if($errors->has('year'))<span class="help-block">{{ $errors->first('year') }}</span>@endif
+                    <input class="form-control" form="vehicle-trade-in-create-form" type="number" name="trade_in_year" id="trade_in_year" value="{{ old('trade_in_year') }}" min="1900" max="{{ now()->year + 1 }}" required>
+                    @if($tradeInErrors->has('trade_in_year'))<span class="help-block">{{ $tradeInErrors->first('trade_in_year') }}</span>@endif
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="form-group {{ $errors->has('kilometers') ? 'has-error' : '' }}">
+                <div class="form-group {{ $tradeInErrors->has('trade_in_kilometers') ? 'has-error' : '' }}">
                     <label for="trade_in_kilometers">Kms</label>
-                    <input class="form-control" form="vehicle-trade-in-create-form" type="number" name="kilometers" id="trade_in_kilometers" value="{{ old('kilometers') }}" min="0" step="1" required>
-                    @if($errors->has('kilometers'))<span class="help-block">{{ $errors->first('kilometers') }}</span>@endif
+                    <input class="form-control" form="vehicle-trade-in-create-form" type="number" name="trade_in_kilometers" id="trade_in_kilometers" value="{{ old('trade_in_kilometers') }}" min="0" step="1" required>
+                    @if($tradeInErrors->has('trade_in_kilometers'))<span class="help-block">{{ $tradeInErrors->first('trade_in_kilometers') }}</span>@endif
                 </div>
             </div>
         </div>
@@ -86,21 +87,21 @@
 
         <div class="form-group">
             <label for="trade_in_notes">Notas</label>
-            <textarea class="form-control" form="vehicle-trade-in-create-form" name="notes" id="trade_in_notes">{{ old('notes') }}</textarea>
+            <textarea class="form-control" form="vehicle-trade-in-create-form" name="trade_in_notes" id="trade_in_notes">{{ old('trade_in_notes') }}</textarea>
         </div>
 
         <div class="panel panel-default">
             <div class="panel-heading">Anexos da retoma</div>
             <div class="panel-body" style="padding: 8px;">
-                <div class="form-group {{ $errors->has('inicial') || $errors->has('inicial.*') ? 'has-error' : '' }}">
+                <div class="form-group {{ $tradeInErrors->has('inicial') || $tradeInErrors->has('inicial.*') ? 'has-error' : '' }}">
                     <label>Fotos iniciais da aquisicao <span class="text-danger">*</span></label>
                     <input class="form-control" form="vehicle-trade-in-create-form" type="file" name="inicial[]" multiple required>
-                    @if($errors->has('inicial'))<span class="help-block">{{ $errors->first('inicial') }}</span>@endif
-                    @if($errors->has('inicial.*'))<span class="help-block">{{ $errors->first('inicial.*') }}</span>@endif
+                    @if($tradeInErrors->has('inicial'))<span class="help-block">{{ $tradeInErrors->first('inicial') }}</span>@endif
+                    @if($tradeInErrors->has('inicial.*'))<span class="help-block">{{ $tradeInErrors->first('inicial.*') }}</span>@endif
                 </div>
                 @foreach($tradeInUploads as $collection => $label)
                     @php($requiredUpload = in_array($collection, ['purchase_sale_rgpd', 'internal_invoice'], true))
-                    <div class="form-group {{ $errors->has($collection) || $errors->has($collection . '.*') ? 'has-error' : '' }}">
+                    <div class="form-group {{ $tradeInErrors->has($collection) || $tradeInErrors->has($collection . '.*') ? 'has-error' : '' }}">
                         <label>
                             {{ $label }}
                             @if($requiredUpload)
@@ -108,8 +109,8 @@
                             @endif
                         </label>
                         <input class="form-control" form="vehicle-trade-in-create-form" type="file" name="{{ $collection }}[]" multiple {{ $requiredUpload ? 'required' : '' }}>
-                        @if($errors->has($collection))<span class="help-block">{{ $errors->first($collection) }}</span>@endif
-                        @if($errors->has($collection . '.*'))<span class="help-block">{{ $errors->first($collection . '.*') }}</span>@endif
+                        @if($tradeInErrors->has($collection))<span class="help-block">{{ $tradeInErrors->first($collection) }}</span>@endif
+                        @if($tradeInErrors->has($collection . '.*'))<span class="help-block">{{ $tradeInErrors->first($collection . '.*') }}</span>@endif
                     </div>
                 @endforeach
             </div>

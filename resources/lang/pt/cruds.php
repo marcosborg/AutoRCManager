@@ -307,6 +307,8 @@ return [
             'payment_notes_helper'                     => ' ',
             'iuc_price'                                 => 'Valor do IUC',
             'iuc_price_helper'                          => ' ',
+            'mes_iuc'                                   => 'Mes de vencimento do IUC',
+            'mes_iuc_helper'                            => ' ',
             'commission'                                => 'Comissoes',
             'commission_helper'                         => ' ',
             'tow_price'                                 => 'Preço do reboque',

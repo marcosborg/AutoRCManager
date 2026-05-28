@@ -18,6 +18,7 @@ class VehicleResource extends JsonResource
                 'purchase_vat_value',
                 'commission',
                 'iuc_price',
+                'mes_iuc',
                 'tow_price',
                 'acquisition_notes',
             ] as $field) {

@@ -272,6 +272,32 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.iuc_price_helper') }}</span>
                                 </div>
+                                <div class="form-group {{ $errors->has('mes_iuc') ? 'has-error' : '' }}">
+                                    <label for="mes_iuc">{{ trans('cruds.vehicle.fields.mes_iuc') }}</label>
+                                    <select class="form-control" name="mes_iuc" id="mes_iuc">
+                                        <option value></option>
+                                        @foreach([
+                                            'Janeiro',
+                                            'Fevereiro',
+                                            'Marco',
+                                            'Abril',
+                                            'Maio',
+                                            'Junho',
+                                            'Julho',
+                                            'Agosto',
+                                            'Setembro',
+                                            'Outubro',
+                                            'Novembro',
+                                            'Dezembro',
+                                        ] as $month)
+                                            <option value="{{ $month }}" {{ old('mes_iuc', $vehicle->mes_iuc) === $month ? 'selected' : '' }}>{{ $month }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if($errors->has('mes_iuc'))
+                                        <span class="help-block" role="alert">{{ $errors->first('mes_iuc') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.mes_iuc_helper') }}</span>
+                                </div>
                                 <div class="form-group {{ $errors->has('commission') ? 'has-error' : '' }}">
                                     <label for="commission">{{ trans('cruds.vehicle.fields.commission') }}</label>
                                     <input class="form-control" type="number" name="commission" id="commission" value="{{ old('commission', $vehicle->commission) }}" step="0.01">
@@ -1094,115 +1120,7 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.sale_notes_helper') }}</span>
                                 </div>
-                                @include('admin.vehicles.partials.sendToWorkshop')
-                                @include('admin.vehicles.partials.tradeIns')
                             </div>
-                        </div>
-
-                        @if($showWorkshopSection)
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    Oficina
-                                </div>
-                                <div class="panel-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h5><strong>Checklist</strong></h5>
-                                            <div class="checkbox">
-                                                <label style="font-weight: 400">
-                                                    <input type="checkbox" disabled {{ $vehicle->vehicle_manuals ? 'checked' : '' }}>
-                                                    {{ trans('cruds.vehicle.fields.vehicle_manuals') }}
-                                                </label>
-                                            </div>
-                                            <div class="checkbox">
-                                                <label style="font-weight: 400">
-                                                    <input type="checkbox" disabled {{ $vehicle->cables ? 'checked' : '' }}>
-                                                    {{ trans('cruds.vehicle.fields.cables') }}
-                                                </label>
-                                            </div>
-                                            <div class="checkbox">
-                                                <label style="font-weight: 400">
-                                                    <input type="checkbox" disabled {{ $vehicle->cables_2 ? 'checked' : '' }}>
-                                                    {{ trans('cruds.vehicle.fields.cables_2') }}
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <h5><strong>Documentos</strong></h5>
-                                            <div class="checkbox">
-                                                <label style="font-weight: 400">
-                                                    <input type="checkbox" disabled {{ $vehicle->vehicle_ownership_title ? 'checked' : '' }}>
-                                                    DUA
-                                                </label>
-                                            </div>
-                                            <div class="checkbox">
-                                                <label style="font-weight: 400">
-                                                    <input type="checkbox" disabled {{ $vehicle->tax_identification_card ? 'checked' : '' }}>
-                                                    {{ trans('cruds.vehicle.fields.tax_identification_card') }}
-                                                </label>
-                                            </div>
-                                            <div class="checkbox">
-                                                <label style="font-weight: 400">
-                                                    <input type="checkbox" disabled {{ $vehicle->copy_of_the_citizen_card ? 'checked' : '' }}>
-                                                    {{ trans('cruds.vehicle.fields.copy_of_the_citizen_card') }}
-                                                </label>
-                                            </div>
-                                            <div class="checkbox">
-                                                <label style="font-weight: 400">
-                                                    <input type="checkbox" disabled {{ $vehicle->copy_of_the_stamp_duty_receipt ? 'checked' : '' }}>
-                                                    {{ trans('cruds.vehicle.fields.copy_of_the_stamp_duty_receipt') }}
-                                                </label>
-                                            </div>
-                                            <div class="checkbox">
-                                                <label style="font-weight: 400">
-                                                    <input type="checkbox" disabled {{ $vehicle->release_of_reservation_or_mortgage ? 'checked' : '' }}>
-                                                    Extinção Reserva / Hipotéca
-                                                </label>
-                                            </div>
-                                            <div class="checkbox">
-                                                <label style="font-weight: 400">
-                                                    <input type="checkbox" disabled {{ $vehicle->leasing_agreement ? 'checked' : '' }}>
-                                                    {{ trans('cruds.vehicle.fields.leasing_agreement') }}
-                                                </label>
-                                            </div>
-                                            <div style="margin-top: 10px;">
-                                                @foreach($vehicle->documents as $media)
-                                                    <a href="{{ $media->getUrl() }}" target="_blank">{{ trans('global.view_file') }}</a>
-                                                @endforeach
-                                            </div>
-                                            <div style="margin-top: 5px;">
-                                                @foreach($vehicle->additional_documents as $media)
-                                                    <a href="{{ $media->getUrl() }}" target="_blank">{{ trans('global.view_file') }}</a>
-                                                @endforeach
-                                            </div>
-                                            <div style="margin-top: 5px;">
-                                                @foreach($vehicle->pdfs as $media)
-                                                    <a href="{{ $media->getUrl() }}" target="_blank">{{ trans('global.view_file') }}</a>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <hr>
-                                    <h5><strong>Fotos a chegada</strong></h5>
-                                    <div>
-                                        @foreach($vehicle->inicial as $media)
-                                            <a href="{{ $media->getUrl() }}" data-lightbox="vehicle-inicial-gallery" style="display: inline-block; margin-right: 5px;">
-                                                <img src="{{ $media->getUrl('thumb') }}" alt="Foto inicial da viatura">
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                    <hr>
-                                    <h5><strong>Notas de venda</strong></h5>
-                                    <div>
-                                        {!! $vehicle->sale_notes !!}
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                        <div class="form-group">
-                            <button class="btn btn-danger" type="submit">
-                                {{ trans('global.save') }}
-                            </button>
                         </div>
                     </form>
                     <form id="vehicle-trade-in-create-form" method="POST" action="{{ route('admin.vehicles.trade-ins.store', $vehicle) }}" enctype="multipart/form-data">
@@ -1211,7 +1129,114 @@
                     <form id="vehicle-send-to-workshop-form" method="POST" action="{{ route('admin.vehicles.send-to-workshop', $vehicle) }}">
                         @csrf
                     </form>
-                    <button type="submit" form="vehicle-edit-form" class="btn btn-danger floating-save-btn">
+                    <div class="row">
+                        <div class="col-md-6 col-md-offset-6">
+                            @include('admin.vehicles.partials.sendToWorkshop')
+                            @include('admin.vehicles.partials.tradeIns')
+                        </div>
+                    </div>
+
+                    @if($showWorkshopSection)
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                Oficina
+                            </div>
+                            <div class="panel-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5><strong>Checklist</strong></h5>
+                                        <div class="checkbox">
+                                            <label style="font-weight: 400">
+                                                <input type="checkbox" disabled {{ $vehicle->vehicle_manuals ? 'checked' : '' }}>
+                                                {{ trans('cruds.vehicle.fields.vehicle_manuals') }}
+                                            </label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <label style="font-weight: 400">
+                                                <input type="checkbox" disabled {{ $vehicle->cables ? 'checked' : '' }}>
+                                                {{ trans('cruds.vehicle.fields.cables') }}
+                                            </label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <label style="font-weight: 400">
+                                                <input type="checkbox" disabled {{ $vehicle->cables_2 ? 'checked' : '' }}>
+                                                {{ trans('cruds.vehicle.fields.cables_2') }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5><strong>Documentos</strong></h5>
+                                        <div class="checkbox">
+                                            <label style="font-weight: 400">
+                                                <input type="checkbox" disabled {{ $vehicle->vehicle_ownership_title ? 'checked' : '' }}>
+                                                DUA
+                                            </label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <label style="font-weight: 400">
+                                                <input type="checkbox" disabled {{ $vehicle->tax_identification_card ? 'checked' : '' }}>
+                                                {{ trans('cruds.vehicle.fields.tax_identification_card') }}
+                                            </label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <label style="font-weight: 400">
+                                                <input type="checkbox" disabled {{ $vehicle->copy_of_the_citizen_card ? 'checked' : '' }}>
+                                                {{ trans('cruds.vehicle.fields.copy_of_the_citizen_card') }}
+                                            </label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <label style="font-weight: 400">
+                                                <input type="checkbox" disabled {{ $vehicle->copy_of_the_stamp_duty_receipt ? 'checked' : '' }}>
+                                                {{ trans('cruds.vehicle.fields.copy_of_the_stamp_duty_receipt') }}
+                                            </label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <label style="font-weight: 400">
+                                                <input type="checkbox" disabled {{ $vehicle->release_of_reservation_or_mortgage ? 'checked' : '' }}>
+                                                Extinção Reserva / Hipotéca
+                                            </label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <label style="font-weight: 400">
+                                                <input type="checkbox" disabled {{ $vehicle->leasing_agreement ? 'checked' : '' }}>
+                                                {{ trans('cruds.vehicle.fields.leasing_agreement') }}
+                                            </label>
+                                        </div>
+                                        <div style="margin-top: 10px;">
+                                            @foreach($vehicle->documents as $media)
+                                                <a href="{{ $media->getUrl() }}" target="_blank">{{ trans('global.view_file') }}</a>
+                                            @endforeach
+                                        </div>
+                                        <div style="margin-top: 5px;">
+                                            @foreach($vehicle->additional_documents as $media)
+                                                <a href="{{ $media->getUrl() }}" target="_blank">{{ trans('global.view_file') }}</a>
+                                            @endforeach
+                                        </div>
+                                        <div style="margin-top: 5px;">
+                                            @foreach($vehicle->pdfs as $media)
+                                                <a href="{{ $media->getUrl() }}" target="_blank">{{ trans('global.view_file') }}</a>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr>
+                                <h5><strong>Fotos a chegada</strong></h5>
+                                <div>
+                                    @foreach($vehicle->inicial as $media)
+                                        <a href="{{ $media->getUrl() }}" data-lightbox="vehicle-inicial-gallery" style="display: inline-block; margin-right: 5px;">
+                                            <img src="{{ $media->getUrl('thumb') }}" alt="Foto inicial da viatura">
+                                        </a>
+                                    @endforeach
+                                </div>
+                                <hr>
+                                <h5><strong>Notas de venda</strong></h5>
+                                <div>
+                                    {!! $vehicle->sale_notes !!}
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    <button type="button" id="vehicle-floating-save-button" class="btn btn-danger floating-save-btn">
                         {{ trans('global.save') }}
                     </button>
                 </div>
@@ -1381,18 +1406,58 @@
 
 <script>
     $(function () {
+        $('#vehicle-floating-save-button').on('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            var form = document.getElementById('vehicle-edit-form');
+            if (!form) {
+                return;
+            }
+
+            if (form.reportValidity && !form.reportValidity()) {
+                return;
+            }
+
+            var submitEvent = new Event('submit', {
+                bubbles: true,
+                cancelable: true
+            });
+
+            if (form.dispatchEvent(submitEvent)) {
+                HTMLFormElement.prototype.submit.call(form);
+            }
+        });
+
         $('#create-trade-in-button').on('click', function () {
             if (!confirm('Criar retoma e criar uma nova viatura em stock?')) {
                 return;
             }
 
-            $('#create_trade_in_confirmed').val('1');
             var form = document.getElementById('vehicle-trade-in-create-form');
+
+            if (!form) {
+                return;
+            }
+
+            $('#create_trade_in_confirmed').val('1');
+
+            if (form.reportValidity && !form.reportValidity()) {
+                $('#create_trade_in_confirmed').val('0');
+                return;
+            }
+
             if (form.requestSubmit) {
                 form.requestSubmit();
             } else {
                 form.submit();
             }
+        });
+
+        $('#vehicle-trade-in-create-form').on('submit', function () {
+            setTimeout(function () {
+                $('#create_trade_in_confirmed').val('0');
+            }, 0);
         });
     });
 </script>
@@ -1981,7 +2046,7 @@
         const form = document.getElementById('vehicle-edit-form');
         if (!form) return;
 
-        const submitButtons = Array.from(document.querySelectorAll('button[type="submit"][form="vehicle-edit-form"], #vehicle-edit-form button[type="submit"]'));
+        const submitButtons = Array.from(document.querySelectorAll('button[type="submit"][form="vehicle-edit-form"], #vehicle-edit-form button[type="submit"], #vehicle-floating-save-button'));
         let isSubmitting = false;
 
         function parseLocaleNumber(value) {
