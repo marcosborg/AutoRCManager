@@ -65,6 +65,11 @@ class UpdateClientRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'provenience_id' => [
+                'nullable',
+                'integer',
+                'exists:proveniences,id',
+            ],
         ];
     }
 }

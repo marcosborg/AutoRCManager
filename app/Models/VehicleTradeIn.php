@@ -22,7 +22,7 @@ class VehicleTradeIn extends Model implements HasMedia
 
     public const STATUS_SELECT = [
         self::STATUS_PENDING => 'Pendente',
-        self::STATUS_CONVERTED => 'Convertida',
+        self::STATUS_CONVERTED => 'Verificada',
         self::STATUS_REJECTED => 'Rejeitada',
     ];
 

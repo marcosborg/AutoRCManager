@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Repairs\RepairRules;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\CsvImportTrait;
 use App\Http\Controllers\Traits\MediaUploadingTrait;
@@ -11,8 +12,11 @@ use App\Http\Requests\UpdateVehicleRequest;
 use App\Models\Brand;
 use App\Models\Carrier;
 use App\Models\Client;
+use App\Models\FinancialInstitution;
 use App\Models\PaymentStatus;
 use App\Models\PickupState;
+use App\Models\Provenience;
+use App\Models\Repair;
 use App\Models\Suplier;
 use App\Models\Vehicle;
 use App\Models\VehicleClientPayment;
@@ -23,6 +27,7 @@ use App\Models\GeneralState;
 use App\Models\PaymentMethod;
 use App\Services\VehicleLotService;
 use App\Services\VehicleCsvSyncService;
+use App\Support\RolePreview;
 use Gate;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
@@ -43,7 +48,7 @@ class VehicleController extends Controller
         abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ($request->ajax()) {
-            $query = Vehicle::with(['general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client', 'source_trade_in'])->select(sprintf('%s.*', (new Vehicle)->table));
+            $query = Vehicle::with(['general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client', 'source_trade_in', 'media'])->select(sprintf('%s.*', (new Vehicle)->table));
             $table = Datatables::of($query);
 
             $table->addColumn('placeholder', '&nbsp;');
@@ -77,6 +82,9 @@ class VehicleController extends Controller
             $table->editColumn('our_registration', function ($row) {
                 return $row->our_registration ? $row->our_registration : '';
             });
+            $table->addColumn('vehicle_thumb', function ($row) {
+                return $this->vehicleThumbnailHtml($row);
+            });
             $table->addColumn('brand_name', function ($row) {
                 return $row->brand ? $row->brand->name : '';
             });
@@ -106,7 +114,7 @@ class VehicleController extends Controller
             $table->filterColumn('is_invoiced', function ($query, $keyword) {
                 $value = mb_strtolower(trim((string) $keyword, " \t\n\r\0\x0B^$"));
                 $truthy = ['sim', '1', 'true', 'yes', 'y'];
-                $falsy = ['nao', 'nÃ£o', 'não', '0', 'false', 'no', 'n'];
+                $falsy = ['nao', 'nÃƒÂ£o', 'nÃ£o', '0', 'false', 'no', 'n'];
 
                 if (in_array($value, $truthy, true)) {
                     $query->where('is_invoiced', true);
@@ -124,7 +132,7 @@ class VehicleController extends Controller
             $table->filterColumn('source_trade_in', function ($query, $keyword) {
                 $value = mb_strtolower(trim((string) $keyword, " \t\n\r\0\x0B^$"));
                 $truthy = ['sim', '1', 'true', 'yes', 'y'];
-                $falsy = ['nao', 'nÃƒÂ£o', 'nÃ£o', '0', 'false', 'no', 'n'];
+                $falsy = ['nao', 'nÃƒÆ’Ã‚Â£o', 'nÃƒÂ£o', '0', 'false', 'no', 'n'];
 
                 if (in_array($value, $truthy, true)) {
                     $query->whereHas('source_trade_in');
@@ -146,7 +154,7 @@ class VehicleController extends Controller
             $table->filterColumn('chekin_documents', function ($query, $keyword) {
                 $value = mb_strtolower(trim((string) $keyword));
                 $truthy = ['sim', '1', 'true', 'yes', 'y'];
-                $falsy = ['nao', 'não', '0', 'false', 'no', 'n'];
+                $falsy = ['nao', 'nÃ£o', '0', 'false', 'no', 'n'];
                 $expression = $this->allDocumentsSqlExpression();
 
                 if (in_array($value, $truthy, true)) {
@@ -164,7 +172,7 @@ class VehicleController extends Controller
                         $subQuery->orWhereRaw("($expression) = 1");
                     }
 
-                    if (str_starts_with('nao', $value) || str_starts_with('não', $value)) {
+                    if (str_starts_with('nao', $value) || str_starts_with('nÃ£o', $value)) {
                         $subQuery->orWhereRaw("($expression) = 0");
                     }
                 });
@@ -174,7 +182,7 @@ class VehicleController extends Controller
                 return $row->key ? $row->key : '';
             });
 
-            $table->rawColumns(['actions', 'placeholder', 'general_state', 'brand', 'suplier', 'client']);
+            $table->rawColumns(['actions', 'placeholder', 'general_state', 'brand', 'suplier', 'client', 'vehicle_thumb']);
 
             return $table->make(true);
         }
@@ -207,8 +215,10 @@ class VehicleController extends Controller
         $pickup_states = PickupState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $proveniences = Provenience::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $financial_institutions = FinancialInstitution::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        return view('admin.vehicles.create', compact('general_states', 'brands', 'carriers', 'clients', 'payment_statuses', 'pickup_states', 'supliers'));
+        return view('admin.vehicles.create', compact('general_states', 'brands', 'carriers', 'clients', 'proveniences', 'financial_institutions', 'payment_statuses', 'pickup_states', 'supliers'));
     }
 
     public function store(StoreVehicleRequest $request)
@@ -248,6 +258,8 @@ class VehicleController extends Controller
         $pickup_states = PickupState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $proveniences = Provenience::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $financial_institutions = FinancialInstitution::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $relations = [
             'brand',
@@ -259,6 +271,7 @@ class VehicleController extends Controller
             'pickup_state',
             'client',
             'client_payment_method_info',
+            'financial_institution',
             'supplier_payments.payment_method',
             'generic_payments.payment_method',
             'client_payments.payment_method',
@@ -268,6 +281,7 @@ class VehicleController extends Controller
             'trade_ins.created_vehicle',
         ];
         $vehicle->load($relations);
+        $hasOpenRepairs = RepairRules::hasOpenRepairs($vehicle->id);
 
         $financialEntries = collect();
         $financialTotalCost = 0.0;
@@ -309,6 +323,8 @@ class VehicleController extends Controller
             'brands',
             'carriers',
             'clients',
+            'proveniences',
+            'financial_institutions',
             'payment_statuses',
             'pickup_states',
             'supliers',
@@ -331,7 +347,41 @@ class VehicleController extends Controller
             'tradeInsConvertedTotal',
             'clientPaymentsOutstanding',
             'canConvertTradeIns',
+            'hasOpenRepairs',
         ));
+    }
+
+    public function sendToWorkshop(Request $request, Vehicle $vehicle)
+    {
+        abort_if(Gate::denies('repair_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'work_type' => ['required', 'string', 'in:workshop,painting'],
+            'kilometers' => ['nullable', 'integer', 'min:0', 'max:2147483647'],
+            'fuel_level_in_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'expected_completion_date' => ['nullable', 'date_format:' . config('panel.date_format')],
+            'obs_1' => ['nullable', 'string'],
+        ]);
+
+        if (RepairRules::hasOpenRepairs($vehicle->id)) {
+            return redirect()
+                ->route('admin.vehicles.edit', $vehicle)
+                ->withErrors(['workshop' => 'Ja existe uma intervencao aberta para esta viatura.']);
+        }
+
+        $repair = Repair::create([
+            'vehicle_id' => $vehicle->id,
+            'work_type' => $data['work_type'],
+            'kilometers' => $data['kilometers'] ?? $vehicle->kilometers,
+            'fuel_level_in_percentage' => $data['fuel_level_in_percentage'] ?? null,
+            'expected_completion_date' => $data['expected_completion_date'] ?? null,
+            'obs_1' => $data['obs_1'] ?? null,
+            'timestamp' => now()->format('Y-m-d H:i:s'),
+        ]);
+
+        return redirect()
+            ->route('admin.repairs.edit', $repair)
+            ->with('message', 'Viatura enviada para oficina e intervencao criada.');
     }
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle)
@@ -981,10 +1031,7 @@ class VehicleController extends Controller
         if (! $user) {
             return false;
         }
-
-        return $user->roles()
-            ->whereIn('title', ['Admin', 'Gestão', 'Gestao', 'Stand'])
-            ->exists();
+        return RolePreview::hasAnyEffectiveRole($user, ['Admin', 'Gestão', 'Gestao', 'Stand']);
     }
 
     private function vehicleHasAllDocuments(Vehicle $vehicle): bool
@@ -1017,5 +1064,19 @@ class VehicleController extends Controller
             static fn ($field) => sprintf('COALESCE(`vehicles`.`%s`, 0) = 1', $field),
             $this->documentBooleanFields()
         ));
+    }
+
+    private function vehicleThumbnailHtml(Vehicle $vehicle): string
+    {
+        $media = $vehicle->getFirstMedia('photos') ?: $vehicle->getFirstMedia('inicial');
+
+        if ($media) {
+            $url = e($media->getUrl('thumb') ?: $media->getUrl());
+            $alt = e($vehicle->license ?: $vehicle->model ?: 'Viatura');
+
+            return '<img src="' . $url . '" alt="' . $alt . '" class="vehicle-list-thumb">';
+        }
+
+        return '<span class="vehicle-list-thumb vehicle-list-thumb-placeholder"><i class="fa fa-car"></i></span>';
     }
 }

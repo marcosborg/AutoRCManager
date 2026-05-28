@@ -33,6 +33,40 @@
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-group {{ $errors->has('brand_id') ? 'has-error' : '' }}">
+                    <label for="trade_in_brand_id">Marca</label>
+                    <select class="form-control select2" form="vehicle-trade-in-create-form" name="brand_id" id="trade_in_brand_id" required style="width: 100%;">
+                        @foreach($brands as $id => $entry)
+                            <option value="{{ $id }}" {{ (string) old('brand_id') === (string) $id ? 'selected' : '' }}>{{ $entry }}</option>
+                        @endforeach
+                    </select>
+                    @if($errors->has('brand_id'))<span class="help-block">{{ $errors->first('brand_id') }}</span>@endif
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group {{ $errors->has('model') ? 'has-error' : '' }}">
+                    <label for="trade_in_model">Modelo</label>
+                    <input class="form-control" form="vehicle-trade-in-create-form" type="text" name="model" id="trade_in_model" value="{{ old('model') }}" required>
+                    @if($errors->has('model'))<span class="help-block">{{ $errors->first('model') }}</span>@endif
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group {{ $errors->has('year') ? 'has-error' : '' }}">
+                    <label for="trade_in_year">Ano</label>
+                    <input class="form-control" form="vehicle-trade-in-create-form" type="number" name="year" id="trade_in_year" value="{{ old('year') }}" min="1900" max="{{ now()->year + 1 }}" required>
+                    @if($errors->has('year'))<span class="help-block">{{ $errors->first('year') }}</span>@endif
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group {{ $errors->has('kilometers') ? 'has-error' : '' }}">
+                    <label for="trade_in_kilometers">Kms</label>
+                    <input class="form-control" form="vehicle-trade-in-create-form" type="number" name="kilometers" id="trade_in_kilometers" value="{{ old('kilometers') }}" min="0" step="1" required>
+                    @if($errors->has('kilometers'))<span class="help-block">{{ $errors->first('kilometers') }}</span>@endif
+                </div>
+            </div>
+        </div>
 
         <div class="panel panel-default">
             <div class="panel-heading">Checklist - documentacao e acessorios</div>
@@ -57,6 +91,12 @@
         <div class="panel panel-default">
             <div class="panel-heading">Anexos da retoma</div>
             <div class="panel-body" style="padding: 8px;">
+                <div class="form-group {{ $errors->has('inicial') || $errors->has('inicial.*') ? 'has-error' : '' }}">
+                    <label>Fotos iniciais da aquisicao <span class="text-danger">*</span></label>
+                    <input class="form-control" form="vehicle-trade-in-create-form" type="file" name="inicial[]" multiple required>
+                    @if($errors->has('inicial'))<span class="help-block">{{ $errors->first('inicial') }}</span>@endif
+                    @if($errors->has('inicial.*'))<span class="help-block">{{ $errors->first('inicial.*') }}</span>@endif
+                </div>
                 @foreach($tradeInUploads as $collection => $label)
                     @php($requiredUpload = in_array($collection, ['purchase_sale_rgpd', 'internal_invoice'], true))
                     <div class="form-group {{ $errors->has($collection) || $errors->has($collection . '.*') ? 'has-error' : '' }}">
@@ -75,7 +115,7 @@
         </div>
 
         <button class="btn btn-warning btn-sm" form="vehicle-trade-in-create-form" type="submit">
-            Criar pedido de retoma
+            Criar retoma e viatura em stock
         </button>
 
         <hr>
@@ -88,7 +128,7 @@
                         <th>Estado</th>
                         <th>Criado por</th>
                         <th>Documentos</th>
-                        <th>Viatura criada</th>
+                        <th>Viatura em stock</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -111,7 +151,7 @@
                                 @elseif($tradeIn->status === \App\Models\VehicleTradeIn::STATUS_REJECTED)
                                     <span class="text-muted">{{ $tradeIn->rejection_reason }}</span>
                                 @else
-                                    <span class="text-muted">A aguardar conversao</span>
+                                    <span class="text-muted">A aguardar verificacao</span>
                                 @endif
                             </td>
                         </tr>

@@ -36,6 +36,7 @@ class Client extends Model
         'company_phone',
         'company_email',
         'company_country_id',
+        'provenience_id',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -54,6 +55,11 @@ class Client extends Model
     public function company_country()
     {
         return $this->belongsTo(Country::class, 'company_country_id');
+    }
+
+    public function provenience()
+    {
+        return $this->belongsTo(Provenience::class, 'provenience_id');
     }
 
     public function vehicles()

@@ -27,6 +27,7 @@
                         <thead>
                             <tr>
                                 <th width="10"></th>
+                                <th>Foto</th>
                                 <th>{{ trans('cruds.vehicle.fields.general_state') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.license') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.foreign_license') }}</th>
@@ -47,6 +48,7 @@
                                 <th>&nbsp;</th>
                             </tr>
                             <tr>
+                                <td></td>
                                 <td></td>
                                 <td>
                                     <select class="search">
@@ -170,6 +172,7 @@ $(function () {
     ajax: "{{ route('admin.vehicles.index') }}",
     columns: [
         { data: 'placeholder', name: 'placeholder' },
+        { data: 'vehicle_thumb', name: 'vehicle_thumb', orderable: false, searchable: false },
         { data: 'general_state_name', name: 'general_state.name' },
         { data: 'license', name: 'license' },
         { data: 'foreign_license', name: 'foreign_license' },
@@ -337,6 +340,21 @@ $(function () {
 td { padding: 5px!important; margin: 0!important; }
 input.search { width: 100px!important; }
 select.search { width: 100px!important; }
+.vehicle-list-thumb {
+    width: 54px;
+    height: 42px;
+    border-radius: 4px;
+    object-fit: cover;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d2d6de;
+    background: #f5f5f5;
+    color: #8a97a6;
+}
+.vehicle-list-thumb-placeholder .fa {
+    font-size: 18px;
+}
 /* feedback visual: só nas células clicáveis (definido em createdRow) */
 </style>
 @endsection

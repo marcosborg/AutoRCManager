@@ -25,6 +25,7 @@
                         <thead>
                             <tr>
                                 <th width="10"></th>
+                                <th>Foto</th>
                                 <th>{{ trans('cruds.vehicle.fields.brand') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.model') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.version') }}</th>
@@ -42,6 +43,7 @@
                                 <th>&nbsp;</th>
                             </tr>
                             <tr>
+                                <td></td>
                                 <td></td>
                                 <td>
                                     <select class="search">
@@ -133,6 +135,7 @@
             ajax: "{{ route('admin.sales.index', request()->general_state_id) }}",
             columns: [
                 { data: 'placeholder', name: 'placeholder' },
+                { data: 'vehicle_thumb', name: 'vehicle_thumb', orderable: false, searchable: false },
                 { data: 'brand_name', name: 'brand.name' },
                 { data: 'model', name: 'model' },
                 { data: 'version', name: 'version' },
@@ -156,7 +159,7 @@
                 }
             ],
             orderCellsTop: true,
-            order: [[ 1, 'desc' ]],
+            order: [[ 2, 'desc' ]],
             pageLength: 100,
             createdRow: function(row) {
                 // feedback visual nas células clicáveis (todas menos ações)
@@ -285,5 +288,20 @@
     td { padding: 5px!important; margin: 0!important; }
     input.search { width: 100px!important; }
     select.search { width: 100px!important; }
+    .vehicle-list-thumb {
+        width: 54px;
+        height: 42px;
+        border-radius: 4px;
+        object-fit: cover;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #d2d6de;
+        background: #f5f5f5;
+        color: #8a97a6;
+    }
+    .vehicle-list-thumb-placeholder .fa {
+        font-size: 18px;
+    }
 </style>
 @endsection

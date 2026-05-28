@@ -37,7 +37,7 @@
                     <div class="text-muted small" style="margin-top: 6px;">
                         O intervalo filtra por
                         @if(($dateField ?? 'created_at') === 'converted_at')
-                            data de conversao.
+                            data de verificacao.
                         @elseif(($dateField ?? 'created_at') === 'rejected_at')
                             data de rejeicao.
                         @else
@@ -57,7 +57,7 @@
                         <th>Estado</th>
                         <th>Cliente</th>
                         <th>Criado por</th>
-                        <th>Convertido/rejeitado</th>
+                        <th>Verificado/rejeitado</th>
                         <th>Checklist</th>
                         <th>Documentos</th>
                         <th>Acoes</th>
@@ -83,7 +83,7 @@
                                     <div class="text-muted small">{{ $tradeIn->converted_by->name ?? '-' }}</div>
                                     @if($tradeIn->created_vehicle_id)
                                         <a href="{{ route('admin.vehicles.edit', $tradeIn->created_vehicle_id) }}">
-                                            Viatura criada #{{ $tradeIn->created_vehicle_id }}
+                                            Viatura em stock #{{ $tradeIn->created_vehicle_id }}
                                         </a>
                                         <div class="text-muted small">{{ $tradeIn->created_vehicle->license ?? '' }} {{ $tradeIn->created_vehicle->brand->name ?? '' }} {{ $tradeIn->created_vehicle->model ?? '' }}</div>
                                     @endif
@@ -92,6 +92,14 @@
                                     <div class="text-muted small">{{ $tradeIn->rejection_reason ?: '-' }}</div>
                                 @else
                                     <span class="label label-warning">Pendente</span>
+                                    @if($tradeIn->created_vehicle_id)
+                                        <div style="margin-top: 4px;">
+                                            <a href="{{ route('admin.vehicles.edit', $tradeIn->created_vehicle_id) }}">
+                                                Viatura em stock #{{ $tradeIn->created_vehicle_id }}
+                                            </a>
+                                        </div>
+                                        <div class="text-muted small">{{ $tradeIn->created_vehicle->license ?? '' }} {{ $tradeIn->created_vehicle->brand->name ?? '' }} {{ $tradeIn->created_vehicle->model ?? '' }}</div>
+                                    @endif
                                 @endif
                             </td>
                             <td>
@@ -113,7 +121,7 @@
                                 @if($tradeIn->status === \App\Models\VehicleTradeIn::STATUS_PENDING)
                                     <form method="POST" action="{{ route('admin.vehicle-trade-ins.convert', $tradeIn) }}" style="display:inline-block">
                                         @csrf
-                                        <button class="btn btn-xs btn-success" type="submit">Converter em viatura</button>
+                                        <button class="btn btn-xs btn-success" type="submit">Dar como verificado</button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.vehicle-trade-ins.reject', $tradeIn) }}" style="margin-top: 6px;">
                                         @csrf

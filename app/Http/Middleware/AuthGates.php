@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Role;
+use App\Support\RolePreview;
 use Closure;
 use Illuminate\Support\Facades\Gate;
 
@@ -15,6 +16,8 @@ class AuthGates
         if (! $user) {
             return $next($request);
         }
+
+        $user->setRelation('roles', RolePreview::effectiveRoles($user));
 
         $roles            = Role::with('permissions')->get();
         $permissionsArray = [];

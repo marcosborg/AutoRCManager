@@ -13,6 +13,7 @@ use App\Models\ClientPayment;
 use App\Models\Country;
 use App\Models\LotPayment;
 use App\Models\PaymentMethod;
+use App\Models\Provenience;
 use App\Models\Vehicle;
 use App\Models\VehicleGroup;
 use Gate;
@@ -29,7 +30,7 @@ class ClientController extends Controller
         abort_if(Gate::denies('client_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ($request->ajax()) {
-            $query = Client::with(['country', 'company_country'])->select(sprintf('%s.*', (new Client)->table));
+            $query = Client::with(['country', 'company_country', 'provenience'])->select(sprintf('%s.*', (new Client)->table));
             $table = Datatables::of($query);
 
             $table->addColumn('placeholder', '&nbsp;');
@@ -102,15 +103,19 @@ class ClientController extends Controller
             $table->addColumn('company_country_name', function ($row) {
                 return $row->company_country ? $row->company_country->name : '';
             });
+            $table->addColumn('provenience_name', function ($row) {
+                return $row->provenience ? $row->provenience->name : '';
+            });
 
-            $table->rawColumns(['actions', 'placeholder', 'country', 'company_country']);
+            $table->rawColumns(['actions', 'placeholder', 'country', 'company_country', 'provenience']);
 
             return $table->make(true);
         }
 
         $countries = Country::get();
+        $proveniences = Provenience::where('active', true)->orderBy('name')->get();
 
-        return view('admin.clients.index', compact('countries'));
+        return view('admin.clients.index', compact('countries', 'proveniences'));
     }
 
     public function create()
@@ -121,12 +126,21 @@ class ClientController extends Controller
 
         $company_countries = Country::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        return view('admin.clients.create', compact('company_countries', 'countries'));
+        $proveniences = Provenience::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+
+        return view('admin.clients.create', compact('company_countries', 'countries', 'proveniences'));
     }
 
     public function store(StoreClientRequest $request)
     {
         $client = Client::create($request->all());
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'id' => $client->id,
+                'name' => $client->name,
+            ], Response::HTTP_CREATED);
+        }
 
         return redirect()->route('admin.clients.index');
     }
@@ -138,10 +152,12 @@ class ClientController extends Controller
         $countries = Country::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $company_countries = Country::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $proveniences = Provenience::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
         $client->load([
             'country',
             'company_country',
+            'provenience',
             'vehicles.brand',
             'vehicles.general_state',
             'vehicles.client_payments.payment_method',
@@ -164,6 +180,7 @@ class ClientController extends Controller
             'client',
             'company_countries',
             'countries',
+            'proveniences',
             'currentAccount',
             'paymentMethods',
             'ledgerEntries',
@@ -246,7 +263,7 @@ class ClientController extends Controller
     {
         abort_if(Gate::denies('client_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $client->load('country', 'company_country');
+        $client->load('country', 'company_country', 'provenience');
 
         $ledgerEntries = collect();
         $ledgerTotalDebits = 0.0;

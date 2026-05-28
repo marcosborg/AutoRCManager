@@ -41,6 +41,7 @@ class SalesController extends Controller
                 'pickup_state',
                 'client',
                 'source_trade_in',
+                'media',
             ])->select(sprintf('%s.*', (new Vehicle)->table));
 
             // pega do path (/{general_state_id?}) ou da query (?general_state_id=)
@@ -82,6 +83,9 @@ class SalesController extends Controller
             });
             $table->editColumn('our_registration', function ($row) {
                 return $row->our_registration ? $row->our_registration : '';
+            });
+            $table->addColumn('vehicle_thumb', function ($row) {
+                return $this->vehicleThumbnailHtml($row);
             });
             $table->addColumn('brand_name', function ($row) {
                 return $row->brand ? $row->brand->name : '';
@@ -157,7 +161,7 @@ class SalesController extends Controller
                 return $row->manuals ? $row->manuals : '';
             });
 
-            $table->rawColumns(['actions', 'placeholder', 'general_state', 'brand', 'suplier', 'client']);
+            $table->rawColumns(['actions', 'placeholder', 'general_state', 'brand', 'suplier', 'client', 'vehicle_thumb']);
 
             return $table->make(true);
         }
@@ -171,5 +175,19 @@ class SalesController extends Controller
         $clients          = Client::get();
 
         return view('admin.sales.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients'));
+    }
+
+    private function vehicleThumbnailHtml(Vehicle $vehicle): string
+    {
+        $media = $vehicle->getFirstMedia('photos') ?: $vehicle->getFirstMedia('inicial');
+
+        if ($media) {
+            $url = e($media->getUrl('thumb') ?: $media->getUrl());
+            $alt = e($vehicle->license ?: $vehicle->model ?: 'Viatura');
+
+            return '<img src="' . $url . '" alt="' . $alt . '" class="vehicle-list-thumb">';
+        }
+
+        return '<span class="vehicle-list-thumb vehicle-list-thumb-placeholder"><i class="fa fa-car"></i></span>';
     }
 }

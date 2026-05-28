@@ -208,6 +208,11 @@ class StoreVehicleRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'financial_institution_id' => [
+                'nullable',
+                'integer',
+                'exists:financial_institutions,id',
+            ],
         ];
     }
 

@@ -889,11 +889,20 @@
                                 </div>
                                 <div class="form-group {{ $errors->has('client') ? 'has-error' : '' }}">
                                     <label for="client_id">{{ trans('cruds.vehicle.fields.client') }}</label>
-                                    <select class="form-control select2" name="client_id" id="client_id">
-                                        @foreach($clients as $id => $entry)
-                                        <option value="{{ $id }}" {{ (old('client_id') ? old('client_id') : $vehicle->client->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
-                                        @endforeach
-                                    </select>
+                                    <div class="input-group">
+                                        <select class="form-control select2" name="client_id" id="client_id">
+                                            @foreach($clients as $id => $entry)
+                                            <option value="{{ $id }}" {{ (old('client_id') ? old('client_id') : $vehicle->client->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                            @endforeach
+                                        </select>
+                                        @can('client_create')
+                                            <span class="input-group-btn">
+                                                <button class="btn btn-default" type="button" data-toggle="modal" data-target="#quick-client-modal">
+                                                    Novo
+                                                </button>
+                                            </span>
+                                        @endcan
+                                    </div>
                                     @if($errors->has('client'))
                                         <span class="help-block" role="alert">{{ $errors->first('client') }}</span>
                                     @endif
@@ -923,6 +932,25 @@
                                     @if($errors->has('client_payment_method_id'))
                                         <span class="help-block" role="alert">{{ $errors->first('client_payment_method_id') }}</span>
                                     @endif
+                                </div>
+                                <div class="form-group {{ $errors->has('financial_institution_id') ? 'has-error' : '' }}">
+                                    <label for="financial_institution_id">Financeira</label>
+                                    <div class="input-group">
+                                        <select class="form-control select2" name="financial_institution_id" id="financial_institution_id">
+                                            @foreach($financial_institutions as $id => $entry)
+                                                <option value="{{ $id }}" {{ (string) old('financial_institution_id', $vehicle->financial_institution_id) === (string) $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                            @endforeach
+                                        </select>
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-default" type="button" id="create-financial-institution">
+                                                Nova
+                                            </button>
+                                        </span>
+                                    </div>
+                                    @if($errors->has('financial_institution_id'))
+                                        <span class="help-block" role="alert">{{ $errors->first('financial_institution_id') }}</span>
+                                    @endif
+                                    <span class="help-block">Informativo. Nao cria pagamento.</span>
                                 </div>
                                 <div class="form-group {{ $errors->has('client_payment_method_info_id') ? 'has-error' : '' }}">
                                     <label for="client_payment_method_info_id">Meio de pagamento cliente informativo</label>
@@ -1064,6 +1092,7 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.sale_notes_helper') }}</span>
                                 </div>
+                                @include('admin.vehicles.partials.sendToWorkshop')
                                 @include('admin.vehicles.partials.tradeIns')
                             </div>
                         </div>
@@ -1177,6 +1206,9 @@
                     <form id="vehicle-trade-in-create-form" method="POST" action="{{ route('admin.vehicles.trade-ins.store', $vehicle) }}" enctype="multipart/form-data">
                         @csrf
                     </form>
+                    <form id="vehicle-send-to-workshop-form" method="POST" action="{{ route('admin.vehicles.send-to-workshop', $vehicle) }}">
+                        @csrf
+                    </form>
                     <button type="submit" form="vehicle-edit-form" class="btn btn-danger floating-save-btn">
                         {{ trans('global.save') }}
                     </button>
@@ -1185,9 +1217,195 @@
         </div>
     </div>
 </div>
+@can('client_create')
+    <div class="modal fade" id="quick-client-modal" tabindex="-1" role="dialog" aria-labelledby="quick-client-modal-title">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form id="quick-client-form" method="POST" action="{{ route('admin.clients.store') }}">
+                    @csrf
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" id="quick-client-modal-title">Novo cliente</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger" id="quick-client-errors" style="display:none;"></div>
+                        <div class="form-group">
+                            <label class="required" for="quick_client_name">Nome</label>
+                            <input class="form-control" type="text" name="name" id="quick_client_name" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="quick_client_vat">NIF</label>
+                                    <input class="form-control" type="text" name="vat" id="quick_client_vat">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="quick_client_phone">Telefone</label>
+                                    <input class="form-control" type="text" name="phone" id="quick_client_phone">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="quick_client_email">Email</label>
+                            <input class="form-control" type="email" name="email" id="quick_client_email">
+                        </div>
+                        <div class="form-group">
+                            <label for="quick_client_provenience_id">Proveniencia</label>
+                            <div class="input-group">
+                                <select class="form-control select2" name="provenience_id" id="quick_client_provenience_id">
+                                    @foreach($proveniences as $id => $entry)
+                                        <option value="{{ $id }}">{{ $entry }}</option>
+                                    @endforeach
+                                </select>
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default" type="button" id="quick-client-create-provenience">
+                                        Nova
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="quick_client_address">Morada</label>
+                            <input class="form-control" type="text" name="address" id="quick_client_address">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="quick_client_location">Localidade</label>
+                                    <input class="form-control" type="text" name="location" id="quick_client_location">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="quick_client_zip">Codigo postal</label>
+                                    <input class="form-control" type="text" name="zip" id="quick_client_zip">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="quick-client-submit">Criar cliente</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endcan
 @endsection
 
 @section('scripts')
+
+@can('client_create')
+<script>
+    $(function () {
+        var $quickClientForm = $('#quick-client-form');
+        var $quickClientErrors = $('#quick-client-errors');
+        var $quickClientSubmit = $('#quick-client-submit');
+        var $clientSelect = $('#client_id');
+
+        $quickClientForm.on('submit', function (event) {
+            event.preventDefault();
+
+            $quickClientErrors.hide().empty();
+            $quickClientSubmit.prop('disabled', true);
+
+            $.ajax({
+                method: 'POST',
+                url: $quickClientForm.attr('action'),
+                data: $quickClientForm.serialize(),
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).done(function (client) {
+                var option = new Option(client.name, client.id, true, true);
+                $clientSelect.append(option).trigger('change');
+                $quickClientForm[0].reset();
+                $('#quick-client-modal').modal('hide');
+            }).fail(function (xhr) {
+                var errors = xhr.responseJSON && xhr.responseJSON.errors ? xhr.responseJSON.errors : null;
+                var messages = [];
+
+                if (errors) {
+                    Object.keys(errors).forEach(function (field) {
+                        messages = messages.concat(errors[field]);
+                    });
+                } else {
+                    messages.push('Nao foi possivel criar o cliente.');
+                }
+
+                $quickClientErrors.html(messages.join('<br>')).show();
+            }).always(function () {
+                $quickClientSubmit.prop('disabled', false);
+            });
+        });
+
+        $('#quick-client-modal').on('hidden.bs.modal', function () {
+            $quickClientErrors.hide().empty();
+        });
+
+        $('#quick-client-create-provenience').on('click', function () {
+            var name = window.prompt('Nome da proveniencia');
+
+            if (!name) {
+                return;
+            }
+
+            $.ajax({
+                method: 'POST',
+                url: '{{ route('admin.proveniences.store') }}',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    name: name
+                },
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).done(function (provenience) {
+                var option = new Option(provenience.name, provenience.id, true, true);
+                $('#quick_client_provenience_id').append(option).trigger('change');
+            }).fail(function (xhr) {
+                var errors = xhr.responseJSON && xhr.responseJSON.errors ? xhr.responseJSON.errors : null;
+                alert(errors && errors.name ? errors.name[0] : 'Nao foi possivel criar a proveniencia.');
+            });
+        });
+    });
+</script>
+@endcan
+
+<script>
+    $(function () {
+        $('#create-financial-institution').on('click', function () {
+            var name = window.prompt('Nome da financeira');
+
+            if (!name) {
+                return;
+            }
+
+            $.ajax({
+                method: 'POST',
+                url: '{{ route('admin.financial-institutions.store') }}',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    name: name
+                },
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).done(function (financialInstitution) {
+                var option = new Option(financialInstitution.name, financialInstitution.id, true, true);
+                $('#financial_institution_id').append(option).trigger('change');
+            }).fail(function (xhr) {
+                var errors = xhr.responseJSON && xhr.responseJSON.errors ? xhr.responseJSON.errors : null;
+                alert(errors && errors.name ? errors.name[0] : 'Nao foi possivel criar a financeira.');
+            });
+        });
+    });
+</script>
 
 <script>
     var uploadedDocumentsMap = {}

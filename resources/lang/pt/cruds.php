@@ -131,6 +131,8 @@ return [
             'company_email_helper'    => ' ',
             'company_country'         => 'País da Empresa',
             'company_country_helper'  => ' ',
+            'provenience'             => 'Proveniencia',
+            'provenience_helper'      => ' ',
         ],
     ],
     'brand' => [

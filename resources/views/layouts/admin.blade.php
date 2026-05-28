@@ -41,8 +41,13 @@
                     $calendarAlertTasks = collect();
                     $uncheckedStateTransfers = collect();
                     $pendingTradeIns = collect();
+                    $rolePreviewIsRealAdmin = \App\Support\RolePreview::isRealAdmin(auth()->user());
+                    $rolePreviewActiveRole = $rolePreviewIsRealAdmin ? \App\Support\RolePreview::activeRole() : null;
+                    $rolePreviewRoles = $rolePreviewIsRealAdmin
+                        ? \App\Models\Role::orderBy('title')->get(['id', 'title'])
+                        : collect();
                     $canConvertTradeIns = auth()->check()
-                        && auth()->user()->roles()->whereIn('title', ['Admin', 'Gestão', 'Gestao', 'Stand'])->exists();
+                        && \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Gestão', 'Gestao', 'Stand']);
                     try {
                         if (\Illuminate\Support\Facades\Schema::hasTable('calendar_tasks')) {
                             $calendarAlertTasks = \App\Models\CalendarTask::query()
@@ -79,6 +84,30 @@
 
                 <div class="navbar-custom-menu">
                     <ul class="nav navbar-nav">
+                        @if($rolePreviewIsRealAdmin)
+                            <li style="padding: 8px 8px 0 0;">
+                                <div class="form-inline" style="white-space: nowrap;">
+                                    <form method="POST" action="{{ route('admin.role-preview.store') }}" style="display:inline-block;">
+                                        @csrf
+                                        <select class="form-control input-sm" name="role_id" onchange="this.form.submit()" title="Testar como role">
+                                            <option value="" disabled {{ $rolePreviewActiveRole ? '' : 'selected' }}>Role real</option>
+                                            @foreach($rolePreviewRoles as $rolePreviewRole)
+                                                <option value="{{ $rolePreviewRole->id }}" {{ optional($rolePreviewActiveRole)->id === $rolePreviewRole->id ? 'selected' : '' }}>
+                                                    {{ $rolePreviewRole->title }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </form>
+                                    @if($rolePreviewActiveRole)
+                                        <form method="POST" action="{{ route('admin.role-preview.destroy') }}" style="display:inline-block;">
+                                            @csrf
+                                            <input type="hidden" name="_method" value="DELETE">
+                                            <button class="btn btn-xs btn-default" type="submit">Reset</button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </li>
+                        @endif
                         <li>
                             <a href="#" data-toggle="modal" data-target="#system-shutdown-modal" title="Desligar sistema" style="background:#dd4b39;color:#fff;">
                                 <i class="fa fa-power-off"></i>

@@ -55,6 +55,9 @@
                                     {{ trans('cruds.client.fields.country') }}
                                 </th>
                                 <th>
+                                    {{ trans('cruds.client.fields.provenience') }}
+                                </th>
+                                <th>
                                     {{ trans('cruds.client.fields.company_name') }}
                                 </th>
                                 <th>
@@ -116,6 +119,14 @@
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
                                         @foreach($countries as $key => $item)
+                                            <option value="{{ $item->name }}">{{ $item->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td>
+                                    <select class="search">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        @foreach($proveniences as $key => $item)
                                             <option value="{{ $item->name }}">{{ $item->name }}</option>
                                         @endforeach
                                     </select>
@@ -219,6 +230,7 @@
 { data: 'phone', name: 'phone' },
 { data: 'email', name: 'email' },
 { data: 'country_name', name: 'country.name' },
+{ data: 'provenience_name', name: 'provenience.name' },
 { data: 'company_name', name: 'company_name' },
 { data: 'company_vat', name: 'company_vat' },
 { data: 'company_address', name: 'company_address' },
@@ -318,6 +330,7 @@ table.on('column-visibility.dt', function(e, settings, column, state) {
       { data: 'phone', name: 'phone' },
       { data: 'email', name: 'email' },
       { data: 'country_name', name: 'country.name' },
+      { data: 'provenience_name', name: 'provenience.name' },
       { data: 'company_name', name: 'company_name' },
       { data: 'company_vat', name: 'company_vat' },
       { data: 'company_address', name: 'company_address' },

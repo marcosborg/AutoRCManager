@@ -15,6 +15,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('/', 'HomeController@index')->name('home');
     Route::get('dashboard', 'DashboardController@index')->name('dashboard');
     Route::post('system-shutdown', 'SystemShutdownController@store')->name('system-shutdown.store');
+    Route::post('role-preview', 'RolePreviewController@store')->name('role-preview.store');
+    Route::delete('role-preview', 'RolePreviewController@destroy')->name('role-preview.destroy');
     Route::get('approvals', 'ApprovalController@index')->name('approvals.index');
     Route::get('gps-positions', 'GpsController@latest')->name('gps.positions');
     // Permissions
@@ -49,6 +51,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('clients/{client}/payments/{payment}', 'ClientController@showPayment')->name('clients.payments.show');
     Route::post('clients/{client}/payments', 'ClientController@storePayment')->name('clients.payments.store');
     Route::post('clients/{client}/charges', 'ClientController@storeCharge')->name('clients.charges.store');
+    Route::post('proveniences', 'ProvenienceController@store')->name('proveniences.store');
+    Route::post('financial-institutions', 'FinancialInstitutionController@store')->name('financial-institutions.store');
     Route::resource('clients', 'ClientController');
 
     // Brand
@@ -69,6 +73,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('vehicles/{vehicle}/supplier-payments/{payment}', 'VehicleController@destroySupplierPayment')->name('vehicles.supplier-payments.destroy');
     Route::delete('vehicles/{vehicle}/generic-payments/{payment}', 'VehicleController@destroyGenericPayment')->name('vehicles.generic-payments.destroy');
     Route::delete('vehicles/{vehicle}/client-payments/{payment}', 'VehicleController@destroyClientPayment')->name('vehicles.client-payments.destroy');
+    Route::post('vehicles/{vehicle}/send-to-workshop', 'VehicleController@sendToWorkshop')->name('vehicles.send-to-workshop');
     Route::get('vehicle-trade-ins', 'VehicleTradeInController@index')->name('vehicle-trade-ins.index');
     Route::get('vehicle-trade-ins/pending', 'VehicleTradeInController@pending')->name('vehicle-trade-ins.pending');
     Route::post('vehicles/{vehicle}/trade-ins', 'VehicleTradeInController@store')->name('vehicles.trade-ins.store');

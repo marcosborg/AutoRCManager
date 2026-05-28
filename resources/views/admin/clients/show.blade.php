@@ -91,6 +91,14 @@
                                 </tr>
                                 <tr>
                                     <th>
+                                        {{ trans('cruds.client.fields.provenience') }}
+                                    </th>
+                                    <td>
+                                        {{ $client->provenience->name ?? '' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
                                         {{ trans('cruds.client.fields.company_name') }}
                                     </th>
                                     <td>
