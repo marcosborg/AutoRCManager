@@ -13,6 +13,7 @@ Auth::routes(['register' => false]);
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'middleware' => ['auth']], function () {
     Route::get('/', 'HomeController@index')->name('home');
+    Route::get('iuc-due/export', 'HomeController@exportIucDue')->name('iuc-due.export');
     Route::get('dashboard', 'DashboardController@index')->name('dashboard');
     Route::post('system-shutdown', 'SystemShutdownController@store')->name('system-shutdown.store');
     Route::post('role-preview', 'RolePreviewController@store')->name('role-preview.store');

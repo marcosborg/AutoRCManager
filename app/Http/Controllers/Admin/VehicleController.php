@@ -353,7 +353,7 @@ class VehicleController extends Controller
 
     public function sendToWorkshop(Request $request, Vehicle $vehicle)
     {
-        abort_if(Gate::denies('repair_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if(! $this->canSendVehicleToWorkshop(), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $data = $request->validate([
             'work_type' => ['required', 'string', 'in:workshop,painting'],
@@ -379,8 +379,14 @@ class VehicleController extends Controller
             'timestamp' => now()->format('Y-m-d H:i:s'),
         ]);
 
+        if (Gate::allows('repair_edit')) {
+            return redirect()
+                ->route('admin.repairs.edit', $repair)
+                ->with('message', 'Viatura enviada para oficina e intervencao criada.');
+        }
+
         return redirect()
-            ->route('admin.repairs.edit', $repair)
+            ->route('admin.vehicles.edit', $vehicle)
             ->with('message', 'Viatura enviada para oficina e intervencao criada.');
     }
 
@@ -932,7 +938,6 @@ class VehicleController extends Controller
             'purchase_vat_value',
             'commission',
             'iuc_price',
-            'mes_iuc',
             'tow_price',
             'iuc_paid_date',
             'iuc_paid_value',
@@ -1033,6 +1038,17 @@ class VehicleController extends Controller
             return false;
         }
         return RolePreview::hasAnyEffectiveRole($user, ['Admin', 'Gestão', 'Gestao', 'Stand']);
+    }
+
+    private function canSendVehicleToWorkshop(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        return Gate::allows('repair_create')
+            || RolePreview::hasAnyEffectiveRole($user, ['Stand']);
     }
 
     private function vehicleHasAllDocuments(Vehicle $vehicle): bool

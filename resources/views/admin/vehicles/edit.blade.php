@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('styles')
 <style>
     .floating-save-btn {
@@ -37,6 +37,12 @@
                 </div>
                 <div class="panel-body">
                     @include('admin.vehicles.partials.lotFinancialStatus')
+                    <form id="vehicle-trade-in-create-form" method="POST" action="{{ route('admin.vehicles.trade-ins.store', $vehicle) }}" enctype="multipart/form-data">
+                        @csrf
+                    </form>
+                    <form id="vehicle-send-to-workshop-form" method="POST" action="{{ route('admin.vehicles.send-to-workshop', $vehicle) }}">
+                        @csrf
+                    </form>
                     <form id="vehicle-edit-form" method="POST" action="{{ route('admin.vehicles.update', [$vehicle->id]) }}" enctype="multipart/form-data">
                         @method('PUT')
                         @csrf
@@ -271,32 +277,6 @@
                                         <span class="help-block" role="alert">{{ $errors->first('iuc_price') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.iuc_price_helper') }}</span>
-                                </div>
-                                <div class="form-group {{ $errors->has('mes_iuc') ? 'has-error' : '' }}">
-                                    <label for="mes_iuc">{{ trans('cruds.vehicle.fields.mes_iuc') }}</label>
-                                    <select class="form-control" name="mes_iuc" id="mes_iuc">
-                                        <option value></option>
-                                        @foreach([
-                                            'Janeiro',
-                                            'Fevereiro',
-                                            'Marco',
-                                            'Abril',
-                                            'Maio',
-                                            'Junho',
-                                            'Julho',
-                                            'Agosto',
-                                            'Setembro',
-                                            'Outubro',
-                                            'Novembro',
-                                            'Dezembro',
-                                        ] as $month)
-                                            <option value="{{ $month }}" {{ old('mes_iuc', $vehicle->mes_iuc) === $month ? 'selected' : '' }}>{{ $month }}</option>
-                                        @endforeach
-                                    </select>
-                                    @if($errors->has('mes_iuc'))
-                                        <span class="help-block" role="alert">{{ $errors->first('mes_iuc') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.mes_iuc_helper') }}</span>
                                 </div>
                                 <div class="form-group {{ $errors->has('commission') ? 'has-error' : '' }}">
                                     <label for="commission">{{ trans('cruds.vehicle.fields.commission') }}</label>
@@ -891,6 +871,32 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.sales_iuc_helper') }}</span>
                                 </div>
+                                <div class="form-group {{ $errors->has('mes_iuc') ? 'has-error' : '' }}">
+                                    <label for="mes_iuc">{{ trans('cruds.vehicle.fields.mes_iuc') }}</label>
+                                    <select class="form-control" name="mes_iuc" id="mes_iuc">
+                                        <option value></option>
+                                        @foreach([
+                                            'Janeiro',
+                                            'Fevereiro',
+                                            'Marco',
+                                            'Abril',
+                                            'Maio',
+                                            'Junho',
+                                            'Julho',
+                                            'Agosto',
+                                            'Setembro',
+                                            'Outubro',
+                                            'Novembro',
+                                            'Dezembro',
+                                        ] as $month)
+                                            <option value="{{ $month }}" {{ old('mes_iuc', $vehicle->mes_iuc) === $month ? 'selected' : '' }}>{{ $month }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if($errors->has('mes_iuc'))
+                                        <span class="help-block" role="alert">{{ $errors->first('mes_iuc') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.mes_iuc_helper') }}</span>
+                                </div>
                                 <div class="form-group {{ $errors->has('sales_tow') ? 'has-error' : '' }}">
                                     <label for="sales_tow">{{ trans('cruds.vehicle.fields.sales_tow') }}</label>
                                     <input class="form-control" type="number" name="sales_tow" id="sales_tow" value="{{ old('sales_tow', $vehicle->sales_tow) }}" step="0.01">
@@ -1120,21 +1126,11 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.sale_notes_helper') }}</span>
                                 </div>
+                                @include('admin.vehicles.partials.sendToWorkshop')
+                                @include('admin.vehicles.partials.tradeIns')
                             </div>
                         </div>
                     </form>
-                    <form id="vehicle-trade-in-create-form" method="POST" action="{{ route('admin.vehicles.trade-ins.store', $vehicle) }}" enctype="multipart/form-data">
-                        @csrf
-                    </form>
-                    <form id="vehicle-send-to-workshop-form" method="POST" action="{{ route('admin.vehicles.send-to-workshop', $vehicle) }}">
-                        @csrf
-                    </form>
-                    <div class="row">
-                        <div class="col-md-6 col-md-offset-6">
-                            @include('admin.vehicles.partials.sendToWorkshop')
-                            @include('admin.vehicles.partials.tradeIns')
-                        </div>
-                    </div>
 
                     @if($showWorkshopSection)
                         <div class="panel panel-default">
@@ -1501,13 +1497,13 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10 },
         success: function (file, response) {
-            $('form').append('<input type="hidden" name="documents[]" value="' + response.name + '">')
+            $('#vehicle-edit-form').append('<input type="hidden" name="documents[]" value="' + response.name + '">')
             uploadedDocumentsMap[file.name] = response.name
         },
         removedfile: function (file) {
             file.previewElement.remove()
             var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedDocumentsMap[file.name]
-            $('form').find('input[name="documents[]"][value="' + name + '"]').remove()
+            $('#vehicle-edit-form').find('input[name="documents[]"][value="' + name + '"]').remove()
         },
         init: function () {
             @if(isset($vehicle) && $vehicle->documents)
@@ -1523,7 +1519,7 @@
                         }
                         window.open(currentFile.original_url, '_blank')
                     })
-                    $('form').append('<input type="hidden" name="documents[]" value="' + currentFile.file_name + '">')
+                    $('#vehicle-edit-form').append('<input type="hidden" name="documents[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },
@@ -1545,13 +1541,13 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10 },
         success: function (file, response) {
-            $('form').append('<input type="hidden" name="additional_documents[]" value="' + response.name + '">')
+            $('#vehicle-edit-form').append('<input type="hidden" name="additional_documents[]" value="' + response.name + '">')
             uploadedAdditionalDocumentsMap[file.name] = response.name
         },
         removedfile: function (file) {
             file.previewElement.remove()
             var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedAdditionalDocumentsMap[file.name]
-            $('form').find('input[name="additional_documents[]"][value="' + name + '"]').remove()
+            $('#vehicle-edit-form').find('input[name="additional_documents[]"][value="' + name + '"]').remove()
         },
         init: function () {
             @if(isset($vehicle) && $vehicle->additional_documents)
@@ -1567,7 +1563,7 @@
                         }
                         window.open(currentFile.original_url, '_blank')
                     })
-                    $('form').append('<input type="hidden" name="additional_documents[]" value="' + currentFile.file_name + '">')
+                    $('#vehicle-edit-form').append('<input type="hidden" name="additional_documents[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },
@@ -1643,7 +1639,7 @@
                                             ? `${genericErrorText}\n${xhr.status} ${response.message}`
                                             : `${genericErrorText}\n ${xhr.status} ${xhr.statusText}`);
                                     }
-                                    $('form').append('<input type="hidden" name="ck-media[]" value="' + response.id + '">');
+                                    $('#vehicle-edit-form').append('<input type="hidden" name="ck-media[]" value="' + response.id + '">');
                                     resolve({ default: response.url });
                                 });
 
@@ -1691,13 +1687,13 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10, width: 4096, height: 4096 },
         success: function (file, response) {
-            $('form').append('<input type="hidden" name="photos[]" value="' + response.name + '">')
+            $('#vehicle-edit-form').append('<input type="hidden" name="photos[]" value="' + response.name + '">')
             uploadedPhotosMap[file.name] = response.name
         },
         removedfile: function (file) {
             file.previewElement.remove()
             var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPhotosMap[file.name]
-            $('form').find('input[name="photos[]"][value="' + name + '"]').remove()
+            $('#vehicle-edit-form').find('input[name="photos[]"][value="' + name + '"]').remove()
         },
         init: function () {
             @if(isset($vehicle) && $vehicle->photos)
@@ -1707,7 +1703,7 @@
                     this.options.addedfile.call(this, file)
                     this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
                     file.previewElement.classList.add('dz-complete')
-                    $('form').append('<input type="hidden" name="photos[]" value="' + file.file_name + '">')
+                    $('#vehicle-edit-form').append('<input type="hidden" name="photos[]" value="' + file.file_name + '">')
                     const img = file.previewElement.querySelector("img");
                     if (img) {
                         img.style.cursor = "pointer";
@@ -1745,13 +1741,13 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10 },
         success: function (file, response) {
-            $('form').append('<input type="hidden" name="invoice[]" value="' + response.name + '">')
+            $('#vehicle-edit-form').append('<input type="hidden" name="invoice[]" value="' + response.name + '">')
             uploadedInvoiceMap[file.name] = response.name
         },
         removedfile: function (file) {
             file.previewElement.remove()
             var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedInvoiceMap[file.name]
-            $('form').find('input[name="invoice[]"][value="' + name + '"]').remove()
+            $('#vehicle-edit-form').find('input[name="invoice[]"][value="' + name + '"]').remove()
         },
         init: function () {
             @if(isset($vehicle) && $vehicle->invoice)
@@ -1767,7 +1763,7 @@
                         }
                         window.open(currentFile.original_url, '_blank')
                     })
-                    $('form').append('<input type="hidden" name="invoice[]" value="' + currentFile.file_name + '">')
+                    $('#vehicle-edit-form').append('<input type="hidden" name="invoice[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },
@@ -1789,13 +1785,13 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10 },
         success: function (file, response) {
-            $('form').append('<input type="hidden" name="pdfs[]" value="' + response.name + '">')
+            $('#vehicle-edit-form').append('<input type="hidden" name="pdfs[]" value="' + response.name + '">')
             uploadedPdfsMap[file.name] = response.name
         },
         removedfile: function (file) {
             file.previewElement.remove()
             var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPdfsMap[file.name]
-            $('form').find('input[name="pdfs[]"][value="' + name + '"]').remove()
+            $('#vehicle-edit-form').find('input[name="pdfs[]"][value="' + name + '"]').remove()
         },
         init: function () {
             @if(isset($vehicle) && $vehicle->pdfs)
@@ -1811,7 +1807,7 @@
                         }
                         window.open(currentFile.original_url, '_blank')
                     })
-                    $('form').append('<input type="hidden" name="pdfs[]" value="' + currentFile.file_name + '">')
+                    $('#vehicle-edit-form').append('<input type="hidden" name="pdfs[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },
@@ -1834,13 +1830,13 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10, width: 4096, height: 4096 },
         success: function (file, response) {
-            $('form').append('<input type="hidden" name="inicial[]" value="' + response.name + '">')
+            $('#vehicle-edit-form').append('<input type="hidden" name="inicial[]" value="' + response.name + '">')
             uploadedInicialMap[file.name] = response.name
         },
         removedfile: function (file) {
             file.previewElement.remove()
             var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedInicialMap[file.name]
-            $('form').find('input[name="inicial[]"][value="' + name + '"]').remove()
+            $('#vehicle-edit-form').find('input[name="inicial[]"][value="' + name + '"]').remove()
         },
         init: function () {
             @if(isset($vehicle) && $vehicle->inicial)
@@ -1850,7 +1846,7 @@
                     this.options.addedfile.call(this, file)
                     this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
                     file.previewElement.classList.add('dz-complete')
-                    $('form').append('<input type="hidden" name="inicial[]" value="' + file.file_name + '">')
+                    $('#vehicle-edit-form').append('<input type="hidden" name="inicial[]" value="' + file.file_name + '">')
                     const img = file.previewElement.querySelector("img");
                     if (img) {
                         img.style.cursor = "pointer";
@@ -1888,13 +1884,13 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10 },
         success: function (file, response) {
-            $('form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + response.name + '">')
+            $('#vehicle-edit-form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + response.name + '">')
             uploadedWithdrawalAuthorizationFileMap[file.name] = response.name
         },
         removedfile: function (file) {
             file.previewElement.remove()
             var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedWithdrawalAuthorizationFileMap[file.name]
-            $('form').find('input[name="withdrawal_authorization_file[]"][value="' + name + '"]').remove()
+            $('#vehicle-edit-form').find('input[name="withdrawal_authorization_file[]"][value="' + name + '"]').remove()
         },
         init: function () {
             @if(isset($vehicle) && $vehicle->withdrawal_authorization_file)
@@ -1910,7 +1906,7 @@
                         }
                         window.open(currentFile.original_url, '_blank')
                     })
-                    $('form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + currentFile.file_name + '">')
+                    $('#vehicle-edit-form').append('<input type="hidden" name="withdrawal_authorization_file[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },
@@ -2305,13 +2301,13 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10 },
         success: function (file, response) {
-            $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + response.name + '">')
+            $('#vehicle-edit-form').append('<input type="hidden" name="payment_comprovant[]" value="' + response.name + '">')
             uploadedPaymentComprovantMap[file.name] = response.name
         },
         removedfile: function (file) {
             file.previewElement.remove()
             var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPaymentComprovantMap[file.name]
-            $('form').find('input[name="payment_comprovant[]"][value="' + name + '"]').remove()
+            $('#vehicle-edit-form').find('input[name="payment_comprovant[]"][value="' + name + '"]').remove()
         },
         init: function () {
             @if(isset($vehicle) && $vehicle->payment_comprovant)
@@ -2327,7 +2323,7 @@
                         }
                         window.open(currentFile.original_url, '_blank')
                     })
-                    $('form').append('<input type="hidden" name="payment_comprovant[]" value="' + currentFile.file_name + '">')
+                    $('#vehicle-edit-form').append('<input type="hidden" name="payment_comprovant[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },

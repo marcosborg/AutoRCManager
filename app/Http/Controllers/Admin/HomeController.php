@@ -132,17 +132,7 @@ class HomeController
             ];
 
         $currentIucMonthLabel = $this->iucMonthLabel($today);
-        $iucDueVehicles = Schema::hasColumn('vehicles', 'mes_iuc')
-            ? Vehicle::with(['brand', 'general_state'])
-                ->where(function ($query) use ($today) {
-                    foreach ($this->iucMonthSearchValues($today) as $monthValue) {
-                        $query->orWhereRaw('UPPER(TRIM(mes_iuc)) = ?', [$monthValue]);
-                    }
-                })
-                ->orderByRaw('COALESCE(NULLIF(license, ""), foreign_license, id)')
-                ->limit(50)
-                ->get()
-            : collect();
+        $iucDueVehicles = $this->iucDueVehicles($today, 50);
 
         return view('home', compact(
             'tasksToday',
@@ -156,6 +146,47 @@ class HomeController
         ));
     }
 
+    public function exportIucDue()
+    {
+        $today = Carbon::today();
+        $monthLabel = $this->iucMonthLabel($today);
+        $vehicles = $this->iucDueVehicles($today);
+        $filename = 'iuc-a-pagamento-' . $today->format('Y-m') . '.xls';
+
+        return response()->streamDownload(function () use ($vehicles, $monthLabel) {
+            echo '<html><head><meta charset="UTF-8"></head><body>';
+            echo '<table border="1">';
+            echo '<thead><tr>';
+            foreach (['Matricula', 'Marca', 'Modelo', 'Estado', 'Mes IUC', 'Valor IUC'] as $heading) {
+                echo '<th>' . htmlspecialchars($heading, ENT_QUOTES, 'UTF-8') . '</th>';
+            }
+            echo '</tr></thead><tbody>';
+
+            foreach ($vehicles as $vehicle) {
+                $license = $vehicle->license ?: $vehicle->foreign_license ?: 'Sem matricula';
+                $values = [
+                    $license,
+                    $vehicle->brand->name ?? '',
+                    $vehicle->model ?? '',
+                    $vehicle->general_state->name ?? '',
+                    $vehicle->mes_iuc ?? $monthLabel,
+                    number_format((float) ($vehicle->sales_iuc ?? 0), 2, ',', '.'),
+                ];
+
+                echo '<tr>';
+                foreach ($values as $value) {
+                    echo '<td style="mso-number-format:\'@\';">' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '</td>';
+                }
+                echo '</tr>';
+            }
+
+            echo '</tbody></table>';
+            echo '</body></html>';
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+        ]);
+    }
+
     private function salesTotal(Vehicle $vehicle): float
     {
         return (float) ($vehicle->pvp ?? 0)
@@ -163,6 +194,27 @@ class HomeController
             + (float) ($vehicle->sales_tow ?? 0)
             + (float) ($vehicle->sales_transfer ?? 0)
             + (float) ($vehicle->sales_others ?? 0);
+    }
+
+    private function iucDueVehicles(Carbon $today, ?int $limit = null)
+    {
+        if (! Schema::hasColumn('vehicles', 'mes_iuc')) {
+            return collect();
+        }
+
+        $query = Vehicle::with(['brand', 'general_state'])
+            ->where(function ($query) use ($today) {
+                foreach ($this->iucMonthSearchValues($today) as $monthValue) {
+                    $query->orWhereRaw('UPPER(TRIM(mes_iuc)) = ?', [$monthValue]);
+                }
+            })
+            ->orderByRaw('COALESCE(NULLIF(license, ""), foreign_license, id)');
+
+        if ($limit !== null) {
+            $query->limit($limit);
+        }
+
+        return $query->get();
     }
 
     private function iucMonthLabel(Carbon $date): string

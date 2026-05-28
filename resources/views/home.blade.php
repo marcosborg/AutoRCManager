@@ -202,9 +202,14 @@
     <div class="row">
         <div class="col-md-12">
             <div class="panel panel-default">
-                <div class="panel-heading">
+                <div class="panel-heading clearfix">
                     IUC a pagamento em {{ $currentIucMonthLabel ?? 'este mes' }}
-                    <span class="label label-info pull-right">{{ $iucDueVehicles->count() ?? 0 }}</span>
+                    <div class="pull-right">
+                        <a href="{{ route('admin.iuc-due.export') }}" class="btn btn-xs btn-success">
+                            <i class="fa fa-file-excel-o"></i> Excel
+                        </a>
+                        <span class="label label-info">{{ $iucDueVehicles->count() ?? 0 }}</span>
+                    </div>
                 </div>
                 <div class="panel-body table-responsive">
                     <table class="table table-striped table-hover">
