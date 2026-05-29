@@ -15,6 +15,13 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('/', 'HomeController@index')->name('home');
     Route::get('iuc-due/export', 'HomeController@exportIucDue')->name('iuc-due.export');
     Route::get('dashboard', 'DashboardController@index')->name('dashboard');
+    Route::get('cash', 'CashController@index')->name('cash.index');
+    Route::post('cash/movements', 'CashController@store')->name('cash.movements.store');
+    Route::post('cash/movements/{operation}/accounted', 'CashController@toggleAccounted')->name('cash.movements.accounted');
+    Route::post('cash/transfers', 'CashController@transfer')->name('cash.transfers.store');
+    Route::post('cash/departments', 'CashController@storeDepartment')->name('cash.departments.store');
+    Route::post('cash/categories', 'CashController@storeCategory')->name('cash.categories.store');
+    Route::post('cash/boxes', 'CashController@storeCashBox')->name('cash.boxes.store');
     Route::post('system-shutdown', 'SystemShutdownController@store')->name('system-shutdown.store');
     Route::post('role-preview', 'RolePreviewController@store')->name('role-preview.store');
     Route::delete('role-preview', 'RolePreviewController@destroy')->name('role-preview.destroy');

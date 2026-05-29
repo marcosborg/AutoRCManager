@@ -24,6 +24,14 @@
                     </a>
                 </li>
             @endcan
+            @if(auth()->check() && auth()->user()->roles->contains(fn ($role) => in_array($role->title, ['Admin', 'Adm'], true)))
+                <li class="{{ request()->is("admin/cash") || request()->is("admin/cash/*") ? "active" : "" }}">
+                    <a href="{{ route("admin.cash.index") }}">
+                        <i class="fa-fw fas fa-wallet"></i>
+                        <span>Caixa</span>
+                    </a>
+                </li>
+            @endif
             @can('user_management_access')
                 <li class="treeview">
                     <a href="#">
