@@ -87,6 +87,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('vehicles/{vehicle}/trade-ins', 'VehicleTradeInController@store')->name('vehicles.trade-ins.store');
     Route::post('vehicle-trade-ins/{tradeIn}/convert', 'VehicleTradeInController@convert')->name('vehicle-trade-ins.convert');
     Route::post('vehicle-trade-ins/{tradeIn}/reject', 'VehicleTradeInController@reject')->name('vehicle-trade-ins.reject');
+    Route::get('stand-cash-payment-approvals', 'StandCashPaymentApprovalController@index')->name('stand-cash-payment-approvals.index');
+    Route::post('stand-cash-payment-approvals/{approval}/approve', 'StandCashPaymentApprovalController@approve')->name('stand-cash-payment-approvals.approve');
+    Route::post('stand-cash-payment-approvals/{approval}/reject', 'StandCashPaymentApprovalController@reject')->name('stand-cash-payment-approvals.reject');
     Route::resource('vehicles', 'VehicleController');
     Route::get('vehicles/{vehicle}/timeline', 'VehicleTimelineController@show')->name('vehicles.timeline');
     Route::get('vehicles/{vehicle}/timeline/export/pdf', 'VehicleTimelineExportController@exportPdf')->name('vehicles.timeline.export.pdf');

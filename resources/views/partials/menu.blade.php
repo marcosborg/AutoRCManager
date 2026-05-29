@@ -253,14 +253,14 @@
                     </a>
                 </li>
             @endcan
-            @if(auth()->check() && \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Gestão', 'Gestao']))
+            @can('vehicle_trade_in_convert')
                 <li class="{{ request()->is("admin/vehicle-trade-ins") || request()->is("admin/vehicle-trade-ins/*") ? "active" : "" }}">
                     <a href="{{ route('admin.vehicle-trade-ins.index', ['status' => \App\Models\VehicleTradeIn::STATUS_CONVERTED]) }}">
                         <i class="fa-fw fas fa-exchange-alt"></i>
                         <span>Retomas</span>
                     </a>
                 </li>
-            @endif
+            @endcan
             @can('sale_access')
                 @foreach (\App\Models\GeneralState::orderByRaw('COALESCE(position, 999999)')->orderBy('id')->get() as $key => $generalState)
                 <li class="{{ request()->is("admin/sales") || request()->is("admin/sales/*") ? "active" : "" }}">

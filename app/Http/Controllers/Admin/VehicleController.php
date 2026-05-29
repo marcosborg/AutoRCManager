@@ -9,6 +9,7 @@ use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\MassDestroyVehicleRequest;
 use App\Http\Requests\StoreVehicleRequest;
 use App\Http\Requests\UpdateVehicleRequest;
+use App\Models\AccountOperation;
 use App\Models\Brand;
 use App\Models\Carrier;
 use App\Models\Client;
@@ -17,6 +18,7 @@ use App\Models\PaymentStatus;
 use App\Models\PickupState;
 use App\Models\Provenience;
 use App\Models\Repair;
+use App\Models\StandCashPaymentApproval;
 use App\Models\Suplier;
 use App\Models\Vehicle;
 use App\Models\VehicleClientPayment;
@@ -616,6 +618,16 @@ class VehicleController extends Controller
         abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $clientPayment = VehicleClientPayment::where('vehicle_id', $vehicle->id)->findOrFail($payment);
+        $approval = StandCashPaymentApproval::where('vehicle_client_payment_id', $clientPayment->id)->first();
+
+        if ($approval) {
+            if ($approval->cash_operation_id) {
+                AccountOperation::where('id', $approval->cash_operation_id)->delete();
+            }
+
+            $approval->delete();
+        }
+
         $clientPayment->delete();
 
         if ($request->expectsJson()) {
@@ -1015,11 +1027,34 @@ class VehicleController extends Controller
             return;
         }
 
-        $vehicle->client_payments()->create([
+        $payment = $vehicle->client_payments()->create([
             'paid_at' => $date,
             'amount' => (float) $amount,
             'payment_method_id' => (int) $paymentMethodId,
         ]);
+
+        if ($this->shouldRequestStandCashValidation($request, (int) $paymentMethodId)) {
+            StandCashPaymentApproval::firstOrCreate([
+                'vehicle_client_payment_id' => $payment->id,
+            ], [
+                'vehicle_id' => $vehicle->id,
+                'created_by_id' => $request->user()?->id,
+                'status' => StandCashPaymentApproval::STATUS_PENDING,
+            ]);
+        }
+    }
+
+    private function shouldRequestStandCashValidation(UpdateVehicleRequest $request, int $paymentMethodId): bool
+    {
+        if (! RolePreview::hasAnyEffectiveRole($request->user(), ['Stand'])) {
+            return false;
+        }
+
+        $paymentMethod = PaymentMethod::find($paymentMethodId);
+        $normalizedName = Str::lower(Str::ascii($paymentMethod->name ?? ''));
+
+        return str_contains($normalizedName, 'numerario')
+            || str_contains($normalizedName, 'dinheiro');
     }
 
     private function calculateSalesFinalTotal(Vehicle $vehicle): float
@@ -1037,7 +1072,8 @@ class VehicleController extends Controller
         if (! $user) {
             return false;
         }
-        return RolePreview::hasAnyEffectiveRole($user, ['Admin', 'Gestão', 'Gestao', 'Stand']);
+        return Gate::allows('vehicle_trade_in_convert')
+            || RolePreview::hasAnyEffectiveRole($user, ['Admin', 'Gestão', 'Gestao', 'Stand Adm']);
     }
 
     private function canSendVehicleToWorkshop(): bool

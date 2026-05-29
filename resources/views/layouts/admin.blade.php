@@ -41,13 +41,16 @@
                     $calendarAlertTasks = collect();
                     $uncheckedStateTransfers = collect();
                     $pendingTradeIns = collect();
+                    $pendingStandCashApprovals = collect();
                     $rolePreviewIsRealAdmin = \App\Support\RolePreview::isRealAdmin(auth()->user());
                     $rolePreviewActiveRole = $rolePreviewIsRealAdmin ? \App\Support\RolePreview::activeRole() : null;
                     $rolePreviewRoles = $rolePreviewIsRealAdmin
                         ? \App\Models\Role::orderBy('title')->get(['id', 'title'])
                         : collect();
                     $canConvertTradeIns = auth()->check()
-                        && \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Gestão', 'Gestao']);
+                        && \Illuminate\Support\Facades\Gate::allows('vehicle_trade_in_convert');
+                    $canValidateStandCash = auth()->check()
+                        && \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Adm', 'Stand Adm']);
                     try {
                         if (\Illuminate\Support\Facades\Schema::hasTable('calendar_tasks')) {
                             $calendarAlertTasks = \App\Models\CalendarTask::query()
@@ -75,10 +78,19 @@
                                 ->limit(10)
                                 ->get();
                         }
+
+                        if ($canValidateStandCash && \Illuminate\Support\Facades\Schema::hasTable('stand_cash_payment_approvals')) {
+                            $pendingStandCashApprovals = \App\Models\StandCashPaymentApproval::with(['payment', 'vehicle.brand', 'created_by'])
+                                ->where('status', \App\Models\StandCashPaymentApproval::STATUS_PENDING)
+                                ->orderByDesc('created_at')
+                                ->limit(10)
+                                ->get();
+                        }
                     } catch (\Throwable $exception) {
                         $calendarAlertTasks = collect();
                         $uncheckedStateTransfers = collect();
                         $pendingTradeIns = collect();
+                        $pendingStandCashApprovals = collect();
                     }
                 @endphp
 
@@ -144,6 +156,42 @@
                                         </ul>
                                     </li>
                                     <li class="footer"><a href="{{ route('admin.vehicle-trade-ins.index', ['status' => \App\Models\VehicleTradeIn::STATUS_PENDING]) }}">Ver retomas pendentes</a></li>
+                                </ul>
+                            </li>
+                        @endif
+                        @if($canValidateStandCash)
+                            <li class="dropdown notifications-menu">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="Numerário do Stand por validar">
+                                    <i class="fa fa-money"></i>
+                                    @if($pendingStandCashApprovals->count())
+                                        <span class="label label-danger">{{ $pendingStandCashApprovals->count() }}</span>
+                                    @endif
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li class="header">
+                                        {{ $pendingStandCashApprovals->count() ? $pendingStandCashApprovals->count() . ' pagamentos em numerário por validar' : 'Sem numerário por validar' }}
+                                    </li>
+                                    <li>
+                                        <ul class="menu">
+                                            @forelse($pendingStandCashApprovals as $approval)
+                                                <li>
+                                                    <a href="{{ route('admin.stand-cash-payment-approvals.index') }}">
+                                                        <i class="fa fa-money text-red"></i>
+                                                        {{ $approval->vehicle->license ?? $approval->vehicle->foreign_license ?? ('Viatura #' . $approval->vehicle_id) }}
+                                                        - {{ number_format((float) optional($approval->payment)->amount, 2, ',', '.') }} EUR
+                                                        <div class="text-muted small">Criado por {{ $approval->created_by->name ?? '-' }}</div>
+                                                    </a>
+                                                </li>
+                                            @empty
+                                                <li>
+                                                    <a href="{{ route('admin.stand-cash-payment-approvals.index') }}">
+                                                        <i class="fa fa-check text-green"></i> Sem numerário por validar.
+                                                    </a>
+                                                </li>
+                                            @endforelse
+                                        </ul>
+                                    </li>
+                                    <li class="footer"><a href="{{ route('admin.stand-cash-payment-approvals.index') }}">Validar numerário do Stand</a></li>
                                 </ul>
                             </li>
                         @endif
