@@ -598,7 +598,7 @@
                                 </div>
                             </div>
 @endcan
-                            @can('financial_sensitive_access')
+                            @if($canManageSupplierPayments)
                             @php
                                 $rvMoney = function ($value) {
                                     return number_format((float) $value, 2, ',', '.') . ' EUR';
@@ -606,7 +606,7 @@
                             @endphp
                             <div class="col-md-12">
                                 <div class="panel panel-default">
-                                    <div class="panel-heading">Visao Rafael</div>
+                                    <div class="panel-heading">Registo central</div>
                                     <div class="panel-body">
                                         <div class="row">
                                             <div class="col-md-6">
@@ -708,7 +708,7 @@
                                     </div>
                                 </div>
                             </div>
-                            @endcan
+                            @endif
                             @cannot('financial_sensitive_access')
                                 @canany(['suplier_access', 'suplier_show', 'suplier_edit'])
                                     <div class="col-md-3">
