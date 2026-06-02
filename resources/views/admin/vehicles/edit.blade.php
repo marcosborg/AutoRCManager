@@ -727,7 +727,7 @@
                                     </div>
                                 @endcanany
                             @endcannot
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <div class="form-group {{ $errors->has('inicial') ? 'has-error' : '' }}">
                                     <label for="inicial">{{ trans('cruds.vehicle.fields.inicial') }}</label>
                                     <div class="needsclick dropzone" id="inicial-dropzone">
@@ -737,7 +737,9 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.inicial_helper') }}</span>
                                 </div>
-                                @can('financial_sensitive_access')
+                            </div>
+                            @can('financial_sensitive_access')
+                            <div class="col-md-6">
                                 <div class="form-group {{ $errors->has('invoice') ? 'has-error' : '' }}">
                                     <label for="invoice">{{ trans('cruds.vehicle.fields.invoice') }}</label>
                                     <div class="needsclick dropzone" id="invoice-dropzone">
@@ -747,6 +749,8 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.invoice_helper') }}</span>
                                 </div>
+                            </div>
+                            <div class="col-md-6">
                                 <div class="form-group {{ $errors->has('pdfs') ? 'has-error' : '' }}">
                                     <label for="pdfs">{{ trans('cruds.vehicle.fields.pdfs') }}</label>
                                     <div class="needsclick dropzone" id="pdfs-dropzone">
@@ -756,8 +760,8 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.pdfs_helper') }}</span>
                                 </div>
-                                @endcan
                             </div>
+                            @endcan
                         </div>
 
                         @php
