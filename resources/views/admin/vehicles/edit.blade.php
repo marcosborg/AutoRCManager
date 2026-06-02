@@ -24,6 +24,34 @@
         opacity: 0.7;
         pointer-events: none;
     }
+
+    #photos-dropzone .dz-preview {
+        cursor: grab;
+        position: relative;
+    }
+
+    #photos-dropzone .dz-preview:active {
+        cursor: grabbing;
+    }
+
+    #photos-dropzone .dz-preview.is-cover-photo::before {
+        content: 'Capa';
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        z-index: 10;
+        padding: 2px 7px;
+        border-radius: 3px;
+        background: rgba(0, 0, 0, 0.72);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    #photos-dropzone .sortable-ghost {
+        opacity: 0.45;
+    }
 </style>
 @endsection
 @section('content')
@@ -348,6 +376,7 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.payment_date_helper') }}</span>
                                 </div>
+                                @if($canManageSupplierPayments)
                                 <div class="form-group {{ $errors->has('supplier_payment_date') ? 'has-error' : '' }}">
                                     <label for="supplier_payment_date">Data pagamento fornecedor</label>
                                     <input class="form-control date" type="text" name="supplier_payment_date" id="supplier_payment_date" value="{{ old('supplier_payment_date') }}">
@@ -373,6 +402,13 @@
                                         <span class="help-block" role="alert">{{ $errors->first('supplier_payment_method_id') }}</span>
                                     @endif
                                 </div>
+                                <div class="form-group {{ $errors->has('supplier_payment_proof') ? 'has-error' : '' }}">
+                                    <label for="supplier_payment_proof">Comprovativo pagamento fornecedor</label>
+                                    <input class="form-control" type="file" name="supplier_payment_proof" id="supplier_payment_proof">
+                                    @if($errors->has('supplier_payment_proof'))
+                                        <span class="help-block" role="alert">{{ $errors->first('supplier_payment_proof') }}</span>
+                                    @endif
+                                </div>
                                 <div class="panel panel-default" id="supplier-payments-panel">
                                     <div class="panel-heading">Pagamentos ao fornecedor</div>
                                     <div class="panel-body" style="padding: 10px;">
@@ -394,6 +430,7 @@
                                                         <th>Data</th>
                                                         <th>Valor</th>
                                                         <th>Meio</th>
+                                                        <th>Comprovativo</th>
                                                         <th>Ações</th>
                                                     </tr>
                                                 </thead>
@@ -403,6 +440,16 @@
                                                             <td>{{ $supplierPayment->paid_at }}</td>
                                                             <td>{{ number_format((float) $supplierPayment->amount, 2, ',', '.') }} EUR</td>
                                                             <td>{{ $supplierPayment->payment_method->name ?? '-' }}</td>
+                                                            <td>
+                                                                @php
+                                                                    $supplierProof = $supplierPayment->proof_file->first();
+                                                                @endphp
+                                                                @if($supplierProof)
+                                                                    <a href="{{ $supplierProof->getUrl() }}" target="_blank" rel="noopener">Abrir</a>
+                                                                @else
+                                                                    -
+                                                                @endif
+                                                            </td>
                                                             <td>
                                                                 <button
                                                                     type="button"
@@ -415,7 +462,7 @@
                                                         </tr>
                                                     @empty
                                                         <tr>
-                                                            <td colspan="4">Sem pagamentos registados.</td>
+                                                            <td colspan="5">Sem pagamentos registados.</td>
                                                         </tr>
                                                     @endforelse
                                                 </tbody>
@@ -423,6 +470,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                @endif
                                 <div class="form-group {{ $errors->has('generic_payment_expense_label') ? 'has-error' : '' }}">
                                     <label for="generic_payment_expense_label">Despesa (livre)</label>
                                     <input class="form-control" type="text" name="generic_payment_expense_label" id="generic_payment_expense_label" value="{{ old('generic_payment_expense_label') }}">
@@ -455,6 +503,13 @@
                                         <span class="help-block" role="alert">{{ $errors->first('generic_payment_method_id') }}</span>
                                     @endif
                                 </div>
+                                <div class="form-group {{ $errors->has('generic_payment_proof') ? 'has-error' : '' }}">
+                                    <label for="generic_payment_proof">Comprovativo pagamento</label>
+                                    <input class="form-control" type="file" name="generic_payment_proof" id="generic_payment_proof">
+                                    @if($errors->has('generic_payment_proof'))
+                                        <span class="help-block" role="alert">{{ $errors->first('generic_payment_proof') }}</span>
+                                    @endif
+                                </div>
                                 <div class="panel panel-default" id="generic-payments-panel">
                                     <div class="panel-heading">Pagamentos genericos da viatura</div>
                                     <div class="panel-body" style="padding: 10px;">
@@ -473,6 +528,7 @@
                                                         <th>Data</th>
                                                         <th>Valor</th>
                                                         <th>Meio</th>
+                                                        <th>Comprovativo</th>
                                                         <th>Ações</th>
                                                     </tr>
                                                 </thead>
@@ -483,6 +539,16 @@
                                                             <td>{{ $genericPayment->paid_at }}</td>
                                                             <td>{{ number_format((float) $genericPayment->amount, 2, ',', '.') }} EUR</td>
                                                             <td>{{ $genericPayment->payment_method->name ?? '-' }}</td>
+                                                            <td>
+                                                                @php
+                                                                    $genericProof = $genericPayment->proof_file->first();
+                                                                @endphp
+                                                                @if($genericProof)
+                                                                    <a href="{{ $genericProof->getUrl() }}" target="_blank" rel="noopener">Abrir</a>
+                                                                @else
+                                                                    -
+                                                                @endif
+                                                            </td>
                                                             <td>
                                                                 <button
                                                                     type="button"
@@ -495,7 +561,7 @@
                                                         </tr>
                                                     @empty
                                                         <tr>
-                                                            <td colspan="5">Sem pagamentos genericos registados.</td>
+                                                            <td colspan="6">Sem pagamentos genericos registados.</td>
                                                         </tr>
                                                     @endforelse
                                                 </tbody>
@@ -967,6 +1033,13 @@
                                         <span class="help-block" role="alert">{{ $errors->first('client_payment_method_id') }}</span>
                                     @endif
                                 </div>
+                                <div class="form-group {{ $errors->has('client_payment_proof') ? 'has-error' : '' }}">
+                                    <label for="client_payment_proof">Comprovativo pagamento cliente</label>
+                                    <input class="form-control" type="file" name="client_payment_proof" id="client_payment_proof">
+                                    @if($errors->has('client_payment_proof'))
+                                        <span class="help-block" role="alert">{{ $errors->first('client_payment_proof') }}</span>
+                                    @endif
+                                </div>
                                 <div class="form-group {{ $errors->has('financial_institution_id') ? 'has-error' : '' }}">
                                     <label for="financial_institution_id">Financeira</label>
                                     <div class="input-group">
@@ -1006,6 +1079,14 @@
                                     @endif
                                     <span class="help-block">Informativo. Nao entra no total recebido.</span>
                                 </div>
+                                <div class="form-group {{ $errors->has('client_financing_rate') ? 'has-error' : '' }}">
+                                    <label for="client_financing_rate">Taxa de financiamento (%)</label>
+                                    <input class="form-control" type="number" name="client_financing_rate" id="client_financing_rate" value="{{ old('client_financing_rate', $vehicle->client_financing_rate) }}" step="0.01" min="0" max="100">
+                                    @if($errors->has('client_financing_rate'))
+                                        <span class="help-block" role="alert">{{ $errors->first('client_financing_rate') }}</span>
+                                    @endif
+                                    <span class="help-block">Informativo. Nao entra no total recebido.</span>
+                                </div>
                                 <div class="panel panel-default" id="client-payments-panel">
                                     <div class="panel-heading">Pagamentos do cliente final</div>
                                     <div class="panel-body" style="padding: 10px;">
@@ -1027,6 +1108,7 @@
                                                         <th>Data</th>
                                                         <th>Meio</th>
                                                         <th>Valor</th>
+                                                        <th>Comprovativo</th>
                                                         <th>Ações</th>
                                                     </tr>
                                                 </thead>
@@ -1036,6 +1118,16 @@
                                                             <td>{{ $clientPayment->paid_at }}</td>
                                                             <td>{{ $clientPayment->payment_method->name ?? '-' }}</td>
                                                             <td>{{ number_format((float) $clientPayment->amount, 2, ',', '.') }} EUR</td>
+                                                            <td>
+                                                                @php
+                                                                    $clientProof = $clientPayment->proof_file->first();
+                                                                @endphp
+                                                                @if($clientProof)
+                                                                    <a href="{{ $clientProof->getUrl() }}" target="_blank" rel="noopener">Abrir</a>
+                                                                @else
+                                                                    -
+                                                                @endif
+                                                            </td>
                                                             <td>
                                                                 <button
                                                                     type="button"
@@ -1048,7 +1140,7 @@
                                                         </tr>
                                                     @empty
                                                         <tr>
-                                                            <td colspan="4">Sem pagamentos de cliente registados.</td>
+                                                            <td colspan="5">Sem pagamentos de cliente registados.</td>
                                                         </tr>
                                                     @endforelse
                                                 </tbody>
@@ -1676,9 +1768,45 @@
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 
 <script>
     var uploadedPhotosMap = {}
+    var photosSortable = null
+
+    function getPhotoFileName(file) {
+        return (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPhotosMap[file.name]
+    }
+
+    function refreshCoverPhotoBadge() {
+        $('#photos-dropzone .dz-preview').removeClass('is-cover-photo')
+        $('#photos-dropzone .dz-preview[data-photo-name]').first().addClass('is-cover-photo')
+    }
+
+    function syncPhotoInputsOrder() {
+        $('#vehicle-edit-form').find('input[name="photos[]"]').remove()
+
+        $('#photos-dropzone .dz-preview[data-photo-name]').each(function () {
+            $('#vehicle-edit-form').append('<input type="hidden" name="photos[]" value="' + this.dataset.photoName + '">')
+        })
+
+        refreshCoverPhotoBadge()
+    }
+
+    function setupPhotosSorting() {
+        var dropzone = document.getElementById('photos-dropzone')
+        if (!dropzone || typeof Sortable === 'undefined' || photosSortable) {
+            return
+        }
+
+        photosSortable = Sortable.create(dropzone, {
+            draggable: '.dz-preview',
+            filter: '.dz-remove',
+            ghostClass: 'sortable-ghost',
+            onEnd: syncPhotoInputsOrder
+        })
+    }
+
     Dropzone.options.photosDropzone = {
         url: '{{ route('admin.vehicles.storeMedia') }}',
         maxFilesize: 10,
@@ -1687,15 +1815,20 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10, width: 4096, height: 4096 },
         success: function (file, response) {
-            $('#vehicle-edit-form').append('<input type="hidden" name="photos[]" value="' + response.name + '">')
             uploadedPhotosMap[file.name] = response.name
+            if (file.previewElement) {
+                file.previewElement.dataset.photoName = response.name
+            }
+            setupPhotosSorting()
+            syncPhotoInputsOrder()
         },
         removedfile: function (file) {
             file.previewElement.remove()
-            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPhotosMap[file.name]
-            $('#vehicle-edit-form').find('input[name="photos[]"][value="' + name + '"]').remove()
+            syncPhotoInputsOrder()
         },
         init: function () {
+            setupPhotosSorting()
+
             @if(isset($vehicle) && $vehicle->photos)
                 var files = {!! json_encode($vehicle->photos) !!}
                 for (var i in files) {
@@ -1703,7 +1836,7 @@
                     this.options.addedfile.call(this, file)
                     this.options.thumbnail.call(this, file, file.preview ?? file.preview_url)
                     file.previewElement.classList.add('dz-complete')
-                    $('#vehicle-edit-form').append('<input type="hidden" name="photos[]" value="' + file.file_name + '">')
+                    file.previewElement.dataset.photoName = file.file_name
                     const img = file.previewElement.querySelector("img");
                     if (img) {
                         img.style.cursor = "pointer";
@@ -1722,6 +1855,16 @@
                     }
                 }
             @endif
+
+            syncPhotoInputsOrder()
+            this.on('addedfile', function (file) {
+                setupPhotosSorting()
+                var fileName = getPhotoFileName(file)
+                if (fileName && file.previewElement) {
+                    file.previewElement.dataset.photoName = fileName
+                    syncPhotoInputsOrder()
+                }
+            })
         },
         error: function (file, response) {
             var message = $.type(response) === 'string' ? response : response.errors.file
@@ -2168,13 +2311,16 @@
                 'supplier_payment_date',
                 'supplier_payment_amount',
                 'supplier_payment_method_id',
+                'supplier_payment_proof',
                 'generic_payment_expense_label',
                 'generic_payment_date',
                 'generic_payment_amount',
                 'generic_payment_method_id',
+                'generic_payment_proof',
                 'client_payment_date',
                 'client_payment_amount',
-                'client_payment_method_id'
+                'client_payment_method_id',
+                'client_payment_proof'
             ];
 
             inputIds.forEach(function (id) {

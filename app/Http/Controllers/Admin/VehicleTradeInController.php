@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\GeneralState;
 use App\Models\Vehicle;
 use App\Models\VehicleTradeIn;
+use App\Services\SaleClosureApprovalService;
 use App\Support\RolePreview;
 use Gate;
 use Illuminate\Support\Carbon;
@@ -129,6 +130,12 @@ class VehicleTradeInController extends Controller
             'converted_by_id' => $request->user()?->id,
             'converted_at' => now(),
         ]);
+
+        app(SaleClosureApprovalService::class)->createForTradeIn(
+            $tradeIn->sold_vehicle()->firstOrFail(),
+            $request->user(),
+            $tradeIn
+        );
 
         return redirect()
             ->route('admin.vehicle-trade-ins.index', ['status' => VehicleTradeIn::STATUS_PENDING])

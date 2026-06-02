@@ -42,6 +42,7 @@
                     $uncheckedStateTransfers = collect();
                     $pendingTradeIns = collect();
                     $pendingStandCashApprovals = collect();
+                    $pendingSaleClosureApprovals = collect();
                     $rolePreviewIsRealAdmin = \App\Support\RolePreview::isRealAdmin(auth()->user());
                     $rolePreviewActiveRole = $rolePreviewIsRealAdmin ? \App\Support\RolePreview::activeRole() : null;
                     $rolePreviewRoles = $rolePreviewIsRealAdmin
@@ -50,6 +51,8 @@
                     $canConvertTradeIns = auth()->check()
                         && \Illuminate\Support\Facades\Gate::allows('vehicle_trade_in_convert');
                     $canValidateStandCash = auth()->check()
+                        && \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Adm', 'Stand Adm']);
+                    $canValidateSaleClosures = auth()->check()
                         && \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Adm', 'Stand Adm']);
                     try {
                         if (\Illuminate\Support\Facades\Schema::hasTable('calendar_tasks')) {
@@ -86,11 +89,20 @@
                                 ->limit(10)
                                 ->get();
                         }
+
+                        if ($canValidateSaleClosures && \Illuminate\Support\Facades\Schema::hasTable('sale_closure_approvals')) {
+                            $pendingSaleClosureApprovals = \App\Models\SaleClosureApproval::with(['vehicle.brand', 'closed_by'])
+                                ->where('status', \App\Models\SaleClosureApproval::STATUS_PENDING)
+                                ->orderByDesc('closed_at')
+                                ->limit(10)
+                                ->get();
+                        }
                     } catch (\Throwable $exception) {
                         $calendarAlertTasks = collect();
                         $uncheckedStateTransfers = collect();
                         $pendingTradeIns = collect();
                         $pendingStandCashApprovals = collect();
+                        $pendingSaleClosureApprovals = collect();
                     }
                 @endphp
 
@@ -159,9 +171,45 @@
                                 </ul>
                             </li>
                         @endif
+                        @if($canValidateSaleClosures)
+                            <li class="dropdown notifications-menu">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="Fechos de venda por validar">
+                                    <i class="fa fa-check-square-o"></i>
+                                    @if($pendingSaleClosureApprovals->count())
+                                        <span class="label label-danger">{{ $pendingSaleClosureApprovals->count() }}</span>
+                                    @endif
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li class="header">
+                                        {{ $pendingSaleClosureApprovals->count() ? $pendingSaleClosureApprovals->count() . ' fechos de venda por validar' : 'Sem fechos de venda por validar' }}
+                                    </li>
+                                    <li>
+                                        <ul class="menu">
+                                            @forelse($pendingSaleClosureApprovals as $approval)
+                                                <li>
+                                                    <a href="{{ route('admin.sale-closure-approvals.index') }}">
+                                                        <i class="fa fa-check-square-o text-red"></i>
+                                                        {{ $approval->vehicle->license ?? $approval->vehicle->foreign_license ?? ('Viatura #' . $approval->vehicle_id) }}
+                                                        - {{ number_format((float) $approval->sales_total, 2, ',', '.') }} EUR
+                                                        <div class="text-muted small">Fechado por {{ $approval->closed_by->name ?? '-' }}</div>
+                                                    </a>
+                                                </li>
+                                            @empty
+                                                <li>
+                                                    <a href="{{ route('admin.sale-closure-approvals.index') }}">
+                                                        <i class="fa fa-check text-green"></i> Sem fechos de venda por validar.
+                                                    </a>
+                                                </li>
+                                            @endforelse
+                                        </ul>
+                                    </li>
+                                    <li class="footer"><a href="{{ route('admin.sale-closure-approvals.index') }}">Validar fechos de venda</a></li>
+                                </ul>
+                            </li>
+                        @endif
                         @if($canValidateStandCash)
                             <li class="dropdown notifications-menu">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="Numerário do Stand por validar">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="Pagamentos do Stand por validar">
                                     <i class="fa fa-money"></i>
                                     @if($pendingStandCashApprovals->count())
                                         <span class="label label-danger">{{ $pendingStandCashApprovals->count() }}</span>
@@ -169,7 +217,7 @@
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li class="header">
-                                        {{ $pendingStandCashApprovals->count() ? $pendingStandCashApprovals->count() . ' pagamentos em numerário por validar' : 'Sem numerário por validar' }}
+                                        {{ $pendingStandCashApprovals->count() ? $pendingStandCashApprovals->count() . ' pagamentos por validar' : 'Sem pagamentos por validar' }}
                                     </li>
                                     <li>
                                         <ul class="menu">
@@ -185,13 +233,13 @@
                                             @empty
                                                 <li>
                                                     <a href="{{ route('admin.stand-cash-payment-approvals.index') }}">
-                                                        <i class="fa fa-check text-green"></i> Sem numerário por validar.
+                                                        <i class="fa fa-check text-green"></i> Sem pagamentos por validar.
                                                     </a>
                                                 </li>
                                             @endforelse
                                         </ul>
                                     </li>
-                                    <li class="footer"><a href="{{ route('admin.stand-cash-payment-approvals.index') }}">Validar numerário do Stand</a></li>
+                                    <li class="footer"><a href="{{ route('admin.stand-cash-payment-approvals.index') }}">Validar pagamentos do Stand</a></li>
                                 </ul>
                             </li>
                         @endif

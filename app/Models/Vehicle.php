@@ -111,6 +111,7 @@ class Vehicle extends Model implements HasMedia
         'client_payment_method_info_id',
         'financial_institution_id',
         'client_financed_amount',
+        'client_financing_rate',
         'client_amount_paid',
         'payment_notes',
         'client_registration',
@@ -448,6 +449,11 @@ class Vehicle extends Model implements HasMedia
     public function trade_ins()
     {
         return $this->hasMany(VehicleTradeIn::class, 'sold_vehicle_id');
+    }
+
+    public function sale_closure_approvals()
+    {
+        return $this->hasMany(SaleClosureApproval::class, 'vehicle_id');
     }
 
     public function source_trade_in()

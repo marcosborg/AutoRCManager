@@ -7,6 +7,7 @@ use App\Models\AccountOperation;
 use App\Models\CashBox;
 use App\Models\CashCategory;
 use App\Models\Department;
+use App\Models\SaleClosureApproval;
 use App\Models\StandCashPaymentApproval;
 use App\Support\RolePreview;
 use Illuminate\Http\Request;
@@ -44,9 +45,10 @@ class StandCashPaymentApprovalController extends Controller
         DB::transaction(function () use ($approval): void {
             $approval->loadMissing(['payment.payment_method', 'vehicle.brand']);
             $payment = $approval->payment;
+            abort_if(! $payment || $payment->trashed(), Response::HTTP_UNPROCESSABLE_ENTITY, 'Pagamento ja nao existe na viatura.');
 
             $operation = AccountOperation::create([
-                'description' => 'Recebimento cliente em numerario - viatura ' . $this->vehicleLabel($approval),
+                'description' => 'Recebimento cliente validado - viatura ' . $this->vehicleLabel($approval),
                 'movement_type' => AccountOperation::TYPE_INCOME,
                 'total' => $payment->amount,
                 'department_id' => $this->standDepartmentId(),
@@ -56,7 +58,7 @@ class StandCashPaymentApprovalController extends Controller
                 'date' => $payment->getRawOriginal('paid_at'),
                 'payment_method_id' => $payment->payment_method_id,
                 'cash_box_id' => $this->standCashBoxId(),
-                'notes' => 'Validado como dinheiro entregue ao Stand Adm. Pagamento cliente #' . $payment->id,
+                'notes' => 'Validado pelo Stand Adm. Pagamento cliente #' . $payment->id,
             ]);
 
             $approval->update([
@@ -67,7 +69,7 @@ class StandCashPaymentApprovalController extends Controller
             ]);
         });
 
-        return back()->with('message', 'Pagamento validado e entrada criada na Caixa Stand.');
+        return back()->with('message', 'Pagamento validado e movimento criado na Caixa Stand.');
     }
 
     public function reject(Request $request, StandCashPaymentApproval $approval)
@@ -79,14 +81,38 @@ class StandCashPaymentApprovalController extends Controller
             'rejection_reason' => ['required', 'string', 'max:1000'],
         ]);
 
-        $approval->update([
-            'status' => StandCashPaymentApproval::STATUS_REJECTED,
-            'approved_by_id' => auth()->id(),
-            'rejected_at' => now(),
-            'rejection_reason' => $data['rejection_reason'],
-        ]);
+        DB::transaction(function () use ($approval, $data): void {
+            $approval->loadMissing('payment');
 
-        return back()->with('message', 'Validacao rejeitada. O pagamento continua registado na viatura.');
+            if ($approval->cash_operation_id) {
+                AccountOperation::where('id', $approval->cash_operation_id)->delete();
+            }
+
+            $approval->update([
+                'status' => StandCashPaymentApproval::STATUS_REJECTED,
+                'approved_by_id' => auth()->id(),
+                'cash_operation_id' => null,
+                'rejected_at' => now(),
+                'rejection_reason' => $data['rejection_reason'],
+            ]);
+
+            if ($approval->payment && ! $approval->payment->trashed()) {
+                SaleClosureApproval::where('vehicle_id', $approval->vehicle_id)
+                    ->where('trigger_type', SaleClosureApproval::TRIGGER_PAYMENT)
+                    ->where('trigger_id', $approval->payment->id)
+                    ->where('status', SaleClosureApproval::STATUS_PENDING)
+                    ->update([
+                        'status' => SaleClosureApproval::STATUS_REJECTED,
+                        'approved_by_id' => auth()->id(),
+                        'rejected_at' => now(),
+                        'rejection_reason' => 'Pagamento de cliente rejeitado.',
+                    ]);
+
+                $approval->payment->delete();
+            }
+        });
+
+        return back()->with('message', 'Validacao rejeitada. O pagamento foi removido da viatura e da conta do cliente.');
     }
 
     private function authorizeApprovalAccess(): void

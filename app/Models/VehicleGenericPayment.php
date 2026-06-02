@@ -8,12 +8,19 @@ use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class VehicleGenericPayment extends Model
+class VehicleGenericPayment extends Model implements HasMedia
 {
-    use SoftDeletes, Auditable, HasFactory;
+    use SoftDeletes, InteractsWithMedia, Auditable, HasFactory;
 
     public $table = 'vehicle_generic_payments';
+
+    protected $appends = [
+        'proof_file',
+    ];
 
     protected $dates = [
         'paid_at',
@@ -33,6 +40,11 @@ class VehicleGenericPayment extends Model
     protected function serializeDate(DateTimeInterface $date): string
     {
         return $date->format('Y-m-d H:i:s');
+    }
+
+    public function registerMediaConversions(Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')->fit('crop', 50, 50);
     }
 
     public function vehicle()
@@ -55,5 +67,10 @@ class VehicleGenericPayment extends Model
         $this->attributes['paid_at'] = $value
             ? Carbon::createFromFormat(config('panel.date_format'), $value)->format('Y-m-d')
             : null;
+    }
+
+    public function getProofFileAttribute()
+    {
+        return $this->getMedia('proof_file');
     }
 }

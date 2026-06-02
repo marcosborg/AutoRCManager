@@ -27,6 +27,7 @@ use App\Models\VehicleSupplierPayment;
 use App\Models\VehicleTradeIn;
 use App\Models\GeneralState;
 use App\Models\PaymentMethod;
+use App\Services\SaleClosureApprovalService;
 use App\Services\VehicleLotService;
 use App\Services\VehicleCsvSyncService;
 use App\Support\RolePreview;
@@ -275,8 +276,11 @@ class VehicleController extends Controller
             'client_payment_method_info',
             'financial_institution',
             'supplier_payments.payment_method',
+            'supplier_payments.media',
             'generic_payments.payment_method',
+            'generic_payments.media',
             'client_payments.payment_method',
+            'client_payments.media',
             'trade_ins.media',
             'trade_ins.created_by',
             'trade_ins.converted_by',
@@ -316,6 +320,7 @@ class VehicleController extends Controller
             ->sum('amount');
         $clientPaymentsOutstanding = $salesFinalTotal - $clientPaymentsTotal - $tradeInsConvertedTotal;
         $canConvertTradeIns = $this->canConvertTradeIns();
+        $canManageSupplierPayments = $this->canManageSupplierPayments();
 
         return view('admin.vehicles.edit', compact(
             'purchase_categories',
@@ -349,6 +354,7 @@ class VehicleController extends Controller
             'tradeInsConvertedTotal',
             'clientPaymentsOutstanding',
             'canConvertTradeIns',
+            'canManageSupplierPayments',
             'hasOpenRepairs',
         ));
     }
@@ -407,11 +413,17 @@ class VehicleController extends Controller
 
         $vehicle->update($payload);
 
-        if ($this->canViewFinancialSensitive()) {
+        if ($this->canViewFinancialSensitive() && $this->canManageSupplierPayments()) {
             $this->createSupplierPaymentLine($request, $vehicle);
+        }
+
+        if ($this->canViewFinancialSensitive()) {
             $this->createGenericPaymentLine($request, $vehicle);
         }
-        $this->createClientPaymentLine($request, $vehicle);
+        $clientPayment = $this->createClientPaymentLine($request, $vehicle);
+        if ($clientPayment) {
+            app(SaleClosureApprovalService::class)->createForPayment($vehicle, $request->user(), $clientPayment);
+        }
 
         if (count($vehicle->documents) > 0) {
             foreach ($vehicle->documents as $media) {
@@ -454,6 +466,7 @@ class VehicleController extends Controller
                 $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('photos');
             }
         }
+        $this->syncVehiclePhotoOrder($vehicle, $request->input('photos', []));
 
         if (count($vehicle->invoice) > 0) {
             foreach ($vehicle->invoice as $media) {
@@ -991,11 +1004,41 @@ class VehicleController extends Controller
             return;
         }
 
-        $vehicle->supplier_payments()->create([
+        $payment = $vehicle->supplier_payments()->create([
             'paid_at' => $date,
             'amount' => (float) $amount,
             'payment_method_id' => (int) $paymentMethodId,
         ]);
+
+        $payment->addMediaFromRequest('supplier_payment_proof')->toMediaCollection('proof_file');
+    }
+
+    private function syncVehiclePhotoOrder(Vehicle $vehicle, array $orderedFiles): void
+    {
+        $orderedFiles = collect($orderedFiles)
+            ->filter(fn ($file) => is_string($file) && $file !== '')
+            ->unique()
+            ->values();
+
+        if ($orderedFiles->isEmpty()) {
+            return;
+        }
+
+        $mediaByFileName = Media::query()
+            ->where('model_type', Vehicle::class)
+            ->where('model_id', $vehicle->id)
+            ->where('collection_name', 'photos')
+            ->whereIn('file_name', $orderedFiles->all())
+            ->get()
+            ->keyBy('file_name');
+
+        foreach ($orderedFiles as $index => $fileName) {
+            $media = $mediaByFileName->get($fileName);
+            if ($media) {
+                $media->order_column = $index + 1;
+                $media->save();
+            }
+        }
     }
 
     private function createGenericPaymentLine(UpdateVehicleRequest $request, Vehicle $vehicle): void
@@ -1009,22 +1052,24 @@ class VehicleController extends Controller
             return;
         }
 
-        $vehicle->generic_payments()->create([
+        $payment = $vehicle->generic_payments()->create([
             'expense_label' => trim((string) $description),
             'paid_at' => $date,
             'amount' => (float) $amount,
             'payment_method_id' => (int) $paymentMethodId,
         ]);
+
+        $payment->addMediaFromRequest('generic_payment_proof')->toMediaCollection('proof_file');
     }
 
-    private function createClientPaymentLine(UpdateVehicleRequest $request, Vehicle $vehicle): void
+    private function createClientPaymentLine(UpdateVehicleRequest $request, Vehicle $vehicle): ?VehicleClientPayment
     {
         $date = $request->input('client_payment_date');
         $amount = $request->input('client_payment_amount');
         $paymentMethodId = $request->input('client_payment_method_id');
 
         if ($date === null || $date === '' || $amount === null || $amount === '' || $paymentMethodId === null || $paymentMethodId === '') {
-            return;
+            return null;
         }
 
         $payment = $vehicle->client_payments()->create([
@@ -1032,6 +1077,8 @@ class VehicleController extends Controller
             'amount' => (float) $amount,
             'payment_method_id' => (int) $paymentMethodId,
         ]);
+
+        $payment->addMediaFromRequest('client_payment_proof')->toMediaCollection('proof_file');
 
         if ($this->shouldRequestStandCashValidation($request, (int) $paymentMethodId)) {
             StandCashPaymentApproval::firstOrCreate([
@@ -1042,19 +1089,13 @@ class VehicleController extends Controller
                 'status' => StandCashPaymentApproval::STATUS_PENDING,
             ]);
         }
+
+        return $payment;
     }
 
     private function shouldRequestStandCashValidation(UpdateVehicleRequest $request, int $paymentMethodId): bool
     {
-        if (! RolePreview::hasAnyEffectiveRole($request->user(), ['Stand'])) {
-            return false;
-        }
-
-        $paymentMethod = PaymentMethod::find($paymentMethodId);
-        $normalizedName = Str::lower(Str::ascii($paymentMethod->name ?? ''));
-
-        return str_contains($normalizedName, 'numerario')
-            || str_contains($normalizedName, 'dinheiro');
+        return ! RolePreview::hasAnyEffectiveRole($request->user(), ['Admin', 'Adm', 'Stand Adm']);
     }
 
     private function calculateSalesFinalTotal(Vehicle $vehicle): float
@@ -1078,13 +1119,17 @@ class VehicleController extends Controller
 
     private function canSendVehicleToWorkshop(): bool
     {
+        return auth()->check();
+    }
+
+    private function canManageSupplierPayments(): bool
+    {
         $user = auth()->user();
         if (! $user) {
             return false;
         }
 
-        return Gate::allows('repair_create')
-            || RolePreview::hasAnyEffectiveRole($user, ['Stand']);
+        return RolePreview::hasAnyEffectiveRole($user, ['Admin', 'Adm']);
     }
 
     private function vehicleHasAllDocuments(Vehicle $vehicle): bool

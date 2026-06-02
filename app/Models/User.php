@@ -78,4 +78,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Role::class);
     }
+
+    public function sale_closure_approvals()
+    {
+        return $this->hasMany(SaleClosureApproval::class, 'closed_by_id');
+    }
 }
