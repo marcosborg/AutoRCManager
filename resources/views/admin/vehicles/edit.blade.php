@@ -267,7 +267,7 @@
                         <div class="row">
                             @can('financial_sensitive_access')
                             <div class="col-md-4">
-                                @can('superadmin')
+                                @if($canManageSupplierPayments)
                                 <div class="form-group {{ $errors->has('purchase_price') ? 'has-error' : '' }}">
                                     <label for="purchase_price">{{ trans('cruds.vehicle.fields.purchase_price') }}</label>
                                     <input class="form-control" type="number" name="purchase_price" id="purchase_price" value="{{ old('purchase_price', $vehicle->purchase_price) }}" step="0.01">
@@ -324,7 +324,7 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.purchase_vat_value_helper') }}</span>
                                 </div>
-                                @endcan
+                                @endif
                                 <div class="form-group {{ $errors->has('iuc_price') ? 'has-error' : '' }}">
                                     <label for="iuc_price">{{ trans('cruds.vehicle.fields.iuc_price') }}</label>
                                     <input class="form-control" type="number" name="iuc_price" id="iuc_price" value="{{ old('iuc_price', $vehicle->iuc_price) }}" step="0.01">
