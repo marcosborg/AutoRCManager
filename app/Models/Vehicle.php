@@ -456,6 +456,11 @@ class Vehicle extends Model implements HasMedia
         return $this->hasMany(SaleClosureApproval::class, 'vehicle_id');
     }
 
+    public function purchase_price_histories()
+    {
+        return $this->hasMany(VehiclePurchasePriceHistory::class, 'vehicle_id');
+    }
+
     public function source_trade_in()
     {
         return $this->hasOne(VehicleTradeIn::class, 'created_vehicle_id');

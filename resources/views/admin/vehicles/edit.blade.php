@@ -276,6 +276,33 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.purchase_price_helper') }}</span>
                                 </div>
+                                @if($vehicle->purchase_price_histories->count())
+                                    <div class="table-responsive" style="margin-bottom: 15px;">
+                                        <table class="table table-bordered table-condensed">
+                                            <thead>
+                                                <tr>
+                                                    <th colspan="4">Historico preco de compra</th>
+                                                </tr>
+                                                <tr>
+                                                    <th>Data</th>
+                                                    <th>Anterior</th>
+                                                    <th>Novo</th>
+                                                    <th>Utilizador</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($vehicle->purchase_price_histories->sortByDesc('created_at') as $history)
+                                                    <tr>
+                                                        <td>{{ optional($history->created_at)->format('Y-m-d H:i') }}</td>
+                                                        <td>{{ number_format((float) $history->previous_purchase_price, 2, ',', '.') }} EUR</td>
+                                                        <td>{{ number_format((float) $history->new_purchase_price, 2, ',', '.') }} EUR</td>
+                                                        <td>{{ $history->changed_by->name ?? '-' }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endif
                                 <div class="form-group {{ $errors->has('purchase_has_vat') ? 'has-error' : '' }}">
                                     <div class="checkbox">
                                         <label for="purchase_has_vat" class="required">

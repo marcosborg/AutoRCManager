@@ -34,6 +34,7 @@ use App\Support\RolePreview;
 use Gate;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -285,6 +286,8 @@ class VehicleController extends Controller
             'trade_ins.created_by',
             'trade_ins.converted_by',
             'trade_ins.created_vehicle',
+            'purchase_price_histories.client',
+            'purchase_price_histories.changed_by',
         ];
         $vehicle->load($relations);
         $hasOpenRepairs = RepairRules::hasOpenRepairs($vehicle->id);
@@ -411,7 +414,10 @@ class VehicleController extends Controller
         $payload['is_invoiced'] = $request->boolean('is_invoiced');
         $payload = $this->filterPayloadToExistingVehicleColumns($payload);
 
-        $vehicle->update($payload);
+        DB::transaction(function () use ($request, $vehicle, &$payload): void {
+            $this->applyWorkshopSalePurchasePrice($request, $vehicle, $payload);
+            $vehicle->update($payload);
+        });
 
         if ($this->canViewFinancialSensitive() && $this->canManageSupplierPayments()) {
             $this->createSupplierPaymentLine($request, $vehicle);
@@ -1105,6 +1111,60 @@ class VehicleController extends Controller
             + (float) ($vehicle->sales_tow ?? 0)
             + (float) ($vehicle->sales_transfer ?? 0)
             + (float) ($vehicle->sales_others ?? 0);
+    }
+
+    private function applyWorkshopSalePurchasePrice(UpdateVehicleRequest $request, Vehicle $vehicle, array &$payload): void
+    {
+        $clientId = isset($payload['client_id']) && $payload['client_id'] !== '' ? (int) $payload['client_id'] : null;
+        $saleDate = $payload['sale_date'] ?? null;
+
+        if (! $clientId || ! $saleDate || ! $this->isWorkshopClient($clientId)) {
+            return;
+        }
+
+        $salePrice = $this->calculateSalesFinalTotalFromPayload($vehicle, $payload);
+        if ($salePrice <= 0) {
+            return;
+        }
+
+        $previousPurchasePrice = $vehicle->purchase_price;
+        if (round((float) $previousPurchasePrice, 2) === round($salePrice, 2)) {
+            return;
+        }
+
+        $vehicle->purchase_price_histories()->create([
+            'client_id' => $clientId,
+            'changed_by_id' => $request->user()?->id,
+            'previous_purchase_price' => $previousPurchasePrice,
+            'new_purchase_price' => $salePrice,
+            'sale_price' => $salePrice,
+            'reason' => 'workshop_sale',
+        ]);
+
+        $payload['purchase_price'] = $salePrice;
+    }
+
+    private function calculateSalesFinalTotalFromPayload(Vehicle $vehicle, array $payload): float
+    {
+        return $this->moneyFromPayload($payload, 'pvp', $vehicle->pvp)
+            + $this->moneyFromPayload($payload, 'sales_iuc', $vehicle->sales_iuc)
+            + $this->moneyFromPayload($payload, 'sales_tow', $vehicle->sales_tow)
+            + $this->moneyFromPayload($payload, 'sales_transfer', $vehicle->sales_transfer)
+            + $this->moneyFromPayload($payload, 'sales_others', $vehicle->sales_others);
+    }
+
+    private function moneyFromPayload(array $payload, string $field, mixed $fallback): float
+    {
+        $value = array_key_exists($field, $payload) ? $payload[$field] : $fallback;
+
+        return $value === null || $value === '' ? 0.0 : (float) $value;
+    }
+
+    private function isWorkshopClient(int $clientId): bool
+    {
+        return Client::whereKey($clientId)
+            ->whereRaw('LOWER(name) = ?', ['oficina'])
+            ->exists();
     }
 
     private function canConvertTradeIns(): bool
