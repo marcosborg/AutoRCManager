@@ -598,6 +598,117 @@
                                 </div>
                             </div>
 @endcan
+                            @can('financial_sensitive_access')
+                            @php
+                                $rvMoney = function ($value) {
+                                    return number_format((float) $value, 2, ',', '.') . ' EUR';
+                                };
+                            @endphp
+                            <div class="col-md-12">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">Visao Rafael</div>
+                                    <div class="panel-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <table class="table table-bordered table-condensed">
+                                                    <tbody>
+                                                        <tr>
+                                                            <th style="width: 55%;">Matricula</th>
+                                                            <td>{{ $rafaelVision['vehicle_label'] }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Compra Salvados</th>
+                                                            <td>{{ $rvMoney($rafaelVision['origin_purchase']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Venda a Oficina</th>
+                                                            <td>{{ $rvMoney($rafaelVision['workshop_transfer']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Custos Oficina</th>
+                                                            <td>{{ $rvMoney($rafaelVision['workshop_costs']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th class="text-muted">- Pecas / reparacoes</th>
+                                                            <td class="text-muted">{{ $rvMoney($rafaelVision['workshop_parts']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th class="text-muted">- Movimentos caixa Oficina</th>
+                                                            <td class="text-muted">{{ $rvMoney($rafaelVision['workshop_operations']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Entrada Stand</th>
+                                                            <td>{{ $rvMoney($rafaelVision['stand_entry']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Custos Stand</th>
+                                                            <td>{{ $rvMoney($rafaelVision['stand_costs']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th class="text-muted">- Despesas da viatura</th>
+                                                            <td class="text-muted">{{ $rvMoney($rafaelVision['stand_generic_costs']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th class="text-muted">- Movimentos caixa Stand</th>
+                                                            <td class="text-muted">{{ $rvMoney($rafaelVision['stand_operations']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Venda Cliente</th>
+                                                            <td>{{ $rvMoney($rafaelVision['final_sale']) }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <table class="table table-bordered table-condensed">
+                                                    <tbody>
+                                                        <tr>
+                                                            <th style="width: 55%;">Compra Salvados</th>
+                                                            <td>{{ $rvMoney($rafaelVision['origin_purchase']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Reparacao</th>
+                                                            <td>{{ $rvMoney($rafaelVision['workshop_costs']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Custos Stand</th>
+                                                            <td>{{ $rvMoney($rafaelVision['stand_costs']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Custo Total</th>
+                                                            <td><strong>{{ $rvMoney($rafaelVision['global_cost']) }}</strong></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Venda</th>
+                                                            <td><strong>{{ $rvMoney($rafaelVision['final_sale']) }}</strong></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Margem Global</th>
+                                                            <td><strong>{{ $rvMoney($rafaelVision['global_margin']) }}</strong></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Margem Salvados</th>
+                                                            <td>{{ $rvMoney($rafaelVision['salvage_margin']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Margem Oficina</th>
+                                                            <td>{{ $rvMoney($rafaelVision['workshop_margin']) }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th>Margem Stand</th>
+                                                            <td>{{ $rvMoney($rafaelVision['stand_margin']) }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                <p class="text-muted" style="margin-bottom: 0;">
+                                                    As transferencias internas medem valor por unidade; no custo global entram compra origem, custos Oficina e custos Stand.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endcan
                             @cannot('financial_sensitive_access')
                                 @canany(['suplier_access', 'suplier_show', 'suplier_edit'])
                                     <div class="col-md-3">

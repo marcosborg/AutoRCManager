@@ -28,6 +28,7 @@ use App\Models\VehicleTradeIn;
 use App\Models\GeneralState;
 use App\Models\PaymentMethod;
 use App\Services\SaleClosureApprovalService;
+use App\Services\VehicleProfitabilityService;
 use App\Services\VehicleLotService;
 use App\Services\VehicleCsvSyncService;
 use App\Support\RolePreview;
@@ -243,7 +244,7 @@ class VehicleController extends Controller
         return redirect()->route('admin.vehicles.edit', $vehicle->id)->with('message', 'Criado com sucesso');
     }
 
-    public function edit(Vehicle $vehicle, VehicleLotService $lotService)
+    public function edit(Vehicle $vehicle, VehicleLotService $lotService, VehicleProfitabilityService $profitabilityService)
     {
         abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
@@ -298,6 +299,7 @@ class VehicleController extends Controller
         $financialBalance = 0.0;
         $showWorkshopSection = $this->isWorkshopState($vehicle);
         $vehicleFinancialStatus = $lotService->financialStatusForVehicle($vehicle);
+        $rafaelVision = $profitabilityService->build($vehicle);
 
         $purchase_categories = collect();
         $sale_categories = collect();
@@ -345,6 +347,7 @@ class VehicleController extends Controller
             'financialBalance',
             'showWorkshopSection',
             'vehicleFinancialStatus',
+            'rafaelVision',
             'supplierPayments',
             'supplierPaymentsTotal',
             'supplierPaymentsOutstanding',
