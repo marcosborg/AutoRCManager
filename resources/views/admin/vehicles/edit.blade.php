@@ -597,6 +597,17 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-md-3">
+                                <div class="form-group {{ $errors->has('inicial') ? 'has-error' : '' }}">
+                                    <label for="inicial">{{ trans('cruds.vehicle.fields.inicial') }}</label>
+                                    <div class="needsclick dropzone" id="inicial-dropzone">
+                                    </div>
+                                    @if($errors->has('inicial'))
+                                        <span class="help-block" role="alert">{{ $errors->first('inicial') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.inicial_helper') }}</span>
+                                </div>
+                            </div>
 @endcan
                             @if($canManageSupplierPayments)
                             @php
@@ -727,6 +738,7 @@
                                     </div>
                                 @endcanany
                             @endcannot
+                            @cannot('financial_sensitive_access')
                             <div class="col-md-12">
                                 <div class="form-group {{ $errors->has('inicial') ? 'has-error' : '' }}">
                                     <label for="inicial">{{ trans('cruds.vehicle.fields.inicial') }}</label>
@@ -738,6 +750,7 @@
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.inicial_helper') }}</span>
                                 </div>
                             </div>
+                            @endcannot
                             @can('financial_sensitive_access')
                             <div class="col-md-6">
                                 <div class="form-group {{ $errors->has('invoice') ? 'has-error' : '' }}">
