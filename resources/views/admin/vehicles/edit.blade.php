@@ -266,7 +266,7 @@
                         @endif
                         <div class="row">
                             @can('financial_sensitive_access')
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 @can('superadmin')
                                 <div class="form-group {{ $errors->has('purchase_price') ? 'has-error' : '' }}">
                                     <label for="purchase_price">{{ trans('cruds.vehicle.fields.purchase_price') }}</label>
@@ -370,7 +370,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="form-group {{ $errors->has('suplier') ? 'has-error' : '' }}">
                                     <label for="suplier_id">{{ trans('cruds.vehicle.fields.suplier') }}</label>
                                     <select class="form-control select2" name="suplier_id" id="suplier_id">
@@ -498,6 +498,17 @@
                                     </div>
                                 </div>
                                 @endif
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group {{ $errors->has('inicial') ? 'has-error' : '' }}">
+                                    <label for="inicial">{{ trans('cruds.vehicle.fields.inicial') }}</label>
+                                    <div class="needsclick dropzone" id="inicial-dropzone">
+                                    </div>
+                                    @if($errors->has('inicial'))
+                                        <span class="help-block" role="alert">{{ $errors->first('inicial') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.inicial_helper') }}</span>
+                                </div>
                                 <div class="form-group {{ $errors->has('generic_payment_expense_label') ? 'has-error' : '' }}">
                                     <label for="generic_payment_expense_label">Despesa (livre)</label>
                                     <input class="form-control" type="text" name="generic_payment_expense_label" id="generic_payment_expense_label" value="{{ old('generic_payment_expense_label') }}">
@@ -595,17 +606,6 @@
                                             </table>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('inicial') ? 'has-error' : '' }}">
-                                    <label for="inicial">{{ trans('cruds.vehicle.fields.inicial') }}</label>
-                                    <div class="needsclick dropzone" id="inicial-dropzone">
-                                    </div>
-                                    @if($errors->has('inicial'))
-                                        <span class="help-block" role="alert">{{ $errors->first('inicial') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.inicial_helper') }}</span>
                                 </div>
                             </div>
 @endcan
