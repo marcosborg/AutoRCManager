@@ -253,7 +253,7 @@
                     </a>
                 </li>
             @endcan
-            @can('vehicle_trade_in_convert')
+            @can('vehicle_trade_in_access')
                 <li class="{{ request()->is("admin/vehicle-trade-ins") || request()->is("admin/vehicle-trade-ins/*") ? "active" : "" }}">
                     <a href="{{ route('admin.vehicle-trade-ins.index', ['status' => \App\Models\VehicleTradeIn::STATUS_CONVERTED]) }}">
                         <i class="fa-fw fas fa-exchange-alt"></i>

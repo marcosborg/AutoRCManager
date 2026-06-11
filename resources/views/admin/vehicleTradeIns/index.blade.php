@@ -2,6 +2,13 @@
 
 @section('content')
 <div class="content">
+    @can('vehicle_trade_in_create')
+        <div style="margin-bottom: 12px;">
+            <a class="btn btn-success" href="{{ route('admin.vehicle-trade-ins.create') }}">
+                <i class="fas fa-plus"></i> Adicionar retoma
+            </a>
+        </div>
+    @endcan
     <div class="panel panel-default">
         <div class="panel-heading">Historico de retomas</div>
         <div class="panel-body">
@@ -9,8 +16,11 @@
                 <div class="col-md-3">
                     <label>Estado</label>
                     <select class="form-control" name="status">
-                        <option value="">Todos</option>
+                        @if($canManageTradeIns)
+                            <option value="">Todos</option>
+                        @endif
                         @foreach(\App\Models\VehicleTradeIn::STATUS_SELECT as $status => $label)
+                            @continue(! $canManageTradeIns && $status !== \App\Models\VehicleTradeIn::STATUS_CONVERTED)
                             <option value="{{ $status }}" {{ request('status') === $status ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -31,7 +41,7 @@
                     <button class="btn btn-primary" type="submit">Filtrar</button>
                 </div>
                 <div class="col-md-1" style="padding-top: 25px;">
-                    <a class="btn btn-default" href="{{ route('admin.vehicle-trade-ins.index') }}">Limpar</a>
+                    <a class="btn btn-default" href="{{ route('admin.vehicle-trade-ins.index', $canManageTradeIns ? [] : ['status' => \App\Models\VehicleTradeIn::STATUS_CONVERTED]) }}">Limpar</a>
                 </div>
                 <div class="col-md-12">
                     <div class="text-muted small" style="margin-top: 6px;">
@@ -67,10 +77,14 @@
                     @forelse($tradeIns as $tradeIn)
                         <tr>
                             <td>
-                                <a href="{{ route('admin.vehicles.edit', $tradeIn->sold_vehicle_id) }}">
-                                    {{ $tradeIn->sold_vehicle->license ?? $tradeIn->sold_vehicle->foreign_license ?? ('#' . $tradeIn->sold_vehicle_id) }}
-                                </a>
-                                <div class="text-muted small">{{ $tradeIn->sold_vehicle->brand->name ?? '' }} {{ $tradeIn->sold_vehicle->model ?? '' }}</div>
+                                @if($tradeIn->sold_vehicle_id)
+                                    <a href="{{ route('admin.vehicles.edit', $tradeIn->sold_vehicle_id) }}">
+                                        {{ $tradeIn->sold_vehicle->license ?? $tradeIn->sold_vehicle->foreign_license ?? ('#' . $tradeIn->sold_vehicle_id) }}
+                                    </a>
+                                    <div class="text-muted small">{{ $tradeIn->sold_vehicle->brand->name ?? '' }} {{ $tradeIn->sold_vehicle->model ?? '' }}</div>
+                                @else
+                                    <span class="label label-info">Sem venda associada</span>
+                                @endif
                             </td>
                             <td>{{ $tradeIn->license }}</td>
                             <td>{{ number_format((float) $tradeIn->amount, 2, ',', '.') }} EUR</td>
@@ -104,21 +118,25 @@
                             </td>
                             <td>
                                 <div class="small">
-                                    <div>{{ $tradeIn->has_purchase_sale_rgpd ? 'Sim' : 'Nao' }} - Compra/Venda + RGPD</div>
+                                    @if($tradeIn->sold_vehicle_id)
+                                        <div>{{ $tradeIn->has_purchase_sale_rgpd ? 'Sim' : 'Nao' }} - Compra/Venda + RGPD</div>
+                                    @else
+                                        <div>{{ $tradeIn->has_vehicle_delivery_declaration ? 'Sim' : 'Nao' }} - Declaracao de entrega de viatura</div>
+                                    @endif
                                     <div>{{ $tradeIn->has_ipo ? 'Sim' : 'Nao' }} - IPO</div>
                                     <div>{{ $tradeIn->has_internal_invoice ? 'Sim' : 'Nao' }} - Fatura interna</div>
                                     <div>{{ $tradeIn->has_reservation_extinction_authorization ? 'Sim' : 'Nao' }} - Extincao reserva</div>
                                 </div>
                             </td>
                             <td>
-                                @foreach(\App\Models\VehicleTradeIn::DOCUMENT_COLLECTIONS as $collection => $label)
+                                @foreach(($tradeIn->sold_vehicle_id ? \App\Models\VehicleTradeIn::DOCUMENT_COLLECTIONS : \App\Models\VehicleTradeIn::STANDALONE_DOCUMENT_COLLECTIONS) as $collection => $label)
                                     @foreach($tradeIn->getMedia($collection) as $media)
                                         <a href="{{ $media->getUrl() }}" target="_blank" class="btn btn-xs btn-default" style="margin-bottom:2px;">{{ $label }}</a>
                                     @endforeach
                                 @endforeach
                             </td>
                             <td style="min-width: 220px;">
-                                @if($tradeIn->status === \App\Models\VehicleTradeIn::STATUS_PENDING)
+                                @if($canManageTradeIns && $tradeIn->status === \App\Models\VehicleTradeIn::STATUS_PENDING)
                                     <form method="POST" action="{{ route('admin.vehicle-trade-ins.convert', $tradeIn) }}" style="display:inline-block">
                                         @csrf
                                         <button class="btn btn-xs btn-success" type="submit">Dar como verificado</button>
@@ -133,7 +151,11 @@
                                         </div>
                                     </form>
                                 @else
-                                    <a class="btn btn-xs btn-primary" href="{{ route('admin.vehicles.edit', $tradeIn->sold_vehicle_id) }}">Abrir venda</a>
+                                    @if($tradeIn->sold_vehicle_id)
+                                        <a class="btn btn-xs btn-primary" href="{{ route('admin.vehicles.edit', $tradeIn->sold_vehicle_id) }}">Abrir venda</a>
+                                    @elseif($tradeIn->created_vehicle_id)
+                                        <a class="btn btn-xs btn-primary" href="{{ route('admin.vehicles.edit', $tradeIn->created_vehicle_id) }}">Abrir viatura</a>
+                                    @endif
                                 @endif
                             </td>
                         </tr>

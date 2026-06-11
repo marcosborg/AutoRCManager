@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
 use App\Models\GeneralState;
 use App\Models\Vehicle;
 use App\Models\VehicleTradeIn;
@@ -20,7 +21,14 @@ class VehicleTradeInController extends Controller
 {
     public function index(Request $request)
     {
-        abort_if(! $this->canConvertTradeIns(), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if(! $this->canAccessTradeIns(), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $canManageTradeIns = $this->canConvertTradeIns();
+        abort_if(
+            ! $canManageTradeIns && $request->query('status') !== VehicleTradeIn::STATUS_CONVERTED,
+            Response::HTTP_FORBIDDEN,
+            '403 Forbidden'
+        );
 
         $dateField = $this->dateFieldForStatus($request->query('status'));
         $dateStart = $this->parseDateFilter($request->query('date_start'));
@@ -59,7 +67,46 @@ class VehicleTradeInController extends Controller
             ->paginate(50)
             ->appends($request->query());
 
-        return view('admin.vehicleTradeIns.index', compact('tradeIns', 'dateField'));
+        return view('admin.vehicleTradeIns.index', compact('tradeIns', 'dateField', 'canManageTradeIns'));
+    }
+
+    public function create()
+    {
+        abort_if(Gate::denies('vehicle_trade_in_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $brands = Brand::orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+
+        return view('admin.vehicleTradeIns.create', compact('brands'));
+    }
+
+    public function storeStandalone(Request $request)
+    {
+        abort_if(Gate::denies('vehicle_trade_in_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $this->validatedData($request, true);
+        $data['has_vehicle_delivery_declaration'] = true;
+        $normalizedLicense = VehicleTradeIn::normalizeLicense($data['trade_in_license']);
+        $this->validateLicenseIsAvailable($normalizedLicense, 'trade_in_license');
+        $stockStateId = $this->requiredStockStateId();
+
+        DB::transaction(function () use ($request, $data, $normalizedLicense, $stockStateId) {
+            $createdVehicle = $this->createStockVehicle($data, $stockStateId, 'Retoma sem venda associada.');
+            $tradeIn = VehicleTradeIn::create($this->payload($data, $normalizedLicense) + [
+                'created_by_id' => $request->user()?->id,
+                'created_vehicle_id' => $createdVehicle->id,
+                'status' => VehicleTradeIn::STATUS_PENDING,
+            ]);
+
+            $this->attachTradeInFiles($request, $tradeIn, $createdVehicle);
+        });
+
+        $redirectStatus = $this->canConvertTradeIns()
+            ? VehicleTradeIn::STATUS_PENDING
+            : VehicleTradeIn::STATUS_CONVERTED;
+
+        return redirect()
+            ->route('admin.vehicle-trade-ins.index', ['status' => $redirectStatus])
+            ->with('message', 'Retoma criada sem venda associada. A viatura foi colocada em stock e aguarda verificacao.');
     }
 
     public function store(Request $request, Vehicle $vehicle)
@@ -72,33 +119,18 @@ class VehicleTradeInController extends Controller
                 ->with('message', 'Edicao da viatura mantida. A retoma so e criada pelo botao proprio de confirmacao.');
         }
 
-        $validator = Validator::make($request->all(), $this->rules());
-        if ($validator->fails()) {
-            throw (new ValidationException($validator))->errorBag('trade_in');
-        }
-
-        $data = $validator->validated();
+        $data = $this->validatedData($request);
         $normalizedLicense = VehicleTradeIn::normalizeLicense($data['trade_in_license']);
         $this->validateLicenseIsAvailable($normalizedLicense, 'trade_in_license');
-        $stockStateId = $this->stockStateId();
-        if (! $stockStateId) {
-            $validator = Validator::make([], []);
-            $validator->errors()->add('general_state_id', 'Nao foi encontrado estado de stock para criar a viatura.');
-            throw (new ValidationException($validator))->errorBag('trade_in');
-        }
+        $stockStateId = $this->requiredStockStateId();
 
         DB::transaction(function () use ($request, $vehicle, $data, $normalizedLicense, $stockStateId) {
-            $createdVehicle = Vehicle::create([
-                'license' => trim($data['trade_in_license']),
-                'general_state_id' => $stockStateId,
-                'brand_id' => $data['trade_in_brand_id'],
-                'model' => $data['trade_in_model'],
-                'year' => $data['trade_in_year'],
-                'kilometers' => $data['trade_in_kilometers'],
-                'purchase_price' => $data['trade_in_amount'],
-                'client_id' => $vehicle->client_id,
-                'acquisition_notes' => trim('Retoma da viatura #' . $vehicle->id . '. ' . ($data['trade_in_notes'] ?? '')),
-            ]);
+            $createdVehicle = $this->createStockVehicle(
+                $data,
+                $stockStateId,
+                'Retoma da viatura #' . $vehicle->id . '.',
+                $vehicle->client_id
+            );
 
             $tradeIn = $vehicle->trade_ins()->create($this->payload($data, $normalizedLicense) + [
                 'created_by_id' => $request->user()?->id,
@@ -106,9 +138,7 @@ class VehicleTradeInController extends Controller
                 'status' => VehicleTradeIn::STATUS_PENDING,
             ]);
 
-            $this->attachFiles($request, $tradeIn);
-            $this->attachInitialPhotosToVehicle($request, $createdVehicle);
-            $this->copyDocumentsToVehicle($tradeIn, $createdVehicle);
+            $this->attachTradeInFiles($request, $tradeIn, $createdVehicle);
         });
 
         return redirect()
@@ -131,11 +161,13 @@ class VehicleTradeInController extends Controller
             'converted_at' => now(),
         ]);
 
-        app(SaleClosureApprovalService::class)->createForTradeIn(
-            $tradeIn->sold_vehicle()->firstOrFail(),
-            $request->user(),
-            $tradeIn
-        );
+        if ($tradeIn->sold_vehicle_id) {
+            app(SaleClosureApprovalService::class)->createForTradeIn(
+                $tradeIn->sold_vehicle()->firstOrFail(),
+                $request->user(),
+                $tradeIn
+            );
+        }
 
         return redirect()
             ->route('admin.vehicle-trade-ins.index', ['status' => VehicleTradeIn::STATUS_PENDING])
@@ -160,9 +192,9 @@ class VehicleTradeInController extends Controller
         return back()->with('message', 'Retoma rejeitada.');
     }
 
-    private function rules(): array
+    private function rules(bool $standalone = false): array
     {
-        return [
+        $rules = [
             'trade_in_license' => ['required', 'string', 'max:50'],
             'trade_in_amount' => ['required', 'numeric', 'min:0.01'],
             'trade_in_brand_id' => ['required', 'integer', 'exists:brands,id'],
@@ -172,6 +204,7 @@ class VehicleTradeInController extends Controller
             'trade_in_notes' => ['nullable', 'string'],
             'has_registration_title' => ['nullable', 'boolean'],
             'has_purchase_sale_rgpd' => ['nullable', 'boolean'],
+            'has_vehicle_delivery_declaration' => ['nullable', 'boolean'],
             'has_seller_identification' => ['nullable', 'boolean'],
             'has_ipo' => ['nullable', 'boolean'],
             'has_two_keys' => ['nullable', 'boolean'],
@@ -183,8 +216,10 @@ class VehicleTradeInController extends Controller
             'has_promissory_note' => ['nullable', 'boolean'],
             'has_reservation_extinction_authorization' => ['nullable', 'boolean'],
             'registration_title.*' => ['nullable', 'file', 'max:10240'],
-            'purchase_sale_rgpd' => ['required', 'array', 'min:1'],
-            'purchase_sale_rgpd.*' => ['required', 'file', 'max:10240'],
+            'purchase_sale_rgpd' => [$standalone ? 'nullable' : 'required', 'array', 'min:1'],
+            'purchase_sale_rgpd.*' => [$standalone ? 'nullable' : 'required', 'file', 'max:10240'],
+            'vehicle_delivery_declaration' => [$standalone ? 'required' : 'nullable', 'array', 'min:1'],
+            'vehicle_delivery_declaration.*' => [$standalone ? 'required' : 'nullable', 'file', 'max:10240'],
             'seller_identification.*' => ['nullable', 'file', 'max:10240'],
             'ipo.*' => ['nullable', 'file', 'max:10240'],
             'keys.*' => ['nullable', 'file', 'max:10240'],
@@ -199,6 +234,45 @@ class VehicleTradeInController extends Controller
             'inicial' => ['required', 'array', 'min:1'],
             'inicial.*' => ['required', 'file', 'max:10240'],
         ];
+
+        return $rules;
+    }
+
+    private function validatedData(Request $request, bool $standalone = false): array
+    {
+        $validator = Validator::make($request->all(), $this->rules($standalone));
+        if ($validator->fails()) {
+            throw (new ValidationException($validator))->errorBag('trade_in');
+        }
+
+        return $validator->validated();
+    }
+
+    private function createStockVehicle(array $data, int $stockStateId, string $source, ?int $clientId = null): Vehicle
+    {
+        return Vehicle::create([
+            'license' => trim($data['trade_in_license']),
+            'general_state_id' => $stockStateId,
+            'brand_id' => $data['trade_in_brand_id'],
+            'model' => $data['trade_in_model'],
+            'year' => $data['trade_in_year'],
+            'kilometers' => $data['trade_in_kilometers'],
+            'purchase_price' => $data['trade_in_amount'],
+            'client_id' => $clientId,
+            'acquisition_notes' => trim($source . ' ' . ($data['trade_in_notes'] ?? '')),
+        ]);
+    }
+
+    private function requiredStockStateId(): int
+    {
+        $stockStateId = $this->stockStateId();
+        if ($stockStateId) {
+            return $stockStateId;
+        }
+
+        $validator = Validator::make([], []);
+        $validator->errors()->add('general_state_id', 'Nao foi encontrado estado de stock para criar a viatura.');
+        throw (new ValidationException($validator))->errorBag('trade_in');
     }
 
     private function payload(array $data, string $normalizedLicense): array
@@ -206,6 +280,7 @@ class VehicleTradeInController extends Controller
         $checkboxes = [
             'has_registration_title',
             'has_purchase_sale_rgpd',
+            'has_vehicle_delivery_declaration',
             'has_seller_identification',
             'has_ipo',
             'has_two_keys',
@@ -266,11 +341,23 @@ class VehicleTradeInController extends Controller
 
     private function attachFiles(Request $request, VehicleTradeIn $tradeIn): void
     {
-        foreach (array_keys(VehicleTradeIn::DOCUMENT_COLLECTIONS) as $collection) {
+        $collections = array_unique(array_merge(
+            array_keys(VehicleTradeIn::DOCUMENT_COLLECTIONS),
+            array_keys(VehicleTradeIn::STANDALONE_DOCUMENT_COLLECTIONS)
+        ));
+
+        foreach ($collections as $collection) {
             foreach ((array) $request->file($collection, []) as $file) {
                 $tradeIn->addMedia($file)->toMediaCollection($collection);
             }
         }
+    }
+
+    private function attachTradeInFiles(Request $request, VehicleTradeIn $tradeIn, Vehicle $vehicle): void
+    {
+        $this->attachFiles($request, $tradeIn);
+        $this->attachInitialPhotosToVehicle($request, $vehicle);
+        $this->copyDocumentsToVehicle($tradeIn, $vehicle);
     }
 
     private function attachInitialPhotosToVehicle(Request $request, Vehicle $vehicle): void
@@ -284,6 +371,7 @@ class VehicleTradeInController extends Controller
     {
         $targets = [
             'purchase_sale_rgpd' => 'additional_documents',
+            'vehicle_delivery_declaration' => 'additional_documents',
             'ipo' => 'documents',
             'internal_invoice' => 'invoice',
             'reservation_extinction_authorization' => 'withdrawal_authorization_file',
@@ -319,6 +407,11 @@ class VehicleTradeInController extends Controller
 
         return Gate::allows('vehicle_trade_in_convert')
             || RolePreview::hasAnyEffectiveRole($user, ['Admin', 'Gestão', 'Gestao', 'Stand Adm']);
+    }
+
+    private function canAccessTradeIns(): bool
+    {
+        return Gate::allows('vehicle_trade_in_access') || $this->canConvertTradeIns();
     }
 
     public function pending()

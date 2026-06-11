@@ -83,6 +83,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('vehicles/{vehicle}/client-payments/{payment}', 'VehicleController@destroyClientPayment')->name('vehicles.client-payments.destroy');
     Route::post('vehicles/{vehicle}/send-to-workshop', 'VehicleController@sendToWorkshop')->name('vehicles.send-to-workshop');
     Route::get('vehicle-trade-ins', 'VehicleTradeInController@index')->name('vehicle-trade-ins.index');
+    Route::get('vehicle-trade-ins/create', 'VehicleTradeInController@create')->name('vehicle-trade-ins.create');
+    Route::post('vehicle-trade-ins', 'VehicleTradeInController@storeStandalone')->name('vehicle-trade-ins.store');
     Route::get('vehicle-trade-ins/pending', 'VehicleTradeInController@pending')->name('vehicle-trade-ins.pending');
     Route::post('vehicles/{vehicle}/trade-ins', 'VehicleTradeInController@store')->name('vehicles.trade-ins.store');
     Route::post('vehicle-trade-ins/{tradeIn}/convert', 'VehicleTradeInController@convert')->name('vehicle-trade-ins.convert');

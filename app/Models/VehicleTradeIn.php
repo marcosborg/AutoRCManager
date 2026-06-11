@@ -33,6 +33,13 @@ class VehicleTradeIn extends Model implements HasMedia
         'reservation_extinction_authorization' => 'Autorizacao extincao reserva',
     ];
 
+    public const STANDALONE_DOCUMENT_COLLECTIONS = [
+        'vehicle_delivery_declaration' => 'Declaracao de entrega de viatura',
+        'ipo' => 'IPO - Ficha',
+        'internal_invoice' => 'Fatura interna',
+        'reservation_extinction_authorization' => 'Autorizacao extincao reserva',
+    ];
+
     public $table = 'vehicle_trade_ins';
 
     protected $fillable = [
@@ -50,6 +57,7 @@ class VehicleTradeIn extends Model implements HasMedia
         'rejected_at',
         'has_registration_title',
         'has_purchase_sale_rgpd',
+        'has_vehicle_delivery_declaration',
         'has_seller_identification',
         'has_ipo',
         'has_two_keys',
@@ -74,6 +82,7 @@ class VehicleTradeIn extends Model implements HasMedia
         'amount' => 'float',
         'has_registration_title' => 'boolean',
         'has_purchase_sale_rgpd' => 'boolean',
+        'has_vehicle_delivery_declaration' => 'boolean',
         'has_seller_identification' => 'boolean',
         'has_ipo' => 'boolean',
         'has_two_keys' => 'boolean',

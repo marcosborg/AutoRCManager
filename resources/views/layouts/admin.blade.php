@@ -155,7 +155,8 @@
                                                 <li>
                                                     <a href="{{ route('admin.vehicle-trade-ins.index', ['status' => \App\Models\VehicleTradeIn::STATUS_PENDING]) }}">
                                                         <i class="fa fa-exchange text-yellow"></i>
-                                                        {{ $tradeIn->license }} - venda {{ $tradeIn->sold_vehicle->license ?? $tradeIn->sold_vehicle->foreign_license ?? ('#' . $tradeIn->sold_vehicle_id) }}
+                                                        {{ $tradeIn->license }} -
+                                                        {{ $tradeIn->sold_vehicle_id ? 'venda ' . ($tradeIn->sold_vehicle->license ?? $tradeIn->sold_vehicle->foreign_license ?? ('#' . $tradeIn->sold_vehicle_id)) : 'sem venda associada' }}
                                                     </a>
                                                 </li>
                                             @empty
