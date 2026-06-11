@@ -425,6 +425,112 @@
                 $shutdownInput.val('');
                 $shutdownSubmit.prop('disabled', true);
             });
+
+            var $globalScrollbar = $('<div class="global-horizontal-scrollbar" aria-hidden="true"><div class="global-horizontal-scrollbar__content"></div></div>').appendTo('body');
+            var $globalScrollbarContent = $globalScrollbar.children();
+            var activeHorizontalContainer = null;
+            var syncingHorizontalScroll = false;
+
+            function prepareHorizontalTables() {
+                $('.content-wrapper table.table').each(function () {
+                    if (!$(this).closest('.table-responsive, .dataTables_scrollBody').length) {
+                        $(this).wrap('<div class="table-responsive"></div>');
+                    }
+                });
+            }
+
+            prepareHorizontalTables();
+
+            function horizontalCandidates() {
+                return $('.content-wrapper .table-responsive, .content-wrapper .dataTables_scrollBody').filter(function () {
+                    var rect = this.getBoundingClientRect();
+                    return $(this).is(':visible')
+                        && this.scrollWidth > this.clientWidth + 1
+                        && rect.bottom > 0
+                        && rect.top < window.innerHeight;
+                });
+            }
+
+            function chooseHorizontalContainer() {
+                var candidates = horizontalCandidates().get();
+                if (!candidates.length) {
+                    return null;
+                }
+
+                candidates.sort(function (first, second) {
+                    var firstRect = first.getBoundingClientRect();
+                    var secondRect = second.getBoundingClientRect();
+                    var firstVisible = Math.min(firstRect.bottom, window.innerHeight) - Math.max(firstRect.top, 0);
+                    var secondVisible = Math.min(secondRect.bottom, window.innerHeight) - Math.max(secondRect.top, 0);
+                    return secondVisible - firstVisible;
+                });
+
+                return candidates[0];
+            }
+
+            function refreshGlobalHorizontalScrollbar(preferredContainer) {
+                var container = preferredContainer && preferredContainer.scrollWidth > preferredContainer.clientWidth + 1
+                    ? preferredContainer
+                    : chooseHorizontalContainer();
+
+                activeHorizontalContainer = container;
+                if (!container) {
+                    $globalScrollbar.removeClass('is-visible').scrollLeft(0);
+                    $('body').removeClass('has-global-horizontal-scrollbar');
+                    return;
+                }
+
+                $globalScrollbarContent.width(container.scrollWidth);
+                $globalScrollbar.addClass('is-visible').scrollLeft(container.scrollLeft);
+                $('body').addClass('has-global-horizontal-scrollbar');
+            }
+
+            $(document).on('mouseenter focusin', '.content-wrapper .table-responsive, .content-wrapper .dataTables_scrollBody', function () {
+                refreshGlobalHorizontalScrollbar(this);
+            });
+
+            $(document).on('scroll', '.content-wrapper .table-responsive, .content-wrapper .dataTables_scrollBody', function () {
+                if (this !== activeHorizontalContainer || syncingHorizontalScroll) {
+                    return;
+                }
+                syncingHorizontalScroll = true;
+                $globalScrollbar.scrollLeft(this.scrollLeft);
+                syncingHorizontalScroll = false;
+            });
+
+            $globalScrollbar.on('scroll', function () {
+                if (!activeHorizontalContainer || syncingHorizontalScroll) {
+                    return;
+                }
+                syncingHorizontalScroll = true;
+                activeHorizontalContainer.scrollLeft = this.scrollLeft;
+                syncingHorizontalScroll = false;
+            });
+
+            $(window).on('resize scroll', function () {
+                refreshGlobalHorizontalScrollbar();
+            });
+
+            $(document).on('draw.dt shown.bs.tab expanded.pushMenu collapsed.pushMenu', function () {
+                window.setTimeout(function () {
+                    prepareHorizontalTables();
+                    refreshGlobalHorizontalScrollbar();
+                }, 0);
+            });
+
+            var horizontalMutationTimer = null;
+            var contentWrapper = document.querySelector('.content-wrapper');
+            if (contentWrapper && window.MutationObserver) {
+                new MutationObserver(function () {
+                    window.clearTimeout(horizontalMutationTimer);
+                    horizontalMutationTimer = window.setTimeout(function () {
+                        prepareHorizontalTables();
+                        refreshGlobalHorizontalScrollbar();
+                    }, 50);
+                }).observe(contentWrapper, { childList: true, subtree: true });
+            }
+
+            refreshGlobalHorizontalScrollbar();
         });
 
         $(function() {

@@ -280,6 +280,8 @@
                     <form method="POST" action="{{ route("admin.repairs.update", [$repair->id]) }}" enctype="multipart/form-data">
                         @method('PUT')
                         @csrf
+                        @include('admin.repairs.partials.workshopPlanning')
+
                         <div class="row">
                             <div class="col-md-5">
                                 <div class="panel panel-default">

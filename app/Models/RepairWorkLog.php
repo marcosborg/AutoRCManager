@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RepairWorkLog extends Model
 {
-    use HasFactory, SoftDeletes, Auditable;
+    use Auditable, HasFactory, SoftDeletes;
 
     public $table = 'repair_work_logs';
 
@@ -24,6 +24,7 @@ class RepairWorkLog extends Model
 
     protected $fillable = [
         'repair_id',
+        'workshop_intervention_id',
         'user_id',
         'started_at',
         'finished_at',
@@ -44,5 +45,9 @@ class RepairWorkLog extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-}
 
+    public function workshopIntervention()
+    {
+        return $this->belongsTo(WorkshopIntervention::class, 'workshop_intervention_id');
+    }
+}

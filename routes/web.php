@@ -159,6 +159,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('part-orders/{partOrder}/items/{item}/quotes/{quote}/select', 'PartOrderController@selectQuote')->name('part-orders.items.quotes.select');
     Route::resource('part-orders', 'PartOrderController');
     Route::resource('external-services', 'ExternalServiceController')->except(['show']);
+    Route::post('workshop-interventions/{workshopIntervention}/start', 'WorkshopInterventionController@start')->name('workshop-interventions.start');
+    Route::post('workshop-interventions/{workshopIntervention}/finish', 'WorkshopInterventionController@finish')->name('workshop-interventions.finish');
+    Route::post('workshop-interventions/{workshopIntervention}/complete', 'WorkshopInterventionController@complete')->name('workshop-interventions.complete');
+    Route::resource('workshop-interventions', 'WorkshopInterventionController')
+        ->parameters(['workshop-interventions' => 'workshopIntervention'])
+        ->except(['show']);
+    Route::resource('workshop-intervention-types', 'WorkshopInterventionTypeController')
+        ->parameters(['workshop-intervention-types' => 'workshopInterventionType'])
+        ->only(['index', 'store', 'update', 'destroy']);
     Route::resource('part-payments', 'PartPaymentController');
     Route::resource('part-receipts', 'PartReceiptController');
 

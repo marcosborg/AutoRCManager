@@ -81,7 +81,7 @@ class WorkshopApiController extends Controller
 
         $rules = [
             'repair_state_id' => ['nullable', 'integer', 'exists:repair_states,id'],
-            'work_type' => ['nullable', 'in:workshop,paint'],
+            'work_type' => ['nullable', 'in:workshop,painting,paint'],
             'name' => ['nullable', 'string', 'max:191'],
             'kilometers' => ['nullable', 'integer'],
             'kilometers_out' => ['nullable', 'integer', 'min:0'],
@@ -101,6 +101,9 @@ class WorkshopApiController extends Controller
         }
 
         $data = $request->validate($rules);
+        if (($data['work_type'] ?? null) === 'paint') {
+            $data['work_type'] = 'painting';
+        }
 
         if (array_key_exists('expected_completion_date', $data) && $data['expected_completion_date']) {
             $data['expected_completion_date'] = Carbon::parse($data['expected_completion_date'])
@@ -159,10 +162,13 @@ class WorkshopApiController extends Controller
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $openLog = RepairWorkLog::where('repair_id', $repair->id)
-            ->where('user_id', $request->user()->id)
+        $openLog = RepairWorkLog::where('user_id', $request->user()->id)
             ->whereNull('finished_at')
             ->first();
+
+        if ($openLog && (int) $openLog->repair_id !== (int) $repair->id) {
+            return response()->json(['message' => 'Ja tem outro trabalho em curso. Termine-o antes de iniciar este.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         if (! $openLog) {
             RepairWorkLog::create([
@@ -397,7 +403,7 @@ class WorkshopApiController extends Controller
         abort_if(Gate::denies('repair_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $data = $request->validate([
-            'work_type' => ['nullable', 'in:workshop,paint'],
+            'work_type' => ['nullable', 'in:workshop,painting,paint'],
         ]);
 
         if (RepairRules::hasOpenRepairs($vehicle->id)) {
@@ -408,7 +414,7 @@ class WorkshopApiController extends Controller
 
         $repair = Repair::create([
             'vehicle_id' => $vehicle->id,
-            'work_type' => $data['work_type'] ?? 'workshop',
+            'work_type' => ($data['work_type'] ?? 'workshop') === 'paint' ? 'painting' : ($data['work_type'] ?? 'workshop'),
             'kilometers' => is_numeric($vehicle->kilometers) ? (int) $vehicle->kilometers : null,
             'timestamp' => now(),
         ]);
@@ -606,6 +612,7 @@ class WorkshopApiController extends Controller
                 ->values()
                 ->map(fn (RepairWorkLog $log) => [
                     'id' => $log->id,
+                    'workshop_intervention_id' => $log->workshop_intervention_id,
                     'user_id' => $log->user_id,
                     'user_name' => $log->user?->name,
                     'started_at' => $log->getRawOriginal('started_at'),
@@ -743,7 +750,7 @@ class WorkshopApiController extends Controller
     {
         $definitions = collect($this->checklistFieldDefinitions());
 
-        if (($repair->work_type ?: 'workshop') === 'paint') {
+        if (in_array(($repair->work_type ?: 'workshop'), ['paint', 'painting'], true)) {
             return $definitions->where('group', 'Exterior')->values();
         }
 

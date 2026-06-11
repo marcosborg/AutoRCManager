@@ -518,7 +518,7 @@ class RepairController extends Controller
 
         $repair_states = RepairState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $repair->load('vehicle', 'repair_state', 'parts');
+        $repair->load('vehicle', 'repair_state', 'parts', 'workshopInterventions.type', 'workshopInterventions.mechanics', 'workshopInterventions.workLogs');
 
         $general_states = GeneralState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
@@ -699,17 +699,17 @@ class RepairController extends Controller
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $openLog = RepairWorkLog::where('repair_id', $repair->id)
-            ->where('user_id', Auth::id())
+        $openLog = RepairWorkLog::where('user_id', Auth::id())
             ->whereNull('finished_at')
             ->first();
 
+        if ($openLog && (int) $openLog->repair_id !== (int) $repair->id) {
+            return redirect()->route('admin.repairs.edit', $repair->id)
+                ->withErrors(['repair_work' => 'Já tem outro trabalho em curso. Termine-o antes de iniciar este.']);
+        }
+
         if (! $openLog) {
-            RepairWorkLog::create([
-                'repair_id' => $repair->id,
-                'user_id' => Auth::id(),
-                'started_at' => now(),
-            ]);
+            RepairWorkLog::create(['repair_id' => $repair->id, 'user_id' => Auth::id(), 'started_at' => now()]);
         }
 
         return redirect()

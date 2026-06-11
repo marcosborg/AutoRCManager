@@ -262,18 +262,33 @@
                 </li>
             @endcan
             @can('sale_access')
-                @foreach (\App\Models\GeneralState::orderByRaw('COALESCE(position, 999999)')->orderBy('id')->get() as $key => $generalState)
-                <li class="{{ request()->is("admin/sales") || request()->is("admin/sales/*") ? "active" : "" }}">
-                    <a href="/admin/sales/{{ $generalState->id }}">
-                        <i class="fa-fw fas fa-circle">
-
-                        </i>
-
-                        <span>{{ $generalState->name }}</span>
-
+                @php
+                    $salesMenuActive = request()->is('admin/sales') || request()->is('admin/sales/*');
+                    $selectedGeneralStateId = (string) request()->route('general_state_id');
+                @endphp
+                <li class="treeview {{ $salesMenuActive ? 'active menu-open' : '' }}">
+                    <a href="#">
+                        <i class="fa-fw fas fa-layer-group"></i>
+                        <span>Estados</span>
+                        <span class="pull-right-container"><i class="fa fa-fw fa-angle-left pull-right"></i></span>
                     </a>
+                    <ul class="treeview-menu">
+                        <li class="{{ $salesMenuActive && $selectedGeneralStateId === '' ? 'active' : '' }}">
+                            <a href="{{ route('admin.sales.index') }}">
+                                <i class="fa-fw far fa-circle"></i>
+                                <span>Todos</span>
+                            </a>
+                        </li>
+                        @foreach (\App\Models\GeneralState::orderByRaw('COALESCE(position, 999999)')->orderBy('id')->get() as $generalState)
+                            <li class="{{ $selectedGeneralStateId === (string) $generalState->id ? 'active' : '' }}">
+                                <a href="{{ route('admin.sales.index', $generalState->id) }}">
+                                    <i class="fa-fw fas fa-circle"></i>
+                                    <span>{{ $generalState->name }}</span>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
                 </li>
-                @endforeach
             @endcan
             @can('repair_menu_access')
                 <li class="treeview">
@@ -300,6 +315,11 @@
                                     <i class="fa-fw fas fa-file-invoice-dollar"></i>
                                     <span>Relatorio de pecas</span>
                                 </a>
+                            </li>
+                        @endcan
+                        @can('workshop_planning_access')
+                            <li class="{{ request()->is('admin/workshop-interventions') || request()->is('admin/workshop-interventions/*') ? 'active' : '' }}">
+                                <a href="{{ route('admin.workshop-interventions.index') }}"><i class="fa-fw fas fa-calendar-alt"></i><span>Planificação de intervenções</span></a>
                             </li>
                         @endcan
                         @can('part_order_access')

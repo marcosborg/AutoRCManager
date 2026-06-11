@@ -342,4 +342,9 @@ class Repair extends Model implements HasMedia
     {
         return $this->hasMany(RepairWorkLog::class, 'repair_id');
     }
+
+    public function workshopInterventions()
+    {
+        return $this->hasMany(WorkshopIntervention::class);
+    }
 }

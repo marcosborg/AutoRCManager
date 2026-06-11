@@ -3,6 +3,7 @@
 use App\Models\VehiclePosition;
 use App\Http\Controllers\Api\V1\Mobile\AuthApiController;
 use App\Http\Controllers\Api\V1\Mobile\WorkshopApiController;
+use App\Http\Controllers\Api\V1\Mobile\WorkshopPlanningApiController;
 
 Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', 'middleware' => ['auth:sanctum']], function () {
     // Permissions
@@ -96,6 +97,20 @@ Route::prefix('mobile')->group(function () {
         Route::get('workshop/garage-vehicles', [WorkshopApiController::class, 'garageVehicles']);
         Route::get('workshop/vehicles', [WorkshopApiController::class, 'vehicles']);
         Route::post('workshop/vehicles/{vehicle}/interventions', [WorkshopApiController::class, 'newIntervention']);
+        Route::get('workshop/planning/my-agenda', [WorkshopPlanningApiController::class, 'myAgenda']);
+        Route::get('workshop/planning/types', [WorkshopPlanningApiController::class, 'types']);
+        Route::get('workshop/planning/mechanics', [WorkshopPlanningApiController::class, 'mechanics']);
+        Route::post('workshop/planning/types', [WorkshopPlanningApiController::class, 'storeType']);
+        Route::put('workshop/planning/types/{workshopInterventionType}', [WorkshopPlanningApiController::class, 'updateType']);
+        Route::delete('workshop/planning/types/{workshopInterventionType}', [WorkshopPlanningApiController::class, 'destroyType']);
+        Route::get('workshop/planning/interventions', [WorkshopPlanningApiController::class, 'index']);
+        Route::post('workshop/planning/interventions', [WorkshopPlanningApiController::class, 'store']);
+        Route::get('workshop/planning/interventions/{workshopIntervention}', [WorkshopPlanningApiController::class, 'show']);
+        Route::put('workshop/planning/interventions/{workshopIntervention}', [WorkshopPlanningApiController::class, 'update']);
+        Route::delete('workshop/planning/interventions/{workshopIntervention}', [WorkshopPlanningApiController::class, 'destroy']);
+        Route::post('workshop/planning/interventions/{workshopIntervention}/start', [WorkshopPlanningApiController::class, 'start']);
+        Route::post('workshop/planning/interventions/{workshopIntervention}/finish', [WorkshopPlanningApiController::class, 'finish']);
+        Route::post('workshop/planning/interventions/{workshopIntervention}/complete', [WorkshopPlanningApiController::class, 'complete']);
 
         Route::get('workshop/part-order-suppliers', [\App\Http\Controllers\Api\V1\Mobile\PartOrderApiController::class, 'suppliers']);
         Route::post('workshop/part-order-suppliers', [\App\Http\Controllers\Api\V1\Mobile\PartOrderApiController::class, 'storeSupplier']);

@@ -67,3 +67,40 @@ table.dataTable thead .sorting_desc {
     content: " *";
     color: red;
 }
+
+.global-horizontal-scrollbar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 230px;
+    z-index: 1040;
+    display: none;
+    height: 18px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: #f4f4f4;
+    border-top: 1px solid #d2d6de;
+}
+
+.global-horizontal-scrollbar.is-visible {
+    display: block;
+}
+
+.global-horizontal-scrollbar__content {
+    height: 1px;
+}
+
+body.sidebar-collapse .global-horizontal-scrollbar {
+    left: 50px;
+}
+
+body.has-global-horizontal-scrollbar .content-wrapper {
+    padding-bottom: 18px;
+}
+
+@media (max-width: 767px) {
+    .global-horizontal-scrollbar,
+    body.sidebar-collapse .global-horizontal-scrollbar {
+        left: 0;
+    }
+}
