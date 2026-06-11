@@ -244,7 +244,7 @@ class VehicleCsvSyncService
 
         if (!isset($headerMap['license'], $headerMap['brand'])) {
             fclose($handle);
-            throw new RuntimeException('CSV precisa de colunas de matricula/license e marca/brand.');
+            throw new RuntimeException('O CSV precisa das colunas de matrícula e marca.');
         }
 
         $rows = [];

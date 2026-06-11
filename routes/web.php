@@ -158,6 +158,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('part-orders/{partOrder}/items/{item}/quotes', 'PartOrderController@storeQuote')->name('part-orders.items.quotes.store');
     Route::post('part-orders/{partOrder}/items/{item}/quotes/{quote}/select', 'PartOrderController@selectQuote')->name('part-orders.items.quotes.select');
     Route::resource('part-orders', 'PartOrderController');
+    Route::resource('external-services', 'ExternalServiceController')->except(['show']);
     Route::resource('part-payments', 'PartPaymentController');
     Route::resource('part-receipts', 'PartReceiptController');
 

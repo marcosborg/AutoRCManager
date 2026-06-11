@@ -41,8 +41,7 @@ class RepairPartsReportController extends Controller
         if ($request->filled('vehicle')) {
             $vehicleTerm = trim((string) $request->input('vehicle'));
             $query->whereHas('repair.vehicle', function ($vehicleQuery) use ($vehicleTerm) {
-                $vehicleQuery->where('license', 'like', '%' . $vehicleTerm . '%')
-                    ->orWhere('foreign_license', 'like', '%' . $vehicleTerm . '%');
+                $vehicleQuery->searchByLicense($vehicleTerm);
             });
         }
 
@@ -66,4 +65,3 @@ class RepairPartsReportController extends Controller
         ));
     }
 }
-

@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Support\LicensePlate;
 use App\Traits\Auditable;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -108,7 +108,12 @@ class VehicleTradeIn extends Model implements HasMedia
 
     public static function normalizeLicense(string $license): string
     {
-        return preg_replace('/[\s-]+/', '', Str::upper(trim($license))) ?? '';
+        return LicensePlate::normalize($license);
+    }
+
+    public function setLicenseAttribute($value): void
+    {
+        $this->attributes['license'] = LicensePlate::formatNational($value);
     }
 
     public function sold_vehicle()

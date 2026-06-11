@@ -42,9 +42,10 @@ class PartOrderController extends Controller
         if ($request->filled('vehicle_search')) {
             $search = trim((string) $request->vehicle_search);
             $query->whereHas('vehicle', function ($vehicleQuery) use ($search) {
-                $vehicleQuery->where('license', 'like', '%' . $search . '%')
-                    ->orWhere('foreign_license', 'like', '%' . $search . '%')
-                    ->orWhere('model', 'like', '%' . $search . '%');
+                $vehicleQuery->where(function ($vehicleSearch) use ($search) {
+                    $vehicleSearch->searchByLicense($search)
+                        ->orWhere('model', 'like', '%' . $search . '%');
+                });
             });
         }
 
@@ -229,8 +230,6 @@ class PartOrderController extends Controller
                 'reference' => $itemData['reference'] ?? null,
                 'description' => $itemData['description'],
                 'quantity' => $itemData['quantity'] ?? 1,
-                'unit_price_estimated' => $itemData['unit_price_estimated'] ?? null,
-                'unit_price_final' => $itemData['unit_price_final'] ?? null,
                 'iva_percentage' => $itemData['iva_percentage'] ?? null,
                 'status' => $itemData['status'] ?? 'pending',
                 'observations' => $itemData['observations'] ?? null,

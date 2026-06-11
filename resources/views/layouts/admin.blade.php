@@ -312,30 +312,6 @@
                     </ul>
                 </div>
 
-                @if(count(config('panel.available_languages', [])) > 1)
-                    <div class="navbar-custom-menu">
-                        <ul class="nav navbar-nav">
-                            <li class="dropdown notifications-menu">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                                    {{ strtoupper(app()->getLocale()) }}
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li>
-                                        <ul class="menu">
-                                            @foreach(config('panel.available_languages') as $langLocale => $langName)
-                                                <li>
-                                                    <a href="{{ url()->current() }}?change_language={{ $langLocale }}">{{ strtoupper($langLocale) }} ({{ $langName }})</a>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </div>
-                @endif
-
-
             </nav>
         </header>
 
@@ -424,6 +400,20 @@
     <script src="{{ asset('js/main.js') }}"></script>
     <script>
         $(function () {
+            function formatNationalLicense(value) {
+                var normalized = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                return normalized.length === 6
+                    ? normalized.slice(0, 2) + '-' + normalized.slice(2, 4) + '-' + normalized.slice(4, 6)
+                    : String(value || '').toUpperCase();
+            }
+
+            $(document).on('input blur', 'input[name="license"], input[name="trade_in_license"]', function () {
+                var formatted = formatNationalLicense(this.value);
+                if (formatted !== this.value) {
+                    this.value = formatted;
+                }
+            });
+
             var $shutdownInput = $('#system-shutdown-confirmation');
             var $shutdownSubmit = $('#system-shutdown-submit');
 
@@ -447,15 +437,10 @@
   let selectAllButtonTrans = '{{ trans('global.select_all') }}'
   let selectNoneButtonTrans = '{{ trans('global.deselect_all') }}'
 
-  let languages = {
-    'en': 'https://cdn.datatables.net/plug-ins/1.10.19/i18n/English.json',
-        'pt': 'https://cdn.datatables.net/plug-ins/1.10.19/i18n/Portuguese.json'
-  };
-
   $.extend(true, $.fn.dataTable.Buttons.defaults.dom.button, { className: 'btn' })
   $.extend(true, $.fn.dataTable.defaults, {
     language: {
-      url: languages['{{ app()->getLocale() }}']
+      url: 'https://cdn.datatables.net/plug-ins/1.10.19/i18n/Portuguese.json'
     },
     columnDefs: [{
         orderable: false,

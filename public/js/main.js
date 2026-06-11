@@ -1,18 +1,18 @@
 $(document).ready(function () {
   window._token = $('meta[name="csrf-token"]').attr('content')
 
-  moment.updateLocale('en', {
+  moment.updateLocale('pt', {
     week: {dow: 1} // Monday is the first day of the week
   })
 
   $('.date').datetimepicker({
     format: 'YYYY-MM-DD',
-    locale: 'en'
+    locale: 'pt'
   })
 
   $('.datetime').datetimepicker({
     format: 'YYYY-MM-DD HH:mm:ss',
-    locale: 'en',
+    locale: 'pt',
     sideBySide: true
   })
 

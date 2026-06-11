@@ -30,8 +30,6 @@ class StorePartOrderRequest extends FormRequest
             'items.*.reference' => ['nullable', 'string', 'max:191'],
             'items.*.description' => ['nullable', 'string', 'max:191'],
             'items.*.quantity' => ['nullable', 'numeric', 'min:0.01'],
-            'items.*.unit_price_estimated' => ['nullable', 'numeric', 'min:0'],
-            'items.*.unit_price_final' => ['nullable', 'numeric', 'min:0'],
             'items.*.iva_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.status' => ['nullable', 'in:pending,ordered,shipped,received,installed,returned'],
             'items.*.observations' => ['nullable', 'string'],

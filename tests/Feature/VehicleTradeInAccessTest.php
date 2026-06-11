@@ -49,7 +49,8 @@ class VehicleTradeInAccessTest extends TestCase
 
         $user = Role::where('title', 'Stand')->firstOrFail()->users()->firstOrFail();
         $brand = Brand::query()->firstOrFail();
-        $license = 'TI-' . random_int(1000, 9999);
+        $license = 'TI' . random_int(1000, 9999);
+        $formattedLicense = substr($license, 0, 2) . '-' . substr($license, 2, 2) . '-' . substr($license, 4, 2);
 
         $this->actingAs($user)
             ->get(route('admin.vehicle-trade-ins.create'))
@@ -72,14 +73,14 @@ class VehicleTradeInAccessTest extends TestCase
             ])
             ->assertRedirect(route('admin.vehicle-trade-ins.index', ['status' => VehicleTradeIn::STATUS_CONVERTED]));
 
-        $tradeIn = VehicleTradeIn::where('license', $license)->firstOrFail();
+        $tradeIn = VehicleTradeIn::where('license', $formattedLicense)->firstOrFail();
 
         $this->assertNull($tradeIn->sold_vehicle_id);
         $this->assertTrue($tradeIn->has_vehicle_delivery_declaration);
         $this->assertCount(1, $tradeIn->getMedia('vehicle_delivery_declaration'));
         $this->assertSame(VehicleTradeIn::STATUS_PENDING, $tradeIn->status);
         $this->assertNotNull($tradeIn->created_vehicle_id);
-        $this->assertSame($license, Vehicle::findOrFail($tradeIn->created_vehicle_id)->license);
+        $this->assertSame($formattedLicense, Vehicle::findOrFail($tradeIn->created_vehicle_id)->license);
 
         $standAdm = Role::where('title', 'Stand Adm')->firstOrFail()->users()->firstOrFail();
 

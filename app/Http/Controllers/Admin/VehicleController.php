@@ -81,6 +81,9 @@ class VehicleController extends Controller
             $table->editColumn('license', function ($row) {
                 return $row->license ? $row->license : '';
             });
+            $table->filterColumn('license', function ($query, $keyword) {
+                $query->searchByLicense((string) $keyword);
+            });
             $table->editColumn('foreign_license', function ($row) {
                 return $row->foreign_license ? $row->foreign_license : '';
             });
@@ -869,7 +872,7 @@ class VehicleController extends Controller
 
             if (!isset($mapping['license'], $mapping['brand'])) {
                 return redirect()->route('admin.vehicles.syncCsvParseForm', $redirectParams)
-                    ->withErrors(['fields' => 'Selecione colunas para matricula/license e marca/brand.'])
+                    ->withErrors(['fields' => 'Selecione as colunas de matrícula e marca.'])
                     ->withInput();
             }
 

@@ -644,6 +644,10 @@
                                                             <td class="text-muted">{{ $rvMoney($rafaelVision['workshop_parts']) }}</td>
                                                         </tr>
                                                         <tr>
+                                                            <th class="text-muted">- Serviços externos</th>
+                                                            <td class="text-muted">{{ $rvMoney($rafaelVision['workshop_external_services']) }}</td>
+                                                        </tr>
+                                                        <tr>
                                                             <th class="text-muted">- Movimentos caixa Oficina</th>
                                                             <td class="text-muted">{{ $rvMoney($rafaelVision['workshop_operations']) }}</td>
                                                         </tr>
@@ -1524,15 +1528,15 @@
                             <input class="form-control" type="email" name="email" id="quick_client_email">
                         </div>
                         <div class="form-group">
-                            <label for="quick_client_provenience_id">Proveniencia</label>
+                            <label class="required" for="quick_client_provenience_id">Proveniência</label>
                             <div class="input-group">
-                                <select class="form-control select2" name="provenience_id" id="quick_client_provenience_id">
+                                <select class="form-control select2" name="provenience_id" id="quick_client_provenience_id" required>
                                     @foreach($proveniences as $id => $entry)
                                         <option value="{{ $id }}">{{ $entry }}</option>
                                     @endforeach
                                 </select>
                                 <span class="input-group-btn">
-                                    <button class="btn btn-default" type="button" id="quick-client-create-provenience">
+                                    <button class="btn btn-default js-create-provenience" type="button" data-target="#quick_client_provenience_id">
                                         Nova
                                     </button>
                                 </span>
@@ -1566,6 +1570,7 @@
         </div>
     </div>
 @endcan
+@include('admin.clients.partials.provenienceModal')
 @endsection
 
 @section('scripts')
@@ -1618,34 +1623,11 @@
             $quickClientErrors.hide().empty();
         });
 
-        $('#quick-client-create-provenience').on('click', function () {
-            var name = window.prompt('Nome da proveniencia');
-
-            if (!name) {
-                return;
-            }
-
-            $.ajax({
-                method: 'POST',
-                url: '{{ route('admin.proveniences.store') }}',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    name: name
-                },
-                headers: {
-                    'Accept': 'application/json'
-                }
-            }).done(function (provenience) {
-                var option = new Option(provenience.name, provenience.id, true, true);
-                $('#quick_client_provenience_id').append(option).trigger('change');
-            }).fail(function (xhr) {
-                var errors = xhr.responseJSON && xhr.responseJSON.errors ? xhr.responseJSON.errors : null;
-                alert(errors && errors.name ? errors.name[0] : 'Nao foi possivel criar a proveniencia.');
-            });
-        });
     });
 </script>
 @endcan
+
+@stack('scripts')
 
 <script>
     $(function () {
@@ -2638,4 +2620,3 @@
 </script>
 
 @endsection
-

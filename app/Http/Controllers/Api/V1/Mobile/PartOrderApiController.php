@@ -30,9 +30,10 @@ class PartOrderApiController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->whereHas('vehicle', function ($vehicleQuery) use ($search) {
-                    $vehicleQuery->where('license', 'like', '%' . $search . '%')
-                        ->orWhere('foreign_license', 'like', '%' . $search . '%')
-                        ->orWhere('model', 'like', '%' . $search . '%');
+                    $vehicleQuery->where(function ($vehicleSearch) use ($search) {
+                        $vehicleSearch->searchByLicense($search)
+                            ->orWhere('model', 'like', '%' . $search . '%');
+                    });
                 })->orWhereHas('items', function ($itemQuery) use ($search) {
                     $itemQuery->where('description', 'like', '%' . $search . '%')
                         ->orWhere('reference', 'like', '%' . $search . '%');

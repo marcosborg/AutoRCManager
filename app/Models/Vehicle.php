@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Support\LicensePlate;
 use Carbon\Carbon;
 use DateTimeInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -148,6 +150,16 @@ class Vehicle extends Model implements HasMedia
     protected function serializeDate(DateTimeInterface $date)
     {
         return $date->format('Y-m-d H:i:s');
+    }
+
+    public function setLicenseAttribute($value): void
+    {
+        $this->attributes['license'] = LicensePlate::formatNational($value);
+    }
+
+    public function scopeSearchByLicense(Builder $query, string $term): Builder
+    {
+        return LicensePlate::applySearch($query, $term);
     }
 
     public function registerMediaConversions(Media $media = null): void
@@ -434,6 +446,11 @@ class Vehicle extends Model implements HasMedia
     public function part_orders()
     {
         return $this->hasMany(PartOrder::class, 'vehicle_id');
+    }
+
+    public function external_services()
+    {
+        return $this->hasMany(ExternalService::class, 'vehicle_id');
     }
 
     public function generic_payments()

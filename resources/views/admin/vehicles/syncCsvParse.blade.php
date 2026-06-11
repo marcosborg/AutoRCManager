@@ -36,7 +36,7 @@
 
                     @php
                         $fieldOptions = [
-                            'license' => 'matricula/license',
+                            'license' => 'matrícula',
                             'brand' => 'marca/brand',
                             'model' => 'modelo',
                             'general_state_id' => 'general_state_id',

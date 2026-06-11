@@ -310,6 +310,14 @@
                                 </a>
                             </li>
                         @endcan
+                        @can('external_service_access')
+                            <li class="{{ request()->is('admin/external-services') || request()->is('admin/external-services/*') ? 'active' : '' }}">
+                                <a href="{{ route('admin.external-services.index') }}">
+                                    <i class="fa-fw fas fa-tools"></i>
+                                    <span>Serviços Externos</span>
+                                </a>
+                            </li>
+                        @endcan
                         @can('part_payment_access')
                             <li class="{{ request()->is("admin/part-payments") || request()->is("admin/part-payments/*") ? "active" : "" }}">
                                 <a href="{{ route("admin.part-payments.index") }}">

@@ -17,14 +17,16 @@ class VehicleProfitabilityService
             'repairs.parts',
             'repairs.part_orders.items',
             'part_orders.items',
+            'external_services',
             'generic_payments',
         ]);
 
         $originPurchase = $this->originPurchase($vehicle);
         $workshopTransfer = $this->workshopTransfer($vehicle);
         $workshopParts = $this->repairPartsTotal($vehicle) + $this->partOrdersTotal($vehicle);
+        $workshopExternalServices = $this->externalServicesTotal($vehicle);
         $workshopOperations = $this->departmentOperationsTotal($vehicle, 'oficina');
-        $workshopCosts = $workshopParts + $workshopOperations;
+        $workshopCosts = $workshopParts + $workshopExternalServices + $workshopOperations;
         $standEntry = $workshopTransfer > 0 ? $workshopTransfer + $workshopCosts : (float) ($vehicle->purchase_price ?? 0);
         $standGenericCosts = (float) $vehicle->generic_payments->sum('amount');
         $standOperations = $this->departmentOperationsTotal($vehicle, 'stand');
@@ -37,6 +39,7 @@ class VehicleProfitabilityService
             'origin_purchase' => round($originPurchase, 2),
             'workshop_transfer' => round($workshopTransfer, 2),
             'workshop_parts' => round($workshopParts, 2),
+            'workshop_external_services' => round($workshopExternalServices, 2),
             'workshop_operations' => round($workshopOperations, 2),
             'workshop_costs' => round($workshopCosts, 2),
             'stand_entry' => round($standEntry, 2),
@@ -137,6 +140,13 @@ class VehicleProfitabilityService
             ->whereIn('department_id', $departmentIds)
             ->where('movement_type', AccountOperation::TYPE_OUTCOME)
             ->sum('total');
+    }
+
+    private function externalServicesTotal(Vehicle $vehicle): float
+    {
+        return (float) $vehicle->external_services
+            ->where('status', '!=', 'cancelled')
+            ->sum('amount');
     }
 
     private function isWorkshopClient(Vehicle $vehicle): bool

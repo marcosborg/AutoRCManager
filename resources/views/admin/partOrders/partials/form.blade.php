@@ -114,8 +114,6 @@
                 <th>Referencia</th>
                 <th>Descricao</th>
                 <th>Qtd</th>
-                <th>Estimado</th>
-                <th>Final</th>
                 <th>IVA %</th>
                 <th>Estado</th>
                 <th>Obs.</th>
@@ -129,8 +127,6 @@
                     <td><input type="hidden" name="items[{{ $index }}][id]" value="{{ $item['id'] ?? '' }}"><input class="form-control" name="items[{{ $index }}][reference]" value="{{ $item['reference'] ?? '' }}"></td>
                     <td><input class="form-control" name="items[{{ $index }}][description]" value="{{ $item['description'] ?? '' }}"></td>
                     <td><input class="form-control" type="number" step="0.01" min="0.01" name="items[{{ $index }}][quantity]" value="{{ $item['quantity'] ?? 1 }}"></td>
-                    <td><input class="form-control" type="number" step="0.01" min="0" name="items[{{ $index }}][unit_price_estimated]" value="{{ $item['unit_price_estimated'] ?? '' }}"></td>
-                    <td><input class="form-control" type="number" step="0.01" min="0" name="items[{{ $index }}][unit_price_final]" value="{{ $item['unit_price_final'] ?? '' }}"></td>
                     <td><input class="form-control" type="number" step="0.01" min="0" max="100" name="items[{{ $index }}][iva_percentage]" value="{{ $item['iva_percentage'] ?? '' }}"></td>
                     <td>
                         <select class="form-control" name="items[{{ $index }}][status]">
@@ -163,8 +159,6 @@ $(function () {
             '<td><input class="form-control" name="items[' + itemIndex + '][reference]"></td>' +
             '<td><input class="form-control" name="items[' + itemIndex + '][description]"></td>' +
             '<td><input class="form-control" type="number" step="0.01" min="0.01" name="items[' + itemIndex + '][quantity]" value="1"></td>' +
-            '<td><input class="form-control" type="number" step="0.01" min="0" name="items[' + itemIndex + '][unit_price_estimated]"></td>' +
-            '<td><input class="form-control" type="number" step="0.01" min="0" name="items[' + itemIndex + '][unit_price_final]"></td>' +
             '<td><input class="form-control" type="number" step="0.01" min="0" max="100" name="items[' + itemIndex + '][iva_percentage]"></td>' +
             '<td><select class="form-control" name="items[' + itemIndex + '][status]">' + options + '</select></td>' +
             '<td><input class="form-control" name="items[' + itemIndex + '][observations]"></td>' +

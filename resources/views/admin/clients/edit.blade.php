@@ -122,9 +122,9 @@
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group {{ $errors->has('provenience_id') ? 'has-error' : '' }}">
-                                        <label for="provenience_id">{{ trans('cruds.client.fields.provenience') }}</label>
+                                        <label class="required" for="provenience_id">{{ trans('cruds.client.fields.provenience') }}</label>
                                         <div class="input-group">
-                                            <select class="form-control select2" name="provenience_id" id="provenience_id">
+                                            <select class="form-control select2" name="provenience_id" id="provenience_id" required>
                                                 @foreach($proveniences as $id => $entry)
                                                     <option value="{{ $id }}" {{ (old('provenience_id') ? old('provenience_id') : $client->provenience->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
                                                 @endforeach
@@ -678,38 +678,10 @@
         </div>
 
     </div>
+    @include('admin.clients.partials.provenienceModal')
 @endsection
 
 @section('scripts')
 @parent
-<script>
-    $(function () {
-        $('.js-create-provenience').on('click', function () {
-            var target = $(this).data('target');
-            var name = window.prompt('Nome da proveniencia');
-
-            if (!name) {
-                return;
-            }
-
-            $.ajax({
-                method: 'POST',
-                url: '{{ route('admin.proveniences.store') }}',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    name: name
-                },
-                headers: {
-                    'Accept': 'application/json'
-                }
-            }).done(function (provenience) {
-                var option = new Option(provenience.name, provenience.id, true, true);
-                $(target).append(option).trigger('change');
-            }).fail(function (xhr) {
-                var errors = xhr.responseJSON && xhr.responseJSON.errors ? xhr.responseJSON.errors : null;
-                alert(errors && errors.name ? errors.name[0] : 'Nao foi possivel criar a proveniencia.');
-            });
-        });
-    });
-</script>
+@stack('scripts')
 @endsection

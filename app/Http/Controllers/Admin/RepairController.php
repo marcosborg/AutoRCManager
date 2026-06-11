@@ -16,6 +16,7 @@ use App\Models\RepairState;
 use App\Models\PartOrder;
 use App\Models\Vehicle;
 use App\Models\Brand;
+use App\Support\LicensePlate;
 use Gate;
 use Illuminate\Http\Request;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -429,9 +430,9 @@ class RepairController extends Controller
                 }
 
                 if ($licenseFilter !== '') {
-                    $needle = mb_strtolower($licenseFilter);
-                    $license = mb_strtolower((string) ($vehicle->license ?? ''));
-                    $foreign = mb_strtolower((string) ($vehicle->foreign_license ?? ''));
+                    $needle = LicensePlate::normalize($licenseFilter);
+                    $license = LicensePlate::normalize($vehicle->license);
+                    $foreign = LicensePlate::normalize($vehicle->foreign_license);
 
                     if (! str_contains($license, $needle) && ! str_contains($foreign, $needle)) {
                         return false;
@@ -855,4 +856,3 @@ class RepairController extends Controller
         }
     }
 }
-

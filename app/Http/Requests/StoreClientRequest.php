@@ -66,7 +66,7 @@ class StoreClientRequest extends FormRequest
                 'nullable',
             ],
             'provenience_id' => [
-                'nullable',
+                'required',
                 'integer',
                 'exists:proveniences,id',
             ],

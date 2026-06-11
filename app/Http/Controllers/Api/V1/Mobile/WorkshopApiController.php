@@ -50,10 +50,10 @@ class WorkshopApiController extends Controller
         $search = trim((string) $request->query('search', ''));
         if ($search !== '') {
             $query->whereHas('vehicle', function ($vehicleQuery) use ($search) {
-                $vehicleQuery
-                    ->where('license', 'like', '%' . $search . '%')
-                    ->orWhere('foreign_license', 'like', '%' . $search . '%')
-                    ->orWhere('model', 'like', '%' . $search . '%');
+                $vehicleQuery->where(function ($vehicleSearch) use ($search) {
+                    $vehicleSearch->searchByLicense($search)
+                        ->orWhere('model', 'like', '%' . $search . '%');
+                });
             });
         }
 
@@ -333,8 +333,7 @@ class WorkshopApiController extends Controller
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('license', 'like', '%' . $search . '%')
-                    ->orWhere('foreign_license', 'like', '%' . $search . '%')
+                $q->searchByLicense($search)
                     ->orWhere('model', 'like', '%' . $search . '%');
             });
         }
@@ -375,8 +374,7 @@ class WorkshopApiController extends Controller
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('license', 'like', '%' . $search . '%')
-                    ->orWhere('foreign_license', 'like', '%' . $search . '%')
+                $q->searchByLicense($search)
                     ->orWhere('model', 'like', '%' . $search . '%');
             });
         }
