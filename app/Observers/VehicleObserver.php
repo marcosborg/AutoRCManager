@@ -7,6 +7,7 @@ use App\Mail\VehicleStateChangedMail;
 use App\Models\Repair;
 use App\Models\Vehicle;
 use App\Models\VehicleStateTransfer;
+use App\Services\ManagementAlertService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 
@@ -47,6 +48,25 @@ class VehicleObserver
                     ));
                 }
             }
+
+            if ($newState && $this->isStockAvailableState((string) $newState->name)) {
+                app(ManagementAlertService::class)->stockAvailable($vehicle);
+            }
         }
+
+        if ($vehicle->isDirty('sale_date') && ! $vehicle->getOriginal('sale_date') && $vehicle->sale_date) {
+            app(ManagementAlertService::class)->vehicleSold($vehicle);
+        }
+    }
+
+    private function isStockAvailableState(string $name): bool
+    {
+        $normalized = str($name)
+            ->lower()
+            ->ascii()
+            ->squish()
+            ->toString();
+
+        return in_array($normalized, ['em stock disponivel', 'stock disponivel'], true);
     }
 }

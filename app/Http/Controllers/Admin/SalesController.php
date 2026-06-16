@@ -180,14 +180,29 @@ class SalesController extends Controller
     private function vehicleThumbnailHtml(Vehicle $vehicle): string
     {
         $media = $vehicle->getFirstMedia('photos') ?: $vehicle->getFirstMedia('inicial');
+        $placeholder = '<span class="vehicle-list-thumb vehicle-list-thumb-placeholder" style="display:none"><i class="fa fa-car"></i></span>';
 
         if ($media) {
-            $url = e($media->getUrl('thumb') ?: $media->getUrl());
+            $url = e($this->productionMediaUrl($media->getUrl('thumb') ?: $media->getUrl()));
             $alt = e($vehicle->license ?: $vehicle->model ?: 'Viatura');
 
-            return '<img src="' . $url . '" alt="' . $alt . '" class="vehicle-list-thumb">';
+            return '<img src="' . $url . '" alt="' . $alt . '" class="vehicle-list-thumb" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\';">' . $placeholder;
         }
 
         return '<span class="vehicle-list-thumb vehicle-list-thumb-placeholder"><i class="fa fa-car"></i></span>';
+    }
+
+    private function productionMediaUrl(string $url): string
+    {
+        $mediaBaseUrl = rtrim(env('AUTORC_MEDIA_BASE_URL', 'https://autorcmanager.pt'), '/');
+        $host = parse_url($url, PHP_URL_HOST);
+        $path = parse_url($url, PHP_URL_PATH) ?: '';
+        $query = parse_url($url, PHP_URL_QUERY);
+
+        if (! $host || in_array($host, ['127.0.0.1', 'localhost', '0.0.0.0'], true)) {
+            return $mediaBaseUrl . $path . ($query ? '?' . $query : '');
+        }
+
+        return $url;
     }
 }

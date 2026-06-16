@@ -4,6 +4,7 @@ use App\Models\VehiclePosition;
 use App\Http\Controllers\Api\V1\Mobile\AuthApiController;
 use App\Http\Controllers\Api\V1\Mobile\WorkshopApiController;
 use App\Http\Controllers\Api\V1\Mobile\WorkshopPlanningApiController;
+use App\Http\Controllers\Api\V1\Management\GestaoApiController;
 
 Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', 'middleware' => ['auth:sanctum']], function () {
     // Permissions
@@ -70,6 +71,27 @@ Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', '
 
         return response()->json($positions);
     })->name('gps.positions');
+
+    Route::prefix('gestao')->group(function () {
+        Route::get('dashboard', [GestaoApiController::class, 'dashboard']);
+        Route::get('alerts', [GestaoApiController::class, 'alerts']);
+        Route::post('alerts/{alert}/read', [GestaoApiController::class, 'readAlert']);
+        Route::post('alerts/read-all', [GestaoApiController::class, 'readAllAlerts']);
+
+        Route::get('vehicles/by-state', [GestaoApiController::class, 'vehiclesByState']);
+        Route::get('vehicles', [GestaoApiController::class, 'vehicles']);
+        Route::get('vehicles/{vehicle}', [GestaoApiController::class, 'vehicle']);
+        Route::get('vehicles/{vehicle}/central-register', [GestaoApiController::class, 'centralRegister']);
+
+        Route::get('consignments', [GestaoApiController::class, 'consignments']);
+        Route::get('trade-ins', [GestaoApiController::class, 'tradeIns']);
+        Route::get('workshop', [GestaoApiController::class, 'workshop']);
+
+        Route::get('approvals-rafael', [GestaoApiController::class, 'approvalsRafael']);
+        Route::post('approvals-rafael/lots/{vehicleGroup}/approve', [GestaoApiController::class, 'approveLot']);
+        Route::post('approvals-rafael/payments/{lotPayment}/approve', [GestaoApiController::class, 'approvePayment']);
+        Route::post('approvals-rafael/payments/{lotPayment}/reject', [GestaoApiController::class, 'rejectPayment']);
+    });
 });
 
 Route::prefix('mobile')->group(function () {

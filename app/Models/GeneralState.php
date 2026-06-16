@@ -43,4 +43,9 @@ class GeneralState extends Model implements HasMedia
         $this->addMediaConversion('thumb')->fit('crop', 50, 50);
         $this->addMediaConversion('preview')->fit('crop', 120, 120);
     }
+
+    public function vehicles()
+    {
+        return $this->hasMany(Vehicle::class, 'general_state_id');
+    }
 }
