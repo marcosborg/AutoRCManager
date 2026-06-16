@@ -615,6 +615,22 @@
                         <h4>Novo pagamento</h4>
                         <form method="POST" action="{{ route('admin.clients.payments.store', $client->id) }}" enctype="multipart/form-data">
                             @csrf
+                            <div class="form-group {{ $errors->has('payment_type') ? 'has-error' : '' }}">
+                                <label>Tipo de pagamento</label>
+                                <div>
+                                    <label class="radio-inline">
+                                        <input type="radio" name="payment_type" value="money" {{ old('payment_type', 'money') !== 'trade_in' ? 'checked' : '' }}>
+                                        Dinheiro / transfer&ecirc;ncia
+                                    </label>
+                                    <label class="radio-inline">
+                                        <input type="radio" name="payment_type" value="trade_in" {{ old('payment_type') === 'trade_in' ? 'checked' : '' }}>
+                                        Retoma
+                                    </label>
+                                </div>
+                                @if($errors->has('payment_type'))
+                                    <span class="help-block" role="alert">{{ $errors->first('payment_type') }}</span>
+                                @endif
+                            </div>
                             <div class="row">
                                 <div class="col-md-2">
                                     <div class="form-group {{ $errors->has('paid_at') ? 'has-error' : '' }}">
@@ -663,6 +679,65 @@
                                     </div>
                                 </div>
                             </div>
+                            <div id="client-payment-trade-in-fields" style="display: none;">
+                                <hr>
+                                <h5>Dados da retoma</h5>
+                                <p class="text-muted">
+                                    Se a matr&iacute;cula j&aacute; existir, a viatura existente recebe o valor de aquisi&ccedil;&atilde;o e o fornecedor passa a ser este cliente.
+                                    Se n&atilde;o existir, &eacute; criada uma retoma nova em stock.
+                                </p>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group {{ $errors->has('trade_in_license') ? 'has-error' : '' }}">
+                                            <label for="client_payment_trade_in_license">Matr&iacute;cula</label>
+                                            <input class="form-control" type="text" name="trade_in_license" id="client_payment_trade_in_license" value="{{ old('trade_in_license') }}">
+                                            @if($errors->has('trade_in_license'))
+                                                <span class="help-block" role="alert">{{ $errors->first('trade_in_license') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group {{ $errors->has('trade_in_brand_id') ? 'has-error' : '' }}">
+                                            <label for="client_payment_trade_in_brand_id">Marca</label>
+                                            <select class="form-control select2" name="trade_in_brand_id" id="client_payment_trade_in_brand_id" style="width: 100%;">
+                                                @foreach($brands as $id => $entry)
+                                                    <option value="{{ $id }}" {{ old('trade_in_brand_id') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                                @endforeach
+                                            </select>
+                                            @if($errors->has('trade_in_brand_id'))
+                                                <span class="help-block" role="alert">{{ $errors->first('trade_in_brand_id') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group {{ $errors->has('trade_in_model') ? 'has-error' : '' }}">
+                                            <label for="client_payment_trade_in_model">Modelo</label>
+                                            <input class="form-control" type="text" name="trade_in_model" id="client_payment_trade_in_model" value="{{ old('trade_in_model') }}">
+                                            @if($errors->has('trade_in_model'))
+                                                <span class="help-block" role="alert">{{ $errors->first('trade_in_model') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <div class="form-group {{ $errors->has('trade_in_year') ? 'has-error' : '' }}">
+                                            <label for="client_payment_trade_in_year">Ano</label>
+                                            <input class="form-control" type="number" name="trade_in_year" id="client_payment_trade_in_year" value="{{ old('trade_in_year') }}" min="1900" max="{{ now()->year + 1 }}">
+                                            @if($errors->has('trade_in_year'))
+                                                <span class="help-block" role="alert">{{ $errors->first('trade_in_year') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group {{ $errors->has('trade_in_kilometers') ? 'has-error' : '' }}">
+                                            <label for="client_payment_trade_in_kilometers">Km</label>
+                                            <input class="form-control" type="number" name="trade_in_kilometers" id="client_payment_trade_in_kilometers" value="{{ old('trade_in_kilometers') }}" min="0">
+                                            @if($errors->has('trade_in_kilometers'))
+                                                <span class="help-block" role="alert">{{ $errors->first('trade_in_kilometers') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="form-group {{ $errors->has('notes') ? 'has-error' : '' }}">
                                 <label for="client_payment_notes">Notas</label>
                                 <textarea class="form-control" name="notes" id="client_payment_notes" rows="3">{{ old('notes') }}</textarea>
@@ -684,4 +759,16 @@
 @section('scripts')
 @parent
 @stack('scripts')
+<script>
+    $(function () {
+        function syncClientPaymentTradeInFields() {
+            var isTradeIn = $('input[name="payment_type"]:checked').val() === 'trade_in';
+            $('#client-payment-trade-in-fields').toggle(isTradeIn);
+            $('#client_payment_method_id').prop('required', !isTradeIn);
+        }
+
+        $(document).on('change', 'input[name="payment_type"]', syncClientPaymentTradeInFields);
+        syncClientPaymentTradeInFields();
+    });
+</script>
 @endsection

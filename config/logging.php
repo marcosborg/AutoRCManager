@@ -76,6 +76,12 @@ return [
             'level' => 'debug',
         ],
 
+        'meta_leads' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/meta-leads.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

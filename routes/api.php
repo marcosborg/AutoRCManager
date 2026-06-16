@@ -5,6 +5,10 @@ use App\Http\Controllers\Api\V1\Mobile\AuthApiController;
 use App\Http\Controllers\Api\V1\Mobile\WorkshopApiController;
 use App\Http\Controllers\Api\V1\Mobile\WorkshopPlanningApiController;
 use App\Http\Controllers\Api\V1\Management\GestaoApiController;
+use App\Http\Controllers\MetaWebhookController;
+
+Route::get('meta/webhook', [MetaWebhookController::class, 'verify'])->name('meta.webhook.verify');
+Route::post('meta/webhook', [MetaWebhookController::class, 'receive'])->name('meta.webhook.receive');
 
 Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', 'middleware' => ['auth:sanctum']], function () {
     // Permissions

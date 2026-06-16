@@ -212,6 +212,14 @@
                     </a>
                 </li>
             @endcan
+            @can('lead_access')
+                <li class="{{ request()->is("admin/leads") || request()->is("admin/leads/*") ? "active" : "" }}">
+                    <a href="{{ route("admin.leads.index") }}">
+                        <i class="fa-fw fas fa-bullhorn"></i>
+                        <span>Leads</span>
+                    </a>
+                </li>
+            @endcan
             @can('vehicle_access')
                 <li class="{{ request()->is("admin/vehicles") || request()->is("admin/vehicles/*") ? "active" : "" }}">
                     <a href="{{ route("admin.vehicles.index") }}">
