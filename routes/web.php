@@ -30,6 +30,15 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('leads/{lead}/notes', 'LeadController@storeNote')->name('leads.notes.store');
     Route::delete('leads/{lead}/notes/{note}', 'LeadController@destroyNote')->name('leads.notes.destroy');
     Route::resource('leads', 'LeadController')->except(['create', 'store']);
+
+    Route::resource('ai-assistants', 'AiAssistantController');
+    Route::resource('ai-training-contents', 'AiTrainingContentController');
+    Route::resource('chat-leads', 'ChatLeadController');
+    Route::post('chat-conversations/{chatConversation}/takeover', 'ChatConversationController@takeover')->name('chat-conversations.takeover');
+    Route::post('chat-conversations/{chatConversation}/release', 'ChatConversationController@release')->name('chat-conversations.release');
+    Route::post('chat-conversations/{chatConversation}/close', 'ChatConversationController@close')->name('chat-conversations.close');
+    Route::resource('chat-conversations', 'ChatConversationController')->only(['index', 'show']);
+
     // Permissions
     Route::delete('permissions/destroy', 'PermissionsController@massDestroy')->name('permissions.massDestroy');
     Route::post('permissions/parse-csv-import', 'PermissionsController@parseCsvImport')->name('permissions.parseCsvImport');

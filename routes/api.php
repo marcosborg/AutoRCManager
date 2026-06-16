@@ -7,10 +7,24 @@ use App\Http\Controllers\Api\V1\Mobile\WorkshopPlanningApiController;
 use App\Http\Controllers\Api\V1\Management\GestaoApiController;
 use App\Http\Controllers\MetaLeadInboundController;
 use App\Http\Controllers\MetaWebhookController;
+use App\Http\Controllers\WhatsappNodeController;
 
 Route::get('meta/webhook', [MetaWebhookController::class, 'verify'])->name('meta.webhook.verify');
 Route::post('meta/webhook', [MetaWebhookController::class, 'receive'])->name('meta.webhook.receive');
 Route::post('meta/leads/inbound', [MetaLeadInboundController::class, 'store'])->name('meta.leads.inbound');
+
+Route::middleware('node.token')->group(function () {
+    Route::post('whatsapp/incoming-message', [WhatsappNodeController::class, 'incomingMessage'])->name('whatsapp.incoming-message');
+    Route::get('whatsapp/outgoing-messages', [WhatsappNodeController::class, 'outgoingMessages'])->name('whatsapp.outgoing-messages');
+    Route::post('whatsapp/outgoing-messages/{message}/sent', [WhatsappNodeController::class, 'markOutgoingSent'])->name('whatsapp.outgoing-messages.sent');
+    Route::post('whatsapp/message-status', [WhatsappNodeController::class, 'messageStatus'])->name('whatsapp.message-status');
+
+    Route::get('chat/conversations', [WhatsappNodeController::class, 'conversations'])->name('chat.conversations.index');
+    Route::get('chat/conversations/{conversation}', [WhatsappNodeController::class, 'conversation'])->name('chat.conversations.show');
+    Route::post('chat/conversations/{conversation}/takeover', [WhatsappNodeController::class, 'takeover'])->name('chat.conversations.takeover');
+    Route::post('chat/conversations/{conversation}/release', [WhatsappNodeController::class, 'release'])->name('chat.conversations.release');
+    Route::post('chat/conversations/{conversation}/close', [WhatsappNodeController::class, 'close'])->name('chat.conversations.close');
+});
 
 Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', 'middleware' => ['auth:sanctum']], function () {
     // Permissions

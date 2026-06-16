@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Lead;
 use App\Notifications\NewLeadNotification;
+use App\Services\AiLeadAssistantService;
 use App\Services\LeadAssignmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -70,6 +71,7 @@ class MetaLeadInboundController extends Controller
 
         if (! $lead->wasRecentlyCreated) {
             $this->fillMissingLeadData($lead, $normalized);
+            app(AiLeadAssistantService::class)->syncFromMetaLead($lead->fresh());
 
             Log::channel('meta_leads')->info('Lead inbound duplicada ignorada.', [
                 'lead_id' => $lead->id,
@@ -91,6 +93,8 @@ class MetaLeadInboundController extends Controller
                 ]);
             }
         }
+
+        app(AiLeadAssistantService::class)->syncFromMetaLead($lead->fresh());
 
         Log::channel('meta_leads')->info('Lead inbound criada.', [
             'lead_id' => $lead->id,

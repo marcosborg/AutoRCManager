@@ -220,6 +220,21 @@
                     </a>
                 </li>
             @endcan
+            @can('ai_assistant_access')
+                <li class="treeview {{ request()->is("admin/ai-assistants*") || request()->is("admin/ai-training-contents*") || request()->is("admin/chat-leads*") || request()->is("admin/chat-conversations*") ? "active menu-open" : "" }}">
+                    <a href="#">
+                        <i class="fa-fw fas fa-robot"></i>
+                        <span>Assistente IA</span>
+                        <span class="pull-right-container"><i class="fa fa-fw fa-angle-left pull-right"></i></span>
+                    </a>
+                    <ul class="treeview-menu">
+                        <li class="{{ request()->is("admin/ai-assistants*") ? "active" : "" }}"><a href="{{ route("admin.ai-assistants.index") }}"><i class="fa-fw fas fa-user-cog"></i><span>Assistentes</span></a></li>
+                        <li class="{{ request()->is("admin/ai-training-contents*") ? "active" : "" }}"><a href="{{ route("admin.ai-training-contents.index") }}"><i class="fa-fw fas fa-brain"></i><span>Treino da IA</span></a></li>
+                        <li class="{{ request()->is("admin/chat-leads*") ? "active" : "" }}"><a href="{{ route("admin.chat-leads.index") }}"><i class="fa-fw fas fa-address-book"></i><span>Leads IA</span></a></li>
+                        <li class="{{ request()->is("admin/chat-conversations*") ? "active" : "" }}"><a href="{{ route("admin.chat-conversations.index") }}"><i class="fa-fw fas fa-comments"></i><span>Conversas</span></a></li>
+                    </ul>
+                </li>
+            @endcan
             @can('vehicle_access')
                 <li class="{{ request()->is("admin/vehicles") || request()->is("admin/vehicles/*") ? "active" : "" }}">
                     <a href="{{ route("admin.vehicles.index") }}">

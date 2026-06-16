@@ -48,7 +48,10 @@ class MetaLeadService
 
         if (Lead::where('leadgen_id', $leadgenId)->exists()) {
             Log::channel('meta_leads')->info('Lead duplicado ignorado.', ['leadgen_id' => $leadgenId]);
-            return Lead::where('leadgen_id', $leadgenId)->first();
+            $lead = Lead::where('leadgen_id', $leadgenId)->first();
+            app(AiLeadAssistantService::class)->syncFromMetaLead($lead);
+
+            return $lead;
         }
 
         $details = $this->fetchLead($leadgenId);
@@ -64,6 +67,8 @@ class MetaLeadService
             $duplicateLead = Lead::where('leadgen_id', $leadgenId)->first();
             if ($duplicateLead) {
                 Log::channel('meta_leads')->info('Lead duplicado apos corrida de criacao.', ['leadgen_id' => $leadgenId]);
+                app(AiLeadAssistantService::class)->syncFromMetaLead($duplicateLead);
+
                 return $duplicateLead;
             }
 
@@ -72,6 +77,8 @@ class MetaLeadService
 
         if (! $lead->wasRecentlyCreated) {
             Log::channel('meta_leads')->info('Lead duplicado apos firstOrCreate.', ['leadgen_id' => $leadgenId]);
+            app(AiLeadAssistantService::class)->syncFromMetaLead($lead);
+
             return $lead;
         }
 
@@ -92,6 +99,8 @@ class MetaLeadService
                 ]);
             }
         }
+
+        app(AiLeadAssistantService::class)->syncFromMetaLead($lead->fresh());
 
         return $lead->fresh(['assigned_user']);
     }
