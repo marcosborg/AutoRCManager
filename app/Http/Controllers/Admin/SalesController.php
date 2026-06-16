@@ -78,6 +78,9 @@ class SalesController extends Controller
             $table->editColumn('license', function ($row) {
                 return $row->license ? $row->license : '';
             });
+            $table->filterColumn('license', function ($query, $keyword) {
+                $query->searchByLicense((string) $keyword);
+            });
             $table->editColumn('foreign_license', function ($row) {
                 return $row->foreign_license ? $row->foreign_license : '';
             });

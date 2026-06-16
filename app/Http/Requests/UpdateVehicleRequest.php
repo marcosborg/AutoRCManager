@@ -324,7 +324,7 @@ class UpdateVehicleRequest extends FormRequest
                 $validator->errors()->add('sale_date', 'Nao e possivel vender com consignacao ativa.');
             }
 
-            if ($boundVehicle && $incomingSaleDate && $this->saleOutstandingAfterRequest($boundVehicle) > 0.004) {
+            if ($boundVehicle && $this->isSaleDateBeingSet($boundVehicle) && $this->saleOutstandingAfterRequest($boundVehicle) > 0.004) {
                 $validator->errors()->add(
                     'sale_date',
                     'Para fechar a venda, a divida do cliente tem de ficar saldada por pagamento ou retoma.'
@@ -396,6 +396,21 @@ class UpdateVehicleRequest extends FormRequest
             ->sum('amount');
 
         return round($salesTotal - $clientPaymentsTotal - $tradeInsTotal, 2);
+    }
+
+    private function isSaleDateBeingSet(Vehicle $vehicle): bool
+    {
+        return $this->hasFilledInput('sale_date') && ! $this->hasFilledValue($vehicle->sale_date);
+    }
+
+    private function hasFilledInput(string $field): bool
+    {
+        return $this->hasFilledValue($this->input($field));
+    }
+
+    private function hasFilledValue(mixed $value): bool
+    {
+        return $value !== null && trim((string) $value) !== '';
     }
 
     private function moneyInput(string $field, mixed $fallback): float
