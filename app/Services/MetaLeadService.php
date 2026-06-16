@@ -82,7 +82,15 @@ class MetaLeadService
 
         $assignedUser = app(LeadAssignmentService::class)->assign($lead);
         if ($assignedUser) {
-            $assignedUser->notify(new NewLeadNotification($lead));
+            try {
+                $assignedUser->notify(new NewLeadNotification($lead));
+            } catch (\Throwable $exception) {
+                Log::channel('meta_leads')->error('Falha ao notificar vendedor da lead Meta.', [
+                    'lead_id' => $lead->id,
+                    'assigned_user_id' => $assignedUser->id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
         }
 
         return $lead->fresh(['assigned_user']);

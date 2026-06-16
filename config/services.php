@@ -39,6 +39,7 @@ return [
         'form_id' => env('META_FORM_ID'),
         'access_token' => env('META_PAGE_ACCESS_TOKEN'),
         'graph_version' => env('META_GRAPH_VERSION', 'v25.0'),
+        'inbound_token' => env('META_INBOUND_WEBHOOK_TOKEN'),
     ],
 
 ];
