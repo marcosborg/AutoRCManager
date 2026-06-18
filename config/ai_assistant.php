@@ -9,4 +9,5 @@ return [
     'commercial_phone' => env('AI_COMMERCIAL_PHONE', '220 132 036'),
     'company_name' => env('AI_COMPANY_NAME', 'Car 7'),
     'auto_reply_enabled' => filter_var(env('AI_AUTO_REPLY_ENABLED', true), FILTER_VALIDATE_BOOL),
+    'human_takeover_idle_release_minutes' => (int) env('AI_HUMAN_TAKEOVER_IDLE_RELEASE_MINUTES', 5),
 ];

@@ -10,6 +10,7 @@ use App\Models\ChatMessage;
 use App\Models\Lead;
 use App\Notifications\NewLeadNotification;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -86,6 +87,7 @@ class AiLeadAssistantService
 
         $chatLead = $this->leadFromIncoming($channel, $phone, $payload);
         $conversation = $this->conversationFor($assistant, $channel, $chatLead, $phone, $payload['external_id'] ?? null);
+        $conversation = $this->releaseToAiAfterIdleTakeover($conversation);
 
         $conversation->messages()->create([
             'sender' => 'customer',
@@ -257,6 +259,36 @@ class AiLeadAssistantService
         $conversation->lead?->update(['status' => 'open']);
 
         return $conversation->fresh(['lead', 'channel', 'messages']);
+    }
+
+    private function releaseToAiAfterIdleTakeover(ChatConversation $conversation): ChatConversation
+    {
+        if (! $conversation->human_takeover || $conversation->status === 'closed') {
+            return $conversation;
+        }
+
+        $idleMinutes = (int) config('ai_assistant.human_takeover_idle_release_minutes', 5);
+        if ($idleMinutes <= 0) {
+            return $conversation;
+        }
+
+        $lastHumanTouch = $conversation->messages()
+            ->where('sender', 'human')
+            ->latest('created_at')
+            ->value('created_at') ?: $conversation->updated_at;
+        $lastHumanTouch = $lastHumanTouch ? Carbon::parse($lastHumanTouch) : null;
+
+        if (! $lastHumanTouch || $lastHumanTouch->gt(now()->subMinutes($idleMinutes))) {
+            return $conversation;
+        }
+
+        Log::info('AI assistant released after idle human takeover.', [
+            'conversation_id' => $conversation->id,
+            'idle_minutes' => $idleMinutes,
+            'last_human_touch' => $lastHumanTouch->toDateTimeString(),
+        ]);
+
+        return $this->releaseToAi($conversation);
     }
 
     public function close(ChatConversation $conversation): ChatConversation
