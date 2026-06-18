@@ -14,6 +14,11 @@ const laravelApiUrl = (process.env.LARAVEL_API_URL || 'http://127.0.0.1:8000/api
 const laravelApiToken = process.env.LARAVEL_API_TOKEN || '';
 const startedAt = new Date().toISOString();
 let whatsappReady = false;
+const puppeteerHeadless = process.env.PUPPETEER_HEADLESS === undefined
+  ? true
+  : !['false', '0', 'no'].includes(String(process.env.PUPPETEER_HEADLESS).toLowerCase());
+const whatsappUserAgent = process.env.WHATSAPP_USER_AGENT
+  || 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36';
 
 if (!laravelApiToken) {
   console.warn('LARAVEL_API_TOKEN is empty. Laravel will reject requests protected by node.token.');
@@ -46,13 +51,20 @@ function rememberAssistantTarget(chatId) {
 }
 
 function isCustomerChatId(chatId) {
-  return typeof chatId === 'string' && chatId.endsWith('@c.us');
+  return typeof chatId === 'string' && (chatId.endsWith('@c.us') || chatId.endsWith('@lid'));
+}
+
+function chatIdToPhone(chatId, contact) {
+  if (contact && contact.number) return contact.number;
+  return String(chatId || '').replace(/@(c\.us|lid)$/, '');
 }
 
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: process.env.WHATSAPP_SESSION_NAME || 'autorc-manager' }),
+  userAgent: whatsappUserAgent,
   puppeteer: {
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    headless: puppeteerHeadless,
     timeout: Number(process.env.PUPPETEER_TIMEOUT_MS || 120000),
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   },
@@ -63,9 +75,26 @@ client.on('qr', (qr) => {
   qrcode.generate(qr, { small: true });
 });
 
+client.on('loading_screen', (percent, message) => {
+  console.log(`WhatsApp loading ${percent}%: ${message}`);
+});
+
+client.on('authenticated', () => {
+  console.log('WhatsApp authenticated.');
+});
+
+client.on('auth_failure', (message) => {
+  console.error('WhatsApp authentication failed:', message);
+});
+
 client.on('ready', () => {
   whatsappReady = true;
   console.log('WhatsApp client ready.');
+});
+
+client.on('disconnected', (reason) => {
+  whatsappReady = false;
+  console.error('WhatsApp client disconnected:', reason);
 });
 
 client.on('message_create', async (message) => {
@@ -74,6 +103,7 @@ client.on('message_create', async (message) => {
   if (!isCustomerChatId(message.to)) return;
 
   const messageId = message.id && message.id._serialized;
+  const contact = await message.getContact().catch(() => null);
   if (recentlySentByAssistant.has(messageId)) {
     return;
   }
@@ -87,7 +117,7 @@ client.on('message_create', async (message) => {
   try {
     await api.post('/whatsapp/human-outgoing-message', {
       channel: 'whatsapp',
-      phone: message.to.replace('@c.us', ''),
+      phone: chatIdToPhone(message.to, contact),
       message: message.body,
       message_id: messageId,
       metadata: {
@@ -112,9 +142,10 @@ client.on('message', async (message) => {
 
   try {
     const contact = await message.getContact();
+    console.log(`Incoming WhatsApp message from ${message.from} (${contact.number || 'no-number'}): ${message.body.slice(0, 80)}`);
     const response = await api.post('/whatsapp/incoming-message', {
       channel: 'whatsapp',
-      phone: message.from.replace('@c.us', ''),
+      phone: chatIdToPhone(message.from, contact),
       name: contact.pushname || contact.name || null,
       message: message.body,
       message_id: message.id && message.id._serialized,
@@ -128,6 +159,7 @@ client.on('message', async (message) => {
     if (response.data && response.data.reply) {
       rememberAssistantTarget(message.from);
       const sent = await client.sendMessage(message.from, response.data.reply);
+      console.log(`Sent AI reply to ${message.from}`);
       rememberAssistantMessage(sent.id && sent.id._serialized);
       if (response.data.message_id) {
         await api.post(`/whatsapp/outgoing-messages/${response.data.message_id}/sent`, {
