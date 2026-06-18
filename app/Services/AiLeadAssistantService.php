@@ -8,7 +8,9 @@ use App\Models\ChatConversation;
 use App\Models\ChatLead;
 use App\Models\ChatMessage;
 use App\Models\Lead;
+use App\Notifications\NewLeadNotification;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -95,16 +97,15 @@ class AiLeadAssistantService
         ]);
 
         $priority = $this->classifyPriority($message);
-        $mustEscalate = $this->shouldEscalate($message);
 
         $chatLead->fill([
             'priority' => $priority,
-            'status' => $mustEscalate ? 'waiting_human' : ($chatLead->status ?: 'open'),
+            'status' => $chatLead->status === 'waiting_human' ? 'waiting_human' : ($chatLead->status ?: 'open'),
             'summary' => $this->appendSummary($chatLead->summary, $message),
         ])->save();
 
         $conversation->fill([
-            'status' => $mustEscalate ? 'waiting_human' : $conversation->status,
+            'status' => $conversation->human_takeover ? $conversation->status : 'active',
             'last_message_at' => now(),
         ])->save();
 
@@ -120,7 +121,20 @@ class AiLeadAssistantService
             ];
         }
 
-        $reply = $this->generateReply($assistant, $conversation, $message, $mustEscalate);
+        $qualificationService = app(AiLeadQualificationService::class);
+        $qualification = $qualificationService->qualificationFor($conversation->fresh(['lead', 'messages']));
+        $missingFields = $qualificationService->missingFields($qualification);
+        $completedLead = null;
+
+        if ($missingFields === [] && ! $chatLead->lead_id) {
+            $completedLead = $this->createLeadFromConversation($conversation->fresh(['lead', 'messages']), $qualification);
+            $chatLead = $completedLead ? $completedLead->chatLead : $chatLead->fresh();
+        }
+
+        $reply = $completedLead
+            ? 'Obrigado. Vou encaminhar o seu pedido para um comercial da Car 7, que dará seguimento consigo.'
+            : $this->generateReply($assistant, $conversation, $message, $qualificationService->contextForPrompt($qualification));
+
         $assistantMessage = $conversation->messages()->create([
             'sender' => 'assistant',
             'message' => $reply,
@@ -128,7 +142,6 @@ class AiLeadAssistantService
             'metadata' => [
                 'source' => 'ai_auto_reply',
                 'priority' => $priority,
-                'escalated' => $mustEscalate,
             ],
         ]);
 
@@ -144,12 +157,98 @@ class AiLeadAssistantService
         ];
     }
 
+    private function createLeadFromConversation(ChatConversation $conversation, array $qualification): ?Lead
+    {
+        if ($conversation->human_takeover) {
+            return null;
+        }
+
+        return DB::transaction(function () use ($conversation, $qualification) {
+            $conversation->loadMissing('lead', 'messages');
+            $chatLead = $conversation->lead;
+
+            if (! $chatLead || $chatLead->lead_id) {
+                return $chatLead?->meta_lead;
+            }
+
+            $payload = app(AiLeadQualificationService::class)->buildLeadPayload($conversation, $qualification);
+            $lead = Lead::firstOrCreate(['leadgen_id' => $payload['leadgen_id']], $payload);
+
+            if ($lead->wasRecentlyCreated) {
+                $assignedUser = app(LeadAssignmentService::class)->assign($lead);
+                if ($assignedUser) {
+                    try {
+                        $assignedUser->notify(new NewLeadNotification($lead));
+                    } catch (\Throwable $exception) {
+                        Log::channel('meta_leads')->error('Falha ao notificar vendedor da lead IA.', [
+                            'lead_id' => $lead->id,
+                            'assigned_user_id' => $assignedUser->id,
+                            'error' => $exception->getMessage(),
+                        ]);
+                    }
+
+                    app(LeadWhatsappNotificationService::class)->queueForLead($lead->fresh('assigned_user'), $assignedUser);
+                }
+            }
+
+            $chatLead->update([
+                'lead_id' => $lead->id,
+                'assigned_to' => $lead->assigned_user_id,
+                'status' => 'sent_to_sales',
+            ]);
+
+            $lead->setRelation('chatLead', $chatLead->fresh());
+
+            return $lead;
+        });
+    }
+
     public function markTakenOver(ChatConversation $conversation): ChatConversation
     {
         $conversation->update(['human_takeover' => true, 'status' => 'waiting_human']);
         $conversation->lead?->update(['status' => 'waiting_human']);
 
         return $conversation->fresh(['lead', 'channel', 'messages']);
+    }
+
+    public function handleHumanOutgoingMessage(array $payload): ?ChatConversation
+    {
+        $channelSlug = Str::slug((string) ($payload['channel'] ?? 'whatsapp')) ?: 'whatsapp';
+        $phone = $this->normalizePhone((string) ($payload['phone'] ?? $payload['to'] ?? ''));
+
+        if ($phone === '') {
+            return null;
+        }
+
+        $conversation = ChatConversation::query()
+            ->whereHas('channel', fn ($query) => $query->where('slug', $channelSlug))
+            ->where(function ($query) use ($phone) {
+                $query->where('customer_phone', $phone)
+                    ->orWhere('customer_identifier', $phone)
+                    ->orWhereHas('lead', fn ($leadQuery) => $leadQuery->where('phone', $phone));
+            })
+            ->where('status', '!=', 'closed')
+            ->latest('last_message_at')
+            ->first();
+
+        if (! $conversation) {
+            return null;
+        }
+
+        $message = trim((string) ($payload['message'] ?? $payload['body'] ?? ''));
+
+        if ($message !== '') {
+            $conversation->messages()->create([
+                'sender' => 'human',
+                'message' => $message,
+                'external_id' => $payload['message_id'] ?? null,
+                'delivery_status' => 'sent',
+                'metadata' => Arr::except($payload, ['message', 'body']),
+                'sent_at' => now(),
+            ]);
+        }
+
+        return $this->markTakenOver($conversation);
     }
 
     public function releaseToAi(ChatConversation $conversation): ChatConversation
@@ -184,8 +283,8 @@ class AiLeadAssistantService
         return AiAssistant::query()->firstOrCreate(
             ['slug' => 'carsete'],
             [
-                'name' => 'Assistente Comercial CarSete',
-                'company_name' => config('ai_assistant.company_name', 'CarSete'),
+                'name' => 'Assistente Comercial Car 7',
+                'company_name' => config('ai_assistant.company_name', 'Car 7'),
                 'commercial_phone' => config('ai_assistant.commercial_phone', '220 132 036'),
                 'active' => true,
                 'system_prompt' => 'És o assistente virtual comercial da empresa.',
@@ -262,7 +361,7 @@ class AiLeadAssistantService
         }
 
         $name = $chatLead->name ? ' ' . trim($chatLead->name) : '';
-        $company = $conversation->assistant->company_name ?: config('ai_assistant.company_name', 'CarSete');
+        $company = $conversation->assistant->company_name ?: config('ai_assistant.company_name', 'Car 7');
         $phone = $conversation->assistant->commercial_phone ?: config('ai_assistant.commercial_phone');
 
         $conversation->messages()->create([
@@ -284,12 +383,8 @@ class AiLeadAssistantService
             && ! $conversation->human_takeover;
     }
 
-    private function generateReply(AiAssistant $assistant, ChatConversation $conversation, string $message, bool $mustEscalate): string
+    private function generateReply(AiAssistant $assistant, ChatConversation $conversation, string $message, ?string $qualificationContext = null): string
     {
-        if ($mustEscalate) {
-            return $this->handoffReply($assistant);
-        }
-
         $apiKey = (string) config('ai_assistant.openai_api_key');
         if ($apiKey === '') {
             return $this->fallbackReply($assistant);
@@ -298,10 +393,15 @@ class AiLeadAssistantService
         try {
             $response = Http::withToken($apiKey)
                 ->acceptJson()
+                ->withOptions([
+                    'curl' => [
+                        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                    ],
+                ])
                 ->timeout(30)
                 ->post('https://api.openai.com/v1/chat/completions', [
                     'model' => config('ai_assistant.openai_model', 'gpt-4o-mini'),
-                    'messages' => $this->messagesForOpenAi($assistant, $conversation, $message),
+                    'messages' => $this->messagesForOpenAi($assistant, $conversation, $message, $qualificationContext),
                     'temperature' => 0.4,
                 ]);
 
@@ -322,9 +422,13 @@ class AiLeadAssistantService
         }
     }
 
-    private function messagesForOpenAi(AiAssistant $assistant, ChatConversation $conversation, string $message): array
+    private function messagesForOpenAi(AiAssistant $assistant, ChatConversation $conversation, string $message, ?string $qualificationContext = null): array
     {
         $messages = [['role' => 'system', 'content' => $this->systemPrompt($assistant)]];
+
+        if ($qualificationContext) {
+            $messages[] = ['role' => 'system', 'content' => $qualificationContext];
+        }
 
         $history = $conversation->messages()
             ->latest()
@@ -355,14 +459,15 @@ class AiLeadAssistantService
             ->pluck('content')
             ->implode("\n\n");
 
-        $company = $assistant->company_name ?: config('ai_assistant.company_name', 'CarSete');
+        $company = $assistant->company_name ?: config('ai_assistant.company_name', 'Car 7');
         $phone = $assistant->commercial_phone ?: config('ai_assistant.commercial_phone');
 
         return implode("\n\n", array_filter([
             "És o assistente virtual comercial da empresa {$company}. Deves ser transparente sobre seres um assistente virtual.",
             "Fala em português de Portugal. Sê curto, educado, útil e comercial. O telefone comercial é {$phone}.",
             "Não inventes dados de viaturas, preços, financiamento, disponibilidade, garantias ou retomas. Se não souberes, encaminha para humano.",
-            "Escala para humano em pedidos de comercial, negociação, retoma, reserva, irritação, financiamento avançado ou quando o cliente não quiser falar com IA.",
+            "Continua a responder até um humano assumir a conversa. Quando o cliente pedir humano, comercial, negociação, retoma, reserva ou financiamento avançado, recolhe o essencial e diz que um comercial pode acompanhar, mas não pares a conversa por iniciativa própria.",
+            "Antes de encaminhar uma lead, recolhe estes dados sem parecer um inquerito: nome, telefone, segmento ou viatura de interesse, orçamento aproximado, forma de compra, se tem retoma, prazo de compra e se pretende agendar visita. Faz a conversa fluir com uma pergunta curta de cada vez, reagindo ao que o cliente acabou de dizer. Evita listas e frases como \"para completar\", \"para finalizar\", \"campos em falta\" ou \"formulario\".",
             $assistant->system_prompt,
             $assistant->rules,
             $assistant->allowed_topics ? 'Temas permitidos: ' . $assistant->allowed_topics : null,
@@ -386,25 +491,9 @@ class AiLeadAssistantService
         return 'low';
     }
 
-    private function shouldEscalate(string $message): bool
-    {
-        return Str::contains(Str::lower($message), [
-            'comercial', 'humano', 'pessoa', 'liguem', 'ligar', 'não quero bot', 'nao quero bot',
-            'não quero ia', 'nao quero ia', 'negociar', 'desconto', 'retoma', 'avaliação',
-            'avaliacao', 'reservar', 'sinal', 'financiamento', 'crédito', 'credito', 'reclamação', 'reclamacao',
-        ]);
-    }
-
-    private function handoffReply(AiAssistant $assistant): string
-    {
-        $phone = $assistant->commercial_phone ?: config('ai_assistant.commercial_phone');
-
-        return "Vou passar a conversa para um comercial para ajudar melhor. Também pode contactar-nos diretamente pelo {$phone}.";
-    }
-
     private function fallbackReply(AiAssistant $assistant): string
     {
-        $company = $assistant->company_name ?: config('ai_assistant.company_name', 'CarSete');
+        $company = $assistant->company_name ?: config('ai_assistant.company_name', 'Car 7');
         $phone = $assistant->commercial_phone ?: config('ai_assistant.commercial_phone');
 
         return "Olá, sou o assistente virtual da {$company}. Recebi a sua mensagem e vou ajudar. Pode dizer-me que viatura procura, orçamento aproximado e se pretende financiamento ou retoma? Para falar diretamente com um comercial: {$phone}.";

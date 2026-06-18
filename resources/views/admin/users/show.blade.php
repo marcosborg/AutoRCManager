@@ -43,6 +43,14 @@
                                 </tr>
                                 <tr>
                                     <th>
+                                        Telemóvel
+                                    </th>
+                                    <td>
+                                        {{ $user->mobile_phone ?: '-' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
                                         {{ trans('cruds.user.fields.email_verified_at') }}
                                     </th>
                                     <td>

@@ -27,6 +27,13 @@
                             @endif
                             <span class="help-block">{{ trans('cruds.user.fields.email_helper') }}</span>
                         </div>
+                        <div class="form-group {{ $errors->has('mobile_phone') ? 'has-error' : '' }}">
+                            <label for="mobile_phone">Telemóvel</label>
+                            <input class="form-control" type="text" name="mobile_phone" id="mobile_phone" value="{{ old('mobile_phone') }}">
+                            @if($errors->has('mobile_phone'))
+                                <span class="help-block" role="alert">{{ $errors->first('mobile_phone') }}</span>
+                            @endif
+                        </div>
                         <div class="form-group {{ $errors->has('password') ? 'has-error' : '' }}">
                             <label class="required" for="password">{{ trans('cruds.user.fields.password') }}</label>
                             <input class="form-control" type="password" name="password" id="password" required>

@@ -1,3 +1,10 @@
 .env
 .phpunit.result.cache
 storage/backups/
+node_modules/
+package-lock.json
+public/hot
+node-whatsapp-server/node_modules/
+node-whatsapp-server/package-lock.json
+node-whatsapp-server/.wwebjs_auth/
+node-whatsapp-server/.wwebjs_cache/

@@ -71,4 +71,14 @@ class Lead extends Model
     {
         return $this->hasMany(LeadNote::class);
     }
+
+    public function access_tokens()
+    {
+        return $this->hasMany(LeadAccessToken::class);
+    }
+
+    public function whatsapp_notifications()
+    {
+        return $this->hasMany(LeadWhatsappNotification::class);
+    }
 }

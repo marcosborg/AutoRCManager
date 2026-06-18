@@ -11,6 +11,8 @@ Route::get('/home', function () {
 
 Auth::routes(['register' => false]);
 
+Route::get('lead-access/{token}', [\App\Http\Controllers\LeadAccessController::class, 'show'])->name('lead-access.show');
+
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'middleware' => ['auth']], function () {
     Route::get('/', 'HomeController@index')->name('home');
     Route::get('iuc-due/export', 'HomeController@exportIucDue')->name('iuc-due.export');

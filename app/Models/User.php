@@ -34,6 +34,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'mobile_phone',
         'email_verified_at',
         'password',
         'remember_token',
@@ -82,5 +83,15 @@ class User extends Authenticatable
     public function sale_closure_approvals()
     {
         return $this->hasMany(SaleClosureApproval::class, 'closed_by_id');
+    }
+
+    public function lead_access_tokens()
+    {
+        return $this->hasMany(LeadAccessToken::class);
+    }
+
+    public function lead_whatsapp_notifications()
+    {
+        return $this->hasMany(LeadWhatsappNotification::class);
     }
 }

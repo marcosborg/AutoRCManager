@@ -6,6 +6,7 @@ use App\Models\Lead;
 use App\Notifications\NewLeadNotification;
 use App\Services\AiLeadAssistantService;
 use App\Services\LeadAssignmentService;
+use App\Services\LeadWhatsappNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
@@ -64,6 +65,8 @@ class MetaLeadInboundController extends Controller
                 'raw_data' => [
                     'source' => 'inbound',
                     'payload' => $payload,
+                    'purchase_timeline' => $normalized['purchase_timeline'],
+                    'wants_visit' => $normalized['wants_visit'],
                 ],
                 'status' => Lead::STATUS_NEW,
             ]
@@ -92,6 +95,8 @@ class MetaLeadInboundController extends Controller
                     'error' => $exception->getMessage(),
                 ]);
             }
+
+            app(LeadWhatsappNotificationService::class)->queueForLead($lead->fresh('assigned_user'), $assignedUser);
         }
 
         app(AiLeadAssistantService::class)->syncFromMetaLead($lead->fresh());
@@ -166,6 +171,14 @@ class MetaLeadInboundController extends Controller
             'trade_in' => $this->firstFilled([
                 $data['trade_in'] ?? null,
                 $formData['tem_viatura_para_retoma?'] ?? null,
+            ]),
+            'purchase_timeline' => $this->firstFilled([
+                $payload['purchase_timeline'] ?? null,
+                $formData['em_quanto_tempo_pretende_comprar?_'] ?? null,
+            ]),
+            'wants_visit' => $this->firstFilled([
+                $payload['wants_visit'] ?? null,
+                $formData['pretende_agendar_visita?'] ?? null,
             ]),
         ];
     }

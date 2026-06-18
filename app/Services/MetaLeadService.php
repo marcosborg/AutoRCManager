@@ -98,6 +98,8 @@ class MetaLeadService
                     'error' => $exception->getMessage(),
                 ]);
             }
+
+            app(LeadWhatsappNotificationService::class)->queueForLead($lead->fresh('assigned_user'), $assignedUser);
         }
 
         app(AiLeadAssistantService::class)->syncFromMetaLead($lead->fresh());

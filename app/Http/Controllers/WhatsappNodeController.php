@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
+use App\Models\LeadWhatsappNotification;
 use App\Services\AiLeadAssistantService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -35,12 +36,18 @@ class WhatsappNodeController extends Controller
     public function outgoingMessages(Request $request)
     {
         $limit = min(max((int) $request->integer('limit', 20), 1), 100);
+        $createdAfter = $request->date('created_after');
 
         $messages = ChatMessage::query()
             ->with(['conversation.lead', 'conversation.channel'])
             ->where('sender', 'assistant')
             ->where('delivery_status', 'pending')
-            ->whereHas('conversation.channel', fn ($query) => $query->where('slug', 'whatsapp'))
+            ->when($createdAfter, fn ($query) => $query->where('created_at', '>=', $createdAfter))
+            ->whereHas('conversation', function ($query) {
+                $query->where('status', 'active')
+                    ->where('human_takeover', false)
+                    ->whereHas('channel', fn ($channelQuery) => $channelQuery->where('slug', 'whatsapp'));
+            })
             ->oldest()
             ->limit($limit)
             ->get()
@@ -74,6 +81,43 @@ class WhatsappNodeController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function markOutgoingFailed(Request $request, ChatMessage $message)
+    {
+        $data = $request->validate([
+            'error' => ['nullable', 'string', 'max:1000'],
+            'metadata' => ['nullable', 'array'],
+        ]);
+
+        $message->update([
+            'delivery_status' => 'failed',
+            'metadata' => array_filter(array_merge($message->metadata ?? [], $data['metadata'] ?? [], [
+                'error' => $data['error'] ?? null,
+            ])),
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function humanOutgoingMessage(Request $request, AiLeadAssistantService $assistantService)
+    {
+        $payload = $request->validate([
+            'channel' => ['nullable', 'string', 'max:50'],
+            'phone' => ['required_without:to', 'nullable', 'string', 'max:255'],
+            'to' => ['required_without:phone', 'nullable', 'string', 'max:255'],
+            'message' => ['required_without:body', 'nullable', 'string'],
+            'body' => ['required_without:message', 'nullable', 'string'],
+            'message_id' => ['nullable', 'string', 'max:255'],
+            'metadata' => ['nullable', 'array'],
+        ]);
+
+        $conversation = $assistantService->handleHumanOutgoingMessage($payload);
+        if (! $conversation) {
+            return response()->json(['message' => 'Conversation not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json(['ok' => true, 'conversation_id' => $conversation->id]);
+    }
+
     public function messageStatus(Request $request)
     {
         $data = $request->validate([
@@ -90,6 +134,65 @@ class WhatsappNodeController extends Controller
         $message->update([
             'delivery_status' => $data['status'],
             'metadata' => array_filter(array_merge($message->metadata ?? [], $data['metadata'] ?? [])),
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function leadNotifications(Request $request)
+    {
+        $limit = min(max((int) $request->integer('limit', 20), 1), 100);
+
+        $messages = LeadWhatsappNotification::query()
+            ->with(['lead', 'user'])
+            ->where('status', LeadWhatsappNotification::STATUS_PENDING)
+            ->whereNotNull('phone')
+            ->oldest()
+            ->limit($limit)
+            ->get()
+            ->map(fn (LeadWhatsappNotification $notification) => [
+                'id' => $notification->id,
+                'lead_id' => $notification->lead_id,
+                'user_id' => $notification->user_id,
+                'phone' => $notification->phone,
+                'message' => $notification->message,
+                'metadata' => $notification->metadata,
+            ])
+            ->values();
+
+        return response()->json(['data' => $messages]);
+    }
+
+    public function markLeadNotificationSent(Request $request, LeadWhatsappNotification $notification)
+    {
+        $data = $request->validate([
+            'external_id' => ['nullable', 'string', 'max:255'],
+            'metadata' => ['nullable', 'array'],
+        ]);
+
+        $notification->update([
+            'status' => LeadWhatsappNotification::STATUS_SENT,
+            'external_id' => $data['external_id'] ?? $notification->external_id,
+            'sent_at' => now(),
+            'metadata' => array_filter(array_merge($notification->metadata ?? [], $data['metadata'] ?? [])),
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function markLeadNotificationFailed(Request $request, LeadWhatsappNotification $notification)
+    {
+        $data = $request->validate([
+            'error' => ['nullable', 'string', 'max:1000'],
+            'metadata' => ['nullable', 'array'],
+        ]);
+
+        $notification->update([
+            'status' => LeadWhatsappNotification::STATUS_FAILED,
+            'failed_at' => now(),
+            'metadata' => array_filter(array_merge($notification->metadata ?? [], $data['metadata'] ?? [], [
+                'error' => $data['error'] ?? null,
+            ])),
         ]);
 
         return response()->json(['ok' => true]);

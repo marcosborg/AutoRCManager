@@ -25,6 +25,11 @@ class UpdateUserRequest extends FormRequest
                 'required',
                 'unique:users,email,' . request()->route('user')->id,
             ],
+            'mobile_phone' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'roles.*' => [
                 'integer',
             ],

@@ -53,6 +53,9 @@ class UsersController extends Controller
             $table->editColumn('email', function ($row) {
                 return $row->email ? $row->email : '';
             });
+            $table->editColumn('mobile_phone', function ($row) {
+                return $row->mobile_phone ? $row->mobile_phone : '';
+            });
 
             $table->editColumn('roles', function ($row) {
                 $labels = [];

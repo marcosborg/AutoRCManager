@@ -17,7 +17,12 @@ Route::middleware('node.token')->group(function () {
     Route::post('whatsapp/incoming-message', [WhatsappNodeController::class, 'incomingMessage'])->name('whatsapp.incoming-message');
     Route::get('whatsapp/outgoing-messages', [WhatsappNodeController::class, 'outgoingMessages'])->name('whatsapp.outgoing-messages');
     Route::post('whatsapp/outgoing-messages/{message}/sent', [WhatsappNodeController::class, 'markOutgoingSent'])->name('whatsapp.outgoing-messages.sent');
+    Route::post('whatsapp/outgoing-messages/{message}/failed', [WhatsappNodeController::class, 'markOutgoingFailed'])->name('whatsapp.outgoing-messages.failed');
+    Route::post('whatsapp/human-outgoing-message', [WhatsappNodeController::class, 'humanOutgoingMessage'])->name('whatsapp.human-outgoing-message');
     Route::post('whatsapp/message-status', [WhatsappNodeController::class, 'messageStatus'])->name('whatsapp.message-status');
+    Route::get('whatsapp/lead-notifications', [WhatsappNodeController::class, 'leadNotifications'])->name('whatsapp.lead-notifications');
+    Route::post('whatsapp/lead-notifications/{notification}/sent', [WhatsappNodeController::class, 'markLeadNotificationSent'])->name('whatsapp.lead-notifications.sent');
+    Route::post('whatsapp/lead-notifications/{notification}/failed', [WhatsappNodeController::class, 'markLeadNotificationFailed'])->name('whatsapp.lead-notifications.failed');
 
     Route::get('chat/conversations', [WhatsappNodeController::class, 'conversations'])->name('chat.conversations.index');
     Route::get('chat/conversations/{conversation}', [WhatsappNodeController::class, 'conversation'])->name('chat.conversations.show');

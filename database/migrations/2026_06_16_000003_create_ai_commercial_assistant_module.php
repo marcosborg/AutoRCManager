@@ -122,8 +122,8 @@ return new class extends Migration
         DB::table('ai_assistants')->updateOrInsert(
             ['slug' => 'carsete'],
             [
-                'name' => 'Assistente Comercial CarSete',
-                'company_name' => config('ai_assistant.company_name', 'CarSete'),
+                'name' => 'Assistente Comercial Car 7',
+                'company_name' => config('ai_assistant.company_name', 'Car 7'),
                 'commercial_phone' => config('ai_assistant.commercial_phone', '220 132 036'),
                 'active' => true,
                 'default_language' => 'pt-PT',
