@@ -45,6 +45,10 @@ function rememberAssistantTarget(chatId) {
   setTimeout(() => assistantSendTargets.delete(chatId), 30 * 1000);
 }
 
+function isCustomerChatId(chatId) {
+  return typeof chatId === 'string' && chatId.endsWith('@c.us');
+}
+
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: process.env.WHATSAPP_SESSION_NAME || 'autorc-manager' }),
   puppeteer: {
@@ -67,6 +71,7 @@ client.on('ready', () => {
 client.on('message_create', async (message) => {
   if (!message.fromMe) return;
   if (!message.body || !message.body.trim()) return;
+  if (!isCustomerChatId(message.to)) return;
 
   const messageId = message.id && message.id._serialized;
   if (recentlySentByAssistant.has(messageId)) {
@@ -103,6 +108,7 @@ client.on('message_create', async (message) => {
 client.on('message', async (message) => {
   if (message.fromMe) return;
   if (!message.body || !message.body.trim()) return;
+  if (!isCustomerChatId(message.from)) return;
 
   try {
     const contact = await message.getContact();
@@ -121,7 +127,7 @@ client.on('message', async (message) => {
 
     if (response.data && response.data.reply) {
       rememberAssistantTarget(message.from);
-      const sent = await message.reply(response.data.reply);
+      const sent = await client.sendMessage(message.from, response.data.reply);
       rememberAssistantMessage(sent.id && sent.id._serialized);
       if (response.data.message_id) {
         await api.post(`/whatsapp/outgoing-messages/${response.data.message_id}/sent`, {
@@ -148,6 +154,7 @@ async function pollOutgoingMessages() {
       if (!item.phone || !item.message) continue;
 
       const chatId = item.phone.includes('@c.us') ? item.phone : `${item.phone.replace(/\D/g, '')}@c.us`;
+      if (!isCustomerChatId(chatId) || chatId === '@c.us') continue;
       try {
         rememberAssistantTarget(chatId);
         const sent = await client.sendMessage(chatId, item.message);
@@ -180,6 +187,7 @@ async function pollLeadNotifications() {
       if (!item.phone || !item.message) continue;
 
       const chatId = item.phone.includes('@c.us') ? item.phone : `${item.phone.replace(/\D/g, '')}@c.us`;
+      if (!isCustomerChatId(chatId) || chatId === '@c.us') continue;
       try {
         rememberAssistantTarget(chatId);
         const sent = await client.sendMessage(chatId, item.message);
