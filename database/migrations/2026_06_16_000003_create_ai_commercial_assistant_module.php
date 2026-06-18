@@ -124,7 +124,7 @@ return new class extends Migration
             [
                 'name' => 'Assistente Comercial Car 7',
                 'company_name' => config('ai_assistant.company_name', 'Car 7'),
-                'commercial_phone' => config('ai_assistant.commercial_phone', '220 132 036'),
+                'commercial_phone' => config('ai_assistant.commercial_phone', '913203600'),
                 'active' => true,
                 'default_language' => 'pt-PT',
                 'system_prompt' => "Está a falar com o assistente virtual da empresa.\n\nÉs um pré-vendedor digital de um stand automóvel. Responde em português de Portugal, de forma educada, profissional e direta.",

@@ -317,7 +317,7 @@ class AiLeadAssistantService
             [
                 'name' => 'Assistente Comercial Car 7',
                 'company_name' => config('ai_assistant.company_name', 'Car 7'),
-                'commercial_phone' => config('ai_assistant.commercial_phone', '220 132 036'),
+                'commercial_phone' => config('ai_assistant.commercial_phone', '913203600'),
                 'active' => true,
                 'system_prompt' => 'És o assistente virtual comercial da empresa.',
                 'default_language' => 'pt-PT',
