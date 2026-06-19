@@ -35,6 +35,10 @@ class WhatsappNodeController extends Controller
 
     public function outgoingMessages(Request $request)
     {
+        if ((bool) config('ai_assistant.chat_standby', false)) {
+            return response()->json(['data' => []]);
+        }
+
         $limit = min(max((int) $request->integer('limit', 20), 1), 100);
         $createdAfter = $request->date('created_after');
 

@@ -20,6 +20,10 @@ class AiLeadAssistantService
 {
     public function syncFromMetaLead(Lead $lead, bool $queueGreeting = true): ?ChatConversation
     {
+        if ($this->chatOnStandby()) {
+            return null;
+        }
+
         if (blank($lead->phone)) {
             return null;
         }
@@ -79,6 +83,15 @@ class AiLeadAssistantService
 
     public function handleIncomingMessage(array $payload): array
     {
+        if ($this->chatOnStandby()) {
+            return [
+                'ok' => true,
+                'reply' => null,
+                'status' => 'standby',
+                'message' => 'AI chat is temporarily on standby.',
+            ];
+        }
+
         $assistant = $this->assistant();
         $channelSlug = Str::slug((string) ($payload['channel'] ?? 'whatsapp')) ?: 'whatsapp';
         $channel = $this->channel($channelSlug, ucfirst($channelSlug));
@@ -410,9 +423,15 @@ class AiLeadAssistantService
 
     private function canAutoReply(ChatConversation $conversation): bool
     {
-        return (bool) config('ai_assistant.auto_reply_enabled', true)
+        return ! $this->chatOnStandby()
+            && (bool) config('ai_assistant.auto_reply_enabled', true)
             && $conversation->status === 'active'
             && ! $conversation->human_takeover;
+    }
+
+    private function chatOnStandby(): bool
+    {
+        return (bool) config('ai_assistant.chat_standby', false);
     }
 
     private function generateReply(AiAssistant $assistant, ChatConversation $conversation, string $message, ?string $qualificationContext = null): string
