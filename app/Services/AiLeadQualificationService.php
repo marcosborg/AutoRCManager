@@ -27,8 +27,9 @@ class AiLeadQualificationService
     {
         $conversation->loadMissing('lead', 'messages');
         $existing = $this->existingQualification($conversation->lead);
-        $extracted = $this->extractWithOpenAi($conversation) ?: $this->extractFallback($conversation);
-        $qualification = array_filter(array_merge($existing, $extracted), fn ($value) => filled($value));
+        $fallback = $this->extractFallback($conversation);
+        $extracted = $this->extractWithOpenAi($conversation) ?: [];
+        $qualification = array_filter(array_merge($existing, $fallback, $extracted), fn ($value) => filled($value));
         $qualification['phone'] = $this->validatedPhoneForConversation($qualification['phone'] ?? null, $conversation);
 
         if (blank($qualification['phone'] ?? null)) {
@@ -230,7 +231,7 @@ class AiLeadQualificationService
             ->implode("\n");
 
         $data = [];
-        if (preg_match('/\b(?:chamo-me|sou|nome e|nome é)\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\pL\s]{2,80})/iu', $text, $match)) {
+        if (preg_match('/\b(?:chamo-me|sou|nome e|nome é)\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\pL ]{2,80})/iu', $text, $match)) {
             $data['full_name'] = trim($match[1]);
         }
         if (preg_match('/(\+?\d[\d\s]{8,16})/', $text, $match)) {
@@ -251,7 +252,13 @@ class AiLeadQualificationService
             $data['financing'] = 'pronto pagamento';
         }
         if (Str::contains(Str::lower($text), ['retoma'])) {
-            $data['trade_in'] = Str::contains(Str::lower($text), ['sem retoma', 'nao tenho retoma', 'não tenho retoma']) ? 'não' : 'sim';
+            $data['trade_in'] = Str::contains(Str::lower($text), [
+                'sem retoma',
+                'nao tenho retoma',
+                'não tenho retoma',
+                'nao tenho viatura para retoma',
+                'não tenho viatura para retoma',
+            ]) ? 'não' : 'sim';
         }
         if (Str::contains(Str::lower($text), ['hoje', 'semana', 'mes', 'mês', 'urgente'])) {
             $data['purchase_timeline'] = 'curto prazo';
