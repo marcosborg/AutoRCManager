@@ -95,6 +95,11 @@ class LeadWhatsappNotificationService
             return null;
         }
 
-        return preg_replace('/\s+/', '', $phone);
+        $digits = preg_replace('/\D+/', '', $phone);
+        if (strlen($digits) === 9 && str_starts_with($digits, '9')) {
+            return '351' . $digits;
+        }
+
+        return $digits ?: null;
     }
 }

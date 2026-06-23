@@ -31,7 +31,10 @@ class AiLeadQualificationService
         $qualification = array_filter(array_merge($existing, $extracted), fn ($value) => filled($value));
 
         if (blank($qualification['phone'] ?? null)) {
-            $qualification['phone'] = $conversation->customer_phone ?: $conversation->lead?->phone;
+            $conversationPhone = $this->normalizePhone($conversation->customer_phone ?: $conversation->lead?->phone);
+            if ($conversationPhone) {
+                $qualification['phone'] = $conversationPhone;
+            }
         }
 
         if (blank($qualification['full_name'] ?? null)) {
@@ -74,7 +77,7 @@ class AiLeadQualificationService
             'first_name' => null,
             'last_name' => null,
             'email' => $qualification['email'] ?? $chatLead?->email,
-            'phone' => $qualification['phone'] ?? $conversation->customer_phone,
+            'phone' => $this->normalizePhone($qualification['phone'] ?? $conversation->customer_phone),
             'vehicle_interest' => $qualification['vehicle_interest'] ?? null,
             'budget' => $qualification['budget'] ?? null,
             'financing' => $qualification['financing'] ?? null,
@@ -158,7 +161,7 @@ class AiLeadQualificationService
 
         $chatLead->update([
             'name' => $qualification['full_name'] ?? $chatLead->name,
-            'phone' => $qualification['phone'] ?? $chatLead->phone,
+            'phone' => $this->normalizePhone($qualification['phone'] ?? null) ?? $chatLead->phone,
             'vehicle_title' => $qualification['vehicle_interest'] ?? $chatLead->vehicle_title,
             'budget_max' => $this->parseMoney($qualification['budget'] ?? null) ?: $chatLead->budget_max,
             'wants_financing' => $this->truthyText($qualification['financing'] ?? null, ['financiamento', 'credito', 'crédito']),
@@ -272,9 +275,32 @@ class AiLeadQualificationService
 
                 return is_array($value) ? implode(', ', array_filter($value)) : $value;
             })
-            ->map(fn ($value) => blank($value) ? null : trim((string) $value))
+            ->map(fn ($value, $field) => $field === 'phone' ? $this->normalizePhone($value) : (blank($value) ? null : trim((string) $value)))
             ->filter(fn ($value) => filled($value))
             ->all();
+    }
+
+    private function normalizePhone(?string $value): ?string
+    {
+        $raw = trim((string) $value);
+        if ($raw === '' || str_contains($raw, '@lid')) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D+/', '', $raw);
+        if ($digits === '') {
+            return null;
+        }
+
+        if (strlen($digits) === 9 && str_starts_with($digits, '9')) {
+            return '351' . $digits;
+        }
+
+        if (strlen($digits) === 12 && str_starts_with($digits, '3519')) {
+            return $digits;
+        }
+
+        return null;
     }
 
     private function parseMoney(?string $value): ?float
