@@ -29,6 +29,7 @@ class AiLeadQualificationService
         $existing = $this->existingQualification($conversation->lead);
         $extracted = $this->extractWithOpenAi($conversation) ?: $this->extractFallback($conversation);
         $qualification = array_filter(array_merge($existing, $extracted), fn ($value) => filled($value));
+        $qualification['phone'] = $this->validatedPhoneForConversation($qualification['phone'] ?? null, $conversation);
 
         if (blank($qualification['phone'] ?? null)) {
             $conversationPhone = $this->normalizePhone($conversation->customer_phone ?: $conversation->lead?->phone);
@@ -150,7 +151,7 @@ class AiLeadQualificationService
 
         $data = json_decode($chatLead->ai_notes, true);
 
-        return is_array($data) ? (array) ($data['qualification'] ?? []) : [];
+        return is_array($data) ? $this->cleanQualification((array) ($data['qualification'] ?? [])) : [];
     }
 
     private function storeQualification(?ChatLead $chatLead, array $qualification): void
@@ -301,6 +302,28 @@ class AiLeadQualificationService
         }
 
         return null;
+    }
+
+    private function validatedPhoneForConversation(?string $value, ChatConversation $conversation): ?string
+    {
+        $phone = $this->normalizePhone($value);
+        if (! $phone) {
+            return null;
+        }
+
+        $customerPhone = $this->normalizePhone($conversation->customer_phone);
+        if ($customerPhone && $phone === $customerPhone) {
+            return $phone;
+        }
+
+        $customerTextDigits = preg_replace('/\D+/', '', $conversation->messages()
+            ->where('sender', 'customer')
+            ->pluck('message')
+            ->implode(' '));
+
+        return str_contains($customerTextDigits, $phone) || str_contains($customerTextDigits, substr($phone, -9))
+            ? $phone
+            : null;
     }
 
     private function parseMoney(?string $value): ?float

@@ -518,7 +518,7 @@ class AiLeadAssistantService
             "Fala em português de Portugal. Sê curto, educado, útil e comercial. O telefone comercial é {$phone}.",
             "Não inventes dados de viaturas, preços, financiamento, disponibilidade, garantias ou retomas. Se não souberes, encaminha para humano.",
             "Continua a responder até um humano assumir a conversa. Quando o cliente pedir humano, comercial, negociação, retoma, reserva ou financiamento avançado, recolhe o essencial e diz que um comercial pode acompanhar, mas não pares a conversa por iniciativa própria.",
-            "Antes de encaminhar uma lead, recolhe estes dados sem parecer um inquerito: nome, telefone, segmento ou viatura de interesse, orçamento aproximado, forma de compra, se tem retoma, prazo de compra e se pretende agendar visita. Faz a conversa fluir com uma pergunta curta de cada vez, reagindo ao que o cliente acabou de dizer. Evita listas e frases como \"para completar\", \"para finalizar\", \"campos em falta\" ou \"formulario\".",
+            "Antes de encaminhar uma lead, recolhe estes dados sem parecer um inquerito: nome, telefone quando ainda nao existir um numero real do WhatsApp, segmento ou viatura de interesse, orçamento aproximado, forma de compra, se tem retoma, prazo de compra e se pretende agendar visita. Faz a conversa fluir com uma pergunta curta de cada vez, reagindo ao que o cliente acabou de dizer. Evita listas e frases como \"para completar\", \"para finalizar\", \"campos em falta\" ou \"formulario\".",
             $assistant->system_prompt,
             $assistant->rules,
             $assistant->allowed_topics ? 'Temas permitidos: ' . $assistant->allowed_topics : null,
