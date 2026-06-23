@@ -12,6 +12,8 @@ use App\Models\Vehicle;
 use Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 
 class OficinaExpertiseProcessController extends Controller
@@ -126,6 +128,59 @@ class OficinaExpertiseProcessController extends Controller
         return redirect()->route('admin.oficina-expertise-processes.show', $oficinaExpertiseProcess)->with('message', 'Peritagem atualizada com sucesso.');
     }
 
+    public function updateStatus(Request $request, OficinaExpertiseProcess $oficinaExpertiseProcess)
+    {
+        abort_if(Gate::denies('oficina_expertise_process_change_status'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'status' => ['required', Rule::in(array_keys(OficinaExpertiseProcess::STATUS_SELECT))],
+            'date' => ['nullable', 'date'],
+        ]);
+
+        $dateField = OficinaExpertiseProcess::dateFieldForStatus($data['status']);
+        if ($dateField && empty($data['date'])) {
+            return response()->json([
+                'message' => OficinaExpertiseProcess::dateLabelForStatus($data['status']) . ' é obrigatória.',
+                'requires_date' => true,
+                'date_field' => $dateField,
+                'date_label' => OficinaExpertiseProcess::dateLabelForStatus($data['status']),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($data['status'] === OficinaExpertiseProcess::STATUS_CANCELLED && ! $oficinaExpertiseProcess->rejection_reason) {
+            return response()->json(['message' => 'Para cancelar, edite o processo e indique o motivo.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($data['status'] === OficinaExpertiseProcess::STATUS_CLOSED && ! $oficinaExpertiseProcess->payment_received_date) {
+            return response()->json(['message' => 'O processo só pode ser fechado depois de registar o pagamento recebido.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        DB::transaction(function () use ($request, $oficinaExpertiseProcess, $data) {
+            $oldStatus = $oficinaExpertiseProcess->status;
+            if ($oldStatus === $data['status']) {
+                return;
+            }
+
+            $updates = $this->statusSideEffects($data['status'], $oficinaExpertiseProcess, $data['date'] ?? null);
+            $updates['status'] = $data['status'];
+            $updates['updated_by_id'] = $request->user()?->id;
+
+            $oficinaExpertiseProcess->update($updates);
+            $this->recordHistory(
+                $oficinaExpertiseProcess,
+                $oldStatus,
+                $data['status'],
+                $request->user()?->id,
+                'Estado alterado no Kanban.'
+            );
+        });
+
+        return response()->json([
+            'message' => 'Estado atualizado.',
+            'status' => $oficinaExpertiseProcess->fresh()->status,
+        ]);
+    }
+
     public function destroy(OficinaExpertiseProcess $oficinaExpertiseProcess)
     {
         abort_if(Gate::denies('oficina_expertise_process_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -178,36 +233,14 @@ class OficinaExpertiseProcessController extends Controller
             $data['license'] = $vehicle?->license ?: $vehicle?->foreign_license;
         }
 
-        if (($data['status'] ?? null) === OficinaExpertiseProcess::STATUS_EXPERTISE_SCHEDULED && empty($data['scheduled_expertise_date'])) {
-            $data['scheduled_expertise_date'] = now()->toDateString();
-        }
-
-        if (($data['status'] ?? null) === OficinaExpertiseProcess::STATUS_APPROVED && empty($data['approval_date'])) {
-            $data['approval_date'] = now()->toDateString();
-        }
-
-        if (($data['status'] ?? null) === OficinaExpertiseProcess::STATUS_IN_REPAIR && empty($data['repair_start_date'])) {
-            $data['repair_start_date'] = now()->toDateString();
-        }
-
-        if (($data['status'] ?? null) === OficinaExpertiseProcess::STATUS_REPAIR_COMPLETED && empty($data['repair_completed_date'])) {
-            $data['repair_completed_date'] = now()->toDateString();
-        }
-
-        if (($data['status'] ?? null) === OficinaExpertiseProcess::STATUS_INSURANCE_VALIDATION && empty($data['insurance_validation_date'])) {
-            $data['insurance_validation_date'] = now()->toDateString();
-        }
-
-        if (($data['status'] ?? null) === OficinaExpertiseProcess::STATUS_INVOICE_SENT && empty($data['invoice_sent_date'])) {
-            $data['invoice_sent_date'] = now()->toDateString();
-        }
-
-        if (($data['status'] ?? null) === OficinaExpertiseProcess::STATUS_PAYMENT_RECEIVED && empty($data['payment_received_date'])) {
-            $data['payment_received_date'] = now()->toDateString();
+        foreach (OficinaExpertiseProcess::DATETIME_FIELDS as $field) {
+            if (! empty($data[$field])) {
+                $data[$field] = Carbon::parse($data[$field])->format('Y-m-d H:i:s');
+            }
         }
 
         if (($data['status'] ?? null) === OficinaExpertiseProcess::STATUS_PAYMENT_OVERDUE && empty($data['invoice_sent_date'])) {
-            $data['invoice_sent_date'] = now()->subDays(31)->toDateString();
+            $data['invoice_sent_date'] = now()->subDays(31)->format('Y-m-d H:i:s');
         }
 
         return $data;
@@ -224,6 +257,30 @@ class OficinaExpertiseProcessController extends Controller
                 $process->addMedia($file)->toMediaCollection($collection);
             }
         }
+    }
+
+    private function statusSideEffects(string $status, OficinaExpertiseProcess $process, ?string $date = null): array
+    {
+        $updates = [];
+        $dateField = OficinaExpertiseProcess::dateFieldForStatus($status);
+
+        if ($dateField && $date) {
+            $updates[$dateField] = Carbon::parse($date)->format('Y-m-d H:i:s');
+        }
+
+        if ($status === OficinaExpertiseProcess::STATUS_PAYMENT_OVERDUE && ! $process->invoice_sent_date) {
+            $updates['invoice_sent_date'] = now()->subDays(31)->format('Y-m-d H:i:s');
+        }
+
+        if ($status === OficinaExpertiseProcess::STATUS_CLOSED && ! $process->closed_at) {
+            $updates['closed_at'] = now();
+        }
+
+        if ($status !== OficinaExpertiseProcess::STATUS_CLOSED && $process->closed_at) {
+            $updates['closed_at'] = null;
+        }
+
+        return $updates;
     }
 
     private function recordHistory(OficinaExpertiseProcess $process, ?string $oldStatus, ?string $newStatus, ?int $userId, ?string $notes = null): void

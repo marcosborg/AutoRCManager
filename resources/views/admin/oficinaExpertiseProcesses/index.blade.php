@@ -39,14 +39,14 @@
             </form>
 
             @if(request('view') === 'kanban')
-                <div class="row">
+                <div class="row oficina-expertise-kanban">
                     @foreach(\App\Models\OficinaExpertiseProcess::STATUS_SELECT as $status => $label)
                         <div class="col-md-3">
                             <div class="panel panel-default">
                                 <div class="panel-heading"><strong>{{ $label }}</strong></div>
-                                <div class="panel-body" style="min-height: 120px;">
+                                <div class="panel-body kanban-column" data-status="{{ $status }}" style="min-height: 120px;">
                                     @forelse(($kanbanProcesses[$status] ?? collect()) as $process)
-                                        <div class="well well-sm" style="{{ $process->is_alert ? 'border-left:4px solid #dd4b39;' : '' }}">
+                                        <div class="well well-sm kanban-card" draggable="{{ Gate::allows('oficina_expertise_process_change_status') ? 'true' : 'false' }}" data-id="{{ $process->id }}" data-status="{{ $process->status }}" data-update-url="{{ route('admin.oficina-expertise-processes.update-status', $process) }}" style="cursor: {{ Gate::allows('oficina_expertise_process_change_status') ? 'move' : 'default' }}; {{ $process->is_alert ? 'border-left:4px solid #dd4b39;' : '' }}">
                                             <a href="{{ route('admin.oficina-expertise-processes.show', $process) }}"><strong>{{ $process->license_display }}</strong></a>
                                             <div>{{ $process->insurance_company ?: '-' }}</div>
                                             <div class="text-muted small">{{ $process->next_action }}</div>
@@ -94,7 +94,7 @@
                                     @endif
                                 </td>
                                 <td>{{ optional($process->entry_date)->format('Y-m-d') ?: '-' }}</td>
-                                <td>{{ optional($process->scheduled_expertise_date)->format('Y-m-d') ?: '-' }}</td>
+                                <td>{{ optional($process->scheduled_expertise_date)->format('Y-m-d H:i') ?: '-' }}</td>
                                 <td>{{ $process->approved_amount !== null ? number_format($process->approved_amount, 2, ',', '.') . ' €' : '-' }}</td>
                                 <td>
                                     {{ $process->status_label }}
@@ -131,4 +131,158 @@
         </div>
     </div>
 </div>
+
+@if(request('view') === 'kanban')
+    <div class="modal fade" id="kanban-status-date-modal" tabindex="-1" role="dialog" aria-labelledby="kanban-status-date-title">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="kanban-status-date-title">Data do estado</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label id="kanban-status-date-label" for="kanban-status-date-input">Data</label>
+                        <input class="form-control" type="datetime-local" id="kanban-status-date-input">
+                        <span class="help-block">Esta é a data e hora em que o passo ficou agendado/realizado, não a data em que moveste o cartão.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="kanban-status-date-confirm">Guardar estado</button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
+@endsection
+
+@section('scripts')
+@parent
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var statusDateConfig = @json(collect(\App\Models\OficinaExpertiseProcess::STATUS_SELECT)->mapWithKeys(function ($label, $status) {
+        return \App\Models\OficinaExpertiseProcess::dateFieldForStatus($status)
+            ? [$status => ['label' => \App\Models\OficinaExpertiseProcess::dateLabelForStatus($status)]]
+            : [];
+    }));
+    var draggedCard = null;
+    var originalColumn = null;
+    var originalNext = null;
+
+    function requestStatusDate(status) {
+        var config = statusDateConfig[status];
+        if (!config) {
+            return Promise.resolve(null);
+        }
+
+        return new Promise(function (resolve, reject) {
+            var modal = $('#kanban-status-date-modal');
+            var input = document.getElementById('kanban-status-date-input');
+            document.getElementById('kanban-status-date-label').textContent = config.label;
+            document.getElementById('kanban-status-date-title').textContent = config.label;
+            input.value = '';
+
+            modal.off('hidden.bs.modal.kanban-date');
+            $('#kanban-status-date-confirm').off('click.kanban-date').on('click.kanban-date', function () {
+                if (!input.value) {
+                    input.focus();
+                    return;
+                }
+
+                modal.off('hidden.bs.modal.kanban-date');
+                modal.modal('hide');
+                resolve(input.value);
+            });
+
+            modal.on('hidden.bs.modal.kanban-date', function () {
+                reject(new Error('Alteração cancelada.'));
+            });
+
+            modal.modal('show');
+        });
+    }
+
+    function restoreCard(card) {
+        if (originalNext && originalNext.parentElement === originalColumn) {
+            originalColumn.insertBefore(card, originalNext);
+        } else if (originalColumn) {
+            originalColumn.appendChild(card);
+        }
+    }
+
+    document.querySelectorAll('.kanban-card[draggable="true"]').forEach(function (card) {
+        card.addEventListener('dragstart', function (event) {
+            draggedCard = card;
+            originalColumn = card.parentElement;
+            originalNext = card.nextElementSibling;
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', card.dataset.id);
+            card.style.opacity = '0.6';
+        });
+
+        card.addEventListener('dragend', function () {
+            card.style.opacity = '';
+        });
+    });
+
+    document.querySelectorAll('.kanban-column').forEach(function (column) {
+        column.addEventListener('dragover', function (event) {
+            if (!draggedCard) {
+                return;
+            }
+
+            event.preventDefault();
+            column.style.background = '#f7fbff';
+        });
+
+        column.addEventListener('dragleave', function () {
+            column.style.background = '';
+        });
+
+        column.addEventListener('drop', function (event) {
+            event.preventDefault();
+            column.style.background = '';
+
+            if (!draggedCard || draggedCard.dataset.status === column.dataset.status) {
+                return;
+            }
+
+            var card = draggedCard;
+            var targetStatus = column.dataset.status;
+
+            requestStatusDate(targetStatus).then(function (statusDate) {
+                column.appendChild(card);
+
+                fetch(card.dataset.updateUrl, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({status: targetStatus, date: statusDate})
+                }).then(function (response) {
+                if (!response.ok) {
+                    return response.json().catch(function () {
+                        return {message: 'Não foi possível alterar o estado.'};
+                    }).then(function (payload) {
+                        throw new Error(payload.message || 'Não foi possível alterar o estado.');
+                    });
+                }
+
+                return response.json();
+                }).then(function (payload) {
+                    card.dataset.status = payload.status || targetStatus;
+                }).catch(function (error) {
+                    restoreCard(card);
+                    alert(error.message);
+                });
+            }).catch(function () {
+                restoreCard(card);
+            });
+        });
+    });
+});
+</script>
 @endsection

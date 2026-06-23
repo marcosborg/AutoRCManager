@@ -55,7 +55,7 @@
                             'payment_received_date' => 'Pagamento recebido',
                             'closed_at' => 'Fecho',
                         ] as $field => $label)
-                            <div class="col-md-3"><strong>{{ $label }}</strong><br>{{ optional($process->{$field})->format(str_ends_with($field, '_at') ? 'Y-m-d H:i' : 'Y-m-d') ?: '-' }}</div>
+                            <div class="col-md-3"><strong>{{ $label }}</strong><br>{{ optional($process->{$field})->format(in_array($field, \App\Models\OficinaExpertiseProcess::DATETIME_FIELDS, true) || str_ends_with($field, '_at') ? 'Y-m-d H:i' : 'Y-m-d') ?: '-' }}</div>
                         @endforeach
                     </div>
                 </div>

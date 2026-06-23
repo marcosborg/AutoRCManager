@@ -67,6 +67,17 @@ class OficinaExpertiseProcess extends Model implements HasMedia
         'payment_proof' => 'Comprovativo de pagamento',
     ];
 
+    public const DATETIME_FIELDS = [
+        'scheduled_expertise_date',
+        'approval_date',
+        'repair_start_date',
+        'expected_repair_date',
+        'repair_completed_date',
+        'insurance_validation_date',
+        'invoice_sent_date',
+        'payment_received_date',
+    ];
+
     protected $fillable = [
         'vehicle_id',
         'license',
@@ -111,14 +122,14 @@ class OficinaExpertiseProcess extends Model implements HasMedia
 
     protected $casts = [
         'entry_date' => 'date',
-        'scheduled_expertise_date' => 'date',
-        'approval_date' => 'date',
-        'repair_start_date' => 'date',
-        'expected_repair_date' => 'date',
-        'repair_completed_date' => 'date',
-        'insurance_validation_date' => 'date',
-        'invoice_sent_date' => 'date',
-        'payment_received_date' => 'date',
+        'scheduled_expertise_date' => 'datetime',
+        'approval_date' => 'datetime',
+        'repair_start_date' => 'datetime',
+        'expected_repair_date' => 'datetime',
+        'repair_completed_date' => 'datetime',
+        'insurance_validation_date' => 'datetime',
+        'invoice_sent_date' => 'datetime',
+        'payment_received_date' => 'datetime',
         'closed_at' => 'datetime',
         'approved_amount' => 'float',
     ];
@@ -228,5 +239,31 @@ class OficinaExpertiseProcess extends Model implements HasMedia
         }
 
         return null;
+    }
+
+    public static function dateFieldForStatus(string $status): ?string
+    {
+        return [
+            self::STATUS_EXPERTISE_SCHEDULED => 'scheduled_expertise_date',
+            self::STATUS_APPROVED => 'approval_date',
+            self::STATUS_IN_REPAIR => 'repair_start_date',
+            self::STATUS_REPAIR_COMPLETED => 'repair_completed_date',
+            self::STATUS_INSURANCE_VALIDATION => 'insurance_validation_date',
+            self::STATUS_INVOICE_SENT => 'invoice_sent_date',
+            self::STATUS_PAYMENT_RECEIVED => 'payment_received_date',
+        ][$status] ?? null;
+    }
+
+    public static function dateLabelForStatus(string $status): ?string
+    {
+        return [
+            self::STATUS_EXPERTISE_SCHEDULED => 'Data e hora agendada da peritagem',
+            self::STATUS_APPROVED => 'Data e hora de aprovação',
+            self::STATUS_IN_REPAIR => 'Data e hora de início da reparação',
+            self::STATUS_REPAIR_COMPLETED => 'Data e hora de conclusão da reparação',
+            self::STATUS_INSURANCE_VALIDATION => 'Data e hora de validação da seguradora',
+            self::STATUS_INVOICE_SENT => 'Data e hora de envio da fatura',
+            self::STATUS_PAYMENT_RECEIVED => 'Data e hora de pagamento recebido',
+        ][$status] ?? null;
     }
 }

@@ -52,20 +52,20 @@
 
 <div class="row">
     <div class="col-md-2 form-group"><label for="entry_date">Entrada</label><input class="form-control" type="date" name="entry_date" id="entry_date" value="{{ old('entry_date', optional($process?->entry_date)->format('Y-m-d') ?: now()->toDateString()) }}"></div>
-    <div class="col-md-2 form-group"><label for="scheduled_expertise_date">Peritagem</label><input class="form-control" type="date" name="scheduled_expertise_date" id="scheduled_expertise_date" value="{{ old('scheduled_expertise_date', optional($process?->scheduled_expertise_date)->format('Y-m-d')) }}"></div>
-    <div class="col-md-2 form-group"><label for="approval_date">Aprovação</label><input class="form-control" type="date" name="approval_date" id="approval_date" value="{{ old('approval_date', optional($process?->approval_date)->format('Y-m-d')) }}"></div>
+    <div class="col-md-2 form-group"><label for="scheduled_expertise_date">Peritagem</label><input class="form-control" type="datetime-local" name="scheduled_expertise_date" id="scheduled_expertise_date" value="{{ old('scheduled_expertise_date', optional($process?->scheduled_expertise_date)->format('Y-m-d\\TH:i')) }}"></div>
+    <div class="col-md-2 form-group"><label for="approval_date">Aprovação</label><input class="form-control" type="datetime-local" name="approval_date" id="approval_date" value="{{ old('approval_date', optional($process?->approval_date)->format('Y-m-d\\TH:i')) }}"></div>
     <div class="col-md-2 form-group"><label for="approved_amount">Valor aprovado</label><input class="form-control" type="number" min="0" step="0.01" name="approved_amount" id="approved_amount" value="{{ old('approved_amount', $process?->approved_amount) }}"></div>
-    <div class="col-md-2 form-group"><label for="repair_start_date">Início reparação</label><input class="form-control" type="date" name="repair_start_date" id="repair_start_date" value="{{ old('repair_start_date', optional($process?->repair_start_date)->format('Y-m-d')) }}"></div>
-    <div class="col-md-2 form-group"><label for="expected_repair_date">Previsão conclusão</label><input class="form-control" type="date" name="expected_repair_date" id="expected_repair_date" value="{{ old('expected_repair_date', optional($process?->expected_repair_date)->format('Y-m-d')) }}"></div>
+    <div class="col-md-2 form-group"><label for="repair_start_date">Início reparação</label><input class="form-control" type="datetime-local" name="repair_start_date" id="repair_start_date" value="{{ old('repair_start_date', optional($process?->repair_start_date)->format('Y-m-d\\TH:i')) }}"></div>
+    <div class="col-md-2 form-group"><label for="expected_repair_date">Previsão conclusão</label><input class="form-control" type="datetime-local" name="expected_repair_date" id="expected_repair_date" value="{{ old('expected_repair_date', optional($process?->expected_repair_date)->format('Y-m-d\\TH:i')) }}"></div>
 </div>
 
 <div class="row">
-    <div class="col-md-3 form-group"><label for="repair_completed_date">Reparação concluída</label><input class="form-control" type="date" name="repair_completed_date" id="repair_completed_date" value="{{ old('repair_completed_date', optional($process?->repair_completed_date)->format('Y-m-d')) }}"></div>
-    <div class="col-md-3 form-group"><label for="insurance_validation_date">Validação seguradora</label><input class="form-control" type="date" name="insurance_validation_date" id="insurance_validation_date" value="{{ old('insurance_validation_date', optional($process?->insurance_validation_date)->format('Y-m-d')) }}"></div>
-    <div class="col-md-3 form-group"><label for="invoice_sent_date">Fatura enviada</label><input class="form-control" type="date" name="invoice_sent_date" id="invoice_sent_date" value="{{ old('invoice_sent_date', optional($process?->invoice_sent_date)->format('Y-m-d')) }}"></div>
+    <div class="col-md-3 form-group"><label for="repair_completed_date">Reparação concluída</label><input class="form-control" type="datetime-local" name="repair_completed_date" id="repair_completed_date" value="{{ old('repair_completed_date', optional($process?->repair_completed_date)->format('Y-m-d\\TH:i')) }}"></div>
+    <div class="col-md-3 form-group"><label for="insurance_validation_date">Validação seguradora</label><input class="form-control" type="datetime-local" name="insurance_validation_date" id="insurance_validation_date" value="{{ old('insurance_validation_date', optional($process?->insurance_validation_date)->format('Y-m-d\\TH:i')) }}"></div>
+    <div class="col-md-3 form-group"><label for="invoice_sent_date">Fatura enviada</label><input class="form-control" type="datetime-local" name="invoice_sent_date" id="invoice_sent_date" value="{{ old('invoice_sent_date', optional($process?->invoice_sent_date)->format('Y-m-d\\TH:i')) }}"></div>
     <div class="col-md-3 form-group {{ $errors->has('payment_received_date') ? 'has-error' : '' }}">
         <label for="payment_received_date">Pagamento recebido</label>
-        <input class="form-control" type="date" name="payment_received_date" id="payment_received_date" value="{{ old('payment_received_date', optional($process?->payment_received_date)->format('Y-m-d')) }}">
+        <input class="form-control" type="datetime-local" name="payment_received_date" id="payment_received_date" value="{{ old('payment_received_date', optional($process?->payment_received_date)->format('Y-m-d\\TH:i')) }}">
         @if($errors->has('payment_received_date'))<span class="help-block">{{ $errors->first('payment_received_date') }}</span>@endif
     </div>
 </div>

@@ -61,6 +61,11 @@ class StoreOficinaExpertiseProcessRequest extends FormRequest
             if ($this->input('status') === OficinaExpertiseProcess::STATUS_CLOSED && ! $this->filled('payment_received_date')) {
                 $validator->errors()->add('payment_received_date', 'O processo só pode ser fechado depois de registar o pagamento recebido.');
             }
+
+            $dateField = OficinaExpertiseProcess::dateFieldForStatus((string) $this->input('status'));
+            if ($dateField && ! $this->filled($dateField)) {
+                $validator->errors()->add($dateField, 'Indique a data associada ao estado escolhido.');
+            }
         });
     }
 }
