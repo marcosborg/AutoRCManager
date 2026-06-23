@@ -141,7 +141,7 @@ class AiLeadAssistantService
         $missingFields = $qualificationService->missingFields($qualification);
         $completedLead = null;
 
-        if ($missingFields === [] && ! $chatLead->lead_id) {
+        if ($missingFields === [] && $this->shouldCreateLeadFromConversation($conversation->fresh(['lead']))) {
             $completedLead = $this->createLeadFromConversation($conversation->fresh(['lead', 'messages']), $qualification);
             $chatLead = $completedLead ? $completedLead->chatLead : $chatLead->fresh();
         }
@@ -182,11 +182,18 @@ class AiLeadAssistantService
             $conversation->loadMissing('lead', 'messages');
             $chatLead = $conversation->lead;
 
-            if (! $chatLead || $chatLead->lead_id) {
+            if (! $chatLead) {
                 return $chatLead?->meta_lead;
             }
 
             $payload = app(AiLeadQualificationService::class)->buildLeadPayload($conversation, $qualification);
+            if ($chatLead->lead_id && $this->shouldStartNewLeadCycle($chatLead)) {
+                $payload['leadgen_id'] = 'ai_whatsapp:' . $conversation->id . ':' . now()->format('YmdHis');
+                data_set($payload, 'raw_data.previous_lead_id', $chatLead->lead_id);
+            } elseif ($chatLead->lead_id) {
+                return $chatLead->meta_lead;
+            }
+
             $lead = Lead::firstOrCreate(['leadgen_id' => $payload['leadgen_id']], $payload);
 
             if ($lead->wasRecentlyCreated) {
@@ -216,6 +223,29 @@ class AiLeadAssistantService
 
             return $lead;
         });
+    }
+
+    private function shouldCreateLeadFromConversation(ChatConversation $conversation): bool
+    {
+        $conversation->loadMissing('lead');
+        $chatLead = $conversation->lead;
+
+        if (! $chatLead) {
+            return false;
+        }
+
+        return ! $chatLead->lead_id || $this->shouldStartNewLeadCycle($chatLead);
+    }
+
+    private function shouldStartNewLeadCycle(ChatLead $chatLead): bool
+    {
+        if (! $chatLead->lead_id || $chatLead->status !== 'sent_to_sales') {
+            return false;
+        }
+
+        $lastLead = $chatLead->meta_lead;
+
+        return $lastLead && $lastLead->created_at?->lte(now()->subDay());
     }
 
     public function markTakenOver(ChatConversation $conversation): ChatConversation
@@ -349,6 +379,20 @@ class AiLeadAssistantService
             ->where('channel_id', $channel->id)
             ->where('phone', $phone)
             ->first();
+
+        if (! $lead) {
+            $lead = ChatConversation::query()
+                ->with('lead')
+                ->where('channel_id', $channel->id)
+                ->where(function ($query) use ($phone) {
+                    $query->where('customer_phone', $phone)
+                        ->orWhere('customer_identifier', $phone);
+                })
+                ->latest('last_message_at')
+                ->latest('id')
+                ->first()
+                ?->lead;
+        }
 
         $lead = $lead ?: new ChatLead([
             'channel_id' => $channel->id,
