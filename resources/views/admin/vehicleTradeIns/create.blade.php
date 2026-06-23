@@ -9,6 +9,7 @@
         'has_internal_invoice' => 'Fatura interna',
         'has_reservation_extinction_authorization' => 'Autorizacao para extincao de reserva',
     ];
+    $tradeInDocumentsRequired = \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Stand']);
 @endphp
 
 <div class="content">
@@ -98,14 +99,14 @@
                     <div class="panel-heading">Fotos e documentos</div>
                     <div class="panel-body">
                         <div class="form-group {{ $tradeInErrors->has('inicial') || $tradeInErrors->has('inicial.*') ? 'has-error' : '' }}">
-                            <label>Fotos iniciais da aquisicao <span class="text-danger">*</span></label>
-                            <input class="form-control" type="file" name="inicial[]" multiple required>
+                            <label>Fotos iniciais da aquisicao @if($tradeInDocumentsRequired)<span class="text-danger">*</span>@endif</label>
+                            <input class="form-control" type="file" name="inicial[]" multiple {{ $tradeInDocumentsRequired ? 'required' : '' }}>
                             @if($tradeInErrors->has('inicial'))<span class="help-block">{{ $tradeInErrors->first('inicial') }}</span>@endif
                             @if($tradeInErrors->has('inicial.*'))<span class="help-block">{{ $tradeInErrors->first('inicial.*') }}</span>@endif
                         </div>
 
                         @foreach(\App\Models\VehicleTradeIn::STANDALONE_DOCUMENT_COLLECTIONS as $collection => $label)
-                            @php($required = in_array($collection, ['vehicle_delivery_declaration', 'internal_invoice'], true))
+                            @php($required = $tradeInDocumentsRequired && in_array($collection, ['vehicle_delivery_declaration', 'internal_invoice'], true))
                             <div class="form-group {{ $tradeInErrors->has($collection) || $tradeInErrors->has($collection . '.*') ? 'has-error' : '' }}">
                                 <label>{{ $label }} @if($required)<span class="text-danger">*</span>@endif</label>
                                 <input class="form-control" type="file" name="{{ $collection }}[]" multiple {{ $required ? 'required' : '' }}>

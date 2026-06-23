@@ -192,8 +192,12 @@ class VehicleTradeInController extends Controller
         return back()->with('message', 'Retoma rejeitada.');
     }
 
-    private function rules(bool $standalone = false): array
+    private function rules(bool $standalone = false, bool $documentsRequired = false): array
     {
+        $purchaseSaleRequired = $documentsRequired && ! $standalone;
+        $vehicleDeliveryRequired = $documentsRequired && $standalone;
+        $requiredRule = $documentsRequired ? 'required' : 'nullable';
+
         $rules = [
             'trade_in_license' => ['required', 'string', 'max:50'],
             'trade_in_amount' => ['required', 'numeric', 'min:0.01'],
@@ -216,23 +220,23 @@ class VehicleTradeInController extends Controller
             'has_promissory_note' => ['nullable', 'boolean'],
             'has_reservation_extinction_authorization' => ['nullable', 'boolean'],
             'registration_title.*' => ['nullable', 'file', 'max:10240'],
-            'purchase_sale_rgpd' => [$standalone ? 'nullable' : 'required', 'array', 'min:1'],
-            'purchase_sale_rgpd.*' => [$standalone ? 'nullable' : 'required', 'file', 'max:10240'],
-            'vehicle_delivery_declaration' => [$standalone ? 'required' : 'nullable', 'array', 'min:1'],
-            'vehicle_delivery_declaration.*' => [$standalone ? 'required' : 'nullable', 'file', 'max:10240'],
+            'purchase_sale_rgpd' => [$purchaseSaleRequired ? 'required' : 'nullable', 'array', 'min:1'],
+            'purchase_sale_rgpd.*' => [$purchaseSaleRequired ? 'required' : 'nullable', 'file', 'max:10240'],
+            'vehicle_delivery_declaration' => [$vehicleDeliveryRequired ? 'required' : 'nullable', 'array', 'min:1'],
+            'vehicle_delivery_declaration.*' => [$vehicleDeliveryRequired ? 'required' : 'nullable', 'file', 'max:10240'],
             'seller_identification.*' => ['nullable', 'file', 'max:10240'],
             'ipo.*' => ['nullable', 'file', 'max:10240'],
             'keys.*' => ['nullable', 'file', 'max:10240'],
             'charging_kit.*' => ['nullable', 'file', 'max:10240'],
             'manuals.*' => ['nullable', 'file', 'max:10240'],
-            'internal_invoice' => ['required', 'array', 'min:1'],
-            'internal_invoice.*' => ['required', 'file', 'max:10240'],
+            'internal_invoice' => [$requiredRule, 'array', 'min:1'],
+            'internal_invoice.*' => [$requiredRule, 'file', 'max:10240'],
             'finance_mod_2.*' => ['nullable', 'file', 'max:10240'],
             'promissory_note.*' => ['nullable', 'file', 'max:10240'],
             'reservation_extinction_authorization.*' => ['nullable', 'file', 'max:10240'],
             'other_documents.*' => ['nullable', 'file', 'max:10240'],
-            'inicial' => ['required', 'array', 'min:1'],
-            'inicial.*' => ['required', 'file', 'max:10240'],
+            'inicial' => [$requiredRule, 'array', 'min:1'],
+            'inicial.*' => [$requiredRule, 'file', 'max:10240'],
         ];
 
         return $rules;
@@ -240,12 +244,20 @@ class VehicleTradeInController extends Controller
 
     private function validatedData(Request $request, bool $standalone = false): array
     {
-        $validator = Validator::make($request->all(), $this->rules($standalone));
+        $validator = Validator::make(
+            $request->all(),
+            $this->rules($standalone, $this->tradeInDocumentsAreRequiredForUser($request->user()))
+        );
         if ($validator->fails()) {
             throw (new ValidationException($validator))->errorBag('trade_in');
         }
 
         return $validator->validated();
+    }
+
+    private function tradeInDocumentsAreRequiredForUser($user): bool
+    {
+        return RolePreview::hasAnyEffectiveRole($user, ['Stand']);
     }
 
     private function createStockVehicle(array $data, int $stockStateId, string $source, ?int $clientId = null): Vehicle

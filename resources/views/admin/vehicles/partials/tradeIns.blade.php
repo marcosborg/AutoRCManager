@@ -8,6 +8,7 @@
     ];
     $tradeInUploads = \App\Models\VehicleTradeIn::DOCUMENT_COLLECTIONS;
     $tradeInErrors = $errors->getBag('trade_in');
+    $tradeInDocumentsRequired = \App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Stand']);
 @endphp
 
 <div class="panel panel-default" id="vehicle-trade-ins-panel">
@@ -94,13 +95,13 @@
             <div class="panel-heading">Anexos da retoma</div>
             <div class="panel-body" style="padding: 8px;">
                 <div class="form-group {{ $tradeInErrors->has('inicial') || $tradeInErrors->has('inicial.*') ? 'has-error' : '' }}">
-                    <label>Fotos iniciais da aquisicao <span class="text-danger">*</span></label>
-                    <input class="form-control" form="vehicle-trade-in-create-form" type="file" name="inicial[]" multiple required>
+                    <label>Fotos iniciais da aquisicao @if($tradeInDocumentsRequired)<span class="text-danger">*</span>@endif</label>
+                    <input class="form-control" form="vehicle-trade-in-create-form" type="file" name="inicial[]" multiple {{ $tradeInDocumentsRequired ? 'required' : '' }}>
                     @if($tradeInErrors->has('inicial'))<span class="help-block">{{ $tradeInErrors->first('inicial') }}</span>@endif
                     @if($tradeInErrors->has('inicial.*'))<span class="help-block">{{ $tradeInErrors->first('inicial.*') }}</span>@endif
                 </div>
                 @foreach($tradeInUploads as $collection => $label)
-                    @php($requiredUpload = in_array($collection, ['purchase_sale_rgpd', 'internal_invoice'], true))
+                    @php($requiredUpload = $tradeInDocumentsRequired && in_array($collection, ['purchase_sale_rgpd', 'internal_invoice'], true))
                     <div class="form-group {{ $tradeInErrors->has($collection) || $tradeInErrors->has($collection . '.*') ? 'has-error' : '' }}">
                         <label>
                             {{ $label }}
