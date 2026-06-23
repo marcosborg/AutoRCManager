@@ -56,6 +56,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'lead_access_base_url' => env('LEAD_ACCESS_BASE_URL', env('APP_URL', 'http://localhost')),
+
     'asset_url' => env('ASSET_URL', '/'),
 
     /*

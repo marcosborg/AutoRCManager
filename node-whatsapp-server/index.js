@@ -189,7 +189,7 @@ async function pollOutgoingMessages() {
       if (!isCustomerChatId(chatId) || chatId === '@c.us') continue;
       try {
         rememberAssistantTarget(chatId);
-        const sent = await client.sendMessage(chatId, item.message);
+        const sent = await client.sendMessage(chatId, item.message, { linkPreview: false });
         rememberAssistantMessage(sent.id && sent.id._serialized);
         await api.post(`/whatsapp/outgoing-messages/${item.id}/sent`, {
           external_id: sent.id && sent.id._serialized,
@@ -222,7 +222,7 @@ async function pollLeadNotifications() {
       if (!isCustomerChatId(chatId) || chatId === '@c.us') continue;
       try {
         rememberAssistantTarget(chatId);
-        const sent = await client.sendMessage(chatId, item.message);
+        const sent = await client.sendMessage(chatId, item.message, { linkPreview: false });
         rememberAssistantMessage(sent.id && sent.id._serialized);
         await api.post(`/whatsapp/lead-notifications/${item.id}/sent`, {
           external_id: sent.id && sent.id._serialized,

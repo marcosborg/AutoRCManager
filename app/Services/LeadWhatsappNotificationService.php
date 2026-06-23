@@ -58,7 +58,7 @@ class LeadWhatsappNotificationService
 
     private function messageFor(Lead $lead, User $user, string $plainToken): string
     {
-        $url = route('lead-access.show', ['token' => $plainToken]);
+        $url = $this->leadAccessUrl($plainToken);
         $name = $lead->full_name ?: trim(($lead->first_name ?? '') . ' ' . ($lead->last_name ?? '')) ?: 'Sem nome';
         $phone = $lead->phone ?: '-';
         $interest = $lead->vehicle_interest ?: '-';
@@ -73,10 +73,19 @@ class LeadWhatsappNotificationService
             "Orcamento: {$budget}",
             "Compra: {$financing}",
             "Retoma: {$tradeIn}",
-            "Abrir lead: {$url}",
+            'Abrir lead:',
+            $url,
             '',
             'Link valido por 7 dias.',
         ]);
+    }
+
+    private function leadAccessUrl(string $plainToken): string
+    {
+        $baseUrl = rtrim((string) config('app.lead_access_base_url'), '/');
+        $path = route('lead-access.show', ['token' => $plainToken], false);
+
+        return $baseUrl . $path;
     }
 
     private function normalizePhone(?string $phone): ?string
