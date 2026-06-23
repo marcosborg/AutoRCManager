@@ -15,11 +15,13 @@ class LeadAssignmentService
         return DB::transaction(function () use ($lead) {
             $salespeople = User::query()
                 ->whereHas('roles', fn ($query) => $query->where('title', 'Stand'))
+                ->whereNotNull('mobile_phone')
+                ->where('mobile_phone', '!=', '')
                 ->orderBy('id')
                 ->get();
 
             if ($salespeople->isEmpty()) {
-                Log::channel('meta_leads')->warning('Lead sem vendedor disponivel para atribuicao.', [
+                Log::channel('meta_leads')->warning('Lead sem vendedor Stand com telemovel para atribuicao.', [
                     'lead_id' => $lead->id,
                     'leadgen_id' => $lead->leadgen_id,
                 ]);
