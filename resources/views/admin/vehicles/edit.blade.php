@@ -71,6 +71,13 @@
                     <form id="vehicle-send-to-workshop-form" method="POST" action="{{ route('admin.vehicles.send-to-workshop', $vehicle) }}">
                         @csrf
                     </form>
+                    <form id="vehicle-suspended-sale-form" method="POST" action="{{ route('admin.vehicles.suspended-sale.store', $vehicle) }}">
+                        @csrf
+                    </form>
+                    <form id="vehicle-suspended-sale-cancel-form" method="POST" action="{{ route('admin.vehicles.suspended-sale.destroy', $vehicle) }}">
+                        @csrf
+                        @method('DELETE')
+                    </form>
                     <form id="vehicle-edit-form" method="POST" action="{{ route('admin.vehicles.update', [$vehicle->id]) }}" enctype="multipart/form-data">
                         @method('PUT')
                         @csrf
@@ -1166,6 +1173,55 @@
                                         <span class="help-block" role="alert">{{ $errors->first('client') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.client_helper') }}</span>
+                                </div>
+                                <div class="panel panel-default" id="vehicle-suspended-sale-panel">
+                                    <div class="panel-heading">Venda Suspensa</div>
+                                    <div class="panel-body" style="padding: 10px;">
+                                        @if($errors->has('suspended_sale'))
+                                            <div class="alert alert-danger">{{ $errors->first('suspended_sale') }}</div>
+                                        @endif
+
+                                        @if($activeSuspendedSale)
+                                            <p>
+                                                <strong>Cliente:</strong> {{ $activeSuspendedSale->client->name ?? '-' }}<br>
+                                                <strong>Suspensa em:</strong> {{ optional($activeSuspendedSale->suspended_at)->format('Y-m-d H:i') }}<br>
+                                                <strong>Estado anterior:</strong> {{ $activeSuspendedSale->previous_general_state->name ?? '-' }}
+                                            </p>
+                                            @if($activeSuspendedSale->notes)
+                                                <p><strong>Notas:</strong><br>{{ $activeSuspendedSale->notes }}</p>
+                                            @endif
+                                            <button
+                                                type="submit"
+                                                form="vehicle-suspended-sale-cancel-form"
+                                                class="btn btn-warning btn-sm"
+                                                onclick="return confirm('Cancelar esta venda suspensa e libertar a viatura?')"
+                                            >
+                                                Cancelar venda suspensa
+                                            </button>
+                                        @else
+                                            <div class="form-group {{ $errors->has('client_id') ? 'has-error' : '' }}">
+                                                <label for="suspended_sale_client_id">Cliente</label>
+                                                <select class="form-control select2" form="vehicle-suspended-sale-form" name="client_id" id="suspended_sale_client_id" style="width: 100%;">
+                                                    @foreach($clients as $id => $entry)
+                                                        <option value="{{ $id }}" {{ (string) old('client_id', $vehicle->client_id) === (string) $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @if($errors->has('client_id'))
+                                                    <span class="help-block" role="alert">{{ $errors->first('client_id') }}</span>
+                                                @endif
+                                            </div>
+                                            <div class="form-group {{ $errors->has('notes') ? 'has-error' : '' }}">
+                                                <label for="suspended_sale_notes">Notas</label>
+                                                <textarea class="form-control" form="vehicle-suspended-sale-form" name="notes" id="suspended_sale_notes" rows="3">{{ old('notes') }}</textarea>
+                                                @if($errors->has('notes'))
+                                                    <span class="help-block" role="alert">{{ $errors->first('notes') }}</span>
+                                                @endif
+                                            </div>
+                                            <button type="submit" form="vehicle-suspended-sale-form" class="btn btn-primary btn-sm">
+                                                Criar venda suspensa
+                                            </button>
+                                        @endif
+                                    </div>
                                 </div>
                                 <div class="form-group {{ $errors->has('client_payment_date') ? 'has-error' : '' }}">
                                     <label for="client_payment_date">Data pagamento cliente</label>

@@ -31,6 +31,7 @@ use App\Services\SaleClosureApprovalService;
 use App\Services\VehicleProfitabilityService;
 use App\Services\VehicleLotService;
 use App\Services\VehicleCsvSyncService;
+use App\Services\VehicleSuspendedSaleService;
 use App\Support\RolePreview;
 use Gate;
 use Illuminate\Support\Carbon;
@@ -41,6 +42,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
+use RuntimeException;
 use Throwable;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -286,6 +288,11 @@ class VehicleController extends Controller
             'generic_payments.media',
             'client_payments.payment_method',
             'client_payments.media',
+            'active_suspended_sale.client',
+            'active_suspended_sale.previous_general_state',
+            'active_suspended_sale.suspended_by',
+            'suspended_sales.client',
+            'suspended_sales.previous_general_state',
             'trade_ins.media',
             'trade_ins.created_by',
             'trade_ins.converted_by',
@@ -329,6 +336,8 @@ class VehicleController extends Controller
         $clientPaymentsOutstanding = $salesFinalTotal - $clientPaymentsTotal - $tradeInsConvertedTotal;
         $canConvertTradeIns = $this->canConvertTradeIns();
         $canManageSupplierPayments = $this->canManageSupplierPayments();
+        $activeSuspendedSale = $vehicle->active_suspended_sale;
+        $suspendedSales = $vehicle->suspended_sales->sortByDesc('created_at')->values();
 
         return view('admin.vehicles.edit', compact(
             'purchase_categories',
@@ -365,6 +374,8 @@ class VehicleController extends Controller
             'canConvertTradeIns',
             'canManageSupplierPayments',
             'hasOpenRepairs',
+            'activeSuspendedSale',
+            'suspendedSales',
         ));
     }
 
@@ -423,6 +434,7 @@ class VehicleController extends Controller
         DB::transaction(function () use ($request, $vehicle, &$payload): void {
             $this->applyWorkshopSalePurchasePrice($request, $vehicle, $payload);
             $vehicle->update($payload);
+            app(VehicleSuspendedSaleService::class)->convertActiveForVehicle($vehicle->fresh(), $request->user());
         });
 
         if ($this->canViewFinancialSensitive() && $this->canManageSupplierPayments()) {
@@ -557,6 +569,45 @@ class VehicleController extends Controller
         }
 
         return redirect()->back()->with('message', 'Atualizado com sucesso');
+    }
+
+    public function suspendSale(Request $request, Vehicle $vehicle, VehicleSuspendedSaleService $service)
+    {
+        abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'client_id' => ['required', 'integer', 'exists:clients,id'],
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        try {
+            $service->suspend($vehicle, (int) $data['client_id'], $request->user(), $data['notes'] ?? null);
+        } catch (RuntimeException $exception) {
+            return redirect()
+                ->route('admin.vehicles.edit', $vehicle)
+                ->withErrors(['suspended_sale' => $exception->getMessage()])
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('admin.vehicles.edit', $vehicle)
+            ->with('message', 'Venda suspensa criada.');
+    }
+
+    public function cancelSuspendedSale(Request $request, Vehicle $vehicle, VehicleSuspendedSaleService $service)
+    {
+        abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $suspendedSale = $service->cancel($vehicle, $request->user());
+        if (! $suspendedSale) {
+            return redirect()
+                ->route('admin.vehicles.edit', $vehicle)
+                ->withErrors(['suspended_sale' => 'Esta viatura nao tem venda suspensa ativa.']);
+        }
+
+        return redirect()
+            ->route('admin.vehicles.edit', $vehicle)
+            ->with('message', 'Venda suspensa cancelada e viatura libertada.');
     }
 
     public function show(Vehicle $vehicle, VehicleLotService $lotService)
@@ -1022,7 +1073,9 @@ class VehicleController extends Controller
             'payment_method_id' => (int) $paymentMethodId,
         ]);
 
-        $payment->addMediaFromRequest('supplier_payment_proof')->toMediaCollection('proof_file');
+        if ($request->hasFile('supplier_payment_proof')) {
+            $payment->addMediaFromRequest('supplier_payment_proof')->toMediaCollection('proof_file');
+        }
     }
 
     private function syncVehiclePhotoOrder(Vehicle $vehicle, array $orderedFiles): void
@@ -1071,7 +1124,9 @@ class VehicleController extends Controller
             'payment_method_id' => (int) $paymentMethodId,
         ]);
 
-        $payment->addMediaFromRequest('generic_payment_proof')->toMediaCollection('proof_file');
+        if ($request->hasFile('generic_payment_proof')) {
+            $payment->addMediaFromRequest('generic_payment_proof')->toMediaCollection('proof_file');
+        }
     }
 
     private function createClientPaymentLine(UpdateVehicleRequest $request, Vehicle $vehicle): ?VehicleClientPayment
@@ -1090,7 +1145,9 @@ class VehicleController extends Controller
             'payment_method_id' => (int) $paymentMethodId,
         ]);
 
-        $payment->addMediaFromRequest('client_payment_proof')->toMediaCollection('proof_file');
+        if ($request->hasFile('client_payment_proof')) {
+            $payment->addMediaFromRequest('client_payment_proof')->toMediaCollection('proof_file');
+        }
 
         if ($this->shouldRequestStandCashValidation($request, (int) $paymentMethodId)) {
             StandCashPaymentApproval::firstOrCreate([

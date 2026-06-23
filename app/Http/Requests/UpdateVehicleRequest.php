@@ -334,13 +334,12 @@ class UpdateVehicleRequest extends FormRequest
             $date = $this->input('supplier_payment_date');
             $amount = $this->input('supplier_payment_amount');
             $method = $this->input('supplier_payment_method_id');
-            $proof = $this->file('supplier_payment_proof');
-            $filledCount = collect([$date, $amount, $method, $proof])->filter(fn ($v) => $v !== null && $v !== '')->count();
+            $filledCount = collect([$date, $amount, $method])->filter(fn ($v) => $v !== null && $v !== '')->count();
 
-            if ($filledCount > 0 && $filledCount < 4) {
+            if ($filledCount > 0 && $filledCount < 3) {
                 $validator->errors()->add(
                     'supplier_payment_amount',
-                    'Para registar um pagamento faseado, preencha data, valor, meio de pagamento e comprovativo.'
+                    'Para registar um pagamento faseado, preencha data, valor e meio de pagamento.'
                 );
             }
 
@@ -348,30 +347,28 @@ class UpdateVehicleRequest extends FormRequest
             $genericDate = $this->input('generic_payment_date');
             $genericAmount = $this->input('generic_payment_amount');
             $genericMethod = $this->input('generic_payment_method_id');
-            $genericProof = $this->file('generic_payment_proof');
-            $genericFilledCount = collect([$genericDescription, $genericDate, $genericAmount, $genericMethod, $genericProof])
+            $genericFilledCount = collect([$genericDescription, $genericDate, $genericAmount, $genericMethod])
                 ->filter(fn ($v) => $v !== null && $v !== '')
                 ->count();
 
-            if ($genericFilledCount > 0 && $genericFilledCount < 5) {
+            if ($genericFilledCount > 0 && $genericFilledCount < 4) {
                 $validator->errors()->add(
                     'generic_payment_amount',
-                    'Para registar um pagamento generico, preencha despesa, data, valor, meio de pagamento e comprovativo.'
+                    'Para registar um pagamento generico, preencha despesa, data, valor e meio de pagamento.'
                 );
             }
 
             $clientDate = $this->input('client_payment_date');
             $clientAmount = $this->input('client_payment_amount');
             $clientMethod = $this->input('client_payment_method_id');
-            $clientProof = $this->file('client_payment_proof');
-            $clientFilledCount = collect([$clientDate, $clientAmount, $clientMethod, $clientProof])
+            $clientFilledCount = collect([$clientDate, $clientAmount, $clientMethod])
                 ->filter(fn ($v) => $v !== null && $v !== '')
                 ->count();
 
-            if ($clientFilledCount > 0 && $clientFilledCount < 4) {
+            if ($clientFilledCount > 0 && $clientFilledCount < 3) {
                 $validator->errors()->add(
                     'client_payment_amount',
-                    'Para registar um pagamento de cliente, preencha data, valor, meio de pagamento e comprovativo.'
+                    'Para registar um pagamento de cliente, preencha data, valor e meio de pagamento.'
                 );
             }
         });

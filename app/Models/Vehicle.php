@@ -468,6 +468,18 @@ class Vehicle extends Model implements HasMedia
         return $this->hasMany(VehicleTradeIn::class, 'sold_vehicle_id');
     }
 
+    public function suspended_sales()
+    {
+        return $this->hasMany(VehicleSuspendedSale::class, 'vehicle_id');
+    }
+
+    public function active_suspended_sale()
+    {
+        return $this->hasOne(VehicleSuspendedSale::class, 'vehicle_id')
+            ->where('status', VehicleSuspendedSale::STATUS_ACTIVE)
+            ->latestOfMany();
+    }
+
     public function sale_closure_approvals()
     {
         return $this->hasMany(SaleClosureApproval::class, 'vehicle_id');
