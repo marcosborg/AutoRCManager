@@ -260,10 +260,14 @@ class AiLeadQualificationService
                 'não tenho viatura para retoma',
             ]) ? 'não' : 'sim';
         }
-        if (Str::contains(Str::lower($text), ['hoje', 'semana', 'mes', 'mês', 'urgente'])) {
+        $lowerText = Str::lower($text);
+
+        if (Str::contains($lowerText, ['nao tenho', 'não tenho', 'sem prazo', 'sem urgencia', 'sem urgência', 'sem pressa'])) {
+            $data['purchase_timeline'] = 'sem prazo definido';
+        } elseif (Str::contains($lowerText, ['hoje', 'semana', 'mes', 'mês', 'urgente'])) {
             $data['purchase_timeline'] = 'curto prazo';
         }
-        if (Str::contains(Str::lower($text), ['visita', 'ver o carro', 'test drive'])) {
+        if (Str::contains($lowerText, ['visita', 'ver o carro', 'test drive', 'pode ser'])) {
             $data['wants_visit'] = 'sim';
         }
 
