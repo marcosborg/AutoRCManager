@@ -7,12 +7,6 @@
                 <a class="btn btn-success" href="{{ route('admin.vehicles.create') }}">
                     {{ trans('global.add') }} {{ trans('cruds.vehicle.title_singular') }}
                 </a>
-                @can('vehicle_delete')
-                    <button class="btn btn-warning" data-toggle="modal" data-target="#vehicleCsvSyncModal">
-                        Sync CSV
-                    </button>
-                    @include('admin.vehicles.partials.csvSyncModal', ['general_states' => $general_states])
-                @endcan
             </div>
         </div>
     @endcan

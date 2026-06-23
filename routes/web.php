@@ -87,11 +87,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('vehicles/destroy', 'VehicleController@massDestroy')->name('vehicles.massDestroy');
     Route::post('vehicles/media', 'VehicleController@storeMedia')->name('vehicles.storeMedia');
     Route::post('vehicles/ckmedia', 'VehicleController@storeCKEditorImages')->name('vehicles.storeCKEditorImages');
-    Route::post('vehicles/parse-csv-import', 'VehicleController@parseCsvImport')->name('vehicles.parseCsvImport');
-    Route::post('vehicles/process-csv-import', 'VehicleController@processCsvImport')->name('vehicles.processCsvImport');
-    Route::get('vehicles/sync-csv/parse', 'VehicleController@showCsvSyncParse')->name('vehicles.syncCsvParseForm');
-    Route::post('vehicles/sync-csv/parse', 'VehicleController@parseCsvSync')->name('vehicles.syncCsvParse');
-    Route::post('vehicles/sync-csv', 'VehicleController@syncCsv')->name('vehicles.syncCsv');
     Route::delete('vehicles/{vehicle}/supplier-payments/{payment}', 'VehicleController@destroySupplierPayment')->name('vehicles.supplier-payments.destroy');
     Route::delete('vehicles/{vehicle}/generic-payments/{payment}', 'VehicleController@destroyGenericPayment')->name('vehicles.generic-payments.destroy');
     Route::delete('vehicles/{vehicle}/client-payments/{payment}', 'VehicleController@destroyClientPayment')->name('vehicles.client-payments.destroy');
