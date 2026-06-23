@@ -6,6 +6,7 @@ use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\LeadWhatsappNotification;
 use App\Services\AiLeadAssistantService;
+use App\Services\LeadAccessEscalationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Symfony\Component\HttpFoundation\Response;
@@ -143,9 +144,10 @@ class WhatsappNodeController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function leadNotifications(Request $request)
+    public function leadNotifications(Request $request, LeadAccessEscalationService $escalationService)
     {
         $limit = min(max((int) $request->integer('limit', 20), 1), 100);
+        $escalationService->expireUnopenedTokens($limit);
 
         $messages = LeadWhatsappNotification::query()
             ->with(['lead', 'user'])

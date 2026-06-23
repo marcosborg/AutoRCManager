@@ -12,6 +12,7 @@
                                 <th width="10"></th>
                                 <th>ID</th>
                                 <th>Data</th>
+                                <th>Proveniência</th>
                                 <th>Nome</th>
                                 <th>Telefone</th>
                                 <th>Email</th>
@@ -25,6 +26,13 @@
                                 <td></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td>
+                                    <select class="search" strict="true">
+                                        <option value>{{ trans('global.all') }}</option>
+                                        <option value="form">Formulário</option>
+                                        <option value="whatsapp">WhatsApp</option>
+                                    </select>
+                                </td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
@@ -67,6 +75,7 @@ $(function () {
       { data: 'placeholder', name: 'placeholder' },
       { data: 'id', name: 'id' },
       { data: 'created_at', name: 'created_at' },
+      { data: 'source_label', name: 'source_label', orderable: false },
       { data: 'full_name', name: 'full_name' },
       { data: 'phone', name: 'phone' },
       { data: 'email', name: 'email' },

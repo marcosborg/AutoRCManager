@@ -10,13 +10,16 @@ use Illuminate\Support\Facades\Log;
 
 class LeadAssignmentService
 {
-    public function assign(Lead $lead): ?User
+    public function assign(Lead $lead, array $excludeUserIds = [], string $reason = 'round_robin'): ?User
     {
-        return DB::transaction(function () use ($lead) {
+        return DB::transaction(function () use ($lead, $excludeUserIds, $reason) {
+            $excludeUserIds = array_values(array_unique(array_filter(array_map('intval', $excludeUserIds))));
+
             $salespeople = User::query()
                 ->whereHas('roles', fn ($query) => $query->where('title', 'Stand'))
                 ->whereNotNull('mobile_phone')
                 ->where('mobile_phone', '!=', '')
+                ->when($excludeUserIds !== [], fn ($query) => $query->whereNotIn('id', $excludeUserIds))
                 ->orderBy('id')
                 ->get();
 
@@ -24,6 +27,7 @@ class LeadAssignmentService
                 Log::channel('meta_leads')->warning('Lead sem vendedor Stand com telemovel para atribuicao.', [
                     'lead_id' => $lead->id,
                     'leadgen_id' => $lead->leadgen_id,
+                    'excluded_user_ids' => $excludeUserIds,
                 ]);
 
                 return null;
@@ -38,7 +42,7 @@ class LeadAssignmentService
             $lead->update(['assigned_user_id' => $nextUser->id]);
             $lead->assignment_histories()->create([
                 'user_id' => $nextUser->id,
-                'reason' => 'round_robin',
+                'reason' => $reason,
             ]);
 
             $rotation->update(['last_user_id' => $nextUser->id]);
@@ -47,6 +51,7 @@ class LeadAssignmentService
                 'lead_id' => $lead->id,
                 'leadgen_id' => $lead->leadgen_id,
                 'assigned_user_id' => $nextUser->id,
+                'reason' => $reason,
             ]);
 
             return $nextUser;

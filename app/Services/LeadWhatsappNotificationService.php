@@ -30,6 +30,7 @@ class LeadWhatsappNotificationService
             'user_id' => $user->id,
             'token_hash' => hash('sha256', $plainToken),
             'expires_at' => now()->addDays(7),
+            'first_open_deadline_at' => now()->addHour(),
         ]);
 
         $phone = $this->normalizePhone($user->mobile_phone);
@@ -76,7 +77,7 @@ class LeadWhatsappNotificationService
             'Abrir lead:',
             $url,
             '',
-            'Link valido por 7 dias.',
+            'Abra no prazo de 1 hora. Depois de aberto, o link fica valido por 7 dias.',
         ]);
     }
 

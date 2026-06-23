@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatConversation;
 use App\Models\LeadAccessToken;
+use App\Services\LeadAccessEscalationService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class LeadAccessController extends Controller
 {
-    public function show(Request $request, string $token)
+    public function show(Request $request, string $token, LeadAccessEscalationService $escalationService)
     {
         abort_if(! preg_match('/^[A-Za-z0-9]{40,120}$/', $token), Response::HTTP_NOT_FOUND);
 
@@ -17,9 +18,26 @@ class LeadAccessController extends Controller
             ->where('token_hash', hash('sha256', $token))
             ->first();
 
-        abort_if(! $accessToken || ! $accessToken->isUsable(), Response::HTTP_NOT_FOUND);
+        abort_if(! $accessToken, Response::HTTP_NOT_FOUND);
 
-        $accessToken->update(['last_used_at' => now()]);
+        if ($accessToken->revoked_reason === LeadAccessEscalationService::REVOKED_NO_OPEN_TIMEOUT) {
+            return response()->view('leadAccess.transferred', compact('accessToken'), Response::HTTP_GONE);
+        }
+
+        if ($accessToken->firstOpenDeadlinePassed()) {
+            $escalationService->expireTokenAndReassign($accessToken);
+            $accessToken->refresh();
+
+            return response()->view('leadAccess.transferred', compact('accessToken'), Response::HTTP_GONE);
+        }
+
+        abort_if(! $accessToken->isUsable(), Response::HTTP_NOT_FOUND);
+
+        $firstOpen = $accessToken->last_used_at === null;
+        $accessToken->update(array_filter([
+            'last_used_at' => now(),
+            'expires_at' => $firstOpen ? now()->addDays(7) : null,
+        ]));
 
         $lead = $accessToken->lead;
         $messages = $this->messagesFor($lead);

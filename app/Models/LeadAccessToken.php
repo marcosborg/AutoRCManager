@@ -17,12 +17,15 @@ class LeadAccessToken extends Model
         'user_id',
         'token_hash',
         'expires_at',
+        'first_open_deadline_at',
         'last_used_at',
         'revoked_at',
+        'revoked_reason',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
+        'first_open_deadline_at' => 'datetime',
         'last_used_at' => 'datetime',
         'revoked_at' => 'datetime',
     ];
@@ -44,6 +47,17 @@ class LeadAccessToken extends Model
 
     public function isUsable(): bool
     {
-        return $this->revoked_at === null && $this->expires_at?->isFuture();
+        if ($this->revoked_at !== null || ! $this->expires_at?->isFuture()) {
+            return false;
+        }
+
+        return $this->last_used_at !== null || ! $this->firstOpenDeadlinePassed();
+    }
+
+    public function firstOpenDeadlinePassed(): bool
+    {
+        return $this->last_used_at === null
+            && $this->first_open_deadline_at !== null
+            && $this->first_open_deadline_at->isPast();
     }
 }

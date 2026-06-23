@@ -43,6 +43,7 @@ class LeadController extends Controller
             });
 
             $table->editColumn('created_at', fn (Lead $row) => optional($row->created_at)->format('Y-m-d H:i'));
+            $table->addColumn('source_label', fn (Lead $row) => $this->sourceLabel($row));
             $table->editColumn('full_name', fn (Lead $row) => $row->full_name ?: trim(($row->first_name ?? '') . ' ' . ($row->last_name ?? '')));
             $table->editColumn('phone', fn (Lead $row) => $row->phone ?: '');
             $table->editColumn('email', fn (Lead $row) => $row->email ?: '');
@@ -64,6 +65,19 @@ class LeadController extends Controller
                 $value = trim((string) $keyword, " \t\n\r\0\x0B^$");
                 if (array_key_exists($value, Lead::STATUS_SELECT)) {
                     $query->where('status', $value);
+                }
+            });
+            $table->filterColumn('source_label', function ($query, $keyword) {
+                $value = trim((string) $keyword, " \t\n\r\0\x0B^$");
+
+                if ($value === 'whatsapp') {
+                    $query->where(function ($subQuery) {
+                        $this->whereWhatsappSource($subQuery);
+                    });
+                } elseif ($value === 'form') {
+                    $query->where(function ($subQuery) {
+                        $this->whereFormSource($subQuery);
+                    });
                 }
             });
 
@@ -197,5 +211,39 @@ class LeadController extends Controller
             ->orderBy('name')
             ->pluck('name', 'id')
             ->prepend(trans('global.pleaseSelect'), '');
+    }
+
+    private function sourceLabel(Lead $lead): string
+    {
+        return $this->isWhatsappLead($lead) ? 'WhatsApp' : 'Formulário';
+    }
+
+    private function isWhatsappLead(Lead $lead): bool
+    {
+        return data_get($lead->raw_data, 'source') === 'ai_whatsapp'
+            || $lead->form_id === 'ai_whatsapp'
+            || str_starts_with((string) $lead->leadgen_id, 'ai_whatsapp:');
+    }
+
+    private function whereWhatsappSource($query): void
+    {
+        $query
+            ->where('raw_data->source', 'ai_whatsapp')
+            ->orWhere('form_id', 'ai_whatsapp')
+            ->orWhere('leadgen_id', 'like', 'ai_whatsapp:%');
+    }
+
+    private function whereFormSource($query): void
+    {
+        $query
+            ->where(function ($sourceQuery) {
+                $sourceQuery->whereNull('raw_data->source')
+                    ->orWhere('raw_data->source', '!=', 'ai_whatsapp');
+            })
+            ->where(function ($sourceQuery) {
+                $sourceQuery->whereNull('form_id')
+                    ->orWhere('form_id', '!=', 'ai_whatsapp');
+            })
+            ->where('leadgen_id', 'not like', 'ai_whatsapp:%');
     }
 }
