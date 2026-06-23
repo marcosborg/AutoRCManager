@@ -29,7 +29,7 @@ LARAVEL_API_URL=https://autorcmanager.pt/api
 LARAVEL_API_TOKEN=igual_ao_NODE_API_TOKEN_do_laravel_producao
 PORT=3099
 POLL_INTERVAL_MS=10000
-WHATSAPP_SESSION_NAME=autorc-913203600
+WHATSAPP_SESSION_NAME=autorc-912273402
 ```
 
 ## Iniciar
