@@ -313,7 +313,7 @@
                     </ul>
                 </li>
             @endcan
-            @can('repair_menu_access')
+            @if(\Illuminate\Support\Facades\Gate::allows('repair_menu_access') || \Illuminate\Support\Facades\Gate::allows('oficina_expertise_process_access'))
                 <li class="treeview">
                     <a href="#">
                         <i class="fa-fw fas fa-screwdriver">
@@ -361,6 +361,14 @@
                                 </a>
                             </li>
                         @endcan
+                        @can('oficina_expertise_process_access')
+                            <li class="{{ request()->is('admin/oficina-expertise-processes') || request()->is('admin/oficina-expertise-processes/*') ? 'active' : '' }}">
+                                <a href="{{ route('admin.oficina-expertise-processes.index') }}">
+                                    <i class="fa-fw fas fa-clipboard-check"></i>
+                                    <span>Peritagens de Oficina</span>
+                                </a>
+                            </li>
+                        @endcan
                         @can('part_payment_access')
                             <li class="{{ request()->is("admin/part-payments") || request()->is("admin/part-payments/*") ? "active" : "" }}">
                                 <a href="{{ route("admin.part-payments.index") }}">
@@ -390,7 +398,7 @@
                         @endcan
                     </ul>
                 </li>
-            @endcan
+            @endif
             @can('depreciation_access')
                 <li class="{{ request()->is("admin/depreciations") || request()->is("admin/depreciations/*") ? "active" : "" }}">
                     <a href="{{ route("admin.depreciations.index") }}">

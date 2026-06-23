@@ -170,6 +170,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('part-orders/{partOrder}/items/{item}/quotes/{quote}/select', 'PartOrderController@selectQuote')->name('part-orders.items.quotes.select');
     Route::resource('part-orders', 'PartOrderController');
     Route::resource('external-services', 'ExternalServiceController')->except(['show']);
+    Route::resource('oficina-expertise-processes', 'OficinaExpertiseProcessController');
     Route::post('workshop-interventions/{workshopIntervention}/start', 'WorkshopInterventionController@start')->name('workshop-interventions.start');
     Route::post('workshop-interventions/{workshopIntervention}/finish', 'WorkshopInterventionController@finish')->name('workshop-interventions.finish');
     Route::post('workshop-interventions/{workshopIntervention}/complete', 'WorkshopInterventionController@complete')->name('workshop-interventions.complete');

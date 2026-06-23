@@ -438,6 +438,11 @@ class Vehicle extends Model implements HasMedia
         return $this->hasMany(Repair::class, 'vehicle_id');
     }
 
+    public function oficina_expertise_processes()
+    {
+        return $this->hasMany(OficinaExpertiseProcess::class, 'vehicle_id');
+    }
+
     public function supplier_payments()
     {
         return $this->hasMany(VehicleSupplierPayment::class, 'vehicle_id');
