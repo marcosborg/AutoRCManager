@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Lead;
 use App\Models\LeadAccessToken;
+use App\Models\LeadSalesRotation;
 use App\Models\LeadWhatsappNotification;
 use App\Models\Role;
 use App\Models\User;
@@ -81,7 +82,55 @@ class LeadAccessEscalationTest extends TestCase
         $this->assertNotNull($notification->access_token?->first_open_deadline_at);
     }
 
-    private function standUser(string $email, string $mobilePhone): User
+    public function test_lead_rotation_restarts_after_all_eligible_sellers_timeout(): void
+    {
+        $firstSeller = $this->standUser('seller-four@example.com', '911000004');
+        $secondSeller = $this->standUser('seller-five@example.com', '911000005');
+        $thirdSeller = $this->standUser('seller-six@example.com', '911000006');
+        $this->standUser('seller-no-phone@example.com');
+
+        LeadSalesRotation::query()->create(['last_user_id' => $thirdSeller->id]);
+
+        $lead = $this->leadFor($thirdSeller);
+        foreach ([$firstSeller, $secondSeller] as $seller) {
+            LeadAccessToken::create([
+                'lead_id' => $lead->id,
+                'user_id' => $seller->id,
+                'token_hash' => hash('sha256', Str::random(72)),
+                'expires_at' => now()->addDays(7),
+                'first_open_deadline_at' => now()->subHour(),
+                'revoked_at' => now()->subMinutes(30),
+                'revoked_reason' => LeadAccessEscalationService::REVOKED_NO_OPEN_TIMEOUT,
+            ]);
+        }
+
+        $plainToken = Str::random(72);
+        $currentToken = LeadAccessToken::create([
+            'lead_id' => $lead->id,
+            'user_id' => $thirdSeller->id,
+            'token_hash' => hash('sha256', $plainToken),
+            'expires_at' => now()->addDays(7),
+            'first_open_deadline_at' => now()->subMinute(),
+        ]);
+
+        $this->get(route('lead-access.show', $plainToken))
+            ->assertStatus(410)
+            ->assertSee('Lead transitada');
+
+        $currentToken->refresh();
+        $lead->refresh();
+
+        $this->assertSame(LeadAccessEscalationService::REVOKED_NO_OPEN_TIMEOUT, $currentToken->revoked_reason);
+        $this->assertSame($firstSeller->id, $lead->assigned_user_id);
+
+        $notification = LeadWhatsappNotification::where('lead_id', $lead->id)->latest()->first();
+        $this->assertNotNull($notification);
+        $this->assertSame($firstSeller->id, $notification->user_id);
+        $this->assertSame('351911000004', $notification->phone);
+        $this->assertSame(LeadWhatsappNotification::STATUS_PENDING, $notification->status);
+    }
+
+    private function standUser(string $email, ?string $mobilePhone = null): User
     {
         $role = Role::firstOrCreate(['title' => 'Stand']);
         $user = User::factory()->create([

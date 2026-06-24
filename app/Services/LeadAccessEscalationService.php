@@ -68,13 +68,27 @@ class LeadAccessEscalationService
             );
 
             if (! $assignedUser) {
-                Log::channel('meta_leads')->warning('Lead nao transitou por falta de vendedor alternativo.', [
+                Log::channel('meta_leads')->info('Lead completou volta de vendedores; a reiniciar rotacao.', [
                     'lead_id' => $lead->id,
                     'expired_access_token_id' => $accessToken->id,
                     'excluded_user_ids' => $excludedUserIds,
                 ]);
 
-                return true;
+                $assignedUser = app(LeadAssignmentService::class)->assign(
+                    $lead,
+                    [],
+                    self::REVOKED_NO_OPEN_TIMEOUT
+                );
+
+                if (! $assignedUser) {
+                    Log::channel('meta_leads')->warning('Lead nao transitou por falta de vendedor com telemovel.', [
+                        'lead_id' => $lead->id,
+                        'expired_access_token_id' => $accessToken->id,
+                        'excluded_user_ids' => $excludedUserIds,
+                    ]);
+
+                    return true;
+                }
             }
 
             app(LeadWhatsappNotificationService::class)->queueForLead($lead->fresh('assigned_user'), $assignedUser);
