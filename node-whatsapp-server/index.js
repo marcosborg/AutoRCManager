@@ -67,6 +67,10 @@ async function resolveChatIdForPhone(phone) {
     return String(phone);
   }
 
+  if (digits.length > 12 && !digits.startsWith('351')) {
+    return `${digits}@lid`;
+  }
+
   const numberId = await client.getNumberId(digits);
   return numberId && numberId._serialized ? numberId._serialized : null;
 }
