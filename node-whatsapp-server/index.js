@@ -59,6 +59,18 @@ function chatIdToPhone(chatId, contact) {
   return String(chatId || '').replace(/@(c\.us|lid)$/, '');
 }
 
+async function resolveChatIdForPhone(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return null;
+
+  if (String(phone).includes('@c.us') || String(phone).includes('@lid')) {
+    return String(phone);
+  }
+
+  const numberId = await client.getNumberId(digits);
+  return numberId && numberId._serialized ? numberId._serialized : null;
+}
+
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: process.env.WHATSAPP_SESSION_NAME || 'autorc-manager' }),
   userAgent: whatsappUserAgent,
@@ -185,7 +197,15 @@ async function pollOutgoingMessages() {
     for (const item of messages) {
       if (!item.phone || !item.message) continue;
 
-      const chatId = item.phone.includes('@c.us') ? item.phone : `${item.phone.replace(/\D/g, '')}@c.us`;
+      const chatId = await resolveChatIdForPhone(item.phone);
+      if (!chatId) {
+        await api.post(`/whatsapp/outgoing-messages/${item.id}/failed`, {
+          error: 'Phone number is not registered on WhatsApp',
+          metadata: { polled: true, requested_phone: item.phone },
+        });
+        console.error(`Failed to send pending message ${item.id}: phone not registered on WhatsApp (${item.phone})`);
+        continue;
+      }
       if (!isCustomerChatId(chatId) || chatId === '@c.us') continue;
       try {
         rememberAssistantTarget(chatId);
@@ -193,12 +213,12 @@ async function pollOutgoingMessages() {
         rememberAssistantMessage(sent.id && sent.id._serialized);
         await api.post(`/whatsapp/outgoing-messages/${item.id}/sent`, {
           external_id: sent.id && sent.id._serialized,
-          metadata: { polled: true },
+          metadata: { polled: true, target_chat_id: chatId, requested_phone: item.phone },
         });
       } catch (sendError) {
         await api.post(`/whatsapp/outgoing-messages/${item.id}/failed`, {
           error: sendError.message,
-          metadata: { polled: true },
+          metadata: { polled: true, target_chat_id: chatId, requested_phone: item.phone },
         });
         console.error(`Failed to send pending message ${item.id}:`, sendError.message);
       }
@@ -218,7 +238,15 @@ async function pollLeadNotifications() {
     for (const item of messages) {
       if (!item.phone || !item.message) continue;
 
-      const chatId = item.phone.includes('@c.us') ? item.phone : `${item.phone.replace(/\D/g, '')}@c.us`;
+      const chatId = await resolveChatIdForPhone(item.phone);
+      if (!chatId) {
+        await api.post(`/whatsapp/lead-notifications/${item.id}/failed`, {
+          error: 'Phone number is not registered on WhatsApp',
+          metadata: { polled: true, requested_phone: item.phone },
+        });
+        console.error(`Failed to send lead notification ${item.id}: phone not registered on WhatsApp (${item.phone})`);
+        continue;
+      }
       if (!isCustomerChatId(chatId) || chatId === '@c.us') continue;
       try {
         rememberAssistantTarget(chatId);
@@ -226,12 +254,12 @@ async function pollLeadNotifications() {
         rememberAssistantMessage(sent.id && sent.id._serialized);
         await api.post(`/whatsapp/lead-notifications/${item.id}/sent`, {
           external_id: sent.id && sent.id._serialized,
-          metadata: { polled: true },
+          metadata: { polled: true, target_chat_id: chatId, requested_phone: item.phone },
         });
       } catch (sendError) {
         await api.post(`/whatsapp/lead-notifications/${item.id}/failed`, {
           error: sendError.message,
-          metadata: { polled: true },
+          metadata: { polled: true, target_chat_id: chatId, requested_phone: item.phone },
         });
         console.error(`Failed to send lead notification ${item.id}:`, sendError.message);
       }
