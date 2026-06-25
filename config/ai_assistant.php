@@ -11,4 +11,8 @@ return [
     'chat_standby' => filter_var(env('AI_CHAT_STANDBY', false), FILTER_VALIDATE_BOOL),
     'auto_reply_enabled' => filter_var(env('AI_AUTO_REPLY_ENABLED', true), FILTER_VALIDATE_BOOL),
     'human_takeover_idle_release_minutes' => (int) env('AI_HUMAN_TAKEOVER_IDLE_RELEASE_MINUTES', 5),
+    'lead_whatsapp_cc_phones' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('AI_LEAD_WHATSAPP_CC_PHONES', '912239578'))
+    ))),
 ];

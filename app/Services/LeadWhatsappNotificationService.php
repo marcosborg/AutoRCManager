@@ -52,9 +52,46 @@ class LeadWhatsappNotificationService
                 'lead_id' => $lead->id,
                 'assigned_user_id' => $user->id,
             ]);
+        } else {
+            $this->queueCcNotifications($lead, $user);
         }
 
         return $notification;
+    }
+
+    private function queueCcNotifications(Lead $lead, User $user): void
+    {
+        foreach ($this->ccPhones() as $ccPhone) {
+            $phone = $this->normalizePhone($ccPhone);
+
+            if (! $phone || $phone === $this->normalizePhone($user->mobile_phone)) {
+                continue;
+            }
+
+            LeadWhatsappNotification::create([
+                'lead_id' => $lead->id,
+                'user_id' => $user->id,
+                'access_token_id' => null,
+                'phone' => $phone,
+                'message' => $this->ccMessageFor($lead, $user),
+                'status' => LeadWhatsappNotification::STATUS_PENDING,
+                'metadata' => [
+                    'type' => 'stand_seller_copy',
+                    'original_user_id' => $user->id,
+                    'original_user_name' => $user->name,
+                ],
+            ]);
+        }
+    }
+
+    private function ccPhones(): array
+    {
+        return collect(config('ai_assistant.lead_whatsapp_cc_phones', []))
+            ->map(fn ($phone) => $this->normalizePhone($phone))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function messageFor(Lead $lead, User $user, string $plainToken): string
@@ -78,6 +115,26 @@ class LeadWhatsappNotificationService
             $url,
             '',
             'Abra no prazo de 1 hora. Depois de aberto, o link fica valido por 7 dias.',
+        ]);
+    }
+
+    private function ccMessageFor(Lead $lead, User $user): string
+    {
+        $name = $lead->full_name ?: trim(($lead->first_name ?? '') . ' ' . ($lead->last_name ?? '')) ?: 'Sem nome';
+        $phone = $lead->phone ?: '-';
+        $interest = $lead->vehicle_interest ?: '-';
+        $budget = $lead->budget ?: '-';
+        $financing = $lead->financing ?: '-';
+        $tradeIn = $lead->trade_in ?: '-';
+
+        return implode("\n", [
+            "Copia de lead enviada ao vendedor Stand: {$user->name}",
+            "Lead: {$name}",
+            "Telefone: {$phone}",
+            "Interesse: {$interest}",
+            "Orcamento: {$budget}",
+            "Compra: {$financing}",
+            "Retoma: {$tradeIn}",
         ]);
     }
 

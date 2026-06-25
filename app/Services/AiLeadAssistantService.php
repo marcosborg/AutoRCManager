@@ -141,14 +141,18 @@ class AiLeadAssistantService
         $missingFields = $qualificationService->missingFields($qualification);
         $completedLead = null;
 
-        if ($missingFields === [] && $this->shouldCreateLeadFromConversation($conversation->fresh(['lead']))) {
+        if ($missingFields === [] && $this->shouldCreateLeadFromConversation($conversation->fresh(['lead', 'messages']), $qualification)) {
             $completedLead = $this->createLeadFromConversation($conversation->fresh(['lead', 'messages']), $qualification);
             $chatLead = $completedLead ? $completedLead->chatLead : $chatLead->fresh();
         }
 
-        $reply = $completedLead
-            ? 'Obrigado. Vou encaminhar o seu pedido para um comercial da Car 7, que dará seguimento consigo.'
-            : $this->generateReply($assistant, $conversation, $message, $qualificationService->contextForPrompt($qualification));
+        if ($completedLead) {
+            $reply = 'Obrigado. Vou encaminhar o seu pedido para um comercial da Car 7, que dará seguimento consigo.';
+        } elseif ($missingFields === [] && $chatLead->lead_id) {
+            $reply = 'Obrigado. Já temos o seu pedido registado e encaminhado para a equipa comercial da Car 7. Se quiser acrescentar algum detalhe, diga-me e eu junto à conversa.';
+        } else {
+            $reply = $this->generateReply($assistant, $conversation, $message, $qualificationService->contextForPrompt($qualification));
+        }
 
         $assistantMessage = $conversation->messages()->create([
             'sender' => 'assistant',
@@ -225,7 +229,7 @@ class AiLeadAssistantService
         });
     }
 
-    private function shouldCreateLeadFromConversation(ChatConversation $conversation): bool
+    private function shouldCreateLeadFromConversation(ChatConversation $conversation, array $qualification): bool
     {
         $conversation->loadMissing('lead');
         $chatLead = $conversation->lead;
@@ -234,10 +238,10 @@ class AiLeadAssistantService
             return false;
         }
 
-        return ! $chatLead->lead_id || $this->shouldStartNewLeadCycle($chatLead);
+        return ! $chatLead->lead_id || $this->shouldStartNewLeadCycle($chatLead, $conversation, $qualification);
     }
 
-    private function shouldStartNewLeadCycle(ChatLead $chatLead): bool
+    private function shouldStartNewLeadCycle(ChatLead $chatLead, ChatConversation $conversation, array $qualification): bool
     {
         if (! $chatLead->lead_id || $chatLead->status !== 'sent_to_sales') {
             return false;
@@ -245,7 +249,97 @@ class AiLeadAssistantService
 
         $lastLead = $chatLead->meta_lead;
 
-        return $lastLead && $lastLead->created_at?->lte(now()->subDay());
+        if (! $lastLead || ! $this->hasCustomerBuyingIntentSince($conversation, $lastLead->created_at)) {
+            return false;
+        }
+
+        return $this->qualificationChangedSinceLead($lastLead, $qualification)
+            || $lastLead->created_at?->lte(now()->subDay());
+    }
+
+    private function hasCustomerBuyingIntentSince(ChatConversation $conversation, ?Carbon $since): bool
+    {
+        if (! $since) {
+            return false;
+        }
+
+        $text = $conversation->messages()
+            ->where('sender', 'customer')
+            ->where('created_at', '>', $since)
+            ->pluck('message')
+            ->implode(' ');
+
+        if (blank($text)) {
+            return false;
+        }
+
+        return Str::contains($this->normalizeComparableText($text), [
+            'preciso',
+            'quero',
+            'procuro',
+            'interess',
+            'comprar',
+            'carro',
+            'viatura',
+            'modelo',
+            'suv',
+            'familiar',
+            'citadino',
+            'comercial',
+            'eletrico',
+            'hibrido',
+            'diesel',
+            'gasolina',
+            'orcamento',
+            'financiamento',
+            'retoma',
+            'visita',
+            'test drive',
+        ]);
+    }
+
+    private function qualificationChangedSinceLead(Lead $lastLead, array $qualification): bool
+    {
+        foreach (['vehicle_interest', 'financing', 'trade_in', 'purchase_timeline', 'wants_visit'] as $field) {
+            if ($this->normalizedQualificationValue($qualification[$field] ?? null) !== $this->normalizedPreviousLeadValue($lastLead, $field)) {
+                return true;
+            }
+        }
+
+        $newBudget = $this->parseMoney($qualification['budget'] ?? null);
+        $previousBudget = $this->parseMoney($lastLead->budget ?: data_get($lastLead->raw_data, 'qualification.budget'));
+
+        return $newBudget !== null
+            && $previousBudget !== null
+            && abs($newBudget - $previousBudget) >= 1;
+    }
+
+    private function normalizedPreviousLeadValue(Lead $lead, string $field): ?string
+    {
+        $value = match ($field) {
+            'vehicle_interest' => $lead->vehicle_interest ?: data_get($lead->raw_data, 'qualification.vehicle_interest'),
+            'financing' => $lead->financing ?: data_get($lead->raw_data, 'qualification.financing'),
+            'trade_in' => $lead->trade_in ?: data_get($lead->raw_data, 'qualification.trade_in'),
+            'purchase_timeline' => data_get($lead->raw_data, 'qualification.purchase_timeline') ?: data_get($lead->raw_data, 'purchase_timeline'),
+            'wants_visit' => data_get($lead->raw_data, 'qualification.wants_visit') ?: data_get($lead->raw_data, 'wants_visit'),
+            default => null,
+        };
+
+        return $this->normalizedQualificationValue($value);
+    }
+
+    private function normalizedQualificationValue(mixed $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        return $this->normalizeComparableText((string) $value);
+    }
+
+    private function normalizeComparableText(string $value): string
+    {
+        return trim(preg_replace('/\s+/', ' ', Str::lower(Str::ascii($value))));
     }
 
     public function markTakenOver(ChatConversation $conversation): ChatConversation
