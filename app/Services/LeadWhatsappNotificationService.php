@@ -44,6 +44,8 @@ class LeadWhatsappNotificationService
             'failed_at' => $phone ? null : now(),
             'metadata' => [
                 'reason' => $phone ? null : 'missing_user_mobile_phone',
+                'raw_mobile_phone' => $user->mobile_phone,
+                'normalized_mobile_phone' => $phone,
             ],
         ]);
 
@@ -154,10 +156,18 @@ class LeadWhatsappNotificationService
         }
 
         $digits = preg_replace('/\D+/', '', $phone);
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
         if (strlen($digits) === 9 && str_starts_with($digits, '9')) {
             return '351' . $digits;
         }
 
-        return $digits ?: null;
+        if (strlen($digits) === 12 && str_starts_with($digits, '3519')) {
+            return $digits;
+        }
+
+        return null;
     }
 }
