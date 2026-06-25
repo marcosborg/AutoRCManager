@@ -98,7 +98,7 @@ class AiLeadAssistantService
         $phone = $this->normalizePhone((string) ($payload['phone'] ?? $payload['from'] ?? ''));
         $message = trim((string) ($payload['message'] ?? $payload['body'] ?? ''));
 
-        $chatLead = $this->leadFromIncoming($channel, $phone, $payload);
+        $chatLead = $this->leadFromIncoming($channel, $phone, $payload, $message);
         $conversation = $this->conversationFor($assistant, $channel, $chatLead, $phone, $payload['external_id'] ?? null);
         $conversation = $this->releaseToAiAfterIdleTakeover($conversation);
 
@@ -467,26 +467,12 @@ class AiLeadAssistantService
         return ChatChannel::firstOrCreate(['slug' => $slug], ['name' => $name, 'active' => true]);
     }
 
-    private function leadFromIncoming(ChatChannel $channel, string $phone, array $payload): ChatLead
+    private function leadFromIncoming(ChatChannel $channel, string $phone, array $payload, string $message): ChatLead
     {
-        $lead = ChatLead::query()
-            ->where('channel_id', $channel->id)
-            ->where('phone', $phone)
-            ->first();
-
-        if (! $lead) {
-            $lead = ChatConversation::query()
-                ->with('lead')
-                ->where('channel_id', $channel->id)
-                ->where(function ($query) use ($phone) {
-                    $query->where('customer_phone', $phone)
-                        ->orWhere('customer_identifier', $phone);
-                })
-                ->latest('last_message_at')
-                ->latest('id')
-                ->first()
-                ?->lead;
-        }
+        $latestConversation = $this->latestConversationForIncomingPhone($channel, $phone);
+        $lead = $this->shouldContinueExistingConversation($latestConversation, $message)
+            ? $latestConversation?->lead
+            : null;
 
         $lead = $lead ?: new ChatLead([
             'channel_id' => $channel->id,
@@ -505,6 +491,73 @@ class AiLeadAssistantService
         ])->save();
 
         return $lead;
+    }
+
+    private function latestConversationForIncomingPhone(ChatChannel $channel, string $phone): ?ChatConversation
+    {
+        return ChatConversation::query()
+            ->with('lead')
+            ->where('channel_id', $channel->id)
+            ->where(function ($query) use ($phone) {
+                $query->where('customer_phone', $phone)
+                    ->orWhere('customer_identifier', $phone)
+                    ->orWhereHas('lead', fn ($leadQuery) => $leadQuery->where('phone', $phone));
+            })
+            ->latest('last_message_at')
+            ->latest('id')
+            ->first();
+    }
+
+    private function shouldContinueExistingConversation(?ChatConversation $conversation, string $message): bool
+    {
+        if (! $conversation || ! $conversation->lead) {
+            return false;
+        }
+
+        $resetMinutes = (int) config('ai_assistant.lead_context_reset_minutes', 60);
+        if ($resetMinutes <= 0) {
+            return true;
+        }
+
+        $lastMessageAt = $conversation->last_message_at ?: $conversation->updated_at;
+        if ($lastMessageAt && Carbon::parse($lastMessageAt)->gt(now()->subMinutes($resetMinutes))) {
+            return true;
+        }
+
+        return $this->referencesPreviousConversation($message);
+    }
+
+    private function referencesPreviousConversation(string $message): bool
+    {
+        $text = $this->normalizeComparableText($message);
+
+        return Str::contains($text, [
+            'como falei',
+            'como falamos',
+            'como falamos antes',
+            'como disse',
+            'como tinha dito',
+            'falamos ha pouco',
+            'falamos antes',
+            'conversa anterior',
+            'mensagem anterior',
+            'pedido anterior',
+            'lead anterior',
+            'carro anterior',
+            'viatura anterior',
+            'modelo anterior',
+            'orcamento anterior',
+            'proposta anterior',
+            'retomar',
+            'retomar conversa',
+            'continuar',
+            'continuar conversa',
+            'aquele carro',
+            'aquela viatura',
+            'o carro que falei',
+            'a viatura que falei',
+            'o peugeot que falei',
+        ]);
     }
 
     private function conversationFor(AiAssistant $assistant, ChatChannel $channel, ChatLead $lead, string $phone, ?string $externalId): ChatConversation
