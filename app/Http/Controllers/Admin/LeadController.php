@@ -201,7 +201,7 @@ class LeadController extends Controller
 
     private function isLeadManager(): bool
     {
-        return RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Adm']);
+        return RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Adm', 'Marketing Stand']);
     }
 
     private function salespeople()
