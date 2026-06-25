@@ -191,7 +191,7 @@ class AiLeadAssistantService
             }
 
             $payload = app(AiLeadQualificationService::class)->buildLeadPayload($conversation, $qualification);
-            if ($chatLead->lead_id && $this->shouldStartNewLeadCycle($chatLead)) {
+            if ($chatLead->lead_id && $this->shouldStartNewLeadCycle($chatLead, $conversation, $qualification)) {
                 $payload['leadgen_id'] = 'ai_whatsapp:' . $conversation->id . ':' . now()->format('YmdHis');
                 data_set($payload, 'raw_data.previous_lead_id', $chatLead->lead_id);
             } elseif ($chatLead->lead_id) {
