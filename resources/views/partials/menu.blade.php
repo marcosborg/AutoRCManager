@@ -99,6 +99,14 @@
                         <span class="pull-right-container"><i class="fa fa-fw fa-angle-left pull-right"></i></span>
                     </a>
                     <ul class="treeview-menu">
+                        @if(\App\Support\RolePreview::isRealAdmin(auth()->user()))
+                            <li class="{{ request()->is("admin/system-maintenance") ? "active" : "" }}">
+                                <a href="{{ route("admin.system-maintenance.index") }}">
+                                    <i class="fa-fw fas fa-terminal"></i>
+                                    <span>Manutencao</span>
+                                </a>
+                            </li>
+                        @endif
                         @can('country_access')
                             <li class="{{ request()->is("admin/countries") || request()->is("admin/countries/*") ? "active" : "" }}">
                                 <a href="{{ route("admin.countries.index") }}">

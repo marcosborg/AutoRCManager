@@ -25,6 +25,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('cash/categories', 'CashController@storeCategory')->name('cash.categories.store');
     Route::post('cash/boxes', 'CashController@storeCashBox')->name('cash.boxes.store');
     Route::post('system-shutdown', 'SystemShutdownController@store')->name('system-shutdown.store');
+    Route::get('system-maintenance', 'SystemMaintenanceController@index')->name('system-maintenance.index');
+    Route::post('system-maintenance/run', 'SystemMaintenanceController@run')->name('system-maintenance.run');
     Route::post('role-preview', 'RolePreviewController@store')->name('role-preview.store');
     Route::delete('role-preview', 'RolePreviewController@destroy')->name('role-preview.destroy');
     Route::get('approvals', 'ApprovalController@index')->name('approvals.index');
