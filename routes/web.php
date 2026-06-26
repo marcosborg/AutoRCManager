@@ -29,6 +29,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('role-preview', 'RolePreviewController@destroy')->name('role-preview.destroy');
     Route::get('approvals', 'ApprovalController@index')->name('approvals.index');
     Route::get('gps-positions', 'GpsController@latest')->name('gps.positions');
+    Route::post('leads/send-pending-smtp', 'LeadController@sendPendingSmtp')->name('leads.send-pending-smtp');
     Route::post('leads/{lead}/notes', 'LeadController@storeNote')->name('leads.notes.store');
     Route::delete('leads/{lead}/notes/{note}', 'LeadController@destroyNote')->name('leads.notes.destroy');
     Route::resource('leads', 'LeadController')->except(['create', 'store']);
