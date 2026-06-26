@@ -7,7 +7,6 @@ use App\Models\LeadAccessToken;
 use App\Models\LeadWhatsappNotification;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class LeadWhatsappNotificationService
@@ -36,29 +35,50 @@ class LeadWhatsappNotificationService
 
         $message = $this->messageFor($lead, $user, $plainToken);
 
-        if ($this->deliveryChannel() === 'smtp') {
-            $this->sendLeadEmails($lead, $user, $message, $accessToken->id);
+        $phone = $this->deliveryChannel() === 'smtp' ? null : $this->normalizePhone($user->mobile_phone);
+        $metadata = [
+            'reason' => $phone || $this->deliveryChannel() === 'smtp' ? null : 'missing_user_mobile_phone',
+            'raw_mobile_phone' => $user->mobile_phone,
+            'normalized_mobile_phone' => $phone,
+        ];
 
-            return null;
+        if ($this->deliveryChannel() === 'smtp') {
+            $emailReady = $this->validEmail($user->email);
+
+            if ($emailReady) {
+                $metadata['delivery_channel'] = 'smtp';
+                $metadata['recipient_email'] = $user->email;
+                $metadata['recipient_type'] = 'assigned_stand';
+            } else {
+                $metadata['reason'] = 'missing_user_email';
+                $metadata['raw_email'] = $user->email;
+            }
         }
 
-        $phone = $this->normalizePhone($user->mobile_phone);
         $notification = LeadWhatsappNotification::create([
             'lead_id' => $lead->id,
             'user_id' => $user->id,
             'access_token_id' => $accessToken->id,
             'phone' => $phone,
             'message' => $message,
-            'status' => $phone ? LeadWhatsappNotification::STATUS_PENDING : LeadWhatsappNotification::STATUS_FAILED,
-            'failed_at' => $phone ? null : now(),
-            'metadata' => [
-                'reason' => $phone ? null : 'missing_user_mobile_phone',
-                'raw_mobile_phone' => $user->mobile_phone,
-                'normalized_mobile_phone' => $phone,
-            ],
+            'status' => $phone || ($this->deliveryChannel() === 'smtp' && $emailReady)
+                ? LeadWhatsappNotification::STATUS_PENDING
+                : LeadWhatsappNotification::STATUS_FAILED,
+            'failed_at' => $phone || ($this->deliveryChannel() === 'smtp' && $emailReady) ? null : now(),
+            'metadata' => $metadata,
         ]);
 
-        if (! $phone) {
+        if ($this->deliveryChannel() === 'smtp') {
+            if (! $this->validEmail($user->email)) {
+                Log::channel('meta_leads')->warning('Vendedor sem email valido para lead SMTP.', [
+                    'lead_id' => $lead->id,
+                    'assigned_user_id' => $user->id,
+                    'email' => $user->email,
+                ]);
+            } else {
+                $this->queueEmailCcNotifications($lead, $user, $message, $accessToken->id);
+            }
+        } elseif (! $phone) {
             Log::channel('meta_leads')->warning('Vendedor sem telemovel para lead WhatsApp.', [
                 'lead_id' => $lead->id,
                 'assigned_user_id' => $user->id,
@@ -95,44 +115,28 @@ class LeadWhatsappNotificationService
         }
     }
 
-    private function sendLeadEmails(Lead $lead, User $user, string $message, int $accessTokenId): void
+    private function queueEmailCcNotifications(Lead $lead, User $user, string $message, int $accessTokenId): void
     {
-        $subject = 'Nova lead atribuida: ' . ($lead->full_name ?: 'Sem nome');
-        $recipients = [];
-
-        if ($this->validEmail($user->email)) {
-            $recipients[] = [
-                'email' => $user->email,
-                'type' => 'assigned_stand',
-            ];
-        } else {
-            Log::channel('meta_leads')->warning('Vendedor sem email valido para lead SMTP.', [
-                'lead_id' => $lead->id,
-                'assigned_user_id' => $user->id,
-                'email' => $user->email,
-            ]);
-        }
-
         foreach ($this->ccEmails() as $email) {
-            if ($this->validEmail($email) && strcasecmp($email, (string) $user->email) !== 0) {
-                $recipients[] = [
-                    'email' => $email,
-                    'type' => 'stand_seller_copy',
-                ];
+            if (! $this->validEmail($email) || strcasecmp($email, (string) $user->email) === 0) {
+                continue;
             }
-        }
 
-        foreach ($recipients as $recipient) {
-            Mail::raw($message, function ($mail) use ($recipient, $subject): void {
-                $mail->to($recipient['email'])->subject($subject);
-            });
-
-            Log::channel('meta_leads')->info('Lead enviada por SMTP.', [
+            LeadWhatsappNotification::create([
                 'lead_id' => $lead->id,
-                'assigned_user_id' => $user->id,
+                'user_id' => $user->id,
                 'access_token_id' => $accessTokenId,
-                'recipient' => $recipient['email'],
-                'type' => $recipient['type'],
+                'phone' => null,
+                'message' => $message,
+                'status' => LeadWhatsappNotification::STATUS_PENDING,
+                'metadata' => [
+                    'type' => 'stand_seller_copy',
+                    'original_user_id' => $user->id,
+                    'original_user_name' => $user->name,
+                    'delivery_channel' => 'smtp',
+                    'recipient_email' => $email,
+                    'recipient_type' => 'stand_seller_copy',
+                ],
             ]);
         }
     }

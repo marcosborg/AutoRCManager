@@ -15,6 +15,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('part-orders:check-delays')->dailyAt('07:00');
         $schedule->command('part-payments:check-overdue')->dailyAt('07:05');
         $schedule->command('leads:expire-unopened-access')->everyMinute()->withoutOverlapping();
+        $schedule->command('leads:send-pending-smtp')->everyMinute()->withoutOverlapping();
     }
 
     /**
