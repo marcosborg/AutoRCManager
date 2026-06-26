@@ -25,7 +25,7 @@ class PendingLeadSmtpNotificationService
             $email = $notification->metadata['recipient_email'] ?? null;
 
             if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $this->markFailed($notification, 'Email de destino invalido.');
+                $this->keepPendingAfterFailure($notification, 'Email de destino invalido.');
                 $failed++;
                 continue;
             }
@@ -53,7 +53,7 @@ class PendingLeadSmtpNotificationService
 
                 $sent++;
             } catch (\Throwable $exception) {
-                $this->markFailed($notification, $exception->getMessage());
+                $this->keepPendingAfterFailure($notification, $exception->getMessage());
                 $failed++;
             }
         }
@@ -65,21 +65,27 @@ class PendingLeadSmtpNotificationService
         ];
     }
 
-    private function markFailed(LeadWhatsappNotification $notification, string $error): void
+    private function keepPendingAfterFailure(LeadWhatsappNotification $notification, string $error): void
     {
+        $metadata = $notification->metadata ?? [];
+        $attempts = (int) ($metadata['smtp_attempts'] ?? 0);
+
         $notification->update([
-            'status' => LeadWhatsappNotification::STATUS_FAILED,
-            'failed_at' => now(),
-            'metadata' => array_filter(array_merge($notification->metadata ?? [], [
+            'status' => LeadWhatsappNotification::STATUS_PENDING,
+            'failed_at' => null,
+            'metadata' => array_filter(array_merge($metadata, [
                 'smtp_sent' => false,
-                'error' => $error,
+                'smtp_attempts' => $attempts + 1,
+                'last_error' => $error,
+                'last_failed_at' => now()->toDateTimeString(),
             ])),
         ]);
 
-        Log::channel('meta_leads')->error('Falha ao enviar lead pendente por SMTP.', [
+        Log::channel('meta_leads')->error('Falha ao enviar lead pendente por SMTP; mantida em fila.', [
             'notification_id' => $notification->id,
             'lead_id' => $notification->lead_id,
             'recipient' => $notification->metadata['recipient_email'] ?? null,
+            'attempts' => $attempts + 1,
             'error' => $error,
         ]);
     }
