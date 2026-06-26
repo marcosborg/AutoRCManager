@@ -81,7 +81,7 @@ class LeadAccessEscalationService
                 );
 
                 if (! $assignedUser) {
-                    Log::channel('meta_leads')->warning('Lead nao transitou por falta de vendedor com telemovel.', [
+                    Log::channel('meta_leads')->warning('Lead nao transitou por falta de vendedor disponivel.', [
                         'lead_id' => $lead->id,
                         'expired_access_token_id' => $accessToken->id,
                         'excluded_user_ids' => $excludedUserIds,
