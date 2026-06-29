@@ -85,8 +85,8 @@ class SystemMaintenanceController extends Controller
     private function leadConfig(): array
     {
         return [
-            'AI_LEAD_DELIVERY_CHANNEL' => config('ai_assistant.lead_delivery_channel'),
-            'AI_LEAD_EMAIL_CC_ADDRESSES' => implode(', ', config('ai_assistant.lead_email_cc_addresses', [])),
+            'Lead delivery' => 'WhatsApp',
+            'Lead WhatsApp CC' => 'desativado',
         ];
     }
 

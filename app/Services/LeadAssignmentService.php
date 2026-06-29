@@ -17,11 +17,8 @@ class LeadAssignmentService
 
             $salespeople = User::query()
                 ->whereHas('roles', fn ($query) => $query->where('title', 'Stand'))
-                ->when(
-                    $this->deliveryChannel() === 'smtp',
-                    fn ($query) => $query->whereNotNull('email')->where('email', '!=', ''),
-                    fn ($query) => $query->whereNotNull('mobile_phone')->where('mobile_phone', '!=', '')
-                )
+                ->whereNotNull('mobile_phone')
+                ->where('mobile_phone', '!=', '')
                 ->when($excludeUserIds !== [], fn ($query) => $query->whereNotIn('id', $excludeUserIds))
                 ->orderBy('id')
                 ->get();
@@ -30,7 +27,6 @@ class LeadAssignmentService
                 Log::channel('meta_leads')->warning('Lead sem vendedor Stand disponivel para atribuicao.', [
                     'lead_id' => $lead->id,
                     'leadgen_id' => $lead->leadgen_id,
-                    'delivery_channel' => $this->deliveryChannel(),
                     'excluded_user_ids' => $excludeUserIds,
                 ]);
 
@@ -75,12 +71,5 @@ class LeadAssignmentService
         }
 
         return $salespeople->get(($lastIndex + 1) % $salespeople->count());
-    }
-
-    private function deliveryChannel(): string
-    {
-        $channel = strtolower((string) config('ai_assistant.lead_delivery_channel', 'whatsapp'));
-
-        return in_array($channel, ['smtp', 'mail', 'email'], true) ? 'smtp' : 'whatsapp';
     }
 }

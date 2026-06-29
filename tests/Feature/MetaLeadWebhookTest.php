@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Lead;
+use App\Models\LeadWhatsappNotification;
+use App\Models\LeadSalesRotation;
 use App\Models\Role;
 use App\Models\User;
 use App\Notifications\NewLeadNotification;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -14,6 +17,15 @@ use Tests\TestCase;
 class MetaLeadWebhookTest extends TestCase
 {
     use DatabaseTransactions;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $role = Role::firstOrCreate(['title' => 'Stand']);
+        DB::table('role_user')->where('role_id', $role->id)->delete();
+        LeadSalesRotation::query()->delete();
+    }
 
     public function test_webhook_verification_accepts_valid_token(): void
     {
@@ -36,6 +48,7 @@ class MetaLeadWebhookTest extends TestCase
     {
         Notification::fake();
         config([
+            'ai_assistant.lead_whatsapp_cc_phones' => ['912239578', '913333333'],
             'services.meta.form_id' => '829801293296262',
             'services.meta.access_token' => 'page-token',
             'services.meta.graph_version' => 'v25.0',
@@ -74,6 +87,12 @@ class MetaLeadWebhookTest extends TestCase
         $this->assertCount(1, $lead->assignment_histories);
 
         Notification::assertSentTo($seller, NewLeadNotification::class);
+
+        $notifications = LeadWhatsappNotification::where('lead_id', $lead->id)->get();
+        $this->assertCount(1, $notifications);
+        $this->assertSame($seller->id, $notifications->first()->user_id);
+        $this->assertSame('351912000001', $notifications->first()->phone);
+        $this->assertSame(LeadWhatsappNotification::STATUS_PENDING, $notifications->first()->status);
     }
 
     public function test_webhook_is_idempotent_for_duplicate_leadgen_id(): void
@@ -142,6 +161,75 @@ class MetaLeadWebhookTest extends TestCase
         $this->assertNull($lead->assigned_user_id);
     }
 
+    public function test_webhook_assigns_whatsapp_leads_one_by_one_to_each_seller(): void
+    {
+        Notification::fake();
+        config([
+            'ai_assistant.lead_delivery_channel' => 'smtp',
+            'services.meta.form_id' => '829801293296262',
+            'services.meta.access_token' => 'page-token',
+            'services.meta.graph_version' => 'v25.0',
+        ]);
+
+        $fabio = $this->seller('Fabio', '912000001');
+        $nuno = $this->seller('Nuno', '912000002');
+        $sergio = $this->seller('Sergio', '912000003');
+
+        Http::fake([
+            'graph.facebook.com/v25.0/lead-round-*' => function ($request) {
+                $leadgenId = basename(parse_url($request->url(), PHP_URL_PATH));
+
+                return Http::response([
+                    'id' => $leadgenId,
+                    'field_data' => [
+                        ['name' => 'full_name', 'values' => ['Cliente ' . $leadgenId]],
+                        ['name' => 'phone_number', 'values' => ['912345678']],
+                    ],
+                ]);
+            },
+        ]);
+
+        foreach (['lead-round-1', 'lead-round-2', 'lead-round-3'] as $leadgenId) {
+            $this->postJson('/api/meta/webhook', $this->webhookPayload($leadgenId))->assertOk();
+        }
+
+        $this->assertSame($fabio->id, Lead::where('leadgen_id', 'lead-round-1')->firstOrFail()->assigned_user_id);
+        $this->assertSame($nuno->id, Lead::where('leadgen_id', 'lead-round-2')->firstOrFail()->assigned_user_id);
+        $this->assertSame($sergio->id, Lead::where('leadgen_id', 'lead-round-3')->firstOrFail()->assigned_user_id);
+
+        $this->assertSame(3, LeadWhatsappNotification::whereIn('lead_id', Lead::whereIn('leadgen_id', [
+            'lead-round-1',
+            'lead-round-2',
+            'lead-round-3',
+        ])->pluck('id'))->count());
+    }
+
+    public function test_sellers_without_mobile_phone_are_not_eligible_for_whatsapp_rotation(): void
+    {
+        config([
+            'services.meta.form_id' => '829801293296262',
+            'services.meta.access_token' => 'page-token',
+            'services.meta.graph_version' => 'v25.0',
+        ]);
+
+        $this->seller('Sem Telemovel', null);
+
+        Http::fake([
+            'graph.facebook.com/v25.0/lead-sem-telemovel*' => Http::response([
+                'id' => 'lead-sem-telemovel',
+                'field_data' => [
+                    ['name' => 'full_name', 'values' => ['Cliente Sem Telemovel']],
+                ],
+            ]),
+        ]);
+
+        $this->postJson('/api/meta/webhook', $this->webhookPayload('lead-sem-telemovel'))->assertOk();
+
+        $lead = Lead::where('leadgen_id', 'lead-sem-telemovel')->firstOrFail();
+
+        $this->assertNull($lead->assigned_user_id);
+    }
+
     private function webhookPayload(string $leadgenId, string $formId = '829801293296262'): array
     {
         return [
@@ -161,12 +249,13 @@ class MetaLeadWebhookTest extends TestCase
         ];
     }
 
-    private function seller(string $name): User
+    private function seller(string $name, ?string $mobilePhone = '912000001'): User
     {
         $role = Role::firstOrCreate(['title' => 'Stand']);
         $seller = User::factory()->create([
             'name' => $name,
             'email' => strtolower(str_replace(' ', '.', $name)) . '@example.com',
+            'mobile_phone' => $mobilePhone,
         ]);
 
         $seller->roles()->syncWithoutDetaching([$role->id]);

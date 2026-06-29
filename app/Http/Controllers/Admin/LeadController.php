@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Lead;
 use App\Models\LeadNote;
 use App\Models\User;
-use App\Services\PendingLeadSmtpNotificationService;
 use App\Support\RolePreview;
 use Gate;
 use Illuminate\Http\Request;
@@ -90,24 +89,6 @@ class LeadController extends Controller
         $statuses = Lead::STATUS_SELECT;
 
         return view('admin.leads.index', compact('statuses'));
-    }
-
-    public function sendPendingSmtp(Request $request, PendingLeadSmtpNotificationService $service)
-    {
-        abort_if(Gate::denies('lead_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-        abort_if(! $this->isLeadManager(), Response::HTTP_FORBIDDEN, '403 Forbidden');
-
-        $limit = max(1, min(100, (int) $request->integer('limit', 50)));
-        $result = $service->send($limit);
-
-        return redirect()
-            ->route('admin.leads.index')
-            ->with('message', sprintf(
-                'SMTP leads processadas: %d; enviadas: %d; falhadas: %d.',
-                $result['processed'],
-                $result['sent'],
-                $result['failed']
-            ));
     }
 
     public function show(Lead $lead)

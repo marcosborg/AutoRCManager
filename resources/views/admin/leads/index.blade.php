@@ -6,15 +6,6 @@
             <div class="panel panel-default">
                 <div class="panel-heading">Leads Meta</div>
                 <div class="panel-body">
-                    @if(\App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Adm', 'Marketing Stand']))
-                        <form method="POST" action="{{ route('admin.leads.send-pending-smtp') }}" style="margin-bottom: 15px;">
-                            @csrf
-                            <button type="submit" class="btn btn-primary">
-                                Processar emails SMTP pendentes
-                            </button>
-                        </form>
-                    @endif
-
                     <table class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-Lead">
                         <thead>
                             <tr>
