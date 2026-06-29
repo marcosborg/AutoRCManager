@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\LeadWhatsappFallbackMail;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\LeadWhatsappNotification;
 use App\Services\AiLeadAssistantService;
 use App\Services\LeadAccessEscalationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Arr;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -180,7 +183,7 @@ class WhatsappNodeController extends Controller
             'status' => LeadWhatsappNotification::STATUS_SENT,
             'external_id' => $data['external_id'] ?? $notification->external_id,
             'sent_at' => now(),
-            'metadata' => array_filter(array_merge($notification->metadata ?? [], $data['metadata'] ?? [])),
+            'metadata' => $this->cleanMetadata(array_merge($notification->metadata ?? [], $data['metadata'] ?? [])),
         ]);
 
         return response()->json(['ok' => true]);
@@ -193,15 +196,82 @@ class WhatsappNodeController extends Controller
             'metadata' => ['nullable', 'array'],
         ]);
 
+        $metadata = $this->cleanMetadata(array_merge($notification->metadata ?? [], $data['metadata'] ?? [], [
+            'error' => $data['error'] ?? null,
+        ]));
+
         $notification->update([
             'status' => LeadWhatsappNotification::STATUS_FAILED,
             'failed_at' => now(),
-            'metadata' => array_filter(array_merge($notification->metadata ?? [], $data['metadata'] ?? [], [
-                'error' => $data['error'] ?? null,
-            ])),
+            'metadata' => $metadata,
         ]);
 
+        $fallbackMetadata = $this->sendLeadEmailFallback($notification->fresh(['lead', 'user']), $data['error'] ?? null);
+        if ($fallbackMetadata !== []) {
+            $notification->update([
+                'metadata' => $this->cleanMetadata(array_merge($notification->metadata ?? [], $fallbackMetadata)),
+            ]);
+        }
+
         return response()->json(['ok' => true]);
+    }
+
+    private function sendLeadEmailFallback(LeadWhatsappNotification $notification, ?string $failureReason): array
+    {
+        if (($notification->metadata['email_fallback_sent_at'] ?? null) !== null) {
+            return [];
+        }
+
+        $email = trim((string) ($notification->user?->email ?? ''));
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Log::channel('meta_leads')->warning('Fallback email de lead ignorado por email invalido.', [
+                'lead_whatsapp_notification_id' => $notification->id,
+                'lead_id' => $notification->lead_id,
+                'user_id' => $notification->user_id,
+                'email' => $email,
+            ]);
+
+            return [
+                'email_fallback_status' => 'skipped',
+                'email_fallback_error' => 'invalid_recipient_email',
+            ];
+        }
+
+        try {
+            Mail::to($email)->send(new LeadWhatsappFallbackMail($notification, $failureReason));
+
+            Log::channel('meta_leads')->info('Fallback email de lead enviado.', [
+                'lead_whatsapp_notification_id' => $notification->id,
+                'lead_id' => $notification->lead_id,
+                'user_id' => $notification->user_id,
+                'email' => $email,
+            ]);
+
+            return [
+                'email_fallback_status' => 'sent',
+                'email_fallback_recipient' => $email,
+                'email_fallback_sent_at' => now()->toDateTimeString(),
+            ];
+        } catch (\Throwable $exception) {
+            Log::channel('meta_leads')->error('Falha no fallback email de lead.', [
+                'lead_whatsapp_notification_id' => $notification->id,
+                'lead_id' => $notification->lead_id,
+                'user_id' => $notification->user_id,
+                'email' => $email,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return [
+                'email_fallback_status' => 'failed',
+                'email_fallback_recipient' => $email,
+                'email_fallback_error' => $exception->getMessage(),
+            ];
+        }
+    }
+
+    private function cleanMetadata(array $metadata): array
+    {
+        return array_filter($metadata, fn ($value) => $value !== null && $value !== '');
     }
 
     public function conversations(Request $request)

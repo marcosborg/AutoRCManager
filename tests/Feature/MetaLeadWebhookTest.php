@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\LeadWhatsappFallbackMail;
 use App\Models\Lead;
 use App\Models\LeadWhatsappNotification;
 use App\Models\LeadSalesRotation;
@@ -11,6 +12,7 @@ use App\Notifications\NewLeadNotification;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -228,6 +230,59 @@ class MetaLeadWebhookTest extends TestCase
         $lead = Lead::where('leadgen_id', 'lead-sem-telemovel')->firstOrFail();
 
         $this->assertNull($lead->assigned_user_id);
+    }
+
+    public function test_failed_whatsapp_lead_notification_sends_email_fallback(): void
+    {
+        Mail::fake();
+        config(['ai_assistant.node_api_token' => 'node-token']);
+
+        $seller = $this->seller('Nuno Fallback', '912000004');
+        $lead = Lead::create([
+            'leadgen_id' => 'lead-email-fallback',
+            'page_id' => 'page-1',
+            'form_id' => 'form-1',
+            'full_name' => 'Cliente Email Fallback',
+            'email' => 'cliente@example.com',
+            'phone' => '912345678',
+            'vehicle_interest' => 'BMW Serie 1',
+            'budget' => '15000',
+            'assigned_user_id' => $seller->id,
+            'status' => Lead::STATUS_NEW,
+        ]);
+
+        $notification = LeadWhatsappNotification::create([
+            'lead_id' => $lead->id,
+            'user_id' => $seller->id,
+            'phone' => '351912000004',
+            'message' => 'Nova lead atribuida: Cliente Email Fallback',
+            'status' => LeadWhatsappNotification::STATUS_PENDING,
+            'metadata' => ['ack' => 0],
+        ]);
+
+        $this->postJson(route('whatsapp.lead-notifications.failed', $notification), [
+            'error' => 'WhatsApp rejected the message after sendMessage (ack=-1)',
+            'metadata' => [
+                'ack' => -1,
+                'target_chat_id' => '147158581907516@lid',
+            ],
+        ], [
+            'Authorization' => 'Bearer node-token',
+        ])->assertOk();
+
+        Mail::assertSent(LeadWhatsappFallbackMail::class, function (LeadWhatsappFallbackMail $mail) use ($seller, $lead) {
+            return $mail->hasTo($seller->email)
+                && $mail->notification->lead->is($lead)
+                && $mail->failureReason === 'WhatsApp rejected the message after sendMessage (ack=-1)';
+        });
+
+        $notification->refresh();
+
+        $this->assertSame(LeadWhatsappNotification::STATUS_FAILED, $notification->status);
+        $this->assertSame(-1, $notification->metadata['ack']);
+        $this->assertSame('sent', $notification->metadata['email_fallback_status']);
+        $this->assertSame($seller->email, $notification->metadata['email_fallback_recipient']);
+        $this->assertNotEmpty($notification->metadata['email_fallback_sent_at']);
     }
 
     private function webhookPayload(string $leadgenId, string $formId = '829801293296262'): array
