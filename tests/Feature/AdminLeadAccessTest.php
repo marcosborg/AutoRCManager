@@ -20,6 +20,8 @@ class AdminLeadAccessTest extends TestCase
 
         $assigned = Lead::create([
             'leadgen_id' => 'lead-assigned-' . uniqid(),
+            'page_id' => 'page-1',
+            'form_id' => 'form-1',
             'full_name' => 'Lead Visivel',
             'assigned_user_id' => $seller->id,
             'status' => Lead::STATUS_NEW,
@@ -27,6 +29,8 @@ class AdminLeadAccessTest extends TestCase
 
         $hidden = Lead::create([
             'leadgen_id' => 'lead-hidden-' . uniqid(),
+            'page_id' => 'page-1',
+            'form_id' => 'form-1',
             'full_name' => 'Lead Escondido',
             'assigned_user_id' => $otherSeller->id,
             'status' => Lead::STATUS_NEW,
@@ -43,6 +47,8 @@ class AdminLeadAccessTest extends TestCase
 
         $lead = Lead::create([
             'leadgen_id' => 'lead-admin-' . uniqid(),
+            'page_id' => 'page-1',
+            'form_id' => 'form-1',
             'full_name' => 'Lead Admin',
             'assigned_user_id' => $seller->id,
             'status' => Lead::STATUS_NEW,

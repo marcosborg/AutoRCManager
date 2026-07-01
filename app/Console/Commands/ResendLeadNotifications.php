@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Lead;
 use App\Services\LeadWhatsappNotificationService;
 use Illuminate\Console\Command;
 
@@ -16,40 +15,27 @@ class ResendLeadNotifications extends Command
 
     public function handle(LeadWhatsappNotificationService $notificationService): int
     {
-        $query = Lead::query()
-            ->with('assigned_user')
-            ->whereNull('deleted_at')
-            ->orderBy('created_at');
-
         $leadIds = array_filter(array_map('intval', (array) $this->option('lead-id')));
-        if ($leadIds !== []) {
-            $query->whereIn('id', $leadIds);
-        } elseif ($this->option('since')) {
-            $query->where('created_at', '>=', $this->option('since'));
-        } else {
+        $since = $this->option('since');
+
+        if ($leadIds === [] && ! $since) {
             $this->error('Indique --since ou --lead-id.');
 
             return self::FAILURE;
         }
 
-        $sent = 0;
-        $skipped = 0;
+        $stats = $notificationService->resendNotifications($since, $leadIds);
 
-        $query->chunkById(100, function ($leads) use ($notificationService, &$sent, &$skipped): void {
-            foreach ($leads as $lead) {
-                if (! $lead->assigned_user) {
-                    $this->warn("Lead {$lead->id} sem vendedor atribuido; ignorada.");
-                    $skipped++;
-                    continue;
-                }
+        foreach ($stats['skipped_reasons'] as $reason) {
+            $this->warn($reason);
+        }
 
-                $notificationService->queueForLead($lead, $lead->assigned_user);
-                $this->info("Lead {$lead->id} colocada na fila para {$lead->assigned_user->name}.");
-                $sent++;
-            }
-        });
+        foreach ($stats['errors'] as $error) {
+            $this->error($error);
+        }
 
-        $this->info("Leads colocadas na fila: {$sent}; ignoradas: {$skipped}.");
+        $this->info("Leads colocadas na fila: {$stats['queued']}; ignoradas: {$stats['skipped']}; erros: " . count($stats['errors']) . ".");
+        $this->info("Notificacoes pendentes disponiveis para /api/whatsapp/lead-notifications: {$stats['pending_after']}.");
 
         return self::SUCCESS;
     }

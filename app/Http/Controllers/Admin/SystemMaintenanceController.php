@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Services\LeadWhatsappNotificationService;
 use App\Support\RolePreview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class SystemMaintenanceController extends Controller
@@ -33,6 +35,7 @@ class SystemMaintenanceController extends Controller
         return view('admin.system-maintenance.index', [
             'mailConfig' => $this->mailConfig(),
             'leadConfig' => $this->leadConfig(),
+            'defaultLeadNotificationSince' => '2026-06-30 19:11:00',
         ]);
     }
 
@@ -58,6 +61,37 @@ class SystemMaintenanceController extends Controller
             ->route('admin.system-maintenance.index')
             ->with('message', $definition['label'] . ' executado.')
             ->with('command_output', implode("\n", $outputs));
+    }
+
+    public function resendLeadNotifications(Request $request, LeadWhatsappNotificationService $notificationService)
+    {
+        $this->authorizeRealAdmin();
+
+        $data = $request->validate([
+            'since' => ['required', 'date_format:Y-m-d H:i:s'],
+        ]);
+
+        Log::channel('meta_leads')->info('Pedido admin para reenfileirar notificacoes WhatsApp de leads.', [
+            'since' => $data['since'],
+            'user_id' => optional($request->user())->id,
+            'ip' => $request->ip(),
+        ]);
+
+        $result = $notificationService->resendNotifications($data['since']);
+
+        $this->audit($request, 'resend-lead-whatsapp-notifications', ['leads:resend-notifications'], [
+            'since' => $data['since'],
+            'queued' => $result['queued'],
+            'skipped' => $result['skipped'],
+            'errors_count' => count($result['errors']),
+            'pending_after' => $result['pending_after'],
+        ]);
+
+        return redirect()
+            ->route('admin.system-maintenance.index')
+            ->with('message', 'Reenfileiramento de notificacoes WhatsApp concluido.')
+            ->with('lead_resend_result', $result)
+            ->with('lead_resend_since', $data['since']);
     }
 
     private function authorizeRealAdmin(): void
@@ -106,7 +140,7 @@ class SystemMaintenanceController extends Controller
         return $visible . str_repeat('*', max(strlen($local) - 2, 3)) . '@' . $domain;
     }
 
-    private function audit(Request $request, string $action, array $commands): void
+    private function audit(Request $request, string $action, array $commands, array $extraProperties = []): void
     {
         try {
             AuditLog::create([
@@ -118,7 +152,7 @@ class SystemMaintenanceController extends Controller
                     'action' => $action,
                     'commands' => $commands,
                     'user_agent' => $request->userAgent(),
-                ]),
+                ])->merge($extraProperties),
                 'host' => $request->ip(),
             ]);
         } catch (\Throwable $exception) {

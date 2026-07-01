@@ -27,6 +27,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('system-shutdown', 'SystemShutdownController@store')->name('system-shutdown.store');
     Route::get('system-maintenance', 'SystemMaintenanceController@index')->name('system-maintenance.index');
     Route::post('system-maintenance/run', 'SystemMaintenanceController@run')->name('system-maintenance.run');
+    Route::post('system-maintenance/resend-lead-notifications', 'SystemMaintenanceController@resendLeadNotifications')->name('system-maintenance.resend-lead-notifications');
     Route::post('role-preview', 'RolePreviewController@store')->name('role-preview.store');
     Route::delete('role-preview', 'RolePreviewController@destroy')->name('role-preview.destroy');
     Route::get('approvals', 'ApprovalController@index')->name('approvals.index');

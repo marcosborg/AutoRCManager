@@ -11,6 +11,84 @@ use Illuminate\Support\Str;
 
 class LeadWhatsappNotificationService
 {
+    public function resendNotifications(?string $since = null, array $leadIds = []): array
+    {
+        $query = Lead::query()
+            ->with('assigned_user')
+            ->whereNull('deleted_at')
+            ->orderBy('created_at');
+
+        $leadIds = array_values(array_filter(array_map('intval', $leadIds)));
+        if ($leadIds !== []) {
+            $query->whereIn('id', $leadIds);
+        } elseif ($since) {
+            $query->where('created_at', '>=', $since);
+        } else {
+            throw new \InvalidArgumentException('Indique since ou leadIds.');
+        }
+
+        $stats = [
+            'queued' => 0,
+            'skipped' => 0,
+            'errors' => [],
+            'queued_ids' => [],
+            'skipped_reasons' => [],
+            'pending_after' => 0,
+        ];
+
+        Log::channel('meta_leads')->info('A iniciar reenfileiramento de notificacoes WhatsApp de leads.', [
+            'since' => $since,
+            'lead_ids' => $leadIds,
+        ]);
+
+        $query->chunkById(100, function ($leads) use (&$stats): void {
+            foreach ($leads as $lead) {
+                try {
+                    if (! $lead->assigned_user) {
+                        $stats['skipped']++;
+                        $stats['skipped_reasons'][] = "Lead {$lead->id}: sem vendedor atribuido.";
+                        continue;
+                    }
+
+                    $pending = $this->pendingNotificationFor($lead, $lead->assigned_user);
+                    if ($pending) {
+                        $stats['skipped']++;
+                        $stats['skipped_reasons'][] = "Lead {$lead->id}: ja existe notificacao pendente {$pending->id} para {$lead->assigned_user->name}.";
+                        continue;
+                    }
+
+                    $notification = $this->queueForLead($lead, $lead->assigned_user);
+                    if ($notification && $notification->status === LeadWhatsappNotification::STATUS_PENDING && $notification->phone) {
+                        $stats['queued']++;
+                        $stats['queued_ids'][] = $notification->id;
+                        continue;
+                    }
+
+                    $stats['errors'][] = "Lead {$lead->id}: nao foi colocada na fila; vendedor sem telemovel valido.";
+                } catch (\Throwable $exception) {
+                    report($exception);
+                    $stats['errors'][] = "Lead {$lead->id}: {$exception->getMessage()}";
+                }
+            }
+        });
+
+        $stats['pending_after'] = LeadWhatsappNotification::query()
+            ->where('status', LeadWhatsappNotification::STATUS_PENDING)
+            ->whereNotNull('phone')
+            ->count();
+
+        Log::channel('meta_leads')->info('Reenfileiramento de notificacoes WhatsApp de leads concluido.', [
+            'since' => $since,
+            'queued' => $stats['queued'],
+            'skipped' => $stats['skipped'],
+            'errors_count' => count($stats['errors']),
+            'pending_after' => $stats['pending_after'],
+            'queued_ids' => $stats['queued_ids'],
+        ]);
+
+        return $stats;
+    }
+
     public function queueForLead(Lead $lead, ?User $user = null): ?LeadWhatsappNotification
     {
         $lead->loadMissing('assigned_user');
@@ -22,6 +100,17 @@ class LeadWhatsappNotificationService
             ]);
 
             return null;
+        }
+
+        $existing = $this->pendingNotificationFor($lead, $user);
+        if ($existing) {
+            Log::channel('meta_leads')->info('Notificacao WhatsApp pendente ja existente para lead/vendedor.', [
+                'lead_id' => $lead->id,
+                'assigned_user_id' => $user->id,
+                'lead_whatsapp_notification_id' => $existing->id,
+            ]);
+
+            return $existing;
         }
 
         $plainToken = Str::random(72);
@@ -61,6 +150,15 @@ class LeadWhatsappNotificationService
         }
 
         return $notification;
+    }
+
+    public function pendingNotificationFor(Lead $lead, User $user): ?LeadWhatsappNotification
+    {
+        return LeadWhatsappNotification::query()
+            ->where('lead_id', $lead->id)
+            ->where('user_id', $user->id)
+            ->where('status', LeadWhatsappNotification::STATUS_PENDING)
+            ->first();
     }
 
     private function messageFor(Lead $lead, User $user, string $plainToken): string
