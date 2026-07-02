@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ProcessMetaInboundLeadJob;
 use App\Mail\LeadWhatsappFallbackMail;
 use App\Models\Lead;
 use App\Models\LeadWhatsappNotification;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class MetaLeadWebhookTest extends TestCase
@@ -135,6 +137,28 @@ class MetaLeadWebhookTest extends TestCase
 
         $this->assertDatabaseMissing('leads', ['leadgen_id' => 'lead-outro-form']);
         Http::assertNothingSent();
+    }
+
+    public function test_inbound_lead_endpoint_queues_processing(): void
+    {
+        Queue::fake();
+        config(['services.meta.inbound_token' => 'inbound-token']);
+
+        $this->postJson('/api/meta/leads/inbound', [
+            'leadgen_id' => 'inbound-queued-1',
+            'full_name' => 'Cliente Fila',
+            'phone' => '912345678',
+        ], [
+            'Authorization' => 'Bearer inbound-token',
+        ])
+            ->assertAccepted()
+            ->assertJson([
+                'ok' => true,
+                'queued' => true,
+            ]);
+
+        Queue::assertPushedOn('meta-leads', ProcessMetaInboundLeadJob::class);
+        $this->assertDatabaseMissing('leads', ['leadgen_id' => 'inbound-queued-1']);
     }
 
     public function test_lead_can_remain_unassigned_when_no_stand_seller_exists(): void

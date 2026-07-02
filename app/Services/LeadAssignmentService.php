@@ -33,10 +33,17 @@ class LeadAssignmentService
                 return null;
             }
 
-            $rotation = LeadSalesRotation::query()->lockForUpdate()->first();
+            $rotation = LeadSalesRotation::query()->lockForUpdate()->orderBy('id')->first();
             if (! $rotation) {
-                $rotation = LeadSalesRotation::query()->create();
+                DB::table('lead_sales_rotation')->insertOrIgnore([
+                    'id' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $rotation = LeadSalesRotation::query()->lockForUpdate()->orderBy('id')->firstOrFail();
             }
+
             $nextUser = $this->nextUser($salespeople, $rotation->last_user_id);
 
             $lead->update(['assigned_user_id' => $nextUser->id]);

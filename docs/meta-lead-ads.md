@@ -13,6 +13,7 @@ META_FORM_ID=829801293296262
 META_GRAPH_VERSION=v25.0
 META_PAGE_ACCESS_TOKEN=
 META_INBOUND_WEBHOOK_TOKEN=
+QUEUE_CONNECTION=database
 ```
 
 ## Webhook
@@ -40,6 +41,22 @@ Se o token estiver correto, a resposta deve ser `123`.
 5. O vendedor atribuído recebe notificação por mail e database.
 
 Leads de outros formulários são ignorados quando `META_FORM_ID` está configurado.
+
+## Fila e pool de processamento
+
+As entradas de leads respondem rápido ao webhook e ficam na fila `meta-leads`.
+Isto evita que picos de leads obriguem o Apache/PHP a processar todas ao mesmo tempo.
+
+Depois de publicar:
+
+```bash
+php artisan migrate
+php artisan queue:work database --queue=meta-leads --sleep=2 --tries=3 --timeout=120
+```
+
+Para criar uma pool controlada, corre 1 ou 2 workers iguais no servidor. Mais workers aumentam concorrência, mas também aumentam carga sobre MySQL, Graph API, mail e integrações de IA. Começa com 1 worker; sobe para 2 se a fila acumular.
+
+Se usares Supervisor/systemd/serviço Windows, aponta o processo para o comando acima e garante restart automático.
 
 ## Entrada direta por Make/Apiway
 

@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\MetaLeadService;
+use App\Services\MetaInboundLeadService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -10,7 +10,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class ProcessMetaLeadJob implements ShouldQueue
+class ProcessMetaInboundLeadJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -18,7 +18,7 @@ class ProcessMetaLeadJob implements ShouldQueue
 
     public int $timeout = 120;
 
-    public function __construct(public array $value)
+    public function __construct(public array $data, public array $payload)
     {
         $this->onQueue('meta-leads');
     }
@@ -28,13 +28,13 @@ class ProcessMetaLeadJob implements ShouldQueue
         return [10, 60, 180];
     }
 
-    public function handle(MetaLeadService $service): void
+    public function handle(MetaInboundLeadService $service): void
     {
         try {
-            $service->processLeadgenValue($this->value);
+            $service->process($this->data, $this->payload);
         } catch (\Throwable $exception) {
-            Log::channel('meta_leads')->error('Erro ao processar lead Meta.', [
-                'value' => $this->value,
+            Log::channel('meta_leads')->error('Erro ao processar lead inbound.', [
+                'leadgen_id' => $this->data['leadgen_id'] ?? $this->payload['leadgenId'] ?? null,
                 'error' => $exception->getMessage(),
             ]);
 
