@@ -22,7 +22,7 @@
                         </div>
                         <div class="form-group">
                             <label>{{ trans('cruds.vehicleConsignment.fields.to_unit') }}</label>
-                            <input class="form-control" type="text" value="{{ $vehicleConsignment->to_unit->name ?? '' }}" disabled>
+                            <input class="form-control" type="text" value="{{ $vehicleConsignment->to_destination_label }}" disabled>
                         </div>
                         <div class="form-group">
                             <label>{{ trans('cruds.vehicleConsignment.fields.reference_value') }}</label>

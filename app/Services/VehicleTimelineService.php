@@ -62,7 +62,7 @@ class VehicleTimelineService
 
         foreach ($consignments as $consignment) {
             $from = $consignment->from_unit->name ?? 'N/A';
-            $to = $consignment->to_unit->name ?? 'N/A';
+            $to = $consignment->to_destination_label ?: 'N/A';
 
             $events->push([
                 'type' => 'consignment',
@@ -77,6 +77,7 @@ class VehicleTimelineService
                 'metadata' => [
                     'from_unit_id' => $consignment->from_unit_id,
                     'to_unit_id' => $consignment->to_unit_id,
+                    'to_unit_name' => $consignment->to_unit_name,
                     'status' => $consignment->status,
                 ],
             ]);

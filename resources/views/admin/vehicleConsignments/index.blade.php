@@ -124,7 +124,7 @@
       { data: 'id', name: 'id' },
       { data: 'vehicle_label', name: 'vehicle.license' },
       { data: 'from_unit_name', name: 'from_unit.name' },
-      { data: 'to_unit_name', name: 'to_unit.name' },
+      { data: 'to_destination_name', name: 'to_destination_name', orderable: false },
       { data: 'reference_value', name: 'reference_value' },
       { data: 'starts_at', name: 'starts_at' },
       { data: 'ends_at', name: 'ends_at' },

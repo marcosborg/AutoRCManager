@@ -48,7 +48,16 @@ class VehicleConsignmentController extends Controller
             $table->editColumn('id', fn($row) => $row->id ?? '');
             $table->addColumn('vehicle_label', fn($row) => $this->vehicleLabel($row->vehicle));
             $table->addColumn('from_unit_name', fn($row) => optional($row->from_unit)->name ?? '');
-            $table->addColumn('to_unit_name', fn($row) => optional($row->to_unit)->name ?? '');
+            $table->addColumn('to_destination_name', fn($row) => $row->to_destination_label);
+            $table->filterColumn('to_destination_name', function ($query, $keyword) {
+                $query->where(function ($subQuery) use ($keyword) {
+                    $subQuery
+                        ->where('to_unit_name', 'like', '%' . $keyword . '%')
+                        ->orWhereHas('to_unit', function ($unitQuery) use ($keyword) {
+                            $unitQuery->where('name', 'like', '%' . $keyword . '%');
+                        });
+                });
+            });
             $table->editColumn('reference_value', fn($row) => $row->reference_value ?? '');
             $table->editColumn('starts_at', fn($row) => $row->starts_at ?? '');
             $table->editColumn('ends_at', fn($row) => $row->ends_at ?? '');
