@@ -639,6 +639,30 @@ class VehicleController extends Controller
         return back();
     }
 
+    public function deleted()
+    {
+        abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $vehicles = Vehicle::onlyTrashed()
+            ->with(['general_state', 'brand', 'suplier', 'client'])
+            ->orderByDesc('deleted_at')
+            ->get();
+
+        return view('admin.vehicles.deleted', compact('vehicles'));
+    }
+
+    public function restore(int $vehicle)
+    {
+        abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $vehicle = Vehicle::onlyTrashed()->findOrFail($vehicle);
+        $vehicle->restore();
+
+        return redirect()
+            ->route('admin.vehicles.deleted')
+            ->with('message', 'Viatura recuperada com sucesso.');
+    }
+
     public function massDestroy(MassDestroyVehicleRequest $request)
     {
         $vehicles = Vehicle::find(request('ids'));

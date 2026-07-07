@@ -110,6 +110,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('sale-closure-approvals/export', 'SaleClosureApprovalController@export')->name('sale-closure-approvals.export');
     Route::post('sale-closure-approvals/{approval}/approve', 'SaleClosureApprovalController@approve')->name('sale-closure-approvals.approve');
     Route::post('sale-closure-approvals/{approval}/reject', 'SaleClosureApprovalController@reject')->name('sale-closure-approvals.reject');
+    Route::get('vehicles-deleted', 'VehicleController@deleted')->name('vehicles.deleted');
+    Route::post('vehicles-deleted/{vehicle}/restore', 'VehicleController@restore')->name('vehicles.restore');
     Route::resource('vehicles', 'VehicleController');
     Route::get('vehicles/{vehicle}/timeline', 'VehicleTimelineController@show')->name('vehicles.timeline');
     Route::get('vehicles/{vehicle}/timeline/export/pdf', 'VehicleTimelineExportController@exportPdf')->name('vehicles.timeline.export.pdf');
