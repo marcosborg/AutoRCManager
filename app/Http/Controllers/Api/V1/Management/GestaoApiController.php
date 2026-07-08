@@ -171,7 +171,7 @@ class GestaoApiController extends Controller
                     'vehicle' => $this->vehicleLabel($consignment->vehicle),
                     'vehicle_id' => $consignment->vehicle_id,
                     'from_unit' => $consignment->from_unit->name ?? null,
-                    'to_unit' => $consignment->to_unit->name ?? null,
+                    'to_unit' => $consignment->to_destination_label ?: null,
                     'reference_value' => (float) $consignment->reference_value,
                     'starts_at' => optional($consignment->starts_at)->format('Y-m-d H:i'),
                     'ends_at' => optional($consignment->ends_at)->format('Y-m-d H:i'),

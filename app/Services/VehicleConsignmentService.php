@@ -31,19 +31,22 @@ class VehicleConsignmentService
             $consignment = VehicleConsignment::create([
                 'vehicle_id' => $data['vehicle_id'],
                 'from_unit_id' => $data['from_unit_id'],
-                'to_unit_id' => $data['to_unit_id'],
+                'to_unit_id' => $data['to_unit_id'] ?? null,
+                'to_unit_name' => $data['to_unit_name'] ?? null,
                 'reference_value' => $data['reference_value'],
                 'starts_at' => $startsAt,
                 'ends_at' => null,
                 'status' => ConsignmentStatus::ACTIVE,
             ]);
 
-            VehicleLocation::create([
-                'vehicle_id' => $data['vehicle_id'],
-                'operational_unit_id' => $data['to_unit_id'],
-                'starts_at' => $startsAt,
-                'ends_at' => null,
-            ]);
+            if (! empty($data['to_unit_id'])) {
+                VehicleLocation::create([
+                    'vehicle_id' => $data['vehicle_id'],
+                    'operational_unit_id' => $data['to_unit_id'],
+                    'starts_at' => $startsAt,
+                    'ends_at' => null,
+                ]);
+            }
 
             return $consignment;
         });
@@ -168,6 +171,10 @@ class VehicleConsignmentService
 
     private function endActiveLocationOnClose(VehicleConsignment $consignment, Carbon $endsAt): void
     {
+        if (! $consignment->to_unit_id) {
+            return;
+        }
+
         $activeLocations = VehicleLocation::query()
             ->where('vehicle_id', $consignment->vehicle_id)
             ->whereNull('ends_at')

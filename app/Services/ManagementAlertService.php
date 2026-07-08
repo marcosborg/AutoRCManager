@@ -105,7 +105,7 @@ class ManagementAlertService
                 '%s foi consignada de %s para %s.',
                 $this->vehicleLabel($consignment->vehicle),
                 $consignment->from_unit->name ?? 'origem',
-                $consignment->to_unit->name ?? 'destino',
+                $consignment->to_destination_label ?: 'destino',
             ),
         );
     }

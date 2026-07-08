@@ -32,6 +32,7 @@ class VehicleConsignment extends Model
         'vehicle_id',
         'from_unit_id',
         'to_unit_id',
+        'to_unit_name',
         'reference_value',
         'starts_at',
         'ends_at',
@@ -56,5 +57,10 @@ class VehicleConsignment extends Model
     public function to_unit()
     {
         return $this->belongsTo(OperationalUnit::class, 'to_unit_id');
+    }
+
+    public function getToDestinationLabelAttribute(): string
+    {
+        return $this->to_unit->name ?? $this->to_unit_name ?? '';
     }
 }

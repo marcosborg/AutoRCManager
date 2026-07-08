@@ -253,6 +253,12 @@
 
                     </a>
                 </li>
+                <li class="{{ request()->is("admin/vehicles-deleted") ? "active" : "" }}">
+                    <a href="{{ route("admin.vehicles.deleted") }}">
+                        <i class="fa-fw fas fa-recycle"></i>
+                        <span>Recuperar Viaturas</span>
+                    </a>
+                </li>
             @endcan
             @can('vehicle_consignment_access')
                 <li class="{{ request()->is("admin/vehicle-consignments") || request()->is("admin/vehicle-consignments/*") ? "active" : "" }}">

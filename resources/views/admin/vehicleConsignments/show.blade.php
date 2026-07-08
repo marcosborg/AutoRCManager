@@ -45,7 +45,7 @@
                                     {{ trans('cruds.vehicleConsignment.fields.to_unit') }}
                                 </th>
                                 <td>
-                                    {{ $vehicleConsignment->to_unit->name ?? '' }}
+                                    {{ $vehicleConsignment->to_destination_label }}
                                 </td>
                             </tr>
                             <tr>

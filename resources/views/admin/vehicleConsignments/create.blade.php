@@ -36,8 +36,9 @@
                             <span class="help-block">{{ trans('cruds.vehicleConsignment.fields.from_unit_helper') }}</span>
                         </div>
                         <div class="form-group {{ $errors->has('to_unit_id') ? 'has-error' : '' }}">
-                            <label class="required" for="to_unit_id">{{ trans('cruds.vehicleConsignment.fields.to_unit') }}</label>
-                            <select class="form-control select2" name="to_unit_id" id="to_unit_id" required>
+                            <label for="to_unit_id">{{ trans('cruds.vehicleConsignment.fields.to_unit') }}</label>
+                            <select class="form-control select2" name="to_unit_id" id="to_unit_id">
+                                <option value="">{{ trans('global.pleaseSelect') }}</option>
                                 @foreach($units as $id => $entry)
                                     <option value="{{ $id }}" {{ old('to_unit_id') == $id ? 'selected' : '' }}>{{ $entry }}</option>
                                 @endforeach
@@ -46,6 +47,14 @@
                                 <span class="help-block" role="alert">{{ $errors->first('to_unit_id') }}</span>
                             @endif
                             <span class="help-block">{{ trans('cruds.vehicleConsignment.fields.to_unit_helper') }}</span>
+                        </div>
+                        <div class="form-group {{ $errors->has('to_unit_name') ? 'has-error' : '' }}">
+                            <label for="to_unit_name">Destino livre / particular</label>
+                            <input class="form-control" type="text" name="to_unit_name" id="to_unit_name" value="{{ old('to_unit_name') }}" placeholder="Ex.: Joao Silva">
+                            @if($errors->has('to_unit_name'))
+                                <span class="help-block" role="alert">{{ $errors->first('to_unit_name') }}</span>
+                            @endif
+                            <span class="help-block">Preencha este campo quando o destino nao for uma unidade interna.</span>
                         </div>
                         <div class="form-group {{ $errors->has('reference_value') ? 'has-error' : '' }}">
                             <label class="required" for="reference_value">{{ trans('cruds.vehicleConsignment.fields.reference_value') }}</label>
