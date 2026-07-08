@@ -395,7 +395,7 @@ class RepairController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $groupedRepairs = Repair::with(['vehicle.brand', 'repair_state'])
+        $allGroupedRepairs = Repair::with(['vehicle.brand', 'vehicle.general_state', 'repair_state'])
             ->orderByDesc('created_at')
             ->get()
             ->groupBy('vehicle_id')
@@ -423,11 +423,20 @@ class RepairController extends Controller
                     'current_state_name' => $currentStateName,
                 ];
             })
+            ->filter(fn ($row) => $row['vehicle'] !== null)
+            ->values();
+
+        $workshopSummary = [
+            'vehicles_sent' => $allGroupedRepairs->count(),
+            'total_interventions' => (int) $allGroupedRepairs->sum('count'),
+            'vehicles_currently_in_workshop' => $allGroupedRepairs
+                ->filter(fn ($row) => (int) $row['open_count'] > 0)
+                ->count(),
+        ];
+
+        $groupedRepairs = $allGroupedRepairs
             ->filter(function ($row) use ($licenseFilter, $stateFilter, $openOnly) {
                 $vehicle = $row['vehicle'];
-                if (! $vehicle) {
-                    return false;
-                }
 
                 if ($licenseFilter !== '') {
                     $needle = LicensePlate::normalize($licenseFilter);
@@ -471,6 +480,7 @@ class RepairController extends Controller
 
         return view('admin.repairs.index', compact(
             'groupedRepairs',
+            'workshopSummary',
             'repairStates',
             'licenseFilter',
             'stateFilter',

@@ -39,6 +39,36 @@
 
     <div class="row">
         <div class="col-lg-12">
+            <div class="row">
+                <div class="col-md-4 col-sm-6">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-aqua"><i class="fa fa-car"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Viaturas enviadas</span>
+                            <span class="info-box-number">{{ $workshopSummary['vehicles_sent'] }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-green"><i class="fa fa-wrench"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Total de envios/intervencoes</span>
+                            <span class="info-box-number">{{ $workshopSummary['total_interventions'] }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-yellow"><i class="fa fa-tools"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Viaturas atualmente em oficina</span>
+                            <span class="info-box-number">{{ $workshopSummary['vehicles_currently_in_workshop'] }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="panel panel-default">
                 <div class="panel-heading">
                     Filtros
@@ -102,12 +132,13 @@
                                             </a>
                                         </th>
                                         <th>Marca / Modelo</th>
+                                        <th>Estado geral</th>
                                         <th>
                                             <a href="{{ $sortUrl('latest') }}">
                                                 Ultima intervencao{!! $sortIcon('latest') !!}
                                             </a>
                                         </th>
-                                        <th>Estado atual</th>
+                                        <th>Estado oficina</th>
                                         <th>Total intervencoes</th>
                                         <th>
                                             <a href="{{ $sortUrl('open_count') }}">
@@ -131,6 +162,9 @@
                                             </td>
                                             <td>
                                                 {{ $vehicle->brand->name ?? '-' }} {{ $vehicle->model ?? '' }}
+                                            </td>
+                                            <td>
+                                                {{ $vehicle->general_state->name ?? '-' }}
                                             </td>
                                             <td>
                                                 <span>#{{ $latest->id }}</span><br>
