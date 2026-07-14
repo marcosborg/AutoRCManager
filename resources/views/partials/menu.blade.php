@@ -32,6 +32,14 @@
                     </a>
                 </li>
             @endif
+            @can('workshop_cash_access')
+                <li class="{{ request()->is('admin/workshop-cash') || request()->is('admin/workshop-cash/*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.workshop-cash.index') }}">
+                        <i class="fa-fw fas fa-cash-register"></i>
+                        <span>Caixa da Oficina</span>
+                    </a>
+                </li>
+            @endcan
             @can('user_management_access')
                 <li class="treeview">
                     <a href="#">

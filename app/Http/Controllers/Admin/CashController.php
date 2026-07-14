@@ -12,10 +12,11 @@ use App\Models\CashCategory;
 use App\Models\Department;
 use App\Models\PaymentMethod;
 use App\Models\Vehicle;
-use Gate;
+use App\Services\CashBalanceService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 
 class CashController extends Controller
@@ -42,7 +43,7 @@ class CashController extends Controller
         ));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, CashBalanceService $balances)
     {
         $this->authorizeCashAccess();
 
@@ -53,14 +54,26 @@ class CashController extends Controller
             'total' => ['required', 'numeric', 'min:0.01'],
             'cash_box_id' => ['nullable', 'integer', 'exists:cash_boxes,id'],
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],
-            'cash_category_id' => ['nullable', 'integer', 'exists:cash_categories,id'],
+            'cash_category_id' => ['nullable', 'integer', Rule::exists('cash_categories', 'id')->whereNull('cash_box_id')],
             'payment_method_id' => ['nullable', 'integer', 'exists:payment_methods,id'],
             'vehicle_id' => ['nullable', 'integer', 'exists:vehicles,id'],
             'notes' => ['nullable', 'string'],
             'is_accounted' => ['nullable', 'boolean'],
         ]);
 
-        $movement = DB::transaction(function () use ($data) {
+        $selectedBox = ! empty($data['cash_box_id']) ? CashBox::query()->findOrFail($data['cash_box_id']) : null;
+        if ($selectedBox?->slug === 'caixa_oficina') {
+            return back()->withErrors(['cash_box_id' => 'Use o ecrã Caixa da Oficina para registar movimentos nesta caixa.'])->withInput();
+        }
+
+        $movement = DB::transaction(function () use ($data, $selectedBox, $balances) {
+            if ($selectedBox) {
+                CashBox::query()->whereKey($selectedBox->id)->lockForUpdate()->firstOrFail();
+                if ($data['movement_type'] === AccountOperation::TYPE_OUTCOME) {
+                    $balances->ensureSufficientBalance($selectedBox, (float) $data['total']);
+                }
+            }
+
             $accountItem = $this->legacyItemFor(
                 $data['description'],
                 $data['movement_type'],
@@ -84,6 +97,7 @@ class CashController extends Controller
                 'is_accounted' => ! empty($data['is_accounted']),
                 'accounted_at' => ! empty($data['is_accounted']) ? now() : null,
                 'accounted_by' => ! empty($data['is_accounted']) ? auth()->id() : null,
+                'created_by_id' => auth()->id(),
             ]);
         });
 
@@ -92,7 +106,7 @@ class CashController extends Controller
             ->with('message', 'Movimento de caixa registado.');
     }
 
-    public function transfer(Request $request)
+    public function transfer(Request $request, CashBalanceService $balances)
     {
         $this->authorizeCashAccess();
 
@@ -102,55 +116,30 @@ class CashController extends Controller
             'to_cash_box_id' => ['required', 'integer', 'exists:cash_boxes,id'],
             'total' => ['required', 'numeric', 'min:0.01'],
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],
-            'cash_category_id' => ['nullable', 'integer', 'exists:cash_categories,id'],
+            'cash_category_id' => ['nullable', 'integer', Rule::exists('cash_categories', 'id')->whereNull('cash_box_id')],
             'notes' => ['nullable', 'string'],
+            'proofs' => ['nullable', 'array'],
+            'proofs.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:20480'],
         ]);
 
-        $groupId = (string) Str::uuid();
         $fromBox = CashBox::findOrFail($data['from_cash_box_id']);
         $toBox = CashBox::findOrFail($data['to_cash_box_id']);
-
-        DB::transaction(function () use ($data, $groupId, $fromBox, $toBox): void {
-            $categoryId = $data['cash_category_id'] ?? $this->defaultTransferCategoryId();
-            $departmentId = $data['department_id'] ?? null;
-
-            $outDescription = 'Transferência para ' . $toBox->name;
-            $inDescription = 'Transferência de ' . $fromBox->name;
-
-            $outItem = $this->legacyItemFor($outDescription, AccountOperation::TYPE_OUTCOME, $departmentId, $categoryId);
-            $inItem = $this->legacyItemFor($inDescription, AccountOperation::TYPE_INCOME, $departmentId, $categoryId);
-
-            AccountOperation::create([
-                'description' => $outDescription,
-                'movement_type' => AccountOperation::TYPE_OUTCOME,
-                'total' => $data['total'],
-                'account_item_id' => $outItem?->id,
-                'department_id' => $departmentId,
-                'cash_category_id' => $categoryId,
-                'cash_box_id' => $fromBox->id,
-                'qty' => 1,
-                'date' => $data['date'],
-                'notes' => $data['notes'] ?? null,
-                'transfer_group_id' => $groupId,
-            ]);
-
-            AccountOperation::create([
-                'description' => $inDescription,
-                'movement_type' => AccountOperation::TYPE_INCOME,
-                'total' => $data['total'],
-                'account_item_id' => $inItem?->id,
-                'department_id' => $departmentId,
-                'cash_category_id' => $categoryId,
-                'cash_box_id' => $toBox->id,
-                'qty' => 1,
-                'date' => $data['date'],
-                'notes' => $data['notes'] ?? null,
-                'transfer_group_id' => $groupId,
-            ]);
-        });
+        $transfer = $balances->transfer(
+            $fromBox,
+            $toBox,
+            (float) $data['total'],
+            Carbon::parse($data['date']),
+            $request->user(),
+            $data['notes'] ?? null,
+            $data['department_id'] ?? null,
+            $data['cash_category_id'] ?? $this->defaultTransferCategoryId(),
+        );
+        foreach ($request->file('proofs', []) as $proof) {
+            $transfer->addMedia($proof)->toMediaCollection('proofs');
+        }
 
         return redirect()
-            ->route('admin.cash.index', ['transfer_group_id' => $groupId])
+            ->route('admin.cash.index', ['transfer_group_id' => $transfer->group_id])
             ->with('message', 'Transferência registada com rastreabilidade.');
     }
 
@@ -251,7 +240,7 @@ class CashController extends Controller
             ->when($request->filled('amount_max'), fn ($query) => $query->where('total', '<=', (float) $request->input('amount_max')))
             ->when($request->filled('transfer_group_id'), fn ($query) => $query->where('transfer_group_id', $request->input('transfer_group_id')))
             ->when($request->filled('q'), function ($query) use ($request) {
-                $term = '%' . trim((string) $request->input('q')) . '%';
+                $term = '%'.trim((string) $request->input('q')).'%';
                 $query->where(function ($subQuery) use ($term) {
                     $subQuery->where('description', 'like', $term)
                         ->orWhere('notes', 'like', $term)
@@ -392,7 +381,7 @@ class CashController extends Controller
     {
         return [
             'departments' => Department::where('is_active', true)->orderBy('name')->get(),
-            'cashCategories' => CashCategory::where('is_active', true)->orderBy('name')->get(),
+            'cashCategories' => CashCategory::where('is_active', true)->whereNull('cash_box_id')->orderBy('name')->get(),
             'cashBoxes' => CashBox::where('is_active', true)->orderBy('id')->get(),
             'paymentMethods' => PaymentMethod::orderBy('name')->get(),
             'vehicles' => Vehicle::with('brand')->orderByDesc('id')->limit(500)->get(),
@@ -428,6 +417,7 @@ class CashController extends Controller
     {
         return CashCategory::firstOrCreate([
             'name' => 'Transferência entre caixas',
+            'cash_box_id' => null,
         ], [
             'is_active' => true,
         ])->id;

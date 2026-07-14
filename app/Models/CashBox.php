@@ -28,4 +28,14 @@ class CashBox extends Model
             }
         });
     }
+
+    public function operations()
+    {
+        return $this->hasMany(AccountOperation::class);
+    }
+
+    public function categories()
+    {
+        return $this->hasMany(CashCategory::class);
+    }
 }

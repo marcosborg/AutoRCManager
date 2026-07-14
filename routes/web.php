@@ -24,6 +24,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('cash/departments', 'CashController@storeDepartment')->name('cash.departments.store');
     Route::post('cash/categories', 'CashController@storeCategory')->name('cash.categories.store');
     Route::post('cash/boxes', 'CashController@storeCashBox')->name('cash.boxes.store');
+    Route::get('workshop-cash', 'WorkshopCashController@index')->name('workshop-cash.index');
+    Route::post('workshop-cash/expenses', 'WorkshopCashController@storeExpense')->name('workshop-cash.expenses.store');
+    Route::post('workshop-cash/transfers', 'WorkshopCashController@storeTransfer')->name('workshop-cash.transfers.store');
+    Route::post('workshop-cash/categories', 'WorkshopCashController@storeCategory')->name('workshop-cash.categories.store');
+    Route::put('workshop-cash/categories/{cashCategory}', 'WorkshopCashController@updateCategory')->name('workshop-cash.categories.update');
     Route::post('system-shutdown', 'SystemShutdownController@store')->name('system-shutdown.store');
     Route::get('system-maintenance', 'SystemMaintenanceController@index')->name('system-maintenance.index');
     Route::post('system-maintenance/run', 'SystemMaintenanceController@run')->name('system-maintenance.run');
