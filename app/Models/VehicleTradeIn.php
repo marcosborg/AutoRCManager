@@ -14,10 +14,12 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class VehicleTradeIn extends Model implements HasMedia
 {
-    use SoftDeletes, InteractsWithMedia, HasFactory, Auditable;
+    use Auditable, HasFactory, InteractsWithMedia, SoftDeletes;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_CONVERTED = 'converted';
+
     public const STATUS_REJECTED = 'rejected';
 
     public const STATUS_SELECT = [
@@ -100,7 +102,7 @@ class VehicleTradeIn extends Model implements HasMedia
         return $date->format('Y-m-d H:i:s');
     }
 
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')->fit('crop', 50, 50);
         $this->addMediaConversion('preview')->fit('crop', 120, 120);
@@ -129,6 +131,11 @@ class VehicleTradeIn extends Model implements HasMedia
     public function created_by()
     {
         return $this->belongsTo(User::class, 'created_by_id');
+    }
+
+    public function lot_payment()
+    {
+        return $this->hasOne(LotPayment::class, 'vehicle_trade_in_id');
     }
 
     public function converted_by()

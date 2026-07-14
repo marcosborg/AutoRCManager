@@ -21,6 +21,140 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.5.1/min/dropzone.min.css" rel="stylesheet" />
     <link href="{{ asset('css/custom.css') }}" rel="stylesheet" />
+    <style>
+        .sidebar-menu > li:first-child {
+            padding: 10px;
+        }
+
+        .sidebar .select2-container--default .select2-selection--single {
+            background: rgba(255, 255, 255, 0.96);
+            border: 0;
+            border-radius: 6px;
+            height: 38px;
+            position: relative;
+        }
+
+        .sidebar .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #555;
+            line-height: 38px;
+            padding-left: 38px;
+        }
+
+        .sidebar .select2-container--default .select2-selection--single .select2-selection__rendered::before {
+            color: #605ca8;
+            content: "\f002";
+            font-family: FontAwesome;
+            left: 13px;
+            position: absolute;
+        }
+
+        .sidebar .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+            right: 6px;
+        }
+
+        .global-search-dropdown.select2-dropdown {
+            border: 0;
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+            min-width: 380px;
+            overflow: hidden;
+        }
+
+        .global-search-dropdown .select2-search--dropdown {
+            background: #f7f7fb;
+            border-bottom: 1px solid #ececf2;
+            padding: 10px;
+        }
+
+        .global-search-dropdown .select2-search__field {
+            border: 1px solid #d9d9e3 !important;
+            border-radius: 5px;
+            height: 38px;
+            outline: none;
+            padding: 6px 10px;
+        }
+
+        .global-search-dropdown .select2-search__field:focus {
+            border-color: #605ca8 !important;
+            box-shadow: 0 0 0 3px rgba(96, 92, 168, 0.12);
+        }
+
+        .global-search-dropdown .select2-results__options {
+            max-height: 360px;
+        }
+
+        .global-search-dropdown .select2-results__option {
+            border-bottom: 1px solid #f0f0f4;
+            padding: 10px 12px;
+        }
+
+        .global-search-dropdown .select2-results__option:last-child {
+            border-bottom: 0;
+        }
+
+        .global-search-dropdown .select2-results__option[aria-selected="true"] {
+            background: #605ca8;
+        }
+
+        .global-search-dropdown .select2-results__option[aria-selected="true"] .global-search-result-type,
+        .global-search-dropdown .select2-results__option[aria-selected="true"] .global-search-result-title,
+        .global-search-dropdown .select2-results__option[aria-selected="true"] .global-search-result-detail {
+            color: #fff;
+        }
+
+        .global-search-dropdown .select2-results__option--highlighted[aria-selected] {
+            background: #4b468c;
+        }
+
+        .global-search-dropdown .select2-results__option--highlighted .global-search-result-type,
+        .global-search-dropdown .select2-results__option--highlighted .global-search-result-title,
+        .global-search-dropdown .select2-results__option--highlighted .global-search-result-detail {
+            color: #fff;
+        }
+
+        .global-search-dropdown .select2-results__message {
+            color: #777;
+            font-size: 13px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .global-search-result-type {
+            color: #605ca8;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .global-search-result-title {
+            color: #333;
+            font-weight: 700;
+            margin: 2px 0 4px;
+        }
+
+        .global-search-result-detail {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .global-search-result-link,
+        .global-search-result-link:hover,
+        .global-search-result-link:focus {
+            color: inherit;
+            display: block;
+            outline: none;
+            text-decoration: none;
+        }
+
+        @media (max-width: 767px) {
+            .global-search-dropdown {
+                min-width: calc(100vw - 30px);
+            }
+        }
+    </style>
     @yield('styles')
 </head>
 
@@ -644,8 +778,11 @@
     </script>
     <script>
         $(document).ready(function() {
+    var globalSearchResultUrls = {};
     $('.searchable-field').select2({
+        width: '100%',
         minimumInputLength: 3,
+        dropdownCssClass: 'global-search-dropdown',
         ajax: {
             url: '{{ route("admin.globalSearch") }}',
             dataType: 'json',
@@ -656,10 +793,12 @@
                     search: term
                 };
             },
-            results: function (data) {
-                return {
-                    data
-                };
+            processResults: function (data) {
+                $.each(data.results || [], function(index, result) {
+                    globalSearchResultUrls[String(result.id)] = result.url;
+                });
+
+                return data;
             }
         },
         escapeMarkup: function (markup) { return markup; },
@@ -669,32 +808,36 @@
         language: {
             inputTooShort: function(args) {
                 var remainingChars = args.minimum - args.input.length;
-                var translation = '{{ trans('global.search_input_too_short') }}';
 
-                return translation.replace(':count', remainingChars);
+                return 'Escreva mais ' + remainingChars + (remainingChars === 1 ? ' carácter' : ' caracteres');
             },
             errorLoading: function() {
-                return '{{ trans('global.results_could_not_be_loaded') }}';
+                return 'Não foi possível carregar os resultados';
             },
             searching: function() {
-                return '{{ trans('global.searching') }}';
+                return 'A pesquisar...';
             },
             noResults: function() {
-                return '{{ trans('global.no_results') }}';
+                return 'Sem resultados para esta pesquisa';
             },
         }
 
     });
+    $('.searchable-field').next('.select2').find('.select2-selection')
+        .removeAttr('aria-labelledby')
+        .attr('aria-label', 'Pesquisar viaturas e clientes');
     function formatItem (item) {
         if (item.loading) {
             return '{{ trans('global.searching') }}...';
         }
-        var markup = "<div class='searchable-link' href='" + item.url + "'>";
-        markup += "<div class='searchable-title'>" + item.model + "</div>";
-        $.each(item.fields, function(key, field) {
-            markup += "<div class='searchable-fields'>" + item.fields_formated[field] + " : " + item[field] + "</div>";
+        var markup = "<a class='global-search-result-link' href='" + escapeGlobalSearchValue(item.url) + "'>";
+        var icon = item.model === 'Viatura' ? 'fa-car' : 'fa-user';
+        markup += "<div class='global-search-result-type'><i class='fa " + icon + "' aria-hidden='true'></i> " + escapeGlobalSearchValue(item.model) + "</div>";
+        markup += "<div class='global-search-result-title'>" + escapeGlobalSearchValue(item.title) + "</div>";
+        $.each(item.details || [], function(key, detail) {
+            markup += "<div class='global-search-result-detail'><strong>" + escapeGlobalSearchValue(detail.label) + ":</strong> " + escapeGlobalSearchValue(detail.value) + "</div>";
         });
-        markup += "</div>";
+        markup += "</a>";
 
         return markup;
     }
@@ -703,12 +846,36 @@
         if (!item.model) {
             return '{{ trans('global.search') }}...';
         }
-        return item.model;
+        return item.title || item.model;
     }
-    $(document).delegate('.searchable-link', 'click', function() {
-        var url = $(this).attr('href');
-        window.location = url;
+    function escapeGlobalSearchValue(value) {
+        return $('<div>').text(value || '').html();
+    }
+    $('.searchable-field').on('change', function() {
+        var selectedId = $(this).val();
+        var selectedUrl = selectedId !== null ? globalSearchResultUrls[String(selectedId)] : null;
+
+        if (selectedUrl) {
+            window.location.assign(selectedUrl);
+        }
     });
+    $('.searchable-field').on('select2:selecting', function(event) {
+        var selectedResult = event.params && event.params.args ? event.params.args.data : null;
+
+        if (selectedResult && selectedResult.url) {
+            window.location.assign(selectedResult.url);
+        }
+    });
+    document.addEventListener('mousedown', function(event) {
+        var resultLink = event.target.closest('.global-search-result-link');
+
+        if (!resultLink) {
+            return;
+        }
+
+        event.preventDefault();
+        window.location.assign(resultLink.href);
+    }, true);
 });
 
     </script>

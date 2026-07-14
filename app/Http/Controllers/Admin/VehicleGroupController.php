@@ -5,17 +5,24 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\MassDestroyVehicleGroupRequest;
+use App\Http\Requests\StoreVehicleGroupPaymentRequest;
 use App\Http\Requests\StoreVehicleGroupRequest;
 use App\Http\Requests\UpdateVehicleGroupRequest;
+use App\Models\Brand;
 use App\Models\Client;
 use App\Models\LotPayment;
 use App\Models\PaymentMethod;
 use App\Models\Vehicle;
 use App\Models\VehicleGroup;
 use App\Services\VehicleLotService;
+use App\Services\VehicleTradeInPaymentService;
 use Gate;
-use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class VehicleGroupController extends Controller
@@ -64,7 +71,12 @@ class VehicleGroupController extends Controller
 
         $vehicleGroup->load('items.vehicle.brand', 'vehicles', 'clients');
 
-        return view('admin.vehicleGroups.edit', compact('vehicleGroup', 'vehicles', 'clients'));
+        return view('admin.vehicleGroups.edit', [
+            'vehicleGroup' => $vehicleGroup,
+            'vehicles' => $vehicles,
+            'clients' => $clients,
+            ...$this->paymentViewData($vehicleGroup),
+        ]);
     }
 
     public function update(UpdateVehicleGroupRequest $request, VehicleGroup $vehicleGroup, VehicleLotService $service)
@@ -84,42 +96,10 @@ class VehicleGroupController extends Controller
     {
         abort_if(Gate::denies('vehicle_group_show') && Gate::denies('vehicle_lot_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        app(VehicleLotService::class)->recalculate($vehicleGroup);
-
-        $vehicleGroup->load([
-            'customer',
-            'clients',
-            'items.vehicle.brand',
-            'items.vehicle.general_state',
-            'payments.payment_method',
-            'payments.creator',
-            'payments.confirmer',
-            'payments.rejecter',
-            'approver',
+        return view('admin.vehicleGroups.show', [
+            'vehicleGroup' => $vehicleGroup,
+            ...$this->paymentViewData($vehicleGroup),
         ]);
-
-        $paymentMethods = PaymentMethod::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-        $canApproveLots = Gate::allows('vehicle_lot_approve');
-        $canCreateLotPayments = Gate::allows('vehicle_lot_payment_create') || Gate::allows('vehicle_group_edit');
-
-        $financial = [
-            'target' => (float) $vehicleGroup->effective_total,
-            'paid' => (float) $vehicleGroup->approved_paid_total,
-            'invoiced' => (float) $vehicleGroup->approved_invoiced_total,
-            'bank' => (float) $vehicleGroup->approved_bank_total,
-            'cash' => (float) $vehicleGroup->approved_cash_total,
-            'cash_2' => (float) $vehicleGroup->approved_cash_2_total,
-            'pending' => (float) $vehicleGroup->payments->where('approval_status', LotPayment::STATUS_PENDING)->sum('amount'),
-        ];
-        $financial['balance'] = max(0, $financial['target'] - $financial['paid']);
-
-        return view('admin.vehicleGroups.show', compact(
-            'vehicleGroup',
-            'financial',
-            'paymentMethods',
-            'canApproveLots',
-            'canCreateLotPayments'
-        ));
     }
 
     public function destroy(VehicleGroup $vehicleGroup)
@@ -142,56 +122,81 @@ class VehicleGroupController extends Controller
         return response(null, Response::HTTP_NO_CONTENT);
     }
 
-    public function storePayment(Request $request, VehicleGroup $vehicleGroup, VehicleLotService $service)
-    {
-        abort_if(Gate::denies('vehicle_lot_payment_create') && Gate::denies('vehicle_group_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+    public function storePayment(
+        StoreVehicleGroupPaymentRequest $request,
+        VehicleGroup $vehicleGroup,
+        VehicleLotService $service,
+        VehicleTradeInPaymentService $tradeInService
+    ) {
+        $data = $request->validated();
 
-        $data = $request->validate([
-            'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
-            'paid_at' => ['required', 'date_format:' . config('panel.date_format')],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'invoiced_amount' => ['nullable', 'numeric', 'min:0'],
-            'bank_amount' => ['nullable', 'numeric', 'min:0'],
-            'cash_amount' => ['nullable', 'numeric', 'min:0'],
-            'cash_2_amount' => ['nullable', 'numeric', 'min:0'],
-            'notes' => ['nullable', 'string'],
-            'proof_file' => ['nullable', 'file', 'max:10240'],
-        ]);
+        $isTradeInPayment = $data['payment_type'] === 'trade_in';
+        $paymentMethod = $isTradeInPayment
+            ? PaymentMethod::query()->whereRaw('LOWER(name) = ?', ['retoma'])->first()
+            : PaymentMethod::find($data['payment_method_id'] ?? null);
 
-        $amount = round((float) $data['amount'], 2);
-        $split = round(
-            (float) ($data['invoiced_amount'] ?? 0)
-            + (float) ($data['bank_amount'] ?? 0)
-            + (float) ($data['cash_amount'] ?? 0)
-            + (float) ($data['cash_2_amount'] ?? 0),
-            2
-        );
-
-        if (abs($amount - $split) > 0.01) {
-            return back()->withErrors(['amount' => 'O valor recebido tem de ser igual a faturado + banco + caixa 1 + caixa 2.'])->withInput();
+        if (! $paymentMethod) {
+            throw ValidationException::withMessages([
+                'payment_method_id' => $isTradeInPayment
+                    ? 'O metodo de pagamento Retoma nao esta configurado.'
+                    : 'Selecione o metodo de pagamento.',
+            ]);
         }
 
-        $payment = LotPayment::create([
-            'vehicle_group_id' => $vehicleGroup->id,
-            'payment_method_id' => $data['payment_method_id'],
-            'paid_at' => $data['paid_at'],
-            'amount' => $data['amount'],
-            'invoiced_amount' => $data['invoiced_amount'] ?? 0,
-            'bank_amount' => $data['bank_amount'] ?? 0,
-            'cash_amount' => $data['cash_amount'] ?? 0,
-            'cash_2_amount' => $data['cash_2_amount'] ?? 0,
-            'approval_status' => LotPayment::STATUS_PENDING,
-            'created_by' => auth()->id(),
-            'notes' => $data['notes'] ?? null,
-        ]);
+        if ($isTradeInPayment) {
+            if (! $vehicleGroup->customer) {
+                throw ValidationException::withMessages([
+                    'payment_type' => 'Associe um cliente ao lote antes de registar uma retoma.',
+                ]);
+            }
 
-        if ($request->hasFile('proof_file')) {
-            $payment->addMediaFromRequest('proof_file')->toMediaCollection('proof_file');
+            $tradeInService->validate($data);
+        } else {
+            $normalizedMethod = Str::lower(Str::ascii($paymentMethod->name));
+            $isCash = Str::contains($normalizedMethod, ['numerario', 'dinheiro']);
+
+            if (! $request->hasFile('proof_file') && ! $isCash) {
+                throw ValidationException::withMessages([
+                    'proof_file' => 'Comprovativo obrigatorio para este metodo de pagamento.',
+                ]);
+            }
+
+            if ($isCash && empty(trim((string) ($data['notes'] ?? '')))) {
+                throw ValidationException::withMessages([
+                    'notes' => 'Pagamentos em numerario exigem uma nota curta.',
+                ]);
+            }
         }
+
+        DB::transaction(function () use ($request, $vehicleGroup, $paymentMethod, $data, $isTradeInPayment, $tradeInService): void {
+            $tradeIn = $isTradeInPayment
+                ? $tradeInService->create($vehicleGroup->customer, $data, $request->user()?->id)
+                : null;
+
+            $payment = LotPayment::create([
+                'vehicle_group_id' => $vehicleGroup->id,
+                'payment_method_id' => $paymentMethod->id,
+                'vehicle_trade_in_id' => $tradeIn?->id,
+                'paid_at' => $data['paid_at'],
+                'amount' => $data['amount'],
+                'invoiced_amount' => $data['invoiced_amount'] ?? 0,
+                'bank_amount' => $data['bank_amount'] ?? 0,
+                'cash_amount' => $data['cash_amount'] ?? 0,
+                'cash_2_amount' => $data['cash_2_amount'] ?? 0,
+                'approval_status' => LotPayment::STATUS_PENDING,
+                'created_by' => $request->user()?->id,
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            if ($request->hasFile('proof_file')) {
+                $payment->addMediaFromRequest('proof_file')->toMediaCollection('proof_file');
+            }
+        });
 
         $service->recalculate($vehicleGroup);
 
-        return redirect()->route('admin.vehicle-groups.show', $vehicleGroup->id)->with('message', 'Pagamento submetido para aprovacao.');
+        return $this->paymentActionRedirect($request, $vehicleGroup)
+            ->with('message', 'Pagamento submetido para aprovacao.');
     }
 
     public function approveLot(VehicleGroup $vehicleGroup)
@@ -206,14 +211,15 @@ class VehicleGroupController extends Controller
         return back()->with('message', 'Lote aprovado com sucesso.');
     }
 
-    public function approvePayment(VehicleGroup $vehicleGroup, LotPayment $payment, VehicleLotService $service)
+    public function approvePayment(Request $request, VehicleGroup $vehicleGroup, LotPayment $payment, VehicleLotService $service)
     {
         abort_if(Gate::denies('vehicle_lot_approve'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         abort_if((int) $payment->vehicle_group_id !== (int) $vehicleGroup->id, Response::HTTP_NOT_FOUND);
 
         $service->approvePayment($payment, auth()->id());
 
-        return back()->with('message', 'Pagamento aprovado com sucesso.');
+        return $this->paymentActionRedirect($request, $vehicleGroup)
+            ->with('message', 'Pagamento aprovado com sucesso.');
     }
 
     public function rejectPayment(Request $request, VehicleGroup $vehicleGroup, LotPayment $payment, VehicleLotService $service)
@@ -223,11 +229,13 @@ class VehicleGroupController extends Controller
 
         $data = $request->validate([
             'rejection_reason' => ['required', 'string', 'max:1000'],
+            'return_to' => ['nullable', 'in:show,edit'],
         ]);
 
         $service->rejectPayment($payment, auth()->id(), $data['rejection_reason']);
 
-        return back()->with('message', 'Pagamento rejeitado.');
+        return $this->paymentActionRedirect($request, $vehicleGroup)
+            ->with('message', 'Pagamento rejeitado.');
     }
 
     private function vehicleOptions(): Collection
@@ -251,7 +259,7 @@ class VehicleGroupController extends Controller
 
             $label = trim(implode(' - ', $parts));
 
-            return [$vehicle->id => $label !== '' ? $label : 'Veiculo #' . $vehicle->id];
+            return [$vehicle->id => $label !== '' ? $label : 'Veiculo #'.$vehicle->id];
         });
     }
 
@@ -278,5 +286,63 @@ class VehicleGroupController extends Controller
         }
 
         $vehicleGroup->clients()->sync(array_values(array_unique(array_filter($clientIds))));
+    }
+
+    /**
+     * @return array{
+     *     financial: array{target: float, paid: float, invoiced: float, bank: float, cash: float, cash_2: float, pending: float, balance: float},
+     *     paymentMethods: Collection,
+     *     brands: Collection,
+     *     canApproveLots: bool,
+     *     canCreateLotPayments: bool
+     * }
+     */
+    private function paymentViewData(VehicleGroup $vehicleGroup): array
+    {
+        app(VehicleLotService::class)->recalculate($vehicleGroup);
+
+        $vehicleGroup->load([
+            'customer',
+            'clients',
+            'items.vehicle.brand',
+            'items.vehicle.general_state',
+            'payments.payment_method',
+            'payments.creator',
+            'payments.confirmer',
+            'payments.rejecter',
+            'payments.vehicle_trade_in.created_vehicle',
+            'approver',
+        ]);
+
+        $financial = [
+            'target' => (float) $vehicleGroup->effective_total,
+            'paid' => (float) $vehicleGroup->approved_paid_total,
+            'invoiced' => (float) $vehicleGroup->approved_invoiced_total,
+            'bank' => (float) $vehicleGroup->approved_bank_total,
+            'cash' => (float) $vehicleGroup->approved_cash_total,
+            'cash_2' => (float) $vehicleGroup->approved_cash_2_total,
+            'pending' => (float) $vehicleGroup->payments->where('approval_status', LotPayment::STATUS_PENDING)->sum('amount'),
+        ];
+        $financial['balance'] = max(0, $financial['target'] - $financial['paid']);
+
+        return [
+            'financial' => $financial,
+            'paymentMethods' => PaymentMethod::query()
+                ->whereRaw('LOWER(name) <> ?', ['retoma'])
+                ->pluck('name', 'id')
+                ->prepend(trans('global.pleaseSelect'), ''),
+            'brands' => Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), ''),
+            'canApproveLots' => Gate::allows('vehicle_lot_approve'),
+            'canCreateLotPayments' => Gate::allows('vehicle_lot_payment_create') || Gate::allows('vehicle_group_edit'),
+        ];
+    }
+
+    private function paymentActionRedirect(Request $request, VehicleGroup $vehicleGroup): RedirectResponse
+    {
+        return match ($request->input('return_to')) {
+            'edit' => redirect()->to(route('admin.vehicle-groups.edit', $vehicleGroup).'#lot-payments'),
+            'show' => redirect()->route('admin.vehicle-groups.show', $vehicleGroup),
+            default => redirect()->back(),
+        };
     }
 }

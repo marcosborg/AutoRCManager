@@ -2,7 +2,7 @@
     <section class="sidebar" style="height: auto;">
         <ul class="sidebar-menu tree" data-widget="tree">
             <li>
-                <select class="searchable-field form-control">
+                <select class="searchable-field form-control" aria-label="Pesquisar viaturas e clientes">
 
                 </select>
             </li>

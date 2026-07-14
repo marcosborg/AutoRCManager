@@ -14,10 +14,12 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class LotPayment extends Model implements HasMedia
 {
-    use SoftDeletes, InteractsWithMedia, Auditable, HasFactory;
+    use Auditable, HasFactory, InteractsWithMedia, SoftDeletes;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_APPROVED = 'approved';
+
     public const STATUS_REJECTED = 'rejected';
 
     public $table = 'lot_payments';
@@ -38,6 +40,7 @@ class LotPayment extends Model implements HasMedia
     protected $fillable = [
         'vehicle_group_id',
         'payment_method_id',
+        'vehicle_trade_in_id',
         'paid_at',
         'amount',
         'invoiced_amount',
@@ -67,7 +70,7 @@ class LotPayment extends Model implements HasMedia
         return $date->format('Y-m-d H:i:s');
     }
 
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')->fit('crop', 50, 50);
     }
@@ -80,6 +83,11 @@ class LotPayment extends Model implements HasMedia
     public function payment_method()
     {
         return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
+    }
+
+    public function vehicle_trade_in()
+    {
+        return $this->belongsTo(VehicleTradeIn::class, 'vehicle_trade_in_id');
     }
 
     public function creator()

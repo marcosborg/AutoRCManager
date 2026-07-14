@@ -96,7 +96,7 @@
 
 <div class="form-group {{ $errors->has('notes') ? 'has-error' : '' }}">
     <label for="notes">Observacoes</label>
-    <textarea class="form-control" name="notes" id="notes">{{ old('notes', $vehicleGroup->notes ?? '') }}</textarea>
+    <textarea class="form-control" name="notes" id="notes">{{ old('return_to') === 'edit' ? ($vehicleGroup->notes ?? '') : old('notes', $vehicleGroup->notes ?? '') }}</textarea>
     @if($errors->has('notes'))<span class="help-block">{{ $errors->first('notes') }}</span>@endif
 </div>
 
