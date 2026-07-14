@@ -215,6 +215,15 @@
                                                 <span class="badge {{ $row['open_count'] > 0 ? 'bg-yellow' : 'bg-green' }}">{{ $row['open_count'] }}</span>
                                             </td>
                                             <td>
+                                                @can('vehicle_edit')
+                                                    <a class="btn btn-xs btn-default" href="{{ route('admin.vehicles.edit', $vehicle) }}">
+                                                        Abrir viatura
+                                                    </a>
+                                                @elsecan('vehicle_show')
+                                                    <a class="btn btn-xs btn-default" href="{{ route('admin.vehicles.show', $vehicle) }}">
+                                                        Ver viatura
+                                                    </a>
+                                                @endcan
                                                 @if($latest)
                                                     <a class="btn btn-xs btn-primary" href="{{ route('admin.repairs.edit', $latest) }}">Abrir última</a>
                                                 @endif

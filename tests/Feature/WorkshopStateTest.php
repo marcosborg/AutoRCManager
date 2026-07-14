@@ -85,6 +85,21 @@ class WorkshopStateTest extends TestCase
             ->assertDontSee('data-second-key-warning="'.$withSecondKey->id.'"', false);
     }
 
+    public function test_workshop_page_offers_vehicle_access_without_starting_an_intervention(): void
+    {
+        $user = $this->userWithPermissions(['repair_access', 'vehicle_edit']);
+        $vehicle = $this->vehicleInState('OFICINA', '55-EE-55');
+        $vehicle->update(['workshop_state_id' => $this->defaultWorkshopState()->id]);
+
+        $this->actingAs($user)
+            ->get(route('admin.repairs.index'))
+            ->assertOk()
+            ->assertSee('Abrir viatura')
+            ->assertSee(route('admin.vehicles.edit', $vehicle), false);
+
+        $this->assertSame(0, $vehicle->repairs()->count());
+    }
+
     public function test_updating_sold_workshop_state_synchronizes_general_state_without_changing_repairs(): void
     {
         $user = $this->userWithPermissions(['workshop_state_edit']);
