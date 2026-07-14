@@ -25,15 +25,15 @@ class SystemCalendarController extends Controller
                 }
 
                 $events[] = [
-                    'title' => trim($source['prefix'] . ' ' . $model->{$source['field']} . ' ' . $source['suffix']),
+                    'title' => trim($source['prefix'].' '.$model->{$source['field']}.' '.$source['suffix']),
                     'start' => $crudFieldValue,
-                    'url'   => route($source['route'], $model->id),
+                    'url' => route($source['route'], $model->id),
                 ];
             }
         }
 
         $tasks = CalendarTask::with('created_by')
-            ->where('created_by_id', auth()->id())
+            ->visibleTo(auth()->user())
             ->orderByRaw('completed_at IS NOT NULL')
             ->orderBy('due_date')
             ->orderBy('id')
@@ -41,9 +41,9 @@ class SystemCalendarController extends Controller
 
         foreach ($tasks as $task) {
             $events[] = [
-                'title' => ($task->completed_at ? '[OK] ' : '[Tarefa] ') . $task->title,
+                'title' => ($task->completed_at ? '[OK] ' : '[Tarefa] ').$task->title,
                 'start' => Carbon::createFromFormat(config('panel.date_format'), $task->due_date)->format('Y-m-d'),
-                'url' => route('admin.systemCalendar') . '#task-' . $task->id,
+                'url' => $task->target_url ?: route('admin.systemCalendar').'#task-'.$task->id,
                 'color' => $task->completed_at ? '#00a65a' : '#f39c12',
             ];
         }
@@ -55,7 +55,7 @@ class SystemCalendarController extends Controller
     {
         $data = $request->validate([
             'title' => ['required', 'string', 'max:191'],
-            'due_date' => ['required', 'date_format:' . config('panel.date_format')],
+            'due_date' => ['required', 'date_format:'.config('panel.date_format')],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -68,7 +68,7 @@ class SystemCalendarController extends Controller
 
     public function completeTask(CalendarTask $task)
     {
-        abort_if((int) $task->created_by_id !== (int) auth()->id(), 403);
+        abort_unless($task->isVisibleTo(auth()->user()), 403);
 
         $task->update(['completed_at' => now()]);
 
@@ -77,7 +77,7 @@ class SystemCalendarController extends Controller
 
     public function destroyTask(CalendarTask $task)
     {
-        abort_if((int) $task->created_by_id !== (int) auth()->id(), 403);
+        abort_if($task->type || (int) $task->created_by_id !== (int) auth()->id(), 403);
 
         $task->delete();
 

@@ -25,7 +25,7 @@ class HomeController
 
         $tasksToday = Schema::hasTable('calendar_tasks')
             ? CalendarTask::query()
-                ->where('created_by_id', auth()->id())
+                ->visibleTo(auth()->user())
                 ->whereNull('completed_at')
                 ->whereDate('due_date', '<=', $today->format('Y-m-d'))
                 ->orderBy('due_date')
@@ -151,14 +151,14 @@ class HomeController
         $today = Carbon::today();
         $monthLabel = $this->iucMonthLabel($today);
         $vehicles = $this->iucDueVehicles($today);
-        $filename = 'iuc-a-pagamento-' . $today->format('Y-m') . '.xls';
+        $filename = 'iuc-a-pagamento-'.$today->format('Y-m').'.xls';
 
         return response()->streamDownload(function () use ($vehicles, $monthLabel) {
             echo '<html><head><meta charset="UTF-8"></head><body>';
             echo '<table border="1">';
             echo '<thead><tr>';
             foreach (['Matricula', 'Marca', 'Modelo', 'Estado', 'Mes IUC', 'Valor IUC'] as $heading) {
-                echo '<th>' . htmlspecialchars($heading, ENT_QUOTES, 'UTF-8') . '</th>';
+                echo '<th>'.htmlspecialchars($heading, ENT_QUOTES, 'UTF-8').'</th>';
             }
             echo '</tr></thead><tbody>';
 
@@ -175,7 +175,7 @@ class HomeController
 
                 echo '<tr>';
                 foreach ($values as $value) {
-                    echo '<td style="mso-number-format:\'@\';">' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '</td>';
+                    echo '<td style="mso-number-format:\'@\';">'.htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8').'</td>';
                 }
                 echo '</tr>';
             }

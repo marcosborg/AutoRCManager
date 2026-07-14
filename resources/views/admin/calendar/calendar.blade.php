@@ -83,11 +83,16 @@
                                                     <button class="btn btn-xs btn-success" type="submit">Concluir</button>
                                                 </form>
                                             @endif
-                                            <form method="POST" action="{{ route('admin.systemCalendar.tasks.destroy', $task) }}" style="display:inline-block" onsubmit="return confirm('{{ trans('global.areYouSure') }}');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn btn-xs btn-danger" type="submit">Eliminar</button>
-                                            </form>
+                                            @if(!$task->type && (int) $task->created_by_id === (int) auth()->id())
+                                                <form method="POST" action="{{ route('admin.systemCalendar.tasks.destroy', $task) }}" style="display:inline-block" onsubmit="return confirm('{{ trans('global.areYouSure') }}');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="btn btn-xs btn-danger" type="submit">Eliminar</button>
+                                                </form>
+                                            @endif
+                                            @if($task->target_url)
+                                                <a class="btn btn-xs btn-info" href="{{ $task->target_url }}">Abrir viatura</a>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty

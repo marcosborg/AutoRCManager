@@ -107,6 +107,14 @@
                                 </a>
                             </li>
                         @endif
+                        @can('import_configuration_access')
+                            <li class="{{ request()->is('admin/import-configuration') ? 'active' : '' }}">
+                                <a href="{{ route('admin.import-configuration.index') }}">
+                                    <i class="fa-fw fas fa-file-import"></i>
+                                    <span>Importados / Adjudicações</span>
+                                </a>
+                            </li>
+                        @endcan
                         @can('country_access')
                             <li class="{{ request()->is("admin/countries") || request()->is("admin/countries/*") ? "active" : "" }}">
                                 <a href="{{ route("admin.countries.index") }}">

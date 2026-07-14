@@ -61,19 +61,7 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('our_registration') ? 'has-error' : '' }}">
-                                    <label for="our_registration">{{ trans('cruds.vehicle.fields.our_registration') }}</label>
-                                    <select class="form-control" name="our_registration" id="our_registration">
-                                        <option value></option>
-                                        @foreach(['ARC', 'RRS', 'GER'] as $registration)
-                                            <option value="{{ $registration }}" {{ old('our_registration') === $registration ? 'selected' : '' }}>{{ $registration }}</option>
-                                        @endforeach
-                                    </select>
-                                    @if($errors->has('our_registration'))
-                                        <span class="help-block" role="alert">{{ $errors->first('our_registration') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.our_registration_helper') }}</span>
-                                </div>
+                                @include('admin.vehicles.partials.purchasingCompanyField')
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('model') ? 'has-error' : '' }}">

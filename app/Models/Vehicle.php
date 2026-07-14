@@ -181,6 +181,16 @@ class Vehicle extends Model implements HasMedia
         return $this->belongsTo(GeneralState::class, 'general_state_id');
     }
 
+    public function import_process()
+    {
+        return $this->hasOne(VehicleImportProcess::class);
+    }
+
+    public function calendar_tasks()
+    {
+        return $this->hasMany(CalendarTask::class);
+    }
+
     public function state_transfers()
     {
         return $this->hasMany(VehicleStateTransfer::class, 'vehicle_id');

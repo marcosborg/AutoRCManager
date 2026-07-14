@@ -30,6 +30,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('system-maintenance/resend-lead-notifications', 'SystemMaintenanceController@resendLeadNotifications')->name('system-maintenance.resend-lead-notifications');
     Route::post('role-preview', 'RolePreviewController@store')->name('role-preview.store');
     Route::delete('role-preview', 'RolePreviewController@destroy')->name('role-preview.destroy');
+    Route::get('import-configuration', 'ImportConfigurationController@index')->name('import-configuration.index');
+    Route::post('purchasing-companies', 'ImportConfigurationController@storeCompany')->name('purchasing-companies.store');
+    Route::put('purchasing-companies/{company}', 'ImportConfigurationController@updateCompany')->name('purchasing-companies.update');
+    Route::put('import-configuration/tolls-recipient', 'ImportConfigurationController@updateTollsRecipient')->name('import-configuration.tolls-recipient.update');
     Route::get('approvals', 'ApprovalController@index')->name('approvals.index');
     Route::get('gps-positions', 'GpsController@latest')->name('gps.positions');
     Route::post('leads/{lead}/notes', 'LeadController@storeNote')->name('leads.notes.store');
@@ -150,9 +154,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('pickup-states/parse-csv-import', 'PickupStateController@parseCsvImport')->name('pickup-states.parseCsvImport');
     Route::post('pickup-states/process-csv-import', 'PickupStateController@processCsvImport')->name('pickup-states.processCsvImport');
     Route::resource('pickup-states', 'PickupStateController');
-    
+
     // Sales
-    Route::prefix('sales')->group(function() {
+    Route::prefix('sales')->group(function () {
         Route::get('/{general_state_id?}', 'SalesController@index')->name('sales.index');
         Route::get('create', 'SalesController@create')->name('sales.create');
     });
@@ -225,7 +229,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('appreciations/parse-csv-import', 'AppreciationController@parseCsvImport')->name('appreciations.parseCsvImport');
     Route::post('appreciations/process-csv-import', 'AppreciationController@processCsvImport')->name('appreciations.processCsvImport');
     Route::resource('appreciations', 'AppreciationController');
-    
+
     Route::get('system-calendar', 'SystemCalendarController@index')->name('systemCalendar');
     Route::post('system-calendar/tasks', 'SystemCalendarController@storeTask')->name('systemCalendar.tasks.store');
     Route::post('system-calendar/tasks/{task}/complete', 'SystemCalendarController@completeTask')->name('systemCalendar.tasks.complete');

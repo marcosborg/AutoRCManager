@@ -191,19 +191,7 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('our_registration') ? 'has-error' : '' }}">
-                                    <label for="our_registration">{{ trans('cruds.vehicle.fields.our_registration') }}</label>
-                                    <select class="form-control" name="our_registration" id="our_registration">
-                                        <option value></option>
-                                        @foreach(['ARC', 'RRS', 'GER'] as $registration)
-                                            <option value="{{ $registration }}" {{ old('our_registration', $vehicle->our_registration) === $registration ? 'selected' : '' }}>{{ $registration }}</option>
-                                        @endforeach
-                                    </select>
-                                    @if($errors->has('our_registration'))
-                                        <span class="help-block" role="alert">{{ $errors->first('our_registration') }}</span>
-                                    @endif
-                                    <span class="help-block">{{ trans('cruds.vehicle.fields.our_registration_helper') }}</span>
-                                </div>
+                                @include('admin.vehicles.partials.purchasingCompanyField')
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('model') ? 'has-error' : '' }}">
@@ -341,6 +329,11 @@
                             <li role="presentation">
                                 <a href="#vehicle-preparation-sale" aria-controls="vehicle-preparation-sale" role="tab" data-toggle="tab">Preparação e venda da viatura</a>
                             </li>
+                            @if($showImportProcessTab)
+                                <li role="presentation">
+                                    <a href="#vehicle-import-adjudication" aria-controls="vehicle-import-adjudication" role="tab" data-toggle="tab">Importação / Adjudicação</a>
+                                </li>
+                            @endif
                             <li role="presentation">
                                 <a href="#vehicle-ownership-transfer" aria-controls="vehicle-ownership-transfer" role="tab" data-toggle="tab">Transferência de Propriedade</a>
                             </li>
@@ -1531,6 +1524,13 @@
                             </div>
                         </div>
                             </div>
+                            @if($showImportProcessTab)
+                                <div role="tabpanel" class="tab-pane" id="vehicle-import-adjudication">
+                                    <h4>Gestão de Importados / Adjudicações</h4>
+                                    <hr>
+                                    @include('admin.vehicles.partials.importAdjudication')
+                                </div>
+                            @endif
                             <div role="tabpanel" class="tab-pane" id="vehicle-ownership-transfer">
                                 <h4>Transferência de Propriedade</h4>
                                 <hr>

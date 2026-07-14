@@ -26,6 +26,7 @@
                                 <th>{{ trans('cruds.vehicle.fields.model') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.version') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.license') }}</th>
+                                <th>{{ trans('cruds.vehicle.fields.foreign_license') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.our_registration') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.year') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.month') }}</th>
@@ -52,12 +53,13 @@
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td>
                                     <select class="search" strict="true">
                                         <option value>{{ trans('global.all') }}</option>
-                                        <option value="ARC">ARC</option>
-                                        <option value="RRS">RRS</option>
-                                        <option value="GER">GER</option>
+                                        @foreach($purchasingCompanies as $company)
+                                            <option value="{{ $company->name }}">{{ $company->name }}</option>
+                                        @endforeach
                                     </select>
                                 </td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
@@ -136,6 +138,7 @@
                 { data: 'model', name: 'model' },
                 { data: 'version', name: 'version' },
                 { data: 'license', name: 'license' },
+                { data: 'foreign_license', name: 'foreign_license' },
                 { data: 'our_registration', name: 'our_registration' },
                 { data: 'year', name: 'year' },
                 { data: 'month', name: 'month' },

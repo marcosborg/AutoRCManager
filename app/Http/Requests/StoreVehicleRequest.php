@@ -5,7 +5,6 @@ namespace App\Http\Requests;
 use App\Models\Vehicle;
 use Gate;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Validator;
 
@@ -33,7 +32,8 @@ class StoreVehicleRequest extends FormRequest
             ],
             'our_registration' => [
                 'nullable',
-                'in:ARC,RRS,GER',
+                'string',
+                'max:255',
             ],
             'model' => [
                 'string',
@@ -54,7 +54,7 @@ class StoreVehicleRequest extends FormRequest
                 'nullable',
             ],
             'license_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'color' => [
@@ -76,7 +76,7 @@ class StoreVehicleRequest extends FormRequest
                 'nullable',
             ],
             'date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'documents' => [
@@ -89,11 +89,11 @@ class StoreVehicleRequest extends FormRequest
                 'array',
             ],
             'payment_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'iuc_paid_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'iuc_paid_value' => [
@@ -101,7 +101,7 @@ class StoreVehicleRequest extends FormRequest
                 'numeric',
             ],
             'tow_paid_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'tow_paid_value' => [
@@ -130,14 +130,14 @@ class StoreVehicleRequest extends FormRequest
                 'array',
             ],
             'withdrawal_authorization_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'withdrawal_documents' => [
                 'array',
             ],
             'pickup_state_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'client_registration' => [
@@ -149,19 +149,19 @@ class StoreVehicleRequest extends FormRequest
                 'nullable',
             ],
             'chekin_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'chekout_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'sale_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'sele_chekout' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'first_key' => [

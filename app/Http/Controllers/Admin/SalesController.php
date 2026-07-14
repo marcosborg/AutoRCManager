@@ -5,27 +5,24 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\CsvImportTrait;
 use App\Http\Controllers\Traits\MediaUploadingTrait;
-use App\Http\Requests\MassDestroyVehicleRequest;
-use App\Http\Requests\StoreVehicleRequest;
-use App\Http\Requests\UpdateVehicleRequest;
 use App\Models\Brand;
 use App\Models\Carrier;
 use App\Models\Client;
 use App\Models\GeneralState;
 use App\Models\PaymentStatus;
 use App\Models\PickupState;
+use App\Models\PurchasingCompany;
 use App\Models\Suplier;
 use App\Models\Vehicle;
+use App\Support\LicensePlate;
 use Gate;
 use Illuminate\Http\Request;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
 
 class SalesController extends Controller
 {
-
-    use MediaUploadingTrait, CsvImportTrait;
+    use CsvImportTrait, MediaUploadingTrait;
 
     public function index(Request $request, $general_state_id = null)
     {
@@ -47,7 +44,7 @@ class SalesController extends Controller
             // pega do path (/{general_state_id?}) ou da query (?general_state_id=)
             $gsId = $general_state_id ?? $request->input('general_state_id') ?? $request->route('general_state_id');
 
-            if (!empty($gsId)) {
+            if (! empty($gsId)) {
                 $query->where('general_state_id', $gsId);
             }
 
@@ -57,9 +54,9 @@ class SalesController extends Controller
             $table->addColumn('actions', '&nbsp;');
 
             $table->editColumn('actions', function ($row) {
-                $viewGate      = 'vehicle_show';
-                $editGate      = 'vehicle_edit';
-                $deleteGate    = 'vehicle_delete';
+                $viewGate = 'vehicle_show';
+                $editGate = 'vehicle_edit';
+                $deleteGate = 'vehicle_delete';
                 $crudRoutePart = 'vehicles';
 
                 return view('partials.datatablesActions', compact(
@@ -79,10 +76,13 @@ class SalesController extends Controller
                 return $row->license ? $row->license : '';
             });
             $table->filterColumn('license', function ($query, $keyword) {
-                $query->searchByLicense((string) $keyword);
+                LicensePlate::applySearch($query, (string) $keyword, ['license']);
             });
             $table->editColumn('foreign_license', function ($row) {
                 return $row->foreign_license ? $row->foreign_license : '';
+            });
+            $table->filterColumn('foreign_license', function ($query, $keyword) {
+                LicensePlate::applySearch($query, (string) $keyword, ['foreign_license']);
             });
             $table->editColumn('our_registration', function ($row) {
                 return $row->our_registration ? $row->our_registration : '';
@@ -123,11 +123,13 @@ class SalesController extends Controller
 
                 if (in_array($value, $truthy, true)) {
                     $query->where('is_invoiced', true);
+
                     return;
                 }
 
                 if (in_array($value, $falsy, true)) {
                     $query->where('is_invoiced', false);
+
                     return;
                 }
             });
@@ -141,11 +143,13 @@ class SalesController extends Controller
 
                 if (in_array($value, $truthy, true)) {
                     $query->whereHas('source_trade_in');
+
                     return;
                 }
 
                 if (in_array($value, $falsy, true)) {
                     $query->whereDoesntHave('source_trade_in');
+
                     return;
                 }
             });
@@ -169,15 +173,16 @@ class SalesController extends Controller
             return $table->make(true);
         }
 
-        $general_states   = GeneralState::get();
-        $brands           = Brand::get();
-        $supliers         = Suplier::get();
+        $general_states = GeneralState::get();
+        $brands = Brand::get();
+        $supliers = Suplier::get();
         $payment_statuses = PaymentStatus::get();
-        $carriers         = Carrier::get();
-        $pickup_states    = PickupState::get();
-        $clients          = Client::get();
+        $carriers = Carrier::get();
+        $pickup_states = PickupState::get();
+        $clients = Client::get();
+        $purchasingCompanies = PurchasingCompany::where('active', true)->orderBy('name')->get();
 
-        return view('admin.sales.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients'));
+        return view('admin.sales.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients', 'purchasingCompanies'));
     }
 
     private function vehicleThumbnailHtml(Vehicle $vehicle): string
@@ -189,7 +194,7 @@ class SalesController extends Controller
             $url = e($this->productionMediaUrl($media->getUrl('thumb') ?: $media->getUrl()));
             $alt = e($vehicle->license ?: $vehicle->model ?: 'Viatura');
 
-            return '<img src="' . $url . '" alt="' . $alt . '" class="vehicle-list-thumb" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\';">' . $placeholder;
+            return '<img src="'.$url.'" alt="'.$alt.'" class="vehicle-list-thumb" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\';">'.$placeholder;
         }
 
         return '<span class="vehicle-list-thumb vehicle-list-thumb-placeholder"><i class="fa fa-car"></i></span>';
@@ -203,7 +208,7 @@ class SalesController extends Controller
         $query = parse_url($url, PHP_URL_QUERY);
 
         if (! $host || in_array($host, ['127.0.0.1', 'localhost', '0.0.0.0'], true)) {
-            return $mediaBaseUrl . $path . ($query ? '?' . $query : '');
+            return $mediaBaseUrl.$path.($query ? '?'.$query : '');
         }
 
         return $url;

@@ -18,6 +18,7 @@ use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
 use App\Models\PickupState;
 use App\Models\Provenience;
+use App\Models\PurchasingCompany;
 use App\Models\Repair;
 use App\Models\StandCashPaymentApproval;
 use App\Models\Suplier;
@@ -27,6 +28,7 @@ use App\Models\VehicleGenericPayment;
 use App\Models\VehicleSupplierPayment;
 use App\Models\VehicleTradeIn;
 use App\Services\SaleClosureApprovalService;
+use App\Services\VehicleImportProcessService;
 use App\Services\VehicleLotService;
 use App\Services\VehicleProfitabilityService;
 use App\Services\VehicleSuspendedSaleService;
@@ -205,8 +207,9 @@ class VehicleController extends Controller
         $carriers = Carrier::get();
         $pickup_states = PickupState::get();
         $clients = Client::get();
+        $purchasingCompanies = PurchasingCompany::where('active', true)->orderBy('name')->get();
 
-        return view('admin.vehicles.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients'));
+        return view('admin.vehicles.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients', 'purchasingCompanies'));
     }
 
     public function create()
@@ -228,8 +231,9 @@ class VehicleController extends Controller
         $clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $proveniences = Provenience::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $financial_institutions = FinancialInstitution::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $purchasingCompanies = PurchasingCompany::where('active', true)->orderBy('name')->pluck('name', 'name');
 
-        return view('admin.vehicles.create', compact('general_states', 'brands', 'carriers', 'clients', 'proveniences', 'financial_institutions', 'payment_statuses', 'pickup_states', 'supliers'));
+        return view('admin.vehicles.create', compact('general_states', 'brands', 'carriers', 'clients', 'proveniences', 'financial_institutions', 'payment_statuses', 'pickup_states', 'purchasingCompanies', 'supliers'));
     }
 
     public function store(StoreVehicleRequest $request)
@@ -271,6 +275,7 @@ class VehicleController extends Controller
         $clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $proveniences = Provenience::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $financial_institutions = FinancialInstitution::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $purchasingCompanies = PurchasingCompany::where('active', true)->orderBy('name')->pluck('name', 'name');
 
         $relations = [
             'brand',
@@ -300,6 +305,7 @@ class VehicleController extends Controller
             'trade_ins.created_vehicle',
             'purchase_price_histories.client',
             'purchase_price_histories.changed_by',
+            'import_process',
         ];
         $vehicle->load($relations);
         $hasOpenRepairs = RepairRules::hasOpenRepairs($vehicle->id);
@@ -339,6 +345,9 @@ class VehicleController extends Controller
         $canManageSupplierPayments = $this->canManageSupplierPayments();
         $activeSuspendedSale = $vehicle->active_suspended_sale;
         $suspendedSales = $vehicle->suspended_sales->sortByDesc('created_at')->values();
+        $importProcess = $vehicle->import_process;
+        $showImportProcessTab = Gate::allows('vehicle_import_process_access')
+            && ($this->isAdjudicationState($vehicle) || $importProcess);
 
         return view('admin.vehicles.edit', compact(
             'purchase_categories',
@@ -352,6 +361,7 @@ class VehicleController extends Controller
             'financial_institutions',
             'payment_statuses',
             'pickup_states',
+            'purchasingCompanies',
             'supliers',
             'vehicle',
             'financialEntries',
@@ -377,6 +387,8 @@ class VehicleController extends Controller
             'hasOpenRepairs',
             'activeSuspendedSale',
             'suspendedSales',
+            'importProcess',
+            'showImportProcessTab',
         ));
     }
 
@@ -419,8 +431,14 @@ class VehicleController extends Controller
             ->with('message', 'Viatura enviada para oficina e intervencao criada.');
     }
 
-    public function update(UpdateVehicleRequest $request, Vehicle $vehicle)
+    public function update(UpdateVehicleRequest $request, Vehicle $vehicle, VehicleImportProcessService $importProcessService)
     {
+        abort_if(
+            $request->boolean('import_process_present') && Gate::denies('vehicle_import_process_edit'),
+            Response::HTTP_FORBIDDEN,
+            '403 Forbidden'
+        );
+
         $payload = $request->all();
 
         foreach ([
@@ -442,9 +460,10 @@ class VehicleController extends Controller
         $payload['is_invoiced'] = $request->boolean('is_invoiced');
         $payload = $this->filterPayloadToExistingVehicleColumns($payload);
 
-        DB::transaction(function () use ($request, $vehicle, &$payload): void {
+        DB::transaction(function () use ($request, $vehicle, &$payload, $importProcessService): void {
             $this->applyWorkshopSalePurchasePrice($request, $vehicle, $payload);
             $vehicle->update($payload);
+            $importProcessService->sync($vehicle, $request->all(), $request->user());
             app(VehicleSuspendedSaleService::class)->convertActiveForVehicle($vehicle->fresh(), $request->user());
         });
 
@@ -820,6 +839,13 @@ class VehicleController extends Controller
         }
 
         return strcasecmp($stateName, 'OFICINA') === 0;
+    }
+
+    private function isAdjudicationState(Vehicle $vehicle): bool
+    {
+        $stateName = optional($vehicle->general_state)->name;
+
+        return $stateName && str($stateName)->lower()->ascii()->squish()->toString() === 'adjudicacao';
     }
 
     private function filterPayloadToExistingVehicleColumns(array $payload): array

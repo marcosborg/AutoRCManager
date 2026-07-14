@@ -192,7 +192,7 @@
                         if (\Illuminate\Support\Facades\Schema::hasTable('calendar_tasks')) {
                             $calendarAlertTasks = \App\Models\CalendarTask::query()
                                 ->whereNull('completed_at')
-                                ->where('created_by_id', auth()->id())
+                                ->visibleTo(auth()->user())
                                 ->whereDate('due_date', '<=', now()->addDays(3)->toDateString())
                                 ->orderBy('due_date')
                                 ->limit(10)
@@ -426,7 +426,7 @@
                                     <ul class="menu">
                                         @forelse($calendarAlertTasks as $task)
                                             <li>
-                                                <a href="{{ route('admin.systemCalendar') }}#task-{{ $task->id }}">
+                                                <a href="{{ $task->target_url ?: route('admin.systemCalendar') . '#task-' . $task->id }}">
                                                     <i class="fa fa-calendar text-yellow"></i>
                                                     <strong>{{ $task->due_date }}</strong> - {{ $task->title }}
                                                 </a>

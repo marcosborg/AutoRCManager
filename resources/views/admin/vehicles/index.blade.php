@@ -57,9 +57,9 @@
                                 <td>
                                     <select class="search" strict="true">
                                         <option value>{{ trans('global.all') }}</option>
-                                        <option value="ARC">ARC</option>
-                                        <option value="RRS">RRS</option>
-                                        <option value="GER">GER</option>
+                                        @foreach($purchasingCompanies as $company)
+                                            <option value="{{ $company->name }}">{{ $company->name }}</option>
+                                        @endforeach
                                     </select>
                                 </td>
                                 <td>

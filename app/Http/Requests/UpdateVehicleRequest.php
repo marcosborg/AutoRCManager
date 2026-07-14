@@ -34,7 +34,8 @@ class UpdateVehicleRequest extends FormRequest
             ],
             'our_registration' => [
                 'nullable',
-                'in:ARC,RRS,GER',
+                'string',
+                'max:255',
             ],
             'model' => [
                 'string',
@@ -331,12 +332,65 @@ class UpdateVehicleRequest extends FormRequest
                 'min:0',
                 'max:100',
             ],
+            'import_process_present' => [
+                'nullable',
+                'boolean',
+            ],
+            'import_decision' => [
+                'nullable',
+                'in:legalize,scrap',
+            ],
+            'import_decision_at' => [
+                'nullable',
+                'date',
+            ],
+            'import_agency_documents_sent' => [
+                'nullable',
+                'boolean',
+            ],
+            'import_agency_documents_sent_at' => [
+                'nullable',
+                'date',
+            ],
+            'import_documents_received' => [
+                'nullable',
+                'boolean',
+            ],
+            'import_documents_received_at' => [
+                'nullable',
+                'date',
+            ],
+            'import_new_license_received' => [
+                'nullable',
+                'boolean',
+            ],
+            'import_new_license' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'import_new_license_received_at' => [
+                'nullable',
+                'date',
+            ],
+            'import_scrapped' => [
+                'nullable',
+                'boolean',
+            ],
+            'import_scrapped_at' => [
+                'nullable',
+                'date',
+            ],
         ];
     }
 
     public function withValidator(Validator $validator)
     {
         $validator->after(function (Validator $validator) {
+            if ($this->boolean('import_process_present')) {
+                $this->validateImportProcess($validator);
+            }
+
             $vehicle = $this->route('vehicle');
             $currentVehicleId = $vehicle instanceof Vehicle ? (int) $vehicle->getKey() : (int) $vehicle;
 
@@ -422,6 +476,33 @@ class UpdateVehicleRequest extends FormRequest
             ->sum('amount');
 
         return round($salesTotal - $clientPaymentsTotal - $tradeInsTotal, 2);
+    }
+
+    private function validateImportProcess(Validator $validator): void
+    {
+        $decision = $this->input('import_decision');
+
+        if (! in_array($decision, ['legalize', 'scrap'], true)) {
+            $validator->errors()->add('import_decision', 'Escolha Legalizar ou Abater.');
+
+            return;
+        }
+
+        if ($this->boolean('import_new_license_received') && ! $this->filled('import_new_license')) {
+            $validator->errors()->add('import_new_license', 'Indique a nova matrícula.');
+        }
+
+        if ($decision === 'legalize' && $this->boolean('import_scrapped')) {
+            $validator->errors()->add('import_scrapped', 'A conclusão do abate só está disponível na opção Abater.');
+        }
+
+        if ($decision === 'scrap' && collect([
+            'import_agency_documents_sent',
+            'import_documents_received',
+            'import_new_license_received',
+        ])->contains(fn ($field) => $this->boolean($field))) {
+            $validator->errors()->add('import_decision', 'Os marcos de legalização não podem estar ativos na opção Abater.');
+        }
     }
 
     private function isSaleDateBeingSet(Vehicle $vehicle): bool
