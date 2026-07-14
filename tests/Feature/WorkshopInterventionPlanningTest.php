@@ -68,13 +68,31 @@ class WorkshopInterventionPlanningTest extends TestCase
         $repairFinishedAtBefore = $item->repair->getRawOriginal('repair_finished_at');
 
         $this->actingAs($first, 'sanctum')->postJson("/api/mobile/workshop/planning/interventions/{$item->id}/start")->assertOk();
+        $this->actingAs($first, 'sanctum')->postJson("/api/mobile/workshop/planning/interventions/{$item->id}/start")->assertOk();
         $this->actingAs($first, 'sanctum')->postJson("/api/mobile/workshop/planning/interventions/{$other->id}/start")->assertStatus(422);
-        $this->actingAs($second, 'sanctum')->postJson("/api/mobile/workshop/planning/interventions/{$item->id}/start")->assertOk();
+        $this->actingAs($second, 'sanctum')->postJson("/api/mobile/workshop/planning/interventions/{$item->id}/start")
+            ->assertOk()
+            ->assertJsonPath('data.active_mechanics.0.id', $first->id)
+            ->assertJsonPath('data.active_mechanics.1.id', $second->id);
+        $this->assertSame(2, RepairWorkLog::where('workshop_intervention_id', $item->id)->whereNull('finished_at')->count());
         $this->actingAs($first, 'sanctum')->postJson("/api/mobile/workshop/planning/interventions/{$item->id}/complete")->assertOk();
 
         $this->assertSame('completed', $item->fresh()->status);
         $this->assertSame(0, RepairWorkLog::where('workshop_intervention_id', $item->id)->whereNull('finished_at')->count());
         $this->assertSame($repairFinishedAtBefore, $item->repair->fresh()->getRawOriginal('repair_finished_at'));
+    }
+
+    public function test_unassigned_mechanic_cannot_start_planned_work(): void
+    {
+        $assigned = $this->userWithRole('Mecânico');
+        $unassigned = $this->userWithRole('Mecânico');
+        $item = $this->makeIntervention([$assigned->id], 'Trabalho reservado');
+
+        $this->actingAs($unassigned, 'sanctum')
+            ->postJson("/api/mobile/workshop/planning/interventions/{$item->id}/start")
+            ->assertStatus(422);
+
+        $this->assertFalse(RepairWorkLog::where('workshop_intervention_id', $item->id)->exists());
     }
 
     public function test_used_type_cannot_be_deleted(): void
@@ -90,7 +108,7 @@ class WorkshopInterventionPlanningTest extends TestCase
     private function makeIntervention(array $mechanicIds, string $title): WorkshopIntervention
     {
         $item = WorkshopIntervention::create([
-            'repair_id' => Repair::query()->firstOrFail()->id,
+            'repair_id' => Repair::query()->whereNull('repair_finished_at')->firstOrFail()->id,
             'type_id' => WorkshopInterventionType::query()->firstOrFail()->id,
             'title' => $title, 'planned_start_date' => '2026-06-11', 'planned_end_date' => '2026-06-18', 'status' => 'planned',
         ]);

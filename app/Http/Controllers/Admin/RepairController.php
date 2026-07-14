@@ -17,6 +17,7 @@ use App\Models\PartOrder;
 use App\Models\Vehicle;
 use App\Models\Brand;
 use App\Support\LicensePlate;
+use App\Services\RepairWorkLogService;
 use Gate;
 use Illuminate\Http\Request;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -25,6 +26,7 @@ use Yajra\DataTables\Facades\DataTables;
 use App\Models\GeneralState;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RepairController extends Controller
 {
@@ -667,7 +669,7 @@ class RepairController extends Controller
             ->with('message', 'Reparacao iniciada com sucesso.');
     }
 
-    public function finishRepair(Repair $repair)
+    public function finishRepair(Repair $repair, RepairWorkLogService $workLogs)
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
@@ -677,10 +679,15 @@ class RepairController extends Controller
                 ->withErrors(['repair_started_at' => 'Inicie a reparacao antes de finalizar.']);
         }
 
-        if (! $repair->getRawOriginal('repair_finished_at')) {
-            $repair->repair_finished_at = now();
-            $repair->save();
-        }
+        DB::transaction(function () use ($repair, $workLogs) {
+            $repair = Repair::query()->lockForUpdate()->findOrFail($repair->id);
+            $workLogs->closeForRepair($repair);
+
+            if (! $repair->getRawOriginal('repair_finished_at')) {
+                $repair->repair_finished_at = now();
+                $repair->save();
+            }
+        });
 
         return redirect()
             ->route('admin.repairs.edit', $repair->id)
@@ -705,51 +712,22 @@ class RepairController extends Controller
             ->with('message', 'Intervencao reaberta com sucesso.');
     }
 
-    public function startWork(Repair $repair)
+    public function startWork(Repair $repair, RepairWorkLogService $workLogs)
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $openLog = RepairWorkLog::where('user_id', Auth::id())
-            ->whereNull('finished_at')
-            ->first();
-
-        if ($openLog && (int) $openLog->repair_id !== (int) $repair->id) {
-            return redirect()->route('admin.repairs.edit', $repair->id)
-                ->withErrors(['repair_work' => 'Já tem outro trabalho em curso. Termine-o antes de iniciar este.']);
-        }
-
-        if (! $openLog) {
-            RepairWorkLog::create(['repair_id' => $repair->id, 'user_id' => Auth::id(), 'started_at' => now()]);
-        }
+        $workLogs->start($repair, Auth::user());
 
         return redirect()
             ->route('admin.repairs.edit', $repair->id)
             ->with('message', 'Trabalho iniciado para este mecanico.');
     }
 
-    public function finishWork(Repair $repair)
+    public function finishWork(Repair $repair, RepairWorkLogService $workLogs)
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $openLog = RepairWorkLog::where('repair_id', $repair->id)
-            ->where('user_id', Auth::id())
-            ->whereNull('finished_at')
-            ->latest('started_at')
-            ->first();
-
-        if (! $openLog) {
-            return redirect()
-                ->route('admin.repairs.edit', $repair->id)
-                ->withErrors(['repair_work' => 'Nao existe trabalho em curso para este mecanico.']);
-        }
-
-        $end = now();
-        $minutes = Carbon::parse($openLog->started_at)->diffInMinutes($end);
-
-        $openLog->update([
-            'finished_at' => $end,
-            'duration_minutes' => $minutes,
-        ]);
+        $workLogs->finish($repair, Auth::user());
 
         return redirect()
             ->route('admin.repairs.edit', $repair->id)
