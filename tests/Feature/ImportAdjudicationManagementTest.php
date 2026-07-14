@@ -6,6 +6,7 @@ use App\Models\CalendarTask;
 use App\Models\OperationalAlertRecipient;
 use App\Models\Repair;
 use App\Models\Role;
+use App\Models\Suplier;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleImportProcess;
@@ -26,24 +27,20 @@ class ImportAdjudicationManagementTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_authorized_user_can_create_a_reusable_purchasing_company(): void
+    public function test_vehicle_uses_existing_suppliers_as_purchasing_companies(): void
     {
         $admin = $this->userWithRole('Admin');
-
-        $this->actingAs($admin)
-            ->postJson(route('admin.purchasing-companies.store'), ['name' => 'Empresa Teste Importação'])
-            ->assertCreated()
-            ->assertJsonFragment(['name' => 'Empresa Teste Importação']);
-
-        $this->assertDatabaseHas('purchasing_companies', [
-            'name' => 'Empresa Teste Importação',
+        $supplier = Suplier::create([
+            'name' => 'Fornecedor Comprador Teste',
             'active' => true,
         ]);
 
         $this->actingAs($admin)
-            ->postJson(route('admin.purchasing-companies.store'), ['name' => 'Empresa Teste Importação'])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors('name');
+            ->get(route('admin.vehicles.create'))
+            ->assertOk()
+            ->assertSee($supplier->name)
+            ->assertSee(route('admin.supliers.create'))
+            ->assertDontSee('Nova empresa compradora');
     }
 
     public function test_adjudication_vehicle_page_shows_and_saves_the_import_process_tab(): void

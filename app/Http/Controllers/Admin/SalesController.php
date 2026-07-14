@@ -11,7 +11,6 @@ use App\Models\Client;
 use App\Models\GeneralState;
 use App\Models\PaymentStatus;
 use App\Models\PickupState;
-use App\Models\PurchasingCompany;
 use App\Models\Suplier;
 use App\Models\Vehicle;
 use App\Support\LicensePlate;
@@ -180,9 +179,8 @@ class SalesController extends Controller
         $carriers = Carrier::get();
         $pickup_states = PickupState::get();
         $clients = Client::get();
-        $purchasingCompanies = PurchasingCompany::where('active', true)->orderBy('name')->get();
 
-        return view('admin.sales.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients', 'purchasingCompanies'));
+        return view('admin.sales.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients'));
     }
 
     private function vehicleThumbnailHtml(Vehicle $vehicle): string

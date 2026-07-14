@@ -18,7 +18,6 @@ use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
 use App\Models\PickupState;
 use App\Models\Provenience;
-use App\Models\PurchasingCompany;
 use App\Models\Repair;
 use App\Models\StandCashPaymentApproval;
 use App\Models\Suplier;
@@ -207,9 +206,8 @@ class VehicleController extends Controller
         $carriers = Carrier::get();
         $pickup_states = PickupState::get();
         $clients = Client::get();
-        $purchasingCompanies = PurchasingCompany::where('active', true)->orderBy('name')->get();
 
-        return view('admin.vehicles.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients', 'purchasingCompanies'));
+        return view('admin.vehicles.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients'));
     }
 
     public function create()
@@ -231,9 +229,9 @@ class VehicleController extends Controller
         $clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $proveniences = Provenience::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $financial_institutions = FinancialInstitution::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-        $purchasingCompanies = PurchasingCompany::where('active', true)->orderBy('name')->pluck('name', 'name');
+        $purchasingSuppliers = Suplier::orderBy('name')->pluck('name', 'name');
 
-        return view('admin.vehicles.create', compact('general_states', 'brands', 'carriers', 'clients', 'proveniences', 'financial_institutions', 'payment_statuses', 'pickup_states', 'purchasingCompanies', 'supliers'));
+        return view('admin.vehicles.create', compact('general_states', 'brands', 'carriers', 'clients', 'proveniences', 'financial_institutions', 'payment_statuses', 'pickup_states', 'purchasingSuppliers', 'supliers'));
     }
 
     public function store(StoreVehicleRequest $request)
@@ -275,7 +273,7 @@ class VehicleController extends Controller
         $clients = Client::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $proveniences = Provenience::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $financial_institutions = FinancialInstitution::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
-        $purchasingCompanies = PurchasingCompany::where('active', true)->orderBy('name')->pluck('name', 'name');
+        $purchasingSuppliers = Suplier::orderBy('name')->pluck('name', 'name');
 
         $relations = [
             'brand',
@@ -361,7 +359,7 @@ class VehicleController extends Controller
             'financial_institutions',
             'payment_statuses',
             'pickup_states',
-            'purchasingCompanies',
+            'purchasingSuppliers',
             'supliers',
             'vehicle',
             'financialEntries',
