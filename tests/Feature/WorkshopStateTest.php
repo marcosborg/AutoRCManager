@@ -69,6 +69,22 @@ class WorkshopStateTest extends TestCase
         $this->assertSame(0, $outsideVehicle->repairs()->count());
     }
 
+    public function test_workshop_page_warns_when_vehicle_needs_a_second_key(): void
+    {
+        $user = $this->userWithPermissions(['repair_access']);
+        $withoutSecondKey = $this->vehicleInState('OFICINA', '33-CC-33');
+        $withoutSecondKey->update(['key' => false, 'workshop_state_id' => $this->defaultWorkshopState()->id]);
+        $withSecondKey = $this->vehicleInState('OFICINA', '44-DD-44');
+        $withSecondKey->update(['key' => true, 'workshop_state_id' => $this->defaultWorkshopState()->id]);
+
+        $this->actingAs($user)
+            ->get(route('admin.repairs.index'))
+            ->assertOk()
+            ->assertSee('Fazer segunda chave')
+            ->assertSee('data-second-key-warning="'.$withoutSecondKey->id.'"', false)
+            ->assertDontSee('data-second-key-warning="'.$withSecondKey->id.'"', false);
+    }
+
     public function test_updating_sold_workshop_state_synchronizes_general_state_without_changing_repairs(): void
     {
         $user = $this->userWithPermissions(['workshop_state_edit']);

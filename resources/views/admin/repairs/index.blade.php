@@ -142,6 +142,7 @@
                                             </a>
                                         </th>
                                         <th>Estado da Oficina</th>
+                                        <th>Ações necessárias</th>
                                         <th>Total intervencoes</th>
                                         <th>
                                             <a href="{{ $sortUrl('open_count') }}">
@@ -197,6 +198,15 @@
                                                 @else
                                                     {{ $vehicle->workshop_state->name ?? 'Sem estado' }}
                                                 @endcan
+                                            </td>
+                                            <td>
+                                                @if(!$vehicle->key)
+                                                    <span class="label label-danger" data-second-key-warning="{{ $vehicle->id }}">
+                                                        <i class="fa fa-key"></i> Fazer segunda chave
+                                                    </span>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <span class="badge">{{ $row['count'] }}</span>
