@@ -2,12 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Domain\Consignments\ConsignmentRules;
 use App\Models\Vehicle;
 use App\Models\VehicleTradeIn;
-use App\Domain\Consignments\ConsignmentRules;
 use Gate;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Validator;
 
@@ -56,7 +55,7 @@ class UpdateVehicleRequest extends FormRequest
                 'nullable',
             ],
             'license_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'color' => [
@@ -78,7 +77,7 @@ class UpdateVehicleRequest extends FormRequest
                 'nullable',
             ],
             'date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'documents' => [
@@ -91,11 +90,11 @@ class UpdateVehicleRequest extends FormRequest
                 'array',
             ],
             'payment_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'iuc_paid_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'iuc_paid_value' => [
@@ -103,7 +102,7 @@ class UpdateVehicleRequest extends FormRequest
                 'numeric',
             ],
             'tow_paid_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'tow_paid_value' => [
@@ -132,14 +131,14 @@ class UpdateVehicleRequest extends FormRequest
                 'array',
             ],
             'withdrawal_authorization_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'withdrawal_documents' => [
                 'array',
             ],
             'pickup_state_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'client_registration' => [
@@ -151,19 +150,19 @@ class UpdateVehicleRequest extends FormRequest
                 'nullable',
             ],
             'chekin_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'chekout_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'sale_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'sele_chekout' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'first_key' => [
@@ -219,9 +218,39 @@ class UpdateVehicleRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            'ownership_documents_ready' => [
+                'nullable',
+                'boolean',
+            ],
+            'ownership_documents_ready_at' => [
+                'nullable',
+                'date',
+            ],
+            'ownership_payments_completed' => [
+                'nullable',
+                'boolean',
+            ],
+            'ownership_payments_completed_at' => [
+                'nullable',
+                'date',
+            ],
+            'ownership_rafael_authorized' => [
+                'nullable',
+                'boolean',
+            ],
+            'ownership_rafael_authorized_at' => [
+                'nullable',
+                'date',
+            ],
+            'ownership_transfer_proof' => [
+                'array',
+            ],
+            'ownership_rafael_authorization_proof' => [
+                'array',
+            ],
             'supplier_payment_date' => [
                 'nullable',
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
             ],
             'supplier_payment_amount' => [
                 'nullable',
@@ -245,7 +274,7 @@ class UpdateVehicleRequest extends FormRequest
             ],
             'generic_payment_date' => [
                 'nullable',
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
             ],
             'generic_payment_amount' => [
                 'nullable',
@@ -264,7 +293,7 @@ class UpdateVehicleRequest extends FormRequest
             ],
             'client_payment_date' => [
                 'nullable',
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
             ],
             'client_payment_amount' => [
                 'nullable',

@@ -13,6 +13,8 @@ use App\Models\Brand;
 use App\Models\Carrier;
 use App\Models\Client;
 use App\Models\FinancialInstitution;
+use App\Models\GeneralState;
+use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
 use App\Models\PickupState;
 use App\Models\Provenience;
@@ -24,21 +26,19 @@ use App\Models\VehicleClientPayment;
 use App\Models\VehicleGenericPayment;
 use App\Models\VehicleSupplierPayment;
 use App\Models\VehicleTradeIn;
-use App\Models\GeneralState;
-use App\Models\PaymentMethod;
 use App\Services\SaleClosureApprovalService;
-use App\Services\VehicleProfitabilityService;
 use App\Services\VehicleLotService;
+use App\Services\VehicleProfitabilityService;
 use App\Services\VehicleSuspendedSaleService;
 use App\Support\RolePreview;
 use Gate;
-use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
-use RuntimeException;
 use Yajra\DataTables\Facades\DataTables;
 
 class VehicleController extends Controller
@@ -123,11 +123,13 @@ class VehicleController extends Controller
 
                 if (in_array($value, $truthy, true)) {
                     $query->where('is_invoiced', true);
+
                     return;
                 }
 
                 if (in_array($value, $falsy, true)) {
                     $query->where('is_invoiced', false);
+
                     return;
                 }
             });
@@ -141,11 +143,13 @@ class VehicleController extends Controller
 
                 if (in_array($value, $truthy, true)) {
                     $query->whereHas('source_trade_in');
+
                     return;
                 }
 
                 if (in_array($value, $falsy, true)) {
                     $query->whereDoesntHave('source_trade_in');
+
                     return;
                 }
             });
@@ -164,11 +168,13 @@ class VehicleController extends Controller
 
                 if (in_array($value, $truthy, true)) {
                     $query->whereRaw("($expression) = 1");
+
                     return;
                 }
 
                 if (in_array($value, $falsy, true)) {
                     $query->whereRaw("($expression) = 0");
+
                     return;
                 }
 
@@ -382,7 +388,7 @@ class VehicleController extends Controller
             'work_type' => ['required', 'string', 'in:workshop,painting'],
             'kilometers' => ['nullable', 'integer', 'min:0', 'max:2147483647'],
             'fuel_level_in_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'expected_completion_date' => ['nullable', 'date_format:' . config('panel.date_format')],
+            'expected_completion_date' => ['nullable', 'date_format:'.config('panel.date_format')],
             'obs_1' => ['nullable', 'string'],
         ]);
 
@@ -417,6 +423,16 @@ class VehicleController extends Controller
     {
         $payload = $request->all();
 
+        foreach ([
+            'ownership_documents_ready' => 'ownership_documents_ready_at',
+            'ownership_payments_completed' => 'ownership_payments_completed_at',
+            'ownership_rafael_authorized' => 'ownership_rafael_authorized_at',
+        ] as $checkboxField => $timestampField) {
+            $payload[$timestampField] = $request->boolean($checkboxField)
+                ? ($request->input($timestampField) ?: now())
+                : null;
+        }
+
         if (! $this->canViewFinancialSensitive()) {
             foreach ($this->sensitiveVehicleFields() as $field) {
                 unset($payload[$field]);
@@ -446,114 +462,142 @@ class VehicleController extends Controller
 
         if (count($vehicle->documents) > 0) {
             foreach ($vehicle->documents as $media) {
-                if (!in_array($media->file_name, $request->input('documents', []))) {
+                if (! in_array($media->file_name, $request->input('documents', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->documents->pluck('file_name')->toArray();
         foreach ($request->input('documents', []) as $file) {
-            if (count($media) === 0 || !in_array($file, $media)) {
-                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('documents');
+            if (count($media) === 0 || ! in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('documents');
             }
         }
 
         if (count($vehicle->additional_documents) > 0) {
             foreach ($vehicle->additional_documents as $media) {
-                if (!in_array($media->file_name, $request->input('additional_documents', []))) {
+                if (! in_array($media->file_name, $request->input('additional_documents', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->additional_documents->pluck('file_name')->toArray();
         foreach ($request->input('additional_documents', []) as $file) {
-            if (count($media) === 0 || !in_array($file, $media)) {
-                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('additional_documents');
+            if (count($media) === 0 || ! in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('additional_documents');
             }
         }
 
         if (count($vehicle->photos) > 0) {
             foreach ($vehicle->photos as $media) {
-                if (!in_array($media->file_name, $request->input('photos', []))) {
+                if (! in_array($media->file_name, $request->input('photos', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->photos->pluck('file_name')->toArray();
         foreach ($request->input('photos', []) as $file) {
-            if (count($media) === 0 || !in_array($file, $media)) {
-                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('photos');
+            if (count($media) === 0 || ! in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('photos');
             }
         }
         $this->syncVehiclePhotoOrder($vehicle, $request->input('photos', []));
 
         if (count($vehicle->invoice) > 0) {
             foreach ($vehicle->invoice as $media) {
-                if (!in_array($media->file_name, $request->input('invoice', []))) {
+                if (! in_array($media->file_name, $request->input('invoice', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->invoice->pluck('file_name')->toArray();
         foreach ($request->input('invoice', []) as $file) {
-            if (count($media) === 0 || !in_array($file, $media)) {
-                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('invoice');
+            if (count($media) === 0 || ! in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('invoice');
             }
         }
 
         if (count($vehicle->inicial) > 0) {
             foreach ($vehicle->inicial as $media) {
-                if (!in_array($media->file_name, $request->input('inicial', []))) {
+                if (! in_array($media->file_name, $request->input('inicial', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->inicial->pluck('file_name')->toArray();
         foreach ($request->input('inicial', []) as $file) {
-            if (count($media) === 0 || !in_array($file, $media)) {
-                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('inicial');
+            if (count($media) === 0 || ! in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('inicial');
             }
         }
 
         if (count($vehicle->pdfs) > 0) {
             foreach ($vehicle->pdfs as $media) {
-                if (!in_array($media->file_name, $request->input('pdfs', []))) {
+                if (! in_array($media->file_name, $request->input('pdfs', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->pdfs->pluck('file_name')->toArray();
         foreach ($request->input('pdfs', []) as $file) {
-            if (count($media) === 0 || !in_array($file, $media)) {
-                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('pdfs');
+            if (count($media) === 0 || ! in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('pdfs');
             }
         }
 
         if (count($vehicle->withdrawal_authorization_file) > 0) {
             foreach ($vehicle->withdrawal_authorization_file as $media) {
-                if (!in_array($media->file_name, $request->input('withdrawal_authorization_file', []))) {
+                if (! in_array($media->file_name, $request->input('withdrawal_authorization_file', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->withdrawal_authorization_file->pluck('file_name')->toArray();
         foreach ($request->input('withdrawal_authorization_file', []) as $file) {
-            if (count($media) === 0 || !in_array($file, $media)) {
-                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('withdrawal_authorization_file');
+            if (count($media) === 0 || ! in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('withdrawal_authorization_file');
             }
         }
 
         if (count($vehicle->payment_comprovant) > 0) {
             foreach ($vehicle->payment_comprovant as $media) {
-                if (!in_array($media->file_name, $request->input('payment_comprovant', []))) {
+                if (! in_array($media->file_name, $request->input('payment_comprovant', []))) {
                     $media->delete();
                 }
             }
         }
         $media = $vehicle->payment_comprovant->pluck('file_name')->toArray();
         foreach ($request->input('payment_comprovant', []) as $file) {
-            if (count($media) === 0 || !in_array($file, $media)) {
-                $vehicle->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('payment_comprovant');
+            if (count($media) === 0 || ! in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('payment_comprovant');
+            }
+        }
+
+        if (count($vehicle->ownership_transfer_proof) > 0) {
+            foreach ($vehicle->ownership_transfer_proof as $media) {
+                if (! in_array($media->file_name, $request->input('ownership_transfer_proof', []))) {
+                    $media->delete();
+                }
+            }
+        }
+        $media = $vehicle->ownership_transfer_proof->pluck('file_name')->toArray();
+        foreach ($request->input('ownership_transfer_proof', []) as $file) {
+            if (count($media) === 0 || ! in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('ownership_transfer_proof');
+            }
+        }
+
+        if (count($vehicle->ownership_rafael_authorization_proof) > 0) {
+            foreach ($vehicle->ownership_rafael_authorization_proof as $media) {
+                if (! in_array($media->file_name, $request->input('ownership_rafael_authorization_proof', []))) {
+                    $media->delete();
+                }
+            }
+        }
+        $media = $vehicle->ownership_rafael_authorization_proof->pluck('file_name')->toArray();
+        foreach ($request->input('ownership_rafael_authorization_proof', []) as $file) {
+            if (count($media) === 0 || ! in_array($file, $media)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('ownership_rafael_authorization_proof');
             }
         }
 
@@ -624,8 +668,7 @@ class VehicleController extends Controller
             'financialTotalCost',
             'financialTotalRevenue',
             'financialBalance',
-            'showWorkshopSection'
-            ,
+            'showWorkshopSection',
             'vehicleFinancialStatus'
         ));
     }
@@ -738,14 +781,13 @@ class VehicleController extends Controller
     {
         abort_if(Gate::denies('vehicle_create') && Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $model = new Vehicle();
+        $model = new Vehicle;
         $model->id = $request->input('crud_id', 0);
         $model->exists = true;
         $media = $model->addMediaFromRequest('upload')->toMediaCollection('ck-media');
 
         return response()->json(['id' => $media->id, 'url' => $media->getUrl()], Response::HTTP_CREATED);
     }
-
 
     private function canViewFinancialSensitive(): bool
     {
@@ -785,7 +827,7 @@ class VehicleController extends Controller
         static $existingColumnsMap = null;
 
         if ($existingColumnsMap === null) {
-            $existingColumnsMap = array_flip(Schema::getColumnListing((new Vehicle())->getTable()));
+            $existingColumnsMap = array_flip(Schema::getColumnListing((new Vehicle)->getTable()));
         }
 
         return array_intersect_key($payload, $existingColumnsMap);
@@ -970,6 +1012,7 @@ class VehicleController extends Controller
         if (! $user) {
             return false;
         }
+
         return Gate::allows('vehicle_trade_in_convert')
             || RolePreview::hasAnyEffectiveRole($user, ['Admin', 'Gestão', 'Gestao', 'Stand Adm']);
     }
@@ -1030,7 +1073,7 @@ class VehicleController extends Controller
             $url = e($this->productionMediaUrl($media->getUrl('thumb') ?: $media->getUrl()));
             $alt = e($vehicle->license ?: $vehicle->model ?: 'Viatura');
 
-            return '<img src="' . $url . '" alt="' . $alt . '" class="vehicle-list-thumb" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\';">' . $placeholder;
+            return '<img src="'.$url.'" alt="'.$alt.'" class="vehicle-list-thumb" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\';">'.$placeholder;
         }
 
         return '<span class="vehicle-list-thumb vehicle-list-thumb-placeholder"><i class="fa fa-car"></i></span>';
@@ -1044,7 +1087,7 @@ class VehicleController extends Controller
         $query = parse_url($url, PHP_URL_QUERY);
 
         if (! $host || in_array($host, ['127.0.0.1', 'localhost', '0.0.0.0'], true)) {
-            return $mediaBaseUrl . $path . ($query ? '?' . $query : '');
+            return $mediaBaseUrl.$path.($query ? '?'.$query : '');
         }
 
         return $url;

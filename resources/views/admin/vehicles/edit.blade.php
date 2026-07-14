@@ -52,6 +52,51 @@
     #photos-dropzone .sortable-ghost {
         opacity: 0.45;
     }
+
+    .vehicle-summary-panel .panel-heading {
+        padding: 0;
+    }
+
+    .vehicle-summary-toggle {
+        align-items: center;
+        color: inherit;
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px;
+        text-decoration: none;
+    }
+
+    .vehicle-summary-toggle:hover,
+    .vehicle-summary-toggle:focus {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .vehicle-summary-toggle .fa-chevron-up {
+        transition: transform 0.2s ease;
+    }
+
+    .vehicle-summary-toggle.collapsed .fa-chevron-up {
+        transform: rotate(180deg);
+    }
+
+    .vehicle-area-tabs {
+        margin-bottom: 20px;
+    }
+
+    .vehicle-area-tabs > li > a {
+        font-weight: 600;
+    }
+
+    .vehicle-area-tab-content {
+        padding-top: 20px;
+    }
+
+    @media (max-width: 767px) {
+        .vehicle-area-tabs > li {
+            float: none;
+        }
+    }
 </style>
 @endsection
 @section('content')
@@ -81,7 +126,22 @@
                     <form id="vehicle-edit-form" method="POST" action="{{ route('admin.vehicles.update', [$vehicle->id]) }}" enctype="multipart/form-data">
                         @method('PUT')
                         @csrf
-                        <div class="row">
+                        <div class="panel panel-default vehicle-summary-panel">
+                            <div class="panel-heading">
+                                <a
+                                    class="vehicle-summary-toggle"
+                                    href="#vehicle-summary"
+                                    data-toggle="collapse"
+                                    aria-expanded="true"
+                                    aria-controls="vehicle-summary"
+                                >
+                                    <span>Informação geral da viatura</span>
+                                    <i class="fa fa-chevron-up" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                            <div id="vehicle-summary" class="panel-collapse collapse in">
+                                <div class="panel-body">
+                                    <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('general_state') ? 'has-error' : '' }}">
                                     <label class="required" for="general_state_id">{{ trans('cruds.vehicle.fields.general_state') }}</label>
@@ -260,7 +320,34 @@
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.inspec_b_helper') }}</span>
                                 </div>
                             </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        <ul class="nav nav-tabs vehicle-area-tabs" role="tablist">
+                            <li role="presentation" class="active">
+                                <a href="#vehicle-acquisition" aria-controls="vehicle-acquisition" role="tab" data-toggle="tab">Aquisição da viatura</a>
+                            </li>
+                            <li role="presentation">
+                                <a href="#vehicle-withdrawal" aria-controls="vehicle-withdrawal" role="tab" data-toggle="tab">Levantamento da viatura</a>
+                            </li>
+                            <li role="presentation">
+                                <a href="#vehicle-documents" aria-controls="vehicle-documents" role="tab" data-toggle="tab">Documentos da viatura</a>
+                            </li>
+                            <li role="presentation">
+                                <a href="#vehicle-others" aria-controls="vehicle-others" role="tab" data-toggle="tab">Acessórios</a>
+                            </li>
+                            <li role="presentation">
+                                <a href="#vehicle-preparation-sale" aria-controls="vehicle-preparation-sale" role="tab" data-toggle="tab">Preparação e venda da viatura</a>
+                            </li>
+                            <li role="presentation">
+                                <a href="#vehicle-ownership-transfer" aria-controls="vehicle-ownership-transfer" role="tab" data-toggle="tab">Transferência de Propriedade</a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content vehicle-area-tab-content">
+                            <div role="tabpanel" class="tab-pane active" id="vehicle-acquisition">
 
                         @if(
                             auth()->user()->can('financial_sensitive_access')
@@ -788,6 +875,8 @@
                             @endcan
                         </div>
 
+                            </div>
+                            <div role="tabpanel" class="tab-pane" id="vehicle-documents">
                         @php
                             $hasAllDocuments = (int) ($vehicle->purchase_and_sale_agreement ?? 0) === 1
                                 && (int) ($vehicle->copy_of_the_citizen_card ?? 0) === 1
@@ -881,8 +970,10 @@
                             </div>
                         @endcan
 
+                            </div>
+                            <div role="tabpanel" class="tab-pane" id="vehicle-others">
                         @can('vehicle_others_area_access')
-                            <h4>Outros</h4>
+                            <h4>Acessórios</h4>
                             <hr>
                             <div class="row">
                                 <div class="col-md-3">
@@ -966,6 +1057,8 @@
                             </div>
                         </div>
 
+                            </div>
+                            <div role="tabpanel" class="tab-pane" id="vehicle-withdrawal">
                         @unless(\App\Support\RolePreview::hasAnyEffectiveRole(auth()->user(), ['Stand']))
                             <h4>Levantamento da viatura</h4>
                             <hr>
@@ -1043,6 +1136,8 @@
                                 </div>
                             </div>
                         @endunless
+                            </div>
+                            <div role="tabpanel" class="tab-pane" id="vehicle-preparation-sale">
                         @php
                             $pvp = (float) ($vehicle->pvp ?? 0);
                             $sales_iuc = (float) ($vehicle->sales_iuc ?? 0);
@@ -1054,7 +1149,7 @@
                         <h4>Preparação e venda da viatura</h4>
                         <hr>
                         <div class="row">
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <div class="form-group {{ $errors->has('total_price') ? 'has-error' : '' }}">
                                     <label for="total_price">{{ trans('cruds.vehicle.fields.total_price') }}</label>
                                     <input class="form-control" type="number" name="total_price" id="total_price" value="{{ old('total_price', $vehicle->total_price) }}" step="0.01">
@@ -1380,8 +1475,6 @@
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.payment_notes_helper') }}</span>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('client_registration') ? 'has-error' : '' }}">
                                     <label for="client_registration">{{ trans('cruds.vehicle.fields.client_registration') }}</label>
                                     <input class="form-control" type="text" name="client_registration" id="client_registration" value="{{ old('client_registration', $vehicle->client_registration) }}">
@@ -1435,6 +1528,119 @@
                                 </div>
                                 @include('admin.vehicles.partials.sendToWorkshop')
                                 @include('admin.vehicles.partials.tradeIns')
+                            </div>
+                        </div>
+                            </div>
+                            <div role="tabpanel" class="tab-pane" id="vehicle-ownership-transfer">
+                                <h4>Transferência de Propriedade</h4>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group {{ $errors->has('ownership_documents_ready_at') ? 'has-error' : '' }}">
+                                            <input type="hidden" name="ownership_documents_ready" value="0">
+                                            <div class="checkbox">
+                                                <label for="ownership_documents_ready">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="ownership_documents_ready"
+                                                        id="ownership_documents_ready"
+                                                        value="1"
+                                                        data-timestamp-target="ownership_documents_ready_at"
+                                                        {{ old('ownership_documents_ready', $vehicle->ownership_documents_ready_at ? 1 : 0) ? 'checked' : '' }}
+                                                    >
+                                                    Documentação pronta
+                                                </label>
+                                            </div>
+                                            <label for="ownership_documents_ready_at">Data</label>
+                                            <input
+                                                class="form-control"
+                                                type="datetime-local"
+                                                name="ownership_documents_ready_at"
+                                                id="ownership_documents_ready_at"
+                                                value="{{ old('ownership_documents_ready_at', optional($vehicle->ownership_documents_ready_at)->format('Y-m-d\TH:i')) }}"
+                                            >
+                                            @if($errors->has('ownership_documents_ready_at'))
+                                                <span class="help-block" role="alert">{{ $errors->first('ownership_documents_ready_at') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group {{ $errors->has('ownership_payments_completed_at') ? 'has-error' : '' }}">
+                                            <input type="hidden" name="ownership_payments_completed" value="0">
+                                            <div class="checkbox">
+                                                <label for="ownership_payments_completed">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="ownership_payments_completed"
+                                                        id="ownership_payments_completed"
+                                                        value="1"
+                                                        data-timestamp-target="ownership_payments_completed_at"
+                                                        {{ old('ownership_payments_completed', $vehicle->ownership_payments_completed_at ? 1 : 0) ? 'checked' : '' }}
+                                                    >
+                                                    Pagamentos efetuados
+                                                </label>
+                                            </div>
+                                            <label for="ownership_payments_completed_at">Data</label>
+                                            <input
+                                                class="form-control"
+                                                type="datetime-local"
+                                                name="ownership_payments_completed_at"
+                                                id="ownership_payments_completed_at"
+                                                value="{{ old('ownership_payments_completed_at', optional($vehicle->ownership_payments_completed_at)->format('Y-m-d\TH:i')) }}"
+                                            >
+                                            @if($errors->has('ownership_payments_completed_at'))
+                                                <span class="help-block" role="alert">{{ $errors->first('ownership_payments_completed_at') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group {{ $errors->has('ownership_rafael_authorized_at') ? 'has-error' : '' }}">
+                                            <input type="hidden" name="ownership_rafael_authorized" value="0">
+                                            <div class="checkbox">
+                                                <label for="ownership_rafael_authorized">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="ownership_rafael_authorized"
+                                                        id="ownership_rafael_authorized"
+                                                        value="1"
+                                                        data-timestamp-target="ownership_rafael_authorized_at"
+                                                        {{ old('ownership_rafael_authorized', $vehicle->ownership_rafael_authorized_at ? 1 : 0) ? 'checked' : '' }}
+                                                    >
+                                                    Autorização do Rafael
+                                                </label>
+                                            </div>
+                                            <label for="ownership_rafael_authorized_at">Data</label>
+                                            <input
+                                                class="form-control"
+                                                type="datetime-local"
+                                                name="ownership_rafael_authorized_at"
+                                                id="ownership_rafael_authorized_at"
+                                                value="{{ old('ownership_rafael_authorized_at', optional($vehicle->ownership_rafael_authorized_at)->format('Y-m-d\TH:i')) }}"
+                                            >
+                                            @if($errors->has('ownership_rafael_authorized_at'))
+                                                <span class="help-block" role="alert">{{ $errors->first('ownership_rafael_authorized_at') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group {{ $errors->has('ownership_transfer_proof') ? 'has-error' : '' }}">
+                                            <label for="ownership_transfer_proof-dropzone">Comprovativo da transferência</label>
+                                            <div class="needsclick dropzone" id="ownership_transfer_proof-dropzone"></div>
+                                            @if($errors->has('ownership_transfer_proof'))
+                                                <span class="help-block" role="alert">{{ $errors->first('ownership_transfer_proof') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group {{ $errors->has('ownership_rafael_authorization_proof') ? 'has-error' : '' }}">
+                                            <label for="ownership_rafael_authorization_proof-dropzone">Comprovativo da autorização do Rafael</label>
+                                            <div class="needsclick dropzone" id="ownership_rafael_authorization_proof-dropzone"></div>
+                                            @if($errors->has('ownership_rafael_authorization_proof'))
+                                                <span class="help-block" role="alert">{{ $errors->first('ownership_rafael_authorization_proof') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -2663,6 +2869,128 @@
                         window.open(currentFile.original_url, '_blank')
                     })
                     $('#vehicle-edit-form').append('<input type="hidden" name="payment_comprovant[]" value="' + currentFile.file_name + '">')
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
+    }
+</script>
+
+<script>
+    (function () {
+        function currentLocalTimestamp() {
+            var now = new Date()
+            var offset = now.getTimezoneOffset()
+            var localNow = new Date(now.getTime() - (offset * 60000))
+
+            return localNow.toISOString().slice(0, 16)
+        }
+
+        document.querySelectorAll('[data-timestamp-target]').forEach(function (checkbox) {
+            var timestampInput = document.getElementById(checkbox.dataset.timestampTarget)
+
+            if (!timestampInput) {
+                return
+            }
+
+            checkbox.addEventListener('change', function () {
+                if (checkbox.checked && !timestampInput.value) {
+                    timestampInput.value = currentLocalTimestamp()
+                }
+
+                if (!checkbox.checked) {
+                    timestampInput.value = ''
+                }
+            })
+
+            timestampInput.addEventListener('change', function () {
+                checkbox.checked = timestampInput.value !== ''
+            })
+        })
+    })()
+</script>
+
+<script>
+    var uploadedOwnershipTransferProofMap = {}
+    Dropzone.options.ownershipTransferProofDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 10,
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 10 },
+        success: function (file, response) {
+            $('#vehicle-edit-form').append('<input type="hidden" name="ownership_transfer_proof[]" value="' + response.name + '">')
+            uploadedOwnershipTransferProofMap[file.name] = response.name
+        },
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedOwnershipTransferProofMap[file.name]
+            $('#vehicle-edit-form').find('input[name="ownership_transfer_proof[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->ownership_transfer_proof)
+                var files = {!! json_encode($vehicle->ownership_transfer_proof) !!}
+                for (var i in files) {
+                    const currentFile = files[i]
+                    this.options.addedfile.call(this, currentFile)
+                    currentFile.previewElement.classList.add('dz-complete')
+                    currentFile.previewElement.style.cursor = 'pointer'
+                    currentFile.previewElement.addEventListener('click', function (e) {
+                        if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
+                            return
+                        }
+                        window.open(currentFile.original_url, '_blank')
+                    })
+                    $('#vehicle-edit-form').append('<input type="hidden" name="ownership_transfer_proof[]" value="' + currentFile.file_name + '">')
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
+    }
+</script>
+
+<script>
+    var uploadedOwnershipRafaelAuthorizationProofMap = {}
+    Dropzone.options.ownershipRafaelAuthorizationProofDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 10,
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 10 },
+        success: function (file, response) {
+            $('#vehicle-edit-form').append('<input type="hidden" name="ownership_rafael_authorization_proof[]" value="' + response.name + '">')
+            uploadedOwnershipRafaelAuthorizationProofMap[file.name] = response.name
+        },
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedOwnershipRafaelAuthorizationProofMap[file.name]
+            $('#vehicle-edit-form').find('input[name="ownership_rafael_authorization_proof[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->ownership_rafael_authorization_proof)
+                var files = {!! json_encode($vehicle->ownership_rafael_authorization_proof) !!}
+                for (var i in files) {
+                    const currentFile = files[i]
+                    this.options.addedfile.call(this, currentFile)
+                    currentFile.previewElement.classList.add('dz-complete')
+                    currentFile.previewElement.style.cursor = 'pointer'
+                    currentFile.previewElement.addEventListener('click', function (e) {
+                        if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) {
+                            return
+                        }
+                        window.open(currentFile.original_url, '_blank')
+                    })
+                    $('#vehicle-edit-form').append('<input type="hidden" name="ownership_rafael_authorization_proof[]" value="' + currentFile.file_name + '">')
                 }
             @endif
         },

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\LicensePlate;
+use App\Traits\Auditable;
 use Carbon\Carbon;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -12,16 +13,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use App\Traits\Auditable;
 
 class Vehicle extends Model implements HasMedia
 {
-    use SoftDeletes, InteractsWithMedia, HasFactory, Auditable;
+    use Auditable, HasFactory, InteractsWithMedia, SoftDeletes;
 
     public $table = 'vehicles';
 
     public const TRANSMISSION_SELECT = [
-        'manual'    => 'Manual',
+        'manual' => 'Manual',
         'automatic' => 'Automáticas',
     ];
 
@@ -36,6 +36,8 @@ class Vehicle extends Model implements HasMedia
         'withdrawal_authorization_file',
         'withdrawal_documents',
         'payment_comprovant',
+        'ownership_transfer_proof',
+        'ownership_rafael_authorization_proof',
     ];
 
     protected $dates = [
@@ -140,11 +142,17 @@ class Vehicle extends Model implements HasMedia
         'purchase_has_vat',
         'purchase_vat_value',
         'acquisition_notes',
+        'ownership_documents_ready_at',
+        'ownership_payments_completed_at',
+        'ownership_rafael_authorized_at',
     ];
 
     protected $casts = [
         'purchase_has_vat' => 'boolean',
         'is_invoiced' => 'boolean',
+        'ownership_documents_ready_at' => 'datetime',
+        'ownership_payments_completed_at' => 'datetime',
+        'ownership_rafael_authorized_at' => 'datetime',
     ];
 
     protected function serializeDate(DateTimeInterface $date)
@@ -162,7 +170,7 @@ class Vehicle extends Model implements HasMedia
         return LicensePlate::applySearch($query, $term);
     }
 
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')->fit('crop', 50, 50);
         $this->addMediaConversion('preview')->fit('crop', 120, 120);
@@ -232,9 +240,9 @@ class Vehicle extends Model implements HasMedia
     {
         $files = $this->getMedia('photos');
         $files->each(function ($item) {
-            $item->url       = $item->getUrl();
+            $item->url = $item->getUrl();
             $item->thumbnail = $item->getUrl('thumb');
-            $item->preview   = $item->getUrl('preview');
+            $item->preview = $item->getUrl('preview');
         });
 
         return $files;
@@ -289,9 +297,9 @@ class Vehicle extends Model implements HasMedia
     {
         $files = $this->getMedia('inicial');
         $files->each(function ($item) {
-            $item->url       = $item->getUrl();
+            $item->url = $item->getUrl();
             $item->thumbnail = $item->getUrl('thumb');
-            $item->preview   = $item->getUrl('preview');
+            $item->preview = $item->getUrl('preview');
         });
 
         return $files;
@@ -362,6 +370,16 @@ class Vehicle extends Model implements HasMedia
         return $this->getMedia('payment_comprovant');
     }
 
+    public function getOwnershipTransferProofAttribute()
+    {
+        return $this->getMedia('ownership_transfer_proof');
+    }
+
+    public function getOwnershipRafaelAuthorizationProofAttribute()
+    {
+        return $this->getMedia('ownership_rafael_authorization_proof');
+    }
+
     public function getChekinDateAttribute($value)
     {
         return $value ? Carbon::parse($value)->format(config('panel.date_format')) : null;
@@ -401,7 +419,6 @@ class Vehicle extends Model implements HasMedia
     {
         $this->attributes['sele_chekout'] = $value ? Carbon::createFromFormat(config('panel.date_format'), $value)->format('Y-m-d') : null;
     }
-
 
     public function vehicle_groups()
     {
