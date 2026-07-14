@@ -184,6 +184,16 @@ async function refreshWhatsappState() {
   }
 }
 
+let restartScheduled = false;
+function scheduleProcessRestart(reason, delayMs = 5000) {
+  if (restartScheduled) return;
+  restartScheduled = true;
+  console.error(`Scheduling process restart in ${delayMs}ms: ${reason}`);
+  setTimeout(() => {
+    process.exit(1);
+  }, delayMs).unref();
+}
+
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: process.env.WHATSAPP_SESSION_NAME || 'autorc-manager' }),
   userAgent: whatsappUserAgent,
@@ -214,6 +224,7 @@ client.on('authenticated', () => {
 client.on('auth_failure', (message) => {
   whatsappState = 'auth_failure';
   console.error('WhatsApp authentication failed:', message);
+  scheduleProcessRestart('WhatsApp authentication failed');
 });
 
 client.on('ready', () => {
@@ -226,6 +237,7 @@ client.on('disconnected', (reason) => {
   whatsappReady = false;
   whatsappState = 'disconnected';
   console.error('WhatsApp client disconnected:', reason);
+  scheduleProcessRestart(`WhatsApp client disconnected: ${reason}`);
 });
 
 client.on('message_ack', (message, ack) => {
