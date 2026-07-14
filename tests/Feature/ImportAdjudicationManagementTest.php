@@ -203,10 +203,12 @@ class ImportAdjudicationManagementTest extends TestCase
     {
         Carbon::setTestNow('2026-07-14 10:00:00');
         $admin = $this->userWithRole('Admin');
-        $tollsUser = $this->userWithRole('Gestão');
+        $firstAlertUser = $this->userWithRole('Gestão');
+        $secondAlertUser = $this->userWithRole('Aux. gestão');
         $vehicle = $this->adjudicationVehicle('FR-NEW-01');
-        OperationalAlertRecipient::where('key', OperationalAlertRecipient::KEY_TOLLS)
-            ->update(['user_id' => $tollsUser->id]);
+        $alertConfiguration = OperationalAlertRecipient::where('key', OperationalAlertRecipient::KEY_TOLLS)->firstOrFail();
+        $alertConfiguration->users()->sync([$firstAlertUser->id, $secondAlertUser->id]);
+        $alertConfiguration->update(['user_id' => $firstAlertUser->id]);
 
         $payload = array_merge($this->legalizationPayload(), [
             'import_new_license_received' => 1,
@@ -226,8 +228,16 @@ class ImportAdjudicationManagementTest extends TestCase
         $this->assertDatabaseHas('calendar_tasks', [
             'vehicle_id' => $vehicle->id,
             'type' => CalendarTask::TYPE_NEW_LICENSE_TOLLS,
-            'assigned_to_id' => $tollsUser->id,
+            'assigned_to_id' => $firstAlertUser->id,
         ]);
+        $this->assertDatabaseHas('calendar_tasks', [
+            'vehicle_id' => $vehicle->id,
+            'type' => CalendarTask::TYPE_NEW_LICENSE_TOLLS,
+            'assigned_to_id' => $secondAlertUser->id,
+        ]);
+        $this->assertSame(2, CalendarTask::where('vehicle_id', $vehicle->id)
+            ->where('type', CalendarTask::TYPE_NEW_LICENSE_TOLLS)
+            ->count());
         $this->assertNotNull(CalendarTask::where('vehicle_id', $vehicle->id)
             ->where('type', CalendarTask::TYPE_IMPORT_DEADLINE)
             ->firstOrFail()
@@ -238,8 +248,9 @@ class ImportAdjudicationManagementTest extends TestCase
     {
         $admin = $this->userWithRole('Admin');
         $vehicle = $this->adjudicationVehicle('FR-NO-TOLLS');
-        OperationalAlertRecipient::where('key', OperationalAlertRecipient::KEY_TOLLS)
-            ->update(['user_id' => null]);
+        $alertConfiguration = OperationalAlertRecipient::where('key', OperationalAlertRecipient::KEY_TOLLS)->firstOrFail();
+        $alertConfiguration->users()->detach();
+        $alertConfiguration->update(['user_id' => null]);
 
         try {
             app(VehicleImportProcessService::class)->sync($vehicle, array_merge($this->legalizationPayload(), [

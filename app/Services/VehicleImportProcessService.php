@@ -10,6 +10,7 @@ use App\Models\Vehicle;
 use App\Models\VehicleImportProcess;
 use App\Support\LicensePlate;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -55,13 +56,22 @@ class VehicleImportProcessService
                 ]);
             }
 
-            $tollsRecipient = $newLicenseReceivedAt
-                ? OperationalAlertRecipient::where('key', OperationalAlertRecipient::KEY_TOLLS)->first()?->user
-                : null;
+            $tollsRecipients = collect();
 
-            if ($newLicenseReceivedAt && ! $tollsRecipient) {
+            if ($newLicenseReceivedAt) {
+                $recipientConfiguration = OperationalAlertRecipient::with('users')
+                    ->where('key', OperationalAlertRecipient::KEY_TOLLS)
+                    ->first();
+                $tollsRecipients = $recipientConfiguration?->users ?? collect();
+
+                if ($tollsRecipients->isEmpty() && $recipientConfiguration?->user) {
+                    $tollsRecipients = collect([$recipientConfiguration->user]);
+                }
+            }
+
+            if ($newLicenseReceivedAt && $tollsRecipients->isEmpty()) {
                 throw ValidationException::withMessages([
-                    'import_new_license_received_at' => 'Configure primeiro a responsável por Portagens.',
+                    'import_new_license_received_at' => 'Configure primeiro os responsáveis pelos alertas.',
                 ]);
             }
 
@@ -108,7 +118,7 @@ class VehicleImportProcessService
 
             $this->syncDeadlineTask($vehicle, $process, $user);
             $this->syncDocumentsTask($vehicle, $process, $user, $previousDocumentsReceivedAt);
-            $this->syncNewLicenseTasks($vehicle, $process, $user, $tollsRecipient);
+            $this->syncNewLicenseTasks($vehicle, $process, $user, $tollsRecipients);
 
             return $process->fresh();
         });
@@ -237,13 +247,15 @@ class VehicleImportProcessService
         Vehicle $vehicle,
         VehicleImportProcess $process,
         User $user,
-        ?User $tollsRecipient
+        Collection $tollsRecipients
     ): void {
         $workshopKey = "vehicle-import:{$vehicle->id}:new-license-workshop";
-        $tollsKey = "vehicle-import:{$vehicle->id}:new-license-tolls";
+        $legacyTollsKey = "vehicle-import:{$vehicle->id}:new-license-tolls";
 
         if (! $process->new_license_received_at || ! $process->new_license) {
-            CalendarTask::whereIn('dedupe_key', [$workshopKey, $tollsKey])->delete();
+            CalendarTask::where('vehicle_id', $vehicle->id)
+                ->whereIn('type', [CalendarTask::TYPE_NEW_LICENSE_WORKSHOP, CalendarTask::TYPE_NEW_LICENSE_TOLLS])
+                ->delete();
 
             return;
         }
@@ -257,18 +269,27 @@ class VehicleImportProcessService
             CalendarTask::GROUP_WORKSHOP,
         );
 
-        $task = CalendarTask::firstOrNew(['dedupe_key' => $tollsKey]);
-        $task->fill([
-            'title' => 'Adicionar '.$process->new_license.' ao alerta de portagens',
-            'due_date' => now()->format(config('panel.date_format')),
-            'notes' => 'Tarefa criada automaticamente após a receção da nova matrícula.',
-            'vehicle_id' => $vehicle->id,
-            'assigned_to_id' => $tollsRecipient?->id,
-            'type' => CalendarTask::TYPE_NEW_LICENSE_TOLLS,
-            'target_url' => $this->vehicleUrl($vehicle),
-            'created_by_id' => $task->created_by_id ?: $user->id,
-        ]);
-        $task->save();
+        CalendarTask::where('dedupe_key', $legacyTollsKey)->delete();
+        CalendarTask::where('vehicle_id', $vehicle->id)
+            ->where('type', CalendarTask::TYPE_NEW_LICENSE_TOLLS)
+            ->whereNotIn('assigned_to_id', $tollsRecipients->pluck('id'))
+            ->delete();
+
+        foreach ($tollsRecipients as $tollsRecipient) {
+            $tollsKey = "vehicle-import:{$vehicle->id}:new-license-tolls:user:{$tollsRecipient->id}";
+            $task = CalendarTask::firstOrNew(['dedupe_key' => $tollsKey]);
+            $task->fill([
+                'title' => 'Adicionar '.$process->new_license.' ao alerta de portagens',
+                'due_date' => now()->format(config('panel.date_format')),
+                'notes' => 'Tarefa criada automaticamente após a receção da nova matrícula.',
+                'vehicle_id' => $vehicle->id,
+                'assigned_to_id' => $tollsRecipient->id,
+                'type' => CalendarTask::TYPE_NEW_LICENSE_TOLLS,
+                'target_url' => $this->vehicleUrl($vehicle),
+                'created_by_id' => $task->created_by_id ?: $user->id,
+            ]);
+            $task->save();
+        }
     }
 
     private function createOperationalTask(

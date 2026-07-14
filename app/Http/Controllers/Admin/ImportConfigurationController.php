@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePurchasingCompanyRequest;
+use App\Http\Requests\UpdateOperationalAlertRecipientsRequest;
 use App\Models\OperationalAlertRecipient;
 use App\Models\PurchasingCompany;
 use App\Models\User;
@@ -25,8 +26,14 @@ class ImportConfigurationController extends Controller
         $tollsRecipient = OperationalAlertRecipient::firstOrCreate([
             'key' => OperationalAlertRecipient::KEY_TOLLS,
         ]);
+        $tollsRecipient->load('users');
+        $selectedTollsRecipientIds = $tollsRecipient->users->pluck('id');
 
-        return view('admin.importConfiguration.index', compact('companies', 'tollsRecipient', 'users'));
+        if ($selectedTollsRecipientIds->isEmpty() && $tollsRecipient->user_id) {
+            $selectedTollsRecipientIds = collect([$tollsRecipient->user_id]);
+        }
+
+        return view('admin.importConfiguration.index', compact('companies', 'selectedTollsRecipientIds', 'users'));
     }
 
     public function storeCompany(StorePurchasingCompanyRequest $request)
@@ -69,19 +76,18 @@ class ImportConfigurationController extends Controller
         return redirect()->route('admin.import-configuration.index')->with('message', 'Empresa compradora atualizada.');
     }
 
-    public function updateTollsRecipient(Request $request)
+    public function updateTollsRecipient(UpdateOperationalAlertRecipientsRequest $request)
     {
-        abort_if(Gate::denies('import_configuration_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-
-        $data = $request->validate([
-            'user_id' => ['required', 'integer', 'exists:users,id'],
+        $recipient = OperationalAlertRecipient::firstOrCreate([
+            'key' => OperationalAlertRecipient::KEY_TOLLS,
         ]);
+        $userIds = collect($request->validated('user_ids'))->map(fn ($userId) => (int) $userId)->unique()->values();
 
-        OperationalAlertRecipient::updateOrCreate(
-            ['key' => OperationalAlertRecipient::KEY_TOLLS],
-            ['user_id' => $data['user_id']]
-        );
+        DB::transaction(function () use ($recipient, $userIds): void {
+            $recipient->users()->sync($userIds);
+            $recipient->update(['user_id' => $userIds->first()]);
+        });
 
-        return redirect()->route('admin.import-configuration.index')->with('message', 'Responsável por Portagens atualizada.');
+        return redirect()->route('admin.import-configuration.index')->with('message', 'Responsáveis pelos alertas atualizados.');
     }
 }

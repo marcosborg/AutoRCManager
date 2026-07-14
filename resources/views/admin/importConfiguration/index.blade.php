@@ -9,20 +9,19 @@
                     <form method="POST" action="{{ route('admin.import-configuration.tolls-recipient.update') }}">
                         @csrf
                         @method('PUT')
-                        <div class="form-group {{ $errors->has('user_id') ? 'has-error' : '' }}">
-                            <label class="required" for="tolls-recipient-user">Responsável por Portagens</label>
-                            <select class="form-control select2" name="user_id" id="tolls-recipient-user" required>
-                                <option value="">{{ trans('global.pleaseSelect') }}</option>
+                        <div class="form-group {{ $errors->has('user_ids') || $errors->has('user_ids.*') ? 'has-error' : '' }}">
+                            <label class="required" for="tolls-recipient-users">Responsáveis pelos alertas</label>
+                            <select class="form-control select2" name="user_ids[]" id="tolls-recipient-users" multiple required>
                                 @foreach($users as $id => $name)
-                                    <option value="{{ $id }}" {{ (string) old('user_id', $tollsRecipient->user_id) === (string) $id ? 'selected' : '' }}>{{ $name }}</option>
+                                    <option value="{{ $id }}" {{ collect(old('user_ids', $selectedTollsRecipientIds))->contains(fn ($selectedId) => (string) $selectedId === (string) $id) ? 'selected' : '' }}>{{ $name }}</option>
                                 @endforeach
                             </select>
-                            @if($errors->has('user_id'))
-                                <span class="help-block">{{ $errors->first('user_id') }}</span>
+                            @if($errors->has('user_ids'))
+                                <span class="help-block">{{ $errors->first('user_ids') }}</span>
                             @endif
-                            <p class="help-block">Recebe a tarefa para adicionar cada matrícula nova ao alerta de portagens.</p>
+                            <p class="help-block">Todos os utilizadores selecionados recebem individualmente cada tarefa.</p>
                         </div>
-                        <button class="btn btn-danger" type="submit">Gravar responsável</button>
+                        <button class="btn btn-danger" type="submit">Gravar responsáveis</button>
                     </form>
                 </div>
             </div>
