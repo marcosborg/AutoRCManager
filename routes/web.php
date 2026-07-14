@@ -96,6 +96,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('vehicles/{vehicle}/generic-payments/{payment}', 'VehicleController@destroyGenericPayment')->name('vehicles.generic-payments.destroy');
     Route::delete('vehicles/{vehicle}/client-payments/{payment}', 'VehicleController@destroyClientPayment')->name('vehicles.client-payments.destroy');
     Route::post('vehicles/{vehicle}/send-to-workshop', 'VehicleController@sendToWorkshop')->name('vehicles.send-to-workshop');
+    Route::patch('vehicles/{vehicle}/workshop-state', 'VehicleController@updateWorkshopState')->name('vehicles.workshop-state.update');
     Route::post('vehicles/{vehicle}/suspended-sale', 'VehicleController@suspendSale')->name('vehicles.suspended-sale.store');
     Route::delete('vehicles/{vehicle}/suspended-sale', 'VehicleController@cancelSuspendedSale')->name('vehicles.suspended-sale.destroy');
     Route::get('vehicle-trade-ins', 'VehicleTradeInController@index')->name('vehicle-trade-ins.index');
@@ -166,6 +167,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repairs/media', 'RepairController@storeMedia')->name('repairs.storeMedia');
     Route::post('repairs/ckmedia', 'RepairController@storeCKEditorImages')->name('repairs.storeCKEditorImages');
     Route::post('repairs/{repair}/new-intervention', 'RepairController@newIntervention')->name('repairs.newIntervention');
+    Route::post('vehicles/{vehicle}/start-intervention', 'RepairController@startIntervention')->name('vehicles.start-intervention');
     Route::post('repairs/{repair}/start', 'RepairController@startRepair')->name('repairs.start');
     Route::post('repairs/{repair}/finish', 'RepairController@finishRepair')->name('repairs.finish');
     Route::post('repairs/{repair}/reopen', 'RepairController@reopenRepair')->name('repairs.reopen');
@@ -200,6 +202,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repair-states/parse-csv-import', 'RepairStatesController@parseCsvImport')->name('repair-states.parseCsvImport');
     Route::post('repair-states/process-csv-import', 'RepairStatesController@processCsvImport')->name('repair-states.processCsvImport');
     Route::resource('repair-states', 'RepairStatesController');
+
+    Route::resource('workshop-states', 'WorkshopStateController')->except(['create', 'show', 'edit']);
 
     // General State
     Route::delete('general-states/destroy', 'GeneralStateController@massDestroy')->name('general-states.massDestroy');

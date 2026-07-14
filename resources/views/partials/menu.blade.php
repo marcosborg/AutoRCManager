@@ -192,6 +192,14 @@
                                 </a>
                             </li>
                         @endcan
+                        @can('workshop_state_access')
+                            <li class="{{ request()->is('admin/workshop-states') ? 'active' : '' }}">
+                                <a href="{{ route('admin.workshop-states.index') }}">
+                                    <i class="fa-fw fas fa-warehouse"></i>
+                                    <span>Estados da Oficina</span>
+                                </a>
+                            </li>
+                        @endcan
                         @can('general_state_access')
                             <li class="{{ request()->is("admin/general-states") || request()->is("admin/general-states/*") ? "active" : "" }}">
                                 <a href="{{ route("admin.general-states.index") }}">
@@ -365,6 +373,14 @@
                         @can('workshop_planning_access')
                             <li class="{{ request()->is('admin/workshop-interventions') || request()->is('admin/workshop-interventions/*') ? 'active' : '' }}">
                                 <a href="{{ route('admin.workshop-interventions.index') }}"><i class="fa-fw fas fa-calendar-alt"></i><span>Planificação de intervenções</span></a>
+                            </li>
+                        @endcan
+                        @can('workshop_state_access')
+                            <li class="{{ request()->is('admin/workshop-states') ? 'active' : '' }}">
+                                <a href="{{ route('admin.workshop-states.index') }}">
+                                    <i class="fa-fw fas fa-warehouse"></i>
+                                    <span>Estados da Oficina</span>
+                                </a>
                             </li>
                         @endcan
                         @can('part_order_access')
