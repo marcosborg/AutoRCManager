@@ -7,12 +7,21 @@ use App\Models\Lead;
 use App\Models\LeadAssignmentHistory;
 use App\Models\User;
 use Carbon\Carbon;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class LeadPerformanceController extends Controller
 {
+    public function export(Request $request)
+    {
+        $request->merge(['pdf' => 1]);
+
+        return $this->index($request);
+    }
+
     public function index(Request $request)
     {
         abort_if(Gate::denies('lead_performance_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -23,6 +32,7 @@ class LeadPerformanceController extends Controller
         $measurementStart = $measurementStartedAt ? Carbon::parse($measurementStartedAt)->startOfDay() : now()->startOfDay();
 
         $requestedStart = $this->date($request->query('date_start')) ?: now()->startOfYear();
+        $filterDateStart = $requestedStart->copy();
         $dateStart = $requestedStart->lt($measurementStart) ? $measurementStart->copy() : $requestedStart;
         $dateEnd = $this->date($request->query('date_end')) ?: now()->endOfYear();
         if ($dateEnd->lt($dateStart)) {
@@ -70,6 +80,11 @@ class LeadPerformanceController extends Controller
             ->sortByDesc(fn ($row) => sprintf('%010.4f-%010d', $row['contact_rate'], $row['contacted']))
             ->values();
 
+        $legacyEnd = $dateEnd->copy()->endOfDay()->min($measurementStart->copy()->subSecond());
+        $legacyRanking = (!$channel && $filterDateStart->lte($legacyEnd))
+            ? $this->legacyRanking($filterDateStart, $legacyEnd, $sellerId, $source)
+            : collect();
+
         $metric = in_array($request->query('metric'), ['assigned', 'opened', 'contacted', 'unopened', 'call', 'whatsapp'], true)
             ? $request->query('metric') : null;
         $detail = ($sellerId && $metric)
@@ -79,10 +94,98 @@ class LeadPerformanceController extends Controller
         $salespeople = User::query()->whereHas('roles', fn ($query) => $query->where('title', 'Stand'))
             ->orderBy('name')->pluck('name', 'id');
 
-        return view('admin.leads.performance', compact(
-            'ranking', 'detail', 'salespeople', 'measurementStart', 'dateStart', 'dateEnd',
+        $data = compact(
+            'ranking', 'legacyRanking', 'detail', 'salespeople', 'measurementStart', 'filterDateStart', 'dateStart', 'dateEnd',
             'sellerId', 'source', 'channel', 'metric'
-        ));
+        );
+
+        if ($request->boolean('pdf')) {
+            return $this->pdf($data);
+        }
+
+        return view('admin.leads.performance', $data);
+    }
+
+    private function pdf(array $data)
+    {
+        $options = new Options();
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('isRemoteEnabled', false);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml(view('admin.leads.performancePdf', $data + [
+            'generatedAt' => now(),
+        ])->render(), 'UTF-8');
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $canvas = $dompdf->getCanvas();
+        $canvas->page_text(750, 570, 'Página {PAGE_NUM} de {PAGE_COUNT}', null, 8, [0.35, 0.39, 0.45]);
+
+        $filename = 'desempenho-leads-'.now()->format('Y-m-d-His').'.pdf';
+
+        return response($dompdf->output(), Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Cache-Control' => 'private, max-age=0, must-revalidate',
+        ]);
+    }
+
+    private function legacyRanking(Carbon $dateStart, Carbon $dateEnd, ?int $sellerId, ?string $source)
+    {
+        $tokens = \App\Models\LeadAccessToken::query()
+            ->with(['user', 'lead'])
+            ->whereNull('assignment_history_id')
+            ->whereBetween('created_at', [$dateStart->copy()->startOfDay(), $dateEnd])
+            ->whereNotNull('user_id')
+            ->when($sellerId, fn ($query) => $query->where('user_id', $sellerId))
+            ->when($source, fn ($query) => $query->whereHas('lead', function ($leadQuery) use ($source) {
+                $source === 'whatsapp' ? $this->whereWhatsapp($leadQuery) : $this->whereForm($leadQuery);
+            }))
+            ->get();
+
+        if ($tokens->isEmpty()) {
+            return collect();
+        }
+
+        $histories = LeadAssignmentHistory::query()
+            ->whereIn('lead_id', $tokens->pluck('lead_id')->unique())
+            ->whereIn('user_id', $tokens->pluck('user_id')->filter()->unique())
+            ->where('created_at', '<=', $dateEnd)
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy(fn ($history) => $history->lead_id.':'.$history->user_id);
+
+        $opportunities = $tokens->groupBy(function ($token) use ($histories) {
+            $matching = $histories->get($token->lead_id.':'.$token->user_id, collect())
+                ->filter(fn ($history) => $history->created_at->lte($token->created_at))
+                ->last();
+
+            return $matching ? 'history:'.$matching->id : 'token:'.$token->id;
+        })->map(function ($opportunityTokens) {
+            $first = $opportunityTokens->first();
+            $opened = $opportunityTokens->contains(fn ($token) => $token->last_used_at !== null);
+
+            return [
+                'user_id' => $first->user_id,
+                'user_name' => $first->user?->name ?? 'Utilizador removido',
+                'opened' => $opened,
+                'expired' => ! $opened && $opportunityTokens->contains('revoked_reason', 'no_open_timeout'),
+            ];
+        });
+
+        return $opportunities->groupBy('user_id')->map(function ($items) {
+            $assigned = $items->count();
+            $opened = $items->where('opened', true)->count();
+
+            return [
+                'user_name' => $items->first()['user_name'],
+                'assigned' => $assigned,
+                'opened' => $opened,
+                'open_rate' => $assigned ? $opened / $assigned * 100 : 0,
+                'expired' => $items->where('expired', true)->count(),
+            ];
+        })->sortByDesc('open_rate')->values();
     }
 
     private function opportunity(LeadAssignmentHistory $assignment, ?string $channel): array

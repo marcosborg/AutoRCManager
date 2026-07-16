@@ -66,6 +66,24 @@
 <script>
 $(function () {
   let dtButtons = $.extend(true, [], $.fn.dataTable.defaults.buttons)
+  dtButtons = dtButtons.filter(function (button) {
+    let type = typeof button === 'string' ? button : (button.extend || '')
+    return type !== 'pdf' && type !== 'pdfHtml5'
+  })
+  dtButtons.push({
+    text: '<i class="fa fa-file-pdf-o"></i> Exportar PDF',
+    className: 'btn-danger',
+    action: function (e, dt) {
+      let keys = {1:'id', 2:'date', 3:'source', 4:'name', 5:'phone', 6:'email', 7:'budget', 8:'vehicle', 9:'seller', 10:'status'}
+      let params = new URLSearchParams()
+      if (dt.search()) params.set('search', dt.search())
+      Object.keys(keys).forEach(function (index) {
+        let value = dt.column(parseInt(index)).search().replace(/^\^|\$$/g, '')
+        if (value) params.set(keys[index], value)
+      })
+      window.location.href = @json(route('admin.leads.export.pdf')) + (params.toString() ? '?' + params.toString() : '')
+    }
+  })
 
   let dtOverrideGlobals = {
     buttons: dtButtons,

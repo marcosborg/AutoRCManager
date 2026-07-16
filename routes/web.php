@@ -44,6 +44,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('leads/{lead}/notes', 'LeadController@storeNote')->name('leads.notes.store');
     Route::delete('leads/{lead}/notes/{note}', 'LeadController@destroyNote')->name('leads.notes.destroy');
     Route::get('leads-performance', 'LeadPerformanceController@index')->name('leads.performance');
+    Route::get('leads-performance/pdf', 'LeadPerformanceController@export')->name('leads.performance.pdf');
+    Route::get('leads/export/pdf', 'LeadController@exportPdf')->name('leads.export.pdf');
     Route::resource('leads', 'LeadController')->except(['create', 'store']);
 
     Route::resource('ai-assistants', 'AiAssistantController');

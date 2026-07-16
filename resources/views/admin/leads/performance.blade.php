@@ -6,12 +6,13 @@
         <div class="panel-body">
             <div class="alert alert-info">Medição disponível desde {{ $measurementStart->format('d/m/Y H:i') }}. Atribuições anteriores não entram nos cálculos.</div>
             <form method="GET" action="{{ route('admin.leads.performance') }}" class="form-inline" style="margin-bottom:15px">
-                <label>De <input class="form-control" type="date" name="date_start" value="{{ $dateStart->format('Y-m-d') }}" min="{{ $measurementStart->format('Y-m-d') }}"></label>
+                <label>De <input class="form-control" type="date" name="date_start" value="{{ $filterDateStart->format('Y-m-d') }}"></label>
                 <label>Até <input class="form-control" type="date" name="date_end" value="{{ $dateEnd->format('Y-m-d') }}"></label>
                 <label>Vendedor <select class="form-control" name="seller_id"><option value="">Todos</option>@foreach($salespeople as $id => $name)<option value="{{ $id }}" {{ (int)$sellerId === (int)$id ? 'selected' : '' }}>{{ $name }}</option>@endforeach</select></label>
                 <label>Proveniência <select class="form-control" name="source"><option value="">Todas</option><option value="form" {{ $source === 'form' ? 'selected' : '' }}>Formulário</option><option value="whatsapp" {{ $source === 'whatsapp' ? 'selected' : '' }}>WhatsApp</option></select></label>
                 <label>Canal <select class="form-control" name="channel"><option value="">Todos</option><option value="call" {{ $channel === 'call' ? 'selected' : '' }}>Telefone</option><option value="whatsapp" {{ $channel === 'whatsapp' ? 'selected' : '' }}>WhatsApp</option></select></label>
                 <button class="btn btn-primary" type="submit">Filtrar</button>
+                <a class="btn btn-danger" href="{{ route('admin.leads.performance.pdf', request()->query()) }}"><i class="fa fa-file-pdf-o"></i> Exportar PDF</a>
                 <a class="btn btn-default" href="{{ route('admin.leads.performance') }}">Limpar</a>
             </form>
             <div class="table-responsive"><table class="table table-bordered table-striped">
@@ -28,6 +29,20 @@
                     <td>{{ $row['avg_open_minutes'] !== null ? $row['avg_open_minutes'].' min' : '-' }}</td><td>{{ $row['avg_contact_minutes'] !== null ? $row['avg_contact_minutes'].' min' : '-' }}</td>
                 </tr>@empty<tr><td colspan="11" class="text-muted">Sem oportunidades instrumentadas neste período.</td></tr>@endforelse</tbody>
             </table></div>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">Histórico anterior à medição de contactos</div>
+        <div class="panel-body">
+            <p class="text-muted">É possível recuperar atribuições, aberturas e expirações. Os cliques em Telefone/WhatsApp não eram registados e, por isso, não existe taxa de aproveitamento histórica.</p>
+            @if($channel)
+                <div class="alert alert-warning">O histórico não pode ser filtrado por canal, porque os canais de contacto ainda não eram medidos.</div>
+            @else
+                <div class="table-responsive"><table class="table table-bordered table-striped">
+                    <thead><tr><th>Vendedor</th><th>Atribuídas</th><th>Abertas</th><th>Taxa de abertura</th><th>Não abertas/expiradas</th><th>Aproveitamento</th></tr></thead>
+                    <tbody>@forelse($legacyRanking as $row)<tr><td>{{ $row['user_name'] }}</td><td>{{ $row['assigned'] }}</td><td>{{ $row['opened'] }}</td><td>{{ number_format($row['open_rate'], 1, ',', '.') }}%</td><td>{{ $row['expired'] }}</td><td class="text-muted">Não mensurável</td></tr>@empty<tr><td colspan="6" class="text-muted">Sem dados históricos para estes filtros.</td></tr>@endforelse</tbody>
+                </table></div>
+            @endif
         </div>
     </div>
     @if($sellerId && $metric)

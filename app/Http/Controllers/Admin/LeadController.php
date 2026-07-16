@@ -7,6 +7,8 @@ use App\Models\Lead;
 use App\Models\LeadNote;
 use App\Models\User;
 use App\Support\RolePreview;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -103,6 +105,59 @@ class LeadController extends Controller
         return view('admin.leads.show', compact('lead', 'statuses', 'salespeople'));
     }
 
+    public function exportPdf(Request $request)
+    {
+        abort_if(Gate::denies('lead_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'id' => ['nullable', 'string', 'max:50'],
+            'date' => ['nullable', 'string', 'max:50'],
+            'source' => ['nullable', 'in:form,whatsapp'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'string', 'max:255'],
+            'budget' => ['nullable', 'string', 'max:255'],
+            'vehicle' => ['nullable', 'string', 'max:255'],
+            'seller' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'in:'.implode(',', array_keys(Lead::STATUS_SELECT))],
+        ]);
+
+        $query = $this->visibleLeadsQuery()->with('assigned_user');
+        $this->applyExportFilters($query, $filters);
+        $totalMatches = (clone $query)->count();
+        // Dompdf keeps the full table layout in memory. Keeping this batch modest
+        // prevents unfiltered exports from exhausting PHP's production memory limit.
+        $exportLimit = 100;
+        $leads = $query->latest('id')->limit($exportLimit)->get();
+        $statusSummary = $leads->countBy('status');
+
+        $options = new Options();
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('isRemoteEnabled', false);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml(view('admin.leads.indexPdf', [
+            'leads' => $leads,
+            'filters' => array_filter($filters, fn ($value) => $value !== null && $value !== ''),
+            'statusSummary' => $statusSummary,
+            'totalMatches' => $totalMatches,
+            'exportLimit' => $exportLimit,
+            'generatedAt' => now(),
+        ])->render(), 'UTF-8');
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+        $dompdf->getCanvas()->page_text(760, 570, 'Página {PAGE_NUM} de {PAGE_COUNT}', null, 8, [0.35, 0.39, 0.45]);
+
+        $filename = 'leads-'.now()->format('Y-m-d-His').'.pdf';
+
+        return response($dompdf->output(), Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Cache-Control' => 'private, max-age=0, must-revalidate',
+        ]);
+    }
+
     public function edit(Lead $lead)
     {
         abort_if(Gate::denies('lead_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -192,6 +247,41 @@ class LeadController extends Controller
         }
 
         return $query;
+    }
+
+    private function applyExportFilters($query, array $filters): void
+    {
+        $like = fn (string $key) => '%'.($filters[$key] ?? '').'%';
+
+        $query
+            ->when($filters['search'] ?? null, function ($query) use ($like) {
+                $query->where(function ($query) use ($like) {
+                    $query->where('full_name', 'like', $like('search'))
+                        ->orWhere('first_name', 'like', $like('search'))
+                        ->orWhere('last_name', 'like', $like('search'))
+                        ->orWhere('phone', 'like', $like('search'))
+                        ->orWhere('email', 'like', $like('search'))
+                        ->orWhere('vehicle_interest', 'like', $like('search'))
+                        ->orWhereHas('assigned_user', fn ($seller) => $seller->where('name', 'like', $like('search')));
+                });
+            })
+            ->when($filters['id'] ?? null, fn ($query) => $query->where('id', 'like', $like('id')))
+            ->when($filters['date'] ?? null, fn ($query) => $query->where('created_at', 'like', $like('date')))
+            ->when($filters['name'] ?? null, function ($query) use ($like) {
+                $query->where(function ($query) use ($like) {
+                    $query->where('full_name', 'like', $like('name'))
+                        ->orWhere('first_name', 'like', $like('name'))
+                        ->orWhere('last_name', 'like', $like('name'));
+                });
+            })
+            ->when($filters['phone'] ?? null, fn ($query) => $query->where('phone', 'like', $like('phone')))
+            ->when($filters['email'] ?? null, fn ($query) => $query->where('email', 'like', $like('email')))
+            ->when($filters['budget'] ?? null, fn ($query) => $query->where('budget', 'like', $like('budget')))
+            ->when($filters['vehicle'] ?? null, fn ($query) => $query->where('vehicle_interest', 'like', $like('vehicle')))
+            ->when($filters['seller'] ?? null, fn ($query) => $query->whereHas('assigned_user', fn ($seller) => $seller->where('name', 'like', $like('seller'))))
+            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when(($filters['source'] ?? null) === 'whatsapp', fn ($query) => $query->where(fn ($query) => $this->whereWhatsappSource($query)))
+            ->when(($filters['source'] ?? null) === 'form', fn ($query) => $query->where(fn ($query) => $this->whereFormSource($query)));
     }
 
     private function canAccessLead(Lead $lead): bool

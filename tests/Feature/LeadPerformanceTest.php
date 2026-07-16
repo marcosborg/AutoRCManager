@@ -85,12 +85,43 @@ class LeadPerformanceTest extends TestCase
     {
         $seller = $this->userWithRole('Stand', []);
         $lead = $this->lead($seller, 'form');
-        LeadAssignmentHistory::create(['lead_id' => $lead->id, 'user_id' => $seller->id, 'reason' => 'legacy']);
+        $legacyHistory = LeadAssignmentHistory::create(['lead_id' => $lead->id, 'user_id' => $seller->id, 'reason' => 'legacy']);
+        $legacyHistory->created_at = now()->subDay();
+        $legacyHistory->save();
+        $legacyToken = LeadAccessToken::create([
+            'lead_id' => $lead->id,
+            'user_id' => $seller->id,
+            'token_hash' => hash('sha256', Str::random(72)),
+            'expires_at' => now()->addDay(),
+            'last_used_at' => now(),
+        ]);
+        $legacyToken->created_at = now()->subDay()->addMinute();
+        $legacyToken->save();
         $admin = $this->userWithRole('Admin', ['lead_performance_access']);
 
         $this->actingAs($admin)->get(route('admin.leads.performance'))
-            ->assertOk()->assertSee('Sem oportunidades instrumentadas neste período.');
+            ->assertOk()
+            ->assertSee('Sem oportunidades instrumentadas neste período.')
+            ->assertSee('Histórico anterior à medição de contactos')
+            ->assertSee($seller->name)
+            ->assertSee('Não mensurável');
         $this->actingAs($seller)->get(route('admin.leads.performance'))->assertForbidden();
+    }
+
+    public function test_admin_can_export_the_filtered_report_as_pdf(): void
+    {
+        $this->trackedOpportunity('form');
+        $admin = $this->userWithRole('Admin', ['lead_performance_access']);
+
+        $response = $this->actingAs($admin)->get(route('admin.leads.performance.pdf', [
+            'date_start' => now()->startOfYear()->format('Y-m-d'),
+            'date_end' => now()->endOfYear()->format('Y-m-d'),
+            'source' => 'form',
+        ]));
+
+        $response->assertOk()->assertHeader('content-type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+        $this->assertStringContainsString('attachment;', strtolower((string) $response->headers->get('content-disposition')));
     }
 
     private function trackedOpportunity(string $source, ?User $seller = null, ?Lead $lead = null): array

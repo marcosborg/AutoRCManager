@@ -57,6 +57,32 @@ class AdminLeadAccessTest extends TestCase
         $this->actingAs($admin)->get(route('admin.leads.show', $lead))->assertOk();
     }
 
+    public function test_lead_list_pdf_uses_filters_and_is_a_real_download(): void
+    {
+        $admin = $this->userWithRole('Admin', ['lead_access']);
+        $seller = $this->userWithRole('Stand', ['lead_access']);
+
+        Lead::create([
+            'leadgen_id' => 'lead-pdf-'.uniqid(),
+            'page_id' => 'page-1',
+            'form_id' => 'form-1',
+            'full_name' => 'Cliente PDF',
+            'phone' => '910000001',
+            'assigned_user_id' => $seller->id,
+            'status' => Lead::STATUS_QUALIFIED,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.leads.export.pdf', [
+            'name' => 'Cliente PDF',
+            'status' => Lead::STATUS_QUALIFIED,
+            'source' => 'form',
+        ]));
+
+        $response->assertOk()->assertHeader('content-type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+        $this->assertStringContainsString('attachment;', strtolower((string) $response->headers->get('content-disposition')));
+    }
+
     private function userWithRole(string $roleTitle, array $permissionTitles): User
     {
         $role = Role::firstOrCreate(['title' => $roleTitle]);
