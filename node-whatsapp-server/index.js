@@ -2,7 +2,11 @@ require('dotenv').config();
 
 const axios = require('axios');
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const qrcode = require('qrcode-terminal');
+const QRCode = require('qrcode-terminal/vendor/QRCode');
+const QRErrorCorrectLevel = require('qrcode-terminal/vendor/QRCode/QRErrorCorrectLevel');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 
 const app = express();
@@ -17,6 +21,23 @@ let whatsappReady = false;
 let whatsappState = 'starting';
 let pollingOutgoing = false;
 let pollingLeadNotifications = false;
+
+function saveQrSvg(value) {
+  const qr = new QRCode(-1, QRErrorCorrectLevel.L);
+  qr.addData(value);
+  qr.make();
+  const quietZone = 4;
+  const size = qr.getModuleCount();
+  const paths = [];
+  for (let row = 0; row < size; row += 1) {
+    for (let col = 0; col < size; col += 1) {
+      if (qr.isDark(row, col)) paths.push(`M${col + quietZone} ${row + quietZone}h1v1h-1z`);
+    }
+  }
+  const fullSize = size + quietZone * 2;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fullSize} ${fullSize}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="white"/><path d="${paths.join('')}" fill="black"/></svg>`;
+  fs.writeFileSync(path.join(__dirname, 'logs', 'whatsapp-qr.svg'), svg, 'utf8');
+}
 const puppeteerHeadless = process.env.PUPPETEER_HEADLESS === undefined
   ? true
   : !['false', '0', 'no'].includes(String(process.env.PUPPETEER_HEADLESS).toLowerCase());
@@ -205,10 +226,33 @@ const client = new Client({
   },
 });
 
-client.on('qr', (qr) => {
+const pairingPhone = String(process.env.WHATSAPP_PAIRING_PHONE || '').replace(/\D/g, '');
+let pairingCodeRequested = false;
+
+client.on('qr', async (qr) => {
   whatsappState = 'qr';
+  if (pairingPhone) {
+    if (pairingCodeRequested) return;
+    pairingCodeRequested = true;
+    try {
+      const code = await client.requestPairingCode(pairingPhone);
+      whatsappState = 'pairing_code';
+      console.log(`WhatsApp pairing code: ${code}`);
+    } catch (error) {
+      pairingCodeRequested = false;
+      console.error('Failed to request WhatsApp pairing code:', error);
+    }
+    return;
+  }
+  fs.writeFileSync(path.join(__dirname, 'logs', 'latest-qr.txt'), qr, 'utf8');
+  saveQrSvg(qr);
   console.log('Scan this QR code with WhatsApp:');
   qrcode.generate(qr, { small: true });
+});
+
+client.on('code_received', (code) => {
+  whatsappState = 'pairing_code';
+  console.log(`WhatsApp pairing code: ${code}`);
 });
 
 client.on('loading_screen', (percent, message) => {
