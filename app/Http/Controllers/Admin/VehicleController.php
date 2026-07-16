@@ -31,6 +31,7 @@ use App\Services\VehicleImportProcessService;
 use App\Services\VehicleLotService;
 use App\Services\VehicleProfitabilityService;
 use App\Services\VehicleSuspendedSaleService;
+use App\Support\LicensePlate;
 use App\Support\RolePreview;
 use Gate;
 use Illuminate\Http\Request;
@@ -53,6 +54,14 @@ class VehicleController extends Controller
         if ($request->ajax()) {
             $query = Vehicle::with(['general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client', 'source_trade_in', 'media'])->select(sprintf('%s.*', (new Vehicle)->table));
             $table = Datatables::of($query);
+
+            $table->filter(function ($query) use ($request) {
+                $keyword = trim((string) $request->input('search.value', ''));
+
+                if ($keyword !== '') {
+                    $this->applyGlobalTableSearch($query, $keyword);
+                }
+            });
 
             $table->addColumn('placeholder', '&nbsp;');
             $table->addColumn('actions', '&nbsp;');
@@ -84,6 +93,9 @@ class VehicleController extends Controller
             });
             $table->editColumn('foreign_license', function ($row) {
                 return $row->foreign_license ? $row->foreign_license : '';
+            });
+            $table->filterColumn('foreign_license', function ($query, $keyword) {
+                LicensePlate::applySearch($query, (string) $keyword, ['foreign_license']);
             });
             $table->editColumn('our_registration', function ($row) {
                 return $row->our_registration ? $row->our_registration : '';
@@ -1141,6 +1153,69 @@ class VehicleController extends Controller
             static fn ($field) => sprintf('COALESCE(`vehicles`.`%s`, 0) = 1', $field),
             $this->documentBooleanFields()
         ));
+    }
+
+    private function applyGlobalTableSearch($query, string $keyword): void
+    {
+        $like = '%'.$keyword.'%';
+        $normalizedLicense = LicensePlate::normalize($keyword);
+        $value = mb_strtolower($keyword);
+        $truthy = ['sim', '1', 'true', 'yes', 'y'];
+        $falsy = ['nao', 'não', '0', 'false', 'no', 'n'];
+        $documentsExpression = $this->allDocumentsSqlExpression();
+
+        $query->where(function ($search) use (
+            $like,
+            $normalizedLicense,
+            $value,
+            $truthy,
+            $falsy,
+            $documentsExpression
+        ) {
+            foreach ([
+                'license',
+                'foreign_license',
+                'our_registration',
+                'model',
+                'month',
+                'fuel',
+                'inspec_b',
+                'pvp',
+                'sale_date',
+                'key',
+            ] as $column) {
+                $search->orWhere('vehicles.'.$column, 'like', $like);
+            }
+
+            if ($normalizedLicense !== '') {
+                foreach (['license', 'foreign_license'] as $column) {
+                    $search->orWhereRaw(
+                        "REPLACE(REPLACE(REPLACE(UPPER(COALESCE(vehicles.{$column}, '')), '-', ''), ' ', ''), '.', '') LIKE ?",
+                        ['%'.$normalizedLicense.'%']
+                    );
+                }
+            }
+
+            $search
+                ->orWhereHas('general_state', fn ($relation) => $relation->where('name', 'like', $like))
+                ->orWhereHas('brand', fn ($relation) => $relation->where('name', 'like', $like))
+                ->orWhereHas('suplier', fn ($relation) => $relation->where('name', 'like', $like))
+                ->orWhereHas('client', fn ($relation) => $relation->where('name', 'like', $like));
+
+            if (in_array($value, $truthy, true)) {
+                $search
+                    ->orWhere('vehicles.is_invoiced', true)
+                    ->orWhereHas('source_trade_in')
+                    ->orWhereRaw("($documentsExpression) = 1");
+            }
+
+            if (in_array($value, $falsy, true)) {
+                $search
+                    ->orWhere('vehicles.is_invoiced', false)
+                    ->orWhereDoesntHave('source_trade_in')
+                    ->orWhereRaw("($documentsExpression) = 0");
+            }
+        });
     }
 
     private function vehicleThumbnailHtml(Vehicle $vehicle): string
