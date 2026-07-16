@@ -37,7 +37,15 @@
                                     <td>{{ $vehicle->suplier->name ?? '' }}</td>
                                     <td>{{ $vehicle->client->name ?? '' }}</td>
                                     <td>
+                                        @can('vehicle_show')
+                                            <a class="btn btn-xs btn-primary" href="{{ route('admin.vehicles.deleted.show', $vehicle->id) }}">
+                                                {{ trans('global.view') }}
+                                            </a>
+                                        @endcan
                                         @can('vehicle_edit')
+                                            <a class="btn btn-xs btn-info" href="{{ route('admin.vehicles.deleted.edit', $vehicle->id) }}">
+                                                {{ trans('global.edit') }}
+                                            </a>
                                             <form action="{{ route('admin.vehicles.restore', $vehicle->id) }}" method="POST" onsubmit="return confirm('{{ trans('global.areYouSure') }}');" style="display: inline-block;">
                                                 @csrf
                                                 <button type="submit" class="btn btn-xs btn-success">

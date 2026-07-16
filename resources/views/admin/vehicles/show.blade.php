@@ -11,14 +11,18 @@
                 <div class="panel-body">
                     <div class="form-group">
                         <div class="form-group">
-                            <a class="btn btn-default" href="{{ route('admin.vehicles.index') }}">
+                            <a class="btn btn-default" href="{{ $vehicle->trashed() ? route('admin.vehicles.deleted') : route('admin.vehicles.index') }}">
                                 {{ trans('global.back_to_list') }}
                             </a>
-                            @can('vehicle_show')
+                            @if($vehicle->trashed())
+                                @can('vehicle_edit')
+                                    <a class="btn btn-info" href="{{ route('admin.vehicles.deleted.edit', $vehicle->id) }}">{{ trans('global.edit') }}</a>
+                                @endcan
+                            @elseif(auth()->user()->can('vehicle_show'))
                                 <a class="btn btn-primary" href="{{ route('admin.vehicles.timeline', $vehicle->id) }}">
                                     Timeline
                                 </a>
-                            @endcan
+                            @endif
                         </div>
                         @include('admin.vehicles.partials.lotFinancialStatus')
                         <table class="table table-bordered table-striped">
@@ -711,7 +715,7 @@
                         @endif
 
                         <div class="form-group">
-                            <a class="btn btn-default" href="{{ route('admin.vehicles.index') }}">
+                            <a class="btn btn-default" href="{{ $vehicle->trashed() ? route('admin.vehicles.deleted') : route('admin.vehicles.index') }}">
                                 {{ trans('global.back_to_list') }}
                             </a>
                         </div>
@@ -725,7 +729,6 @@
     </div>
 </div>
 @endsection
-
 
 
 

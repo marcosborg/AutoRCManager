@@ -58,6 +58,34 @@ class AdminLeadAccessTest extends TestCase
         $this->actingAs($admin)->get(route('admin.leads.show', $lead))->assertOk();
     }
 
+    public function test_marketing_stand_cannot_edit_or_delete_leads_even_with_write_permissions(): void
+    {
+        $marketing = $this->userWithRole('Marketing Stand', [
+            'lead_access',
+            'lead_show',
+            'lead_edit',
+            'lead_delete',
+        ]);
+
+        $lead = Lead::create([
+            'leadgen_id' => 'lead-marketing-read-only-'.uniqid(),
+            'page_id' => 'page-1',
+            'form_id' => 'form-1',
+            'full_name' => 'Lead apenas leitura',
+            'status' => Lead::STATUS_NEW,
+        ]);
+
+        $this->actingAs($marketing)->get(route('admin.leads.show', $lead))->assertOk();
+        $this->actingAs($marketing)->get(route('admin.leads.edit', $lead))->assertForbidden();
+        $this->actingAs($marketing)->put(route('admin.leads.update', $lead), [
+            'status' => Lead::STATUS_CONTACTED,
+        ])->assertForbidden();
+        $this->actingAs($marketing)->delete(route('admin.leads.destroy', $lead))->assertForbidden();
+
+        $this->assertSame(Lead::STATUS_NEW, $lead->fresh()->status);
+        $this->assertNull($lead->fresh()->deleted_at);
+    }
+
     public function test_lead_list_pdf_uses_filters_and_is_a_real_download(): void
     {
         $admin = $this->userWithRole('Admin', ['lead_access']);

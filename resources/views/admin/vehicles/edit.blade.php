@@ -109,6 +109,12 @@
                     {{ trans('global.edit') }} {{ trans('cruds.vehicle.title_singular') }}
                 </div>
                 <div class="panel-body">
+                    @if($vehicle->trashed())
+                        <div class="alert alert-warning">
+                            <strong>Viatura eliminada.</strong> Pode editar os dados sem recuperar a viatura.
+                            <a class="btn btn-default btn-xs pull-right" href="{{ route('admin.vehicles.deleted') }}">Voltar às viaturas eliminadas</a>
+                        </div>
+                    @endif
                     @include('admin.vehicles.partials.lotFinancialStatus')
                     <form id="vehicle-trade-in-create-form" method="POST" action="{{ route('admin.vehicles.trade-ins.store', $vehicle) }}" enctype="multipart/form-data">
                         @csrf
@@ -123,7 +129,7 @@
                         @csrf
                         @method('DELETE')
                     </form>
-                    <form id="vehicle-edit-form" method="POST" action="{{ route('admin.vehicles.update', [$vehicle->id]) }}" enctype="multipart/form-data">
+                    <form id="vehicle-edit-form" method="POST" action="{{ $vehicle->trashed() ? route('admin.vehicles.deleted.update', $vehicle->id) : route('admin.vehicles.update', $vehicle->id) }}" enctype="multipart/form-data">
                         @method('PUT')
                         @csrf
                         <div class="panel panel-default vehicle-summary-panel">

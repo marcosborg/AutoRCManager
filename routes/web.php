@@ -123,6 +123,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('sale-closure-approvals/{approval}/approve', 'SaleClosureApprovalController@approve')->name('sale-closure-approvals.approve');
     Route::post('sale-closure-approvals/{approval}/reject', 'SaleClosureApprovalController@reject')->name('sale-closure-approvals.reject');
     Route::get('vehicles-deleted', 'VehicleController@deleted')->name('vehicles.deleted');
+    Route::get('vehicles-deleted/{vehicle}', 'VehicleController@showDeleted')->name('vehicles.deleted.show');
+    Route::get('vehicles-deleted/{vehicle}/edit', 'VehicleController@editDeleted')->name('vehicles.deleted.edit');
+    Route::put('vehicles-deleted/{vehicle}', 'VehicleController@updateDeleted')->name('vehicles.deleted.update');
     Route::post('vehicles-deleted/{vehicle}/restore', 'VehicleController@restore')->name('vehicles.restore');
     Route::resource('vehicles', 'VehicleController');
     Route::get('vehicles/{vehicle}/timeline', 'VehicleTimelineController@show')->name('vehicles.timeline');

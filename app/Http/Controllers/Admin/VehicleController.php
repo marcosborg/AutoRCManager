@@ -498,6 +498,8 @@ class VehicleController extends Controller
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle, VehicleImportProcessService $importProcessService)
     {
+        $isDeletedVehicle = $vehicle->trashed();
+
         abort_if(
             $request->boolean('import_process_present') && Gate::denies('vehicle_import_process_edit'),
             Response::HTTP_FORBIDDEN,
@@ -525,21 +527,24 @@ class VehicleController extends Controller
         $payload['is_invoiced'] = $request->boolean('is_invoiced');
         $payload = $this->filterPayloadToExistingVehicleColumns($payload);
 
-        DB::transaction(function () use ($request, $vehicle, &$payload, $importProcessService): void {
+        DB::transaction(function () use ($request, $vehicle, &$payload, $importProcessService, $isDeletedVehicle): void {
             $this->applyWorkshopSalePurchasePrice($request, $vehicle, $payload);
             $vehicle->update($payload);
-            $importProcessService->sync($vehicle, $request->all(), $request->user());
-            app(VehicleSuspendedSaleService::class)->convertActiveForVehicle($vehicle->fresh(), $request->user());
+
+            if (! $isDeletedVehicle) {
+                $importProcessService->sync($vehicle, $request->all(), $request->user());
+                app(VehicleSuspendedSaleService::class)->convertActiveForVehicle($vehicle->fresh(), $request->user());
+            }
         });
 
-        if ($this->canViewFinancialSensitive() && $this->canManageSupplierPayments()) {
+        if (! $isDeletedVehicle && $this->canViewFinancialSensitive() && $this->canManageSupplierPayments()) {
             $this->createSupplierPaymentLine($request, $vehicle);
         }
 
-        if ($this->canViewFinancialSensitive()) {
+        if (! $isDeletedVehicle && $this->canViewFinancialSensitive()) {
             $this->createGenericPaymentLine($request, $vehicle);
         }
-        $clientPayment = $this->createClientPaymentLine($request, $vehicle);
+        $clientPayment = $isDeletedVehicle ? null : $this->createClientPaymentLine($request, $vehicle);
         if ($clientPayment) {
             app(SaleClosureApprovalService::class)->createForPayment($vehicle, $request->user(), $clientPayment);
         }
@@ -776,6 +781,33 @@ class VehicleController extends Controller
             ->get();
 
         return view('admin.vehicles.deleted', compact('vehicles'));
+    }
+
+    public function showDeleted(int $vehicle, VehicleLotService $lotService)
+    {
+        $vehicle = Vehicle::onlyTrashed()->findOrFail($vehicle);
+
+        return $this->show($vehicle, $lotService);
+    }
+
+    public function editDeleted(
+        int $vehicle,
+        VehicleLotService $lotService,
+        VehicleProfitabilityService $profitabilityService
+    ) {
+        $vehicle = Vehicle::onlyTrashed()->findOrFail($vehicle);
+
+        return $this->edit($vehicle, $lotService, $profitabilityService);
+    }
+
+    public function updateDeleted(
+        UpdateVehicleRequest $request,
+        int $vehicle,
+        VehicleImportProcessService $importProcessService
+    ) {
+        $vehicle = Vehicle::onlyTrashed()->findOrFail($vehicle);
+
+        return $this->update($request, $vehicle, $importProcessService);
     }
 
     public function restore(int $vehicle)

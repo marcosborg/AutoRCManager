@@ -34,6 +34,20 @@ class AuthGates
             });
         }
 
+        // Marketing Stand manages lead visibility and assignment, but is always
+        // read-only in the backoffice, regardless of permissions attached in DB.
+        foreach (['lead_edit', 'lead_delete'] as $readOnlyLeadAbility) {
+            $allowedRoleIds = $permissionsArray[$readOnlyLeadAbility] ?? [];
+
+            Gate::define($readOnlyLeadAbility, function ($user) use ($allowedRoleIds) {
+                if ($user->roles->contains('title', 'Marketing Stand')) {
+                    return false;
+                }
+
+                return count(array_intersect($user->roles->pluck('id')->toArray(), $allowedRoleIds)) > 0;
+            });
+        }
+
         $financeUserNames = ['rita', 'rafael'];
         $financePermissionTitles = ['financial_sensitive_access', 'aquisition_of_the_vehicle'];
         $financeRoleIds = [];
