@@ -50,14 +50,6 @@
                             </tr>
                             <tr>
                                 <th>
-                                    {{ trans('cruds.vehicleConsignment.fields.reference_value') }}
-                                </th>
-                                <td>
-                                    {{ $vehicleConsignment->reference_value }}
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>
                                     {{ trans('cruds.vehicleConsignment.fields.starts_at') }}
                                 </th>
                                 <td>

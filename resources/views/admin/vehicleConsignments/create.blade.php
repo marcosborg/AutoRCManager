@@ -56,14 +56,6 @@
                             @endif
                             <span class="help-block">Preencha este campo quando o destino nao for uma unidade interna.</span>
                         </div>
-                        <div class="form-group {{ $errors->has('reference_value') ? 'has-error' : '' }}">
-                            <label class="required" for="reference_value">{{ trans('cruds.vehicleConsignment.fields.reference_value') }}</label>
-                            <input class="form-control" type="number" name="reference_value" id="reference_value" value="{{ old('reference_value') }}" step="0.01" required>
-                            @if($errors->has('reference_value'))
-                                <span class="help-block" role="alert">{{ $errors->first('reference_value') }}</span>
-                            @endif
-                            <span class="help-block">{{ trans('cruds.vehicleConsignment.fields.reference_value_helper') }}</span>
-                        </div>
                         <div class="form-group {{ $errors->has('starts_at') ? 'has-error' : '' }}">
                             <label class="required" for="starts_at">{{ trans('cruds.vehicleConsignment.fields.starts_at') }}</label>
                             <input class="form-control datetime" type="text" name="starts_at" id="starts_at" value="{{ old('starts_at') }}" required>

@@ -13,6 +13,7 @@ use App\Models\VehicleGroup;
 use App\Models\VehicleTradeIn;
 use App\Observers\LotPaymentObserver;
 use App\Observers\VehicleConsignmentObserver;
+use App\Observers\VehicleConsignmentAuditObserver;
 use App\Observers\VehicleGroupObserver;
 use App\Observers\VehicleTradeInObserver;
 
@@ -35,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         Repair::observe(RepairObserver::class);
         LotPayment::observe(LotPaymentObserver::class);
         VehicleConsignment::observe(VehicleConsignmentObserver::class);
+        VehicleConsignment::observe(VehicleConsignmentAuditObserver::class);
         VehicleGroup::observe(VehicleGroupObserver::class);
         VehicleTradeIn::observe(VehicleTradeInObserver::class);
     }

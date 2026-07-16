@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreVehicleConsignmentRequest;
 use App\Http\Requests\UpdateVehicleConsignmentRequest;
 use App\Models\OperationalUnit;
-use App\Domain\Consignments\ConsignmentStatus;
 use App\Models\Vehicle;
 use App\Models\VehicleConsignment;
 use App\Services\VehicleConsignmentService;
@@ -58,7 +57,6 @@ class VehicleConsignmentController extends Controller
                         });
                 });
             });
-            $table->editColumn('reference_value', fn($row) => $row->reference_value ?? '');
             $table->editColumn('starts_at', fn($row) => $row->starts_at ?? '');
             $table->editColumn('ends_at', fn($row) => $row->ends_at ?? '');
             $table->editColumn('status', fn($row) => $row->status ?? '');
@@ -98,19 +96,29 @@ class VehicleConsignmentController extends Controller
         abort_if(Gate::denies('vehicle_consignment_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $vehicleConsignment->load(['vehicle', 'from_unit', 'to_unit']);
+        $vehicles = $this->vehicleOptions();
+        $units = $this->operationalUnitOptions();
 
-        return view('admin.vehicleConsignments.edit', compact('vehicleConsignment'));
+        return view('admin.vehicleConsignments.edit', compact('vehicleConsignment', 'vehicles', 'units'));
     }
 
     public function update(UpdateVehicleConsignmentRequest $request, VehicleConsignment $vehicleConsignment, VehicleConsignmentService $service)
     {
         $payload = $request->validated();
-        $payload['status'] = ConsignmentStatus::CLOSED;
-
-        $service->closeConsignment($vehicleConsignment, $payload);
+        $service->updateConsignment($vehicleConsignment, $payload);
 
         return redirect()->route('admin.vehicle-consignments.show', $vehicleConsignment->id)
-            ->with('message', 'Consignacao encerrada com sucesso');
+            ->with('message', 'Consignacao atualizada com sucesso');
+    }
+
+    public function destroy(VehicleConsignment $vehicleConsignment, VehicleConsignmentService $service)
+    {
+        abort_if(Gate::denies('vehicle_consignment_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $service->deleteConsignment($vehicleConsignment);
+
+        return redirect()->route('admin.vehicle-consignments.index')
+            ->with('message', 'Consignacao eliminada com sucesso');
     }
 
     public function show(VehicleConsignment $vehicleConsignment)

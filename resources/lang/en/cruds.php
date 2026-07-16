@@ -341,8 +341,6 @@ return [
             'from_unit_helper' => ' ',
             'to_unit' => 'To unit',
             'to_unit_helper' => ' ',
-            'reference_value' => 'Reference value',
-            'reference_value_helper' => ' ',
             'starts_at' => 'Starts at',
             'starts_at_helper' => ' ',
             'ends_at' => 'Ends at',

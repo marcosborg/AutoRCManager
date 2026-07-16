@@ -10,6 +10,13 @@
             </div>
         </div>
     @endcan
+    <div style="margin-bottom: 10px;" class="row">
+        <div class="col-lg-12">
+            <a class="btn btn-default" href="{{ route('admin.vehicle-consignments.history') }}">
+                <i class="fa fa-history"></i> Histórico de alterações
+            </a>
+        </div>
+    </div>
     <div class="row">
         <div class="col-lg-12">
             <div class="panel panel-default">
@@ -52,9 +59,6 @@
                                     {{ trans('cruds.vehicleConsignment.fields.to_unit') }}
                                 </th>
                                 <th>
-                                    {{ trans('cruds.vehicleConsignment.fields.reference_value') }}
-                                </th>
-                                <th>
                                     {{ trans('cruds.vehicleConsignment.fields.starts_at') }}
                                 </th>
                                 <th>
@@ -68,34 +72,11 @@
                                 </th>
                             </tr>
                             <tr>
-                                <td>
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                    <input class="search" type="text" placeholder="{{ trans('global.search') }}">
-                                </td>
-                                <td>
-                                </td>
+                                <td></td>
+                                @for($column = 0; $column < 7; $column++)
+                                    <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
+                                @endfor
+                                <td></td>
                             </tr>
                         </thead>
                     </table>
@@ -125,7 +106,6 @@
       { data: 'vehicle_label', name: 'vehicle.license' },
       { data: 'from_unit_name', name: 'from_unit.name' },
       { data: 'to_destination_name', name: 'to_destination_name', orderable: false },
-      { data: 'reference_value', name: 'reference_value' },
       { data: 'starts_at', name: 'starts_at' },
       { data: 'ends_at', name: 'ends_at' },
       { data: 'status', name: 'status' },

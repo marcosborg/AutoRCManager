@@ -17,8 +17,17 @@ class UpdateVehicleConsignmentRequest extends FormRequest
     public function rules()
     {
         return [
-            'ends_at' => [
+            'vehicle_id' => ['required', 'integer', 'exists:vehicles,id'],
+            'from_unit_id' => ['required', 'integer', 'exists:operational_units,id'],
+            'to_unit_id' => ['nullable', 'required_without:to_unit_name', 'integer', 'exists:operational_units,id'],
+            'to_unit_name' => ['nullable', 'required_without:to_unit_id', 'string', 'max:255'],
+            'starts_at' => [
                 'required',
+                'date_format:' . config('panel.date_format') . ' ' . config('panel.time_format'),
+            ],
+            'ends_at' => [
+                'nullable',
+                'required_if:status,' . ConsignmentStatus::CLOSED,
                 'date_format:' . config('panel.date_format') . ' ' . config('panel.time_format'),
             ],
             'status' => [
@@ -26,5 +35,14 @@ class UpdateVehicleConsignmentRequest extends FormRequest
                 Rule::in(ConsignmentStatus::options()),
             ],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'to_unit_id' => $this->input('to_unit_id') ?: null,
+            'to_unit_name' => trim((string) $this->input('to_unit_name')) ?: null,
+            'ends_at' => $this->input('ends_at') ?: null,
+        ]);
     }
 }

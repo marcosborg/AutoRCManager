@@ -39,10 +39,6 @@ class StoreVehicleConsignmentRequest extends FormRequest
                 'string',
                 'max:255',
             ],
-            'reference_value' => [
-                'required',
-                'numeric',
-            ],
             'starts_at' => [
                 'required',
                 'date_format:' . config('panel.date_format') . ' ' . config('panel.time_format'),

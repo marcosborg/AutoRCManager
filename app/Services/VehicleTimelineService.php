@@ -72,7 +72,7 @@ class VehicleTimelineService
                 'description' => sprintf('De %s para %s', $from, $to),
                 'related_model' => 'VehicleConsignment',
                 'related_id' => $consignment->id,
-                'amount' => $consignment->reference_value,
+                'amount' => null,
                 'unit' => $to,
                 'metadata' => [
                     'from_unit_id' => $consignment->from_unit_id,

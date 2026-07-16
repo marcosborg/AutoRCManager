@@ -126,7 +126,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('vehicles/{vehicle}/timeline/export/pdf', 'VehicleTimelineExportController@exportPdf')->name('vehicles.timeline.export.pdf');
 
     // Vehicle Consignments
-    Route::resource('vehicle-consignments', 'VehicleConsignmentController')->except(['destroy']);
+    Route::get('vehicle-consignments-history', 'VehicleConsignmentAuditController@index')->name('vehicle-consignments.history');
+    Route::resource('vehicle-consignments', 'VehicleConsignmentController');
 
     // Vehicle Groups
     Route::delete('vehicle-groups/destroy', 'VehicleGroupController@massDestroy')->name('vehicle-groups.massDestroy');

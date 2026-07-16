@@ -341,8 +341,6 @@ return [
             'from_unit_helper' => ' ',
             'to_unit' => 'Unidade destino',
             'to_unit_helper' => ' ',
-            'reference_value' => 'Valor de referencia',
-            'reference_value_helper' => ' ',
             'starts_at' => 'Data inicio',
             'starts_at_helper' => ' ',
             'ends_at' => 'Data fim',

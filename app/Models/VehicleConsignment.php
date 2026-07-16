@@ -33,7 +33,6 @@ class VehicleConsignment extends Model
         'from_unit_id',
         'to_unit_id',
         'to_unit_name',
-        'reference_value',
         'starts_at',
         'ends_at',
         'status',

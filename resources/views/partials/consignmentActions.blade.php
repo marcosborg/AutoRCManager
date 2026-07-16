@@ -9,3 +9,11 @@
         {{ trans('global.edit') }}
     </a>
 @endcan
+
+@can('vehicle_consignment_delete')
+    <form action="{{ route('admin.' . $crudRoutePart . '.destroy', $row->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Eliminar definitivamente esta consignação?');">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn btn-xs btn-danger">{{ trans('global.delete') }}</button>
+    </form>
+@endcan
