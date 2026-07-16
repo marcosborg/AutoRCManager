@@ -414,6 +414,42 @@ class VehicleController extends Controller
             ->with('message', 'Viatura enviada para oficina. A intervenção será criada quando o trabalho for iniciado.');
     }
 
+    public function removeFromWorkshop(Vehicle $vehicle)
+    {
+        abort_if(Gate::denies('repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $isInWorkshop = $vehicle->general_state()
+            ->whereRaw('LOWER(name) = ?', ['oficina'])
+            ->exists();
+
+        if (! $isInWorkshop) {
+            return back()->withErrors([
+                'workshop' => 'A viatura já não se encontra na oficina.',
+            ]);
+        }
+
+        $workshopEntry = $vehicle->state_transfers()
+            ->where('to_general_state_id', $vehicle->general_state_id)
+            ->whereNotNull('from_general_state_id')
+            ->latest('id')
+            ->first();
+
+        if (! $workshopEntry?->from_general_state_id) {
+            return back()->withErrors([
+                'workshop' => 'Não foi possível determinar o estado anterior da viatura. A viatura não foi retirada.',
+            ]);
+        }
+
+        DB::transaction(function () use ($vehicle, $workshopEntry): void {
+            $vehicle->update([
+                'general_state_id' => $workshopEntry->from_general_state_id,
+                'workshop_state_id' => null,
+            ]);
+        });
+
+        return back()->with('message', 'Viatura retirada da oficina e reposta no estado anterior.');
+    }
+
     public function updateWorkshopState(UpdateVehicleWorkshopStateRequest $request, Vehicle $vehicle)
     {
         $workshopState = WorkshopState::query()->findOrFail($request->integer('workshop_state_id'));

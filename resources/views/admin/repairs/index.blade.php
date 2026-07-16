@@ -232,6 +232,13 @@
                                                         Abrir em curso
                                                     </a>
                                                 @endif
+                                                @can('repair_access')
+                                                    <form method="POST" action="{{ route('admin.vehicles.workshop.destroy', $vehicle) }}" style="display:inline;" onsubmit="return confirm('Retirar esta viatura da oficina e repor o estado anterior?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-xs btn-danger" type="submit">Eliminar</button>
+                                                    </form>
+                                                @endcan
                                                 @can('repair_create')
                                                     @if(!$open)
                                                         <form method="POST" action="{{ route('admin.vehicles.start-intervention', $vehicle) }}" style="display:inline;">

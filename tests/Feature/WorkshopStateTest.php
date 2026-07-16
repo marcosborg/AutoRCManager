@@ -100,6 +100,55 @@ class WorkshopStateTest extends TestCase
         $this->assertSame(0, $vehicle->repairs()->count());
     }
 
+    public function test_workshop_user_can_remove_vehicle_and_restore_its_previous_state(): void
+    {
+        $user = $this->userWithPermissions(['repair_access']);
+        $previousState = $this->generalState('SALVADOS');
+        $vehicle = $this->vehicleInState('SALVADOS', '66-FF-66');
+        $this->generalState('OFICINA');
+        $this->defaultWorkshopState();
+
+        $this->actingAs($user)->post(route('admin.vehicles.send-to-workshop', $vehicle));
+        $repairCount = $vehicle->repairs()->count();
+
+        $this->actingAs($user)
+            ->from(route('admin.repairs.index'))
+            ->delete(route('admin.vehicles.workshop.destroy', $vehicle))
+            ->assertRedirect(route('admin.repairs.index'))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('message', 'Viatura retirada da oficina e reposta no estado anterior.');
+
+        $vehicle->refresh();
+        $this->assertSame($previousState->id, $vehicle->general_state_id);
+        $this->assertNull($vehicle->workshop_state_id);
+        $this->assertSame($repairCount, $vehicle->repairs()->count());
+    }
+
+    public function test_workshop_page_shows_remove_button_to_user_with_workshop_access(): void
+    {
+        $user = $this->userWithPermissions(['repair_access']);
+        $vehicle = $this->vehicleInState('SALVADOS', '77-GG-77');
+        $this->generalState('OFICINA');
+        $this->defaultWorkshopState();
+        $this->actingAs($user)->post(route('admin.vehicles.send-to-workshop', $vehicle));
+
+        $this->actingAs($user)
+            ->get(route('admin.repairs.index'))
+            ->assertOk()
+            ->assertSee('Eliminar')
+            ->assertSee(route('admin.vehicles.workshop.destroy', $vehicle), false);
+    }
+
+    public function test_user_without_workshop_access_cannot_remove_vehicle_from_workshop(): void
+    {
+        $user = $this->userWithPermissions([]);
+        $vehicle = $this->vehicleInState('OFICINA');
+
+        $this->actingAs($user)
+            ->delete(route('admin.vehicles.workshop.destroy', $vehicle))
+            ->assertForbidden();
+    }
+
     public function test_updating_sold_workshop_state_synchronizes_general_state_without_changing_repairs(): void
     {
         $user = $this->userWithPermissions(['workshop_state_edit']);
