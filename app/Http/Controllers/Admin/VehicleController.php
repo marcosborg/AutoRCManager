@@ -53,6 +53,7 @@ class VehicleController extends Controller
 
         if ($request->ajax()) {
             $query = Vehicle::with(['general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client', 'source_trade_in', 'media'])->select(sprintf('%s.*', (new Vehicle)->table));
+            $this->applyDashboardFilter($query, $request->query('dashboard_filter'));
             $table = Datatables::of($query);
 
             $table->filter(function ($query) use ($request) {
@@ -218,8 +219,9 @@ class VehicleController extends Controller
         $carriers = Carrier::get();
         $pickup_states = PickupState::get();
         $clients = Client::get();
+        $dashboardFilter = $this->dashboardFilterLabel($request->query('dashboard_filter'));
 
-        return view('admin.vehicles.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients'));
+        return view('admin.vehicles.index', compact('general_states', 'brands', 'supliers', 'payment_statuses', 'carriers', 'pickup_states', 'clients', 'dashboardFilter'));
     }
 
     public function create()
@@ -858,7 +860,7 @@ class VehicleController extends Controller
     public function destroySupplierPayment(Request $request, Vehicle $vehicle, int $payment)
     {
         abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-        abort_if(! $this->canViewFinancialSensitive(), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if(! $this->canManageSupplierPayments(), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $supplierPayment = VehicleSupplierPayment::where('vehicle_id', $vehicle->id)->findOrFail($payment);
         $supplierPayment->delete();
@@ -1270,6 +1272,32 @@ class VehicleController extends Controller
                     ->orWhereRaw("($documentsExpression) = 0");
             }
         });
+    }
+
+    private function applyDashboardFilter($query, ?string $filter): void
+    {
+        match ($filter) {
+            'sold_month' => $query->whereNotNull('sale_date')->whereBetween('sale_date', [
+                now()->startOfMonth()->toDateString(),
+                now()->endOfMonth()->toDateString(),
+            ]),
+            'sold_year' => $query->whereNotNull('sale_date')->whereBetween('sale_date', [
+                now()->startOfYear()->toDateString(),
+                now()->endOfYear()->toDateString(),
+            ]),
+            'stock' => $query->whereNull('sale_date'),
+            default => null,
+        };
+    }
+
+    private function dashboardFilterLabel(?string $filter): ?string
+    {
+        return match ($filter) {
+            'sold_month' => 'Viaturas vendidas este mês',
+            'sold_year' => 'Viaturas vendidas este ano',
+            'stock' => 'Viaturas em stock',
+            default => null,
+        };
     }
 
     private function vehicleThumbnailHtml(Vehicle $vehicle): string

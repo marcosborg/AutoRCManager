@@ -24,6 +24,17 @@
         white-space: nowrap;
     }
 
+    .dashboard-metrics > a {
+        color: #fff;
+        display: block;
+    }
+
+    .dashboard-metrics > a:hover,
+    .dashboard-metrics > a:focus {
+        color: #fff;
+        text-decoration: none;
+    }
+
     @media (max-width: 1199px) {
         .dashboard-metrics {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -64,7 +75,7 @@
     @endif
 
     <div class="dashboard-metrics">
-        <div>
+        <a href="{{ route('admin.vehicles.index', ['dashboard_filter' => 'sold_month']) }}" aria-label="Ver viaturas vendidas este mês">
             <div class="small-box bg-aqua">
                 <div class="inner">
                     <h3>{{ $business['month_count'] }}</h3>
@@ -72,8 +83,8 @@
                 </div>
                 <div class="icon"><i class="fa fa-car"></i></div>
             </div>
-        </div>
-        <div>
+        </a>
+        <a href="{{ route('admin.vehicles.index', ['dashboard_filter' => 'sold_month']) }}" aria-label="Ver viaturas incluídas no volume deste mês">
             <div class="small-box bg-green">
                 <div class="inner">
                     <h3>{{ number_format($business['month_total'], 0, ',', '.') }} EUR</h3>
@@ -81,8 +92,8 @@
                 </div>
                 <div class="icon"><i class="fa fa-eur"></i></div>
             </div>
-        </div>
-        <div>
+        </a>
+        <a href="{{ route('admin.vehicles.index', ['dashboard_filter' => 'sold_year']) }}" aria-label="Ver viaturas incluídas no volume anual">
             <div class="small-box bg-yellow">
                 <div class="inner">
                     <h3>{{ number_format($business['year_total'], 0, ',', '.') }} EUR</h3>
@@ -90,8 +101,8 @@
                 </div>
                 <div class="icon"><i class="fa fa-line-chart"></i></div>
             </div>
-        </div>
-        <div>
+        </a>
+        <a href="{{ route('admin.vehicles.index', ['dashboard_filter' => 'stock']) }}" aria-label="Ver viaturas em stock">
             <div class="small-box bg-purple">
                 <div class="inner">
                     <h3>{{ $business['stock_count'] }}</h3>
@@ -99,7 +110,7 @@
                 </div>
                 <div class="icon"><i class="fa fa-cubes"></i></div>
             </div>
-        </div>
+        </a>
     </div>
 
     <div class="dashboard-metrics">

@@ -1,6 +1,12 @@
 @extends('layouts.admin')
 @section('content')
 <div class="content">
+    @if($dashboardFilter)
+        <div class="alert alert-info clearfix">
+            <strong>Filtro do dashboard:</strong> {{ $dashboardFilter }}
+            <a class="btn btn-default btn-xs pull-right" href="{{ route('admin.vehicles.index') }}">Mostrar todas</a>
+        </div>
+    @endif
     @can('vehicle_create')
         <div style="margin-bottom: 10px;" class="row">
             <div class="col-lg-12">
@@ -163,7 +169,7 @@ $(function () {
     serverSide: true,
     retrieve: true,
     aaSorting: [],
-    ajax: "{{ route('admin.vehicles.index') }}",
+    ajax: @json(route('admin.vehicles.index', request()->only('dashboard_filter'))),
     columns: [
         { data: 'placeholder', name: 'placeholder' },
         { data: 'vehicle_thumb', name: 'vehicle_thumb', orderable: false, searchable: false },
