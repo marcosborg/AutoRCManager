@@ -28,6 +28,7 @@ class Vehicle extends Model implements HasMedia
     protected $appends = [
         'documents',
         'additional_documents',
+        'dav',
         'photos',
         'invoice',
         'is_invoiced',
@@ -151,6 +152,7 @@ class Vehicle extends Model implements HasMedia
     protected $casts = [
         'purchase_has_vat' => 'boolean',
         'is_invoiced' => 'boolean',
+        'dav_created_at' => 'datetime',
         'ownership_documents_ready_at' => 'datetime',
         'ownership_payments_completed_at' => 'datetime',
         'ownership_rafael_authorized_at' => 'datetime',
@@ -245,6 +247,11 @@ class Vehicle extends Model implements HasMedia
     public function getAdditionalDocumentsAttribute()
     {
         return $this->getMedia('additional_documents');
+    }
+
+    public function getDavAttribute()
+    {
+        return $this->getMedia('dav');
     }
 
     public function getPdfsAttribute()

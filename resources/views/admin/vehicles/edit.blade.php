@@ -954,6 +954,16 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6">
+                                    <div class="form-group {{ $errors->has('dav') ? 'has-error' : '' }}">
+                                        <label for="dav-dropzone">DAV</label>
+                                        <div class="needsclick dropzone" id="dav-dropzone"></div>
+                                        @if($vehicle->dav_created_at)
+                                            <span class="help-block">DAV criada em {{ $vehicle->dav_created_at->format('d/m/Y H:i') }}. O alerta permanece no dashboard durante 7 dias.</span>
+                                        @endif
+                                        @if($errors->has('dav'))
+                                            <span class="help-block" role="alert">{{ $errors->first('dav') }}</span>
+                                        @endif
+                                    </div>
                                     <div class="form-group {{ $errors->has('documents') ? 'has-error' : '' }}">
                                         <label for="documents">DUA / Inspeção</label>
                                         <div class="needsclick dropzone" id="documents-dropzone"></div>
@@ -2025,6 +2035,50 @@
             file.previewElement.classList.add('dz-error')
             var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
             for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
+        }
+    }
+</script>
+
+<script>
+    var uploadedDavMap = {}
+    Dropzone.options.davDropzone = {
+        url: '{{ route('admin.vehicles.storeMedia') }}',
+        maxFilesize: 10,
+        maxFiles: 1,
+        addRemoveLinks: true,
+        headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
+        params: { size: 10 },
+        success: function (file, response) {
+            $('#vehicle-edit-form').find('input[name="dav[]"]').remove()
+            $('#vehicle-edit-form').append('<input type="hidden" name="dav[]" value="' + response.name + '">')
+            uploadedDavMap[file.name] = response.name
+        },
+        removedfile: function (file) {
+            file.previewElement.remove()
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedDavMap[file.name]
+            $('#vehicle-edit-form').find('input[name="dav[]"][value="' + name + '"]').remove()
+        },
+        init: function () {
+            @if(isset($vehicle) && $vehicle->dav)
+                var files = {!! json_encode($vehicle->dav) !!}
+                for (var i in files) {
+                    const currentFile = files[i]
+                    this.options.addedfile.call(this, currentFile)
+                    currentFile.previewElement.classList.add('dz-complete')
+                    currentFile.previewElement.style.cursor = 'pointer'
+                    currentFile.previewElement.addEventListener('click', function (e) {
+                        if (e.target && e.target.classList && e.target.classList.contains('dz-remove')) return
+                        window.open(currentFile.original_url, '_blank')
+                    })
+                    $('#vehicle-edit-form').append('<input type="hidden" name="dav[]" value="' + currentFile.file_name + '">')
+                }
+            @endif
+        },
+        error: function (file, response) {
+            var message = $.type(response) === 'string' ? response : response.errors.file
+            file.previewElement.classList.add('dz-error')
+            var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
+            for (var i = 0; i < nodes.length; i++) nodes[i].textContent = message
         }
     }
 </script>

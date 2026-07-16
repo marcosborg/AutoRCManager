@@ -45,6 +45,24 @@
         <div class="alert alert-success" role="alert">{{ session('status') }}</div>
     @endif
 
+    @if(($recentDavVehicles ?? collect())->isNotEmpty())
+        <div class="alert alert-info" role="alert">
+            <h4><i class="fa fa-file-text-o"></i> DAV criada recentemente</h4>
+            <p>Estas notificações permanecem visíveis durante 7 dias.</p>
+            <ul class="list-unstyled" style="margin-bottom: 0;">
+                @foreach($recentDavVehicles as $vehicle)
+                    <li style="margin-top: 6px;">
+                        <a href="{{ route('admin.vehicles.edit', $vehicle->id) }}">
+                            <strong>{{ $vehicle->license ?: $vehicle->foreign_license ?: 'Viatura #'.$vehicle->id }}</strong>
+                            — {{ trim(($vehicle->brand->name ?? '').' '.($vehicle->model ?? '')) ?: 'Sem descrição' }}
+                        </a>
+                        <span class="text-muted">criada em {{ optional($vehicle->dav_created_at)->format('d/m/Y H:i') }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="dashboard-metrics">
         <div>
             <div class="small-box bg-aqua">

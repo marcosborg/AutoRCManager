@@ -88,6 +88,9 @@ class UpdateVehicleRequest extends FormRequest
             'additional_documents' => [
                 'array',
             ],
+            'dav' => [
+                'array',
+            ],
             'photos' => [
                 'array',
             ],

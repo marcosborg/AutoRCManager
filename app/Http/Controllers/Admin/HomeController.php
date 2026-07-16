@@ -136,6 +136,13 @@ class HomeController
         $showIucAlerts = RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Adm']);
         $currentIucMonthLabel = $this->iucMonthLabel($today);
         $iucDueVehicles = $showIucAlerts ? $this->iucDueVehicles($today, 50) : collect();
+        $recentDavVehicles = Schema::hasColumn('vehicles', 'dav_created_at')
+            ? Vehicle::with(['brand', 'general_state'])
+                ->whereNotNull('dav_created_at')
+                ->whereBetween('dav_created_at', [now()->subDays(7), now()])
+                ->orderByDesc('dav_created_at')
+                ->get()
+            : collect();
 
         return view('home', compact(
             'tasksToday',
@@ -146,7 +153,8 @@ class HomeController
             'latestAdjudications',
             'iucDueVehicles',
             'currentIucMonthLabel',
-            'showIucAlerts'
+            'showIucAlerts',
+            'recentDavVehicles'
         ));
     }
 

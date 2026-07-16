@@ -577,6 +577,28 @@ class VehicleController extends Controller
             }
         }
 
+        $requestedDavFiles = $request->input('dav', []);
+        $hadDav = $vehicle->dav->isNotEmpty();
+        foreach ($vehicle->dav as $media) {
+            if (! in_array($media->file_name, $requestedDavFiles)) {
+                $media->delete();
+            }
+        }
+        $existingDavFiles = $vehicle->dav->pluck('file_name')->toArray();
+        foreach ($requestedDavFiles as $file) {
+            if (! in_array($file, $existingDavFiles)) {
+                $vehicle->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('dav');
+            }
+        }
+
+        if ($requestedDavFiles !== []) {
+            if (! $hadDav || ! $vehicle->dav_created_at) {
+                $vehicle->forceFill(['dav_created_at' => now()])->save();
+            }
+        } elseif ($vehicle->dav_created_at) {
+            $vehicle->forceFill(['dav_created_at' => null])->save();
+        }
+
         if (count($vehicle->photos) > 0) {
             foreach ($vehicle->photos as $media) {
                 if (! in_array($media->file_name, $request->input('photos', []))) {
