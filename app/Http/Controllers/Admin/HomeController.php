@@ -10,8 +10,10 @@ use App\Models\PartOrderItem;
 use App\Models\PartPayment;
 use App\Models\Vehicle;
 use App\Models\VehicleStateTransfer;
+use App\Support\RolePreview;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
+use Symfony\Component\HttpFoundation\Response;
 
 class HomeController
 {
@@ -131,8 +133,9 @@ class HomeController
                 'vehicles_waiting_parts' => 0,
             ];
 
+        $showIucAlerts = RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Adm']);
         $currentIucMonthLabel = $this->iucMonthLabel($today);
-        $iucDueVehicles = $this->iucDueVehicles($today, 50);
+        $iucDueVehicles = $showIucAlerts ? $this->iucDueVehicles($today, 50) : collect();
 
         return view('home', compact(
             'tasksToday',
@@ -142,12 +145,19 @@ class HomeController
             'latestSoldVehicles',
             'latestAdjudications',
             'iucDueVehicles',
-            'currentIucMonthLabel'
+            'currentIucMonthLabel',
+            'showIucAlerts'
         ));
     }
 
     public function exportIucDue()
     {
+        abort_if(
+            ! RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Adm']),
+            Response::HTTP_FORBIDDEN,
+            '403 Forbidden'
+        );
+
         $today = Carbon::today();
         $monthLabel = $this->iucMonthLabel($today);
         $vehicles = $this->iucDueVehicles($today);
@@ -170,7 +180,7 @@ class HomeController
                     $vehicle->model ?? '',
                     $vehicle->general_state->name ?? '',
                     $vehicle->mes_iuc ?? $monthLabel,
-                    number_format((float) ($vehicle->sales_iuc ?? 0), 2, ',', '.'),
+                    $vehicle->iuc_price !== null ? number_format((float) $vehicle->iuc_price, 2, ',', '.') : '',
                 ];
 
                 echo '<tr>';
@@ -207,6 +217,10 @@ class HomeController
                 foreach ($this->iucMonthSearchValues($today) as $monthValue) {
                     $query->orWhereRaw('UPPER(TRIM(mes_iuc)) = ?', [$monthValue]);
                 }
+            })
+            ->where(function ($query) use ($today) {
+                $query->whereNull('iuc_paid_date')
+                    ->orWhereYear('iuc_paid_date', '<', $today->year);
             })
             ->orderByRaw('COALESCE(NULLIF(license, ""), foreign_license, id)');
 

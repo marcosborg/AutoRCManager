@@ -199,6 +199,7 @@
         </div>
     </div>
 
+    @if($showIucAlerts)
     <div class="row">
         <div class="col-md-12">
             <div class="panel panel-default">
@@ -218,6 +219,7 @@
                                 <th>Matricula</th>
                                 <th>Viatura</th>
                                 <th>Estado</th>
+                                <th class="text-right">Valor IUC</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -230,10 +232,11 @@
                                     </td>
                                     <td>{{ $vehicle->brand->name ?? '' }} {{ $vehicle->model ?? '' }}</td>
                                     <td>{{ $vehicle->general_state->name ?? '-' }}</td>
+                                    <td class="text-right">{{ $vehicle->iuc_price !== null ? number_format((float) $vehicle->iuc_price, 2, ',', '.') . ' EUR' : '-' }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted">Sem viaturas com IUC a pagamento neste mes.</td>
+                                    <td colspan="4" class="text-center text-muted">Sem viaturas com IUC a pagamento neste mes.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -242,6 +245,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <div class="row">
         <div class="col-md-7">

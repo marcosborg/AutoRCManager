@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Brand;
+use App\Models\GeneralState;
 use App\Models\Role;
 use App\Models\Vehicle;
 use App\Models\VehicleTradeIn;
@@ -65,6 +66,19 @@ class VehicleTradeInAccessTest extends TestCase
                 'trade_in_model' => 'Modelo teste',
                 'trade_in_year' => now()->year,
                 'trade_in_kilometers' => 45000,
+            ])
+            ->assertSessionHasErrors(['trade_in_iuc_month'], null, 'trade_in');
+
+        $this->actingAs($user)
+            ->post(route('admin.vehicle-trade-ins.store'), [
+                'trade_in_license' => $license,
+                'trade_in_amount' => 12500,
+                'trade_in_brand_id' => $brand->id,
+                'trade_in_model' => 'Modelo teste',
+                'trade_in_year' => now()->year,
+                'trade_in_kilometers' => 45000,
+                'trade_in_iuc_month' => 'Julho',
+                'trade_in_iuc_value' => 147.35,
                 'trade_in_notes' => 'Criada pelo teste de retoma autonoma.',
                 'has_vehicle_delivery_declaration' => 1,
                 'vehicle_delivery_declaration' => [UploadedFile::fake()->create('entrega-viatura.pdf', 100, 'application/pdf')],
@@ -80,7 +94,10 @@ class VehicleTradeInAccessTest extends TestCase
         $this->assertCount(1, $tradeIn->getMedia('vehicle_delivery_declaration'));
         $this->assertSame(VehicleTradeIn::STATUS_PENDING, $tradeIn->status);
         $this->assertNotNull($tradeIn->created_vehicle_id);
-        $this->assertSame($formattedLicense, Vehicle::findOrFail($tradeIn->created_vehicle_id)->license);
+        $createdVehicle = Vehicle::findOrFail($tradeIn->created_vehicle_id);
+        $this->assertSame($formattedLicense, $createdVehicle->license);
+        $this->assertSame('Julho', $createdVehicle->mes_iuc);
+        $this->assertSame(147.35, (float) $createdVehicle->iuc_price);
 
         $standAdm = Role::where('title', 'Stand Adm')->firstOrFail()->users()->firstOrFail();
 
@@ -89,5 +106,45 @@ class VehicleTradeInAccessTest extends TestCase
             ->assertRedirect(route('admin.vehicle-trade-ins.index', ['status' => VehicleTradeIn::STATUS_PENDING]));
 
         $this->assertSame(VehicleTradeIn::STATUS_CONVERTED, $tradeIn->fresh()->status);
+    }
+
+    public function test_admin_and_adm_dashboard_show_current_unpaid_iuc_alert_with_optional_value(): void
+    {
+        $month = [
+            1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Marco', 4 => 'Abril',
+            5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
+            9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro',
+        ][(int) now()->format('n')];
+        $license = 'IUC-'.random_int(1000, 9999);
+        $vehicle = Vehicle::query()->create([
+            'license' => $license,
+            'general_state_id' => GeneralState::query()->firstOrFail()->id,
+            'mes_iuc' => $month,
+            'iuc_price' => 83.60,
+        ]);
+
+        foreach (['Admin', 'Adm'] as $roleTitle) {
+            $user = Role::where('title', $roleTitle)->firstOrFail()->users()->firstOrFail();
+
+            $this->actingAs($user)
+                ->get(route('admin.home'))
+                ->assertOk()
+                ->assertSee('IUC a pagamento em '.$month)
+                ->assertSee($license)
+                ->assertSee('83,60 EUR');
+        }
+
+        $stand = Role::where('title', 'Stand')->firstOrFail()->users()->firstOrFail();
+        $this->actingAs($stand)
+            ->get(route('admin.home'))
+            ->assertOk()
+            ->assertDontSee('IUC a pagamento em '.$month);
+
+        $vehicle->update(['iuc_paid_date' => now()->format(config('panel.date_format'))]);
+        $admin = Role::where('title', 'Admin')->firstOrFail()->users()->firstOrFail();
+        $this->actingAs($admin)
+            ->get(route('admin.home'))
+            ->assertOk()
+            ->assertDontSee($license);
     }
 }

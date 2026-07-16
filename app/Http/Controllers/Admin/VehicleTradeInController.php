@@ -205,6 +205,8 @@ class VehicleTradeInController extends Controller
             'trade_in_model' => ['required', 'string', 'max:255'],
             'trade_in_year' => ['required', 'integer', 'min:1900', 'max:' . (now()->year + 1)],
             'trade_in_kilometers' => ['required', 'integer', 'min:0'],
+            'trade_in_iuc_month' => ['required', 'string', 'in:Janeiro,Fevereiro,Marco,Março,Abril,Maio,Junho,Julho,Agosto,Setembro,Outubro,Novembro,Dezembro'],
+            'trade_in_iuc_value' => ['nullable', 'numeric', 'min:0'],
             'trade_in_notes' => ['nullable', 'string'],
             'has_registration_title' => ['nullable', 'boolean'],
             'has_purchase_sale_rgpd' => ['nullable', 'boolean'],
@@ -270,6 +272,8 @@ class VehicleTradeInController extends Controller
             'year' => $data['trade_in_year'],
             'kilometers' => $data['trade_in_kilometers'],
             'purchase_price' => $data['trade_in_amount'],
+            'mes_iuc' => $data['trade_in_iuc_month'],
+            'iuc_price' => $data['trade_in_iuc_value'] ?? null,
             'client_id' => $clientId,
             'acquisition_notes' => trim($source . ' ' . ($data['trade_in_notes'] ?? '')),
         ]);

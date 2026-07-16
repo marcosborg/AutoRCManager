@@ -71,6 +71,28 @@
             </div>
         </div>
 
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group {{ $tradeInErrors->has('trade_in_iuc_month') ? 'has-error' : '' }}">
+                    <label class="required" for="trade_in_iuc_month">Mês de vencimento do IUC</label>
+                    <select class="form-control" form="vehicle-trade-in-create-form" name="trade_in_iuc_month" id="trade_in_iuc_month" required>
+                        <option value></option>
+                        @foreach(['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'] as $iucMonth)
+                            <option value="{{ $iucMonth }}" {{ old('trade_in_iuc_month') === $iucMonth ? 'selected' : '' }}>{{ $iucMonth }}</option>
+                        @endforeach
+                    </select>
+                    @if($tradeInErrors->has('trade_in_iuc_month'))<span class="help-block">{{ $tradeInErrors->first('trade_in_iuc_month') }}</span>@endif
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group {{ $tradeInErrors->has('trade_in_iuc_value') ? 'has-error' : '' }}">
+                    <label for="trade_in_iuc_value">Valor do IUC (facultativo)</label>
+                    <input class="form-control" form="vehicle-trade-in-create-form" type="number" name="trade_in_iuc_value" id="trade_in_iuc_value" value="{{ old('trade_in_iuc_value') }}" step="0.01" min="0">
+                    @if($tradeInErrors->has('trade_in_iuc_value'))<span class="help-block">{{ $tradeInErrors->first('trade_in_iuc_value') }}</span>@endif
+                </div>
+            </div>
+        </div>
+
         <div class="panel panel-default">
             <div class="panel-heading">Checklist - documentacao e acessorios</div>
             <div class="panel-body" style="padding: 8px;">
