@@ -84,10 +84,9 @@ class AdminLeadAccessTest extends TestCase
         $this->assertStringContainsString('attachment;', strtolower((string) $response->headers->get('content-disposition')));
     }
 
-    public function test_management_api_lists_and_updates_leads(): void
+    public function test_management_api_is_read_only(): void
     {
         $admin = $this->userWithRole('Admin', ['lead_access', 'lead_show', 'lead_edit']);
-        $seller = $this->userWithRole('Stand', ['lead_access']);
         $lead = Lead::create([
             'leadgen_id' => 'lead-api-'.uniqid(),
             'page_id' => 'page-1',
@@ -106,14 +105,13 @@ class AdminLeadAccessTest extends TestCase
 
         $this->putJson("/api/v1/gestao/leads/{$lead->id}", [
             'status' => Lead::STATUS_CONTACTED,
-            'assigned_user_id' => $seller->id,
-        ])->assertOk()
-            ->assertJsonPath('data.status', Lead::STATUS_CONTACTED)
-            ->assertJsonPath('data.assigned_user_id', $seller->id);
+            'assigned_user_id' => null,
+        ])->assertMethodNotAllowed();
 
         $this->postJson("/api/v1/gestao/leads/{$lead->id}/notes", ['body' => 'Cliente contactado pela app.'])
-            ->assertOk()
-            ->assertJsonPath('data.notes.0.body', 'Cliente contactado pela app.');
+            ->assertNotFound();
+
+        $this->assertSame(Lead::STATUS_NEW, $lead->fresh()->status);
     }
 
     private function userWithRole(string $roleTitle, array $permissionTitles): User

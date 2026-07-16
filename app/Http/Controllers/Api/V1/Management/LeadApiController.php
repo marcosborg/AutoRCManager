@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1\Management;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
-use App\Models\User;
 use App\Support\RolePreview;
 use Gate;
 use Illuminate\Http\Request;
@@ -66,47 +65,7 @@ class LeadApiController extends Controller
         return response()->json([
             'data' => $this->detailPayload($lead),
             'statuses' => Lead::STATUS_SELECT,
-            'salespeople' => $this->salespeople(),
         ]);
-    }
-
-    public function update(Request $request, Lead $lead)
-    {
-        abort_if(Gate::denies('lead_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-        abort_if(! $this->canAccess($lead), Response::HTTP_FORBIDDEN, '403 Forbidden');
-
-        $data = $request->validate([
-            'status' => ['required', 'in:'.implode(',', array_keys(Lead::STATUS_SELECT))],
-            'assigned_user_id' => ['nullable', 'integer', 'exists:users,id'],
-        ]);
-
-        if (! $this->isLeadManager()) {
-            unset($data['assigned_user_id']);
-        }
-
-        $oldAssignedUserId = $lead->assigned_user_id;
-        $lead->update($data);
-
-        if (array_key_exists('assigned_user_id', $data) && (int) $oldAssignedUserId !== (int) ($data['assigned_user_id'] ?? 0)) {
-            $lead->assignment_histories()->create([
-                'user_id' => $data['assigned_user_id'],
-                'assigned_by_id' => $request->user()?->id,
-                'reason' => 'manual',
-            ]);
-        }
-
-        return $this->show($lead->fresh());
-    }
-
-    public function storeNote(Request $request, Lead $lead)
-    {
-        abort_if(Gate::denies('lead_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
-        abort_if(! $this->canAccess($lead), Response::HTTP_FORBIDDEN, '403 Forbidden');
-
-        $data = $request->validate(['body' => ['required', 'string', 'max:5000']]);
-        $lead->notes()->create(['user_id' => $request->user()?->id, 'body' => $data['body']]);
-
-        return $this->show($lead->fresh());
     }
 
     private function visibleLeadsQuery()
@@ -125,18 +84,6 @@ class LeadApiController extends Controller
     private function isLeadManager(): bool
     {
         return RolePreview::hasAnyEffectiveRole(auth()->user(), ['Admin', 'Adm', 'Marketing Stand']);
-    }
-
-    private function salespeople()
-    {
-        if (! $this->isLeadManager()) {
-            return collect();
-        }
-
-        return User::query()
-            ->whereHas('roles', fn ($query) => $query->where('title', 'Stand'))
-            ->orderBy('name')
-            ->get(['id', 'name']);
     }
 
     private function listPayload(Lead $lead): array

@@ -115,8 +115,6 @@ Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', '
 
         Route::get('leads', [LeadApiController::class, 'index']);
         Route::get('leads/{lead}', [LeadApiController::class, 'show']);
-        Route::put('leads/{lead}', [LeadApiController::class, 'update']);
-        Route::post('leads/{lead}/notes', [LeadApiController::class, 'storeNote']);
 
         Route::get('approvals-rafael', [GestaoApiController::class, 'approvalsRafael']);
         Route::post('approvals-rafael/lots/{vehicleGroup}/approve', [GestaoApiController::class, 'approveLot']);
