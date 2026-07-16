@@ -100,6 +100,40 @@ class WorkshopStateTest extends TestCase
         $this->assertSame(0, $vehicle->repairs()->count());
     }
 
+    public function test_stand_roles_have_read_only_access_to_the_workshop_list(): void
+    {
+        $vehicle = $this->vehicleInState('OFICINA', '58-ST-58');
+        $vehicle->update(['workshop_state_id' => $this->defaultWorkshopState()->id]);
+        $repair = Repair::query()->create(['vehicle_id' => $vehicle->id]);
+
+        foreach (['Stand', 'Stand Adm'] as $roleTitle) {
+            $user = $this->userWithExactRole($roleTitle, [
+                'repair_access',
+                'repair_create',
+                'repair_edit',
+                'vehicle_show',
+                'vehicle_edit',
+                'workshop_state_edit',
+            ]);
+
+            $response = $this->actingAs($user)->get(route('admin.repairs.index'));
+
+            $response
+                ->assertOk()
+                ->assertSee('58-ST-58')
+                ->assertSee('#'.$repair->id)
+                ->assertSee('Apenas consulta')
+                ->assertSee(route('admin.repairs.index'), false)
+                ->assertDontSee('Abrir viatura')
+                ->assertDontSee('Ver viatura')
+                ->assertDontSee('Abrir última')
+                ->assertDontSee('Abrir em curso')
+                ->assertDontSee('Iniciar intervenção')
+                ->assertDontSee(route('admin.vehicles.workshop.destroy', $vehicle), false)
+                ->assertDontSee('name="workshop_state_id"', false);
+        }
+    }
+
     public function test_workshop_user_can_remove_vehicle_and_restore_its_previous_state(): void
     {
         $user = $this->userWithPermissions(['repair_access']);
@@ -263,6 +297,23 @@ class WorkshopStateTest extends TestCase
             fn (string $title) => Permission::query()->firstOrCreate(['title' => $title])
         );
         $role->permissions()->sync($permissions->pluck('id'));
+        $user->roles()->attach($role);
+
+        return $user;
+    }
+
+    private function userWithExactRole(string $roleTitle, array $permissionTitles): User
+    {
+        $user = User::query()->create([
+            'name' => $roleTitle.' test user',
+            'email' => uniqid('workshop-role-', true).'@example.test',
+            'password' => 'password',
+        ]);
+        $role = Role::query()->firstOrCreate(['title' => $roleTitle]);
+        $permissions = collect($permissionTitles)->map(
+            fn (string $title) => Permission::query()->firstOrCreate(['title' => $title])
+        );
+        $role->permissions()->syncWithoutDetaching($permissions->pluck('id'));
         $user->roles()->attach($role);
 
         return $user;

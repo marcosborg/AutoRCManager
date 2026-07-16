@@ -20,6 +20,7 @@ use App\Models\Vehicle;
 use App\Models\WorkshopState;
 use App\Services\RepairWorkLogService;
 use App\Support\LicensePlate;
+use App\Support\RolePreview;
 use Carbon\Carbon;
 use Gate;
 use Illuminate\Http\Request;
@@ -37,7 +38,11 @@ class RepairController extends Controller
     {
         abort_if(Gate::denies('repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        $workshopReadOnly = RolePreview::hasAnyEffectiveRole($request->user(), ['Stand', 'Stand Adm']);
+
         if ($request->ajax()) {
+            abort_if($workshopReadOnly, Response::HTTP_FORBIDDEN, '403 Forbidden');
+
             $query = Repair::with(['vehicle', 'repair_state'])->select(sprintf('%s.*', (new Repair)->table));
             $table = Datatables::of($query);
 
@@ -492,7 +497,8 @@ class RepairController extends Controller
             'stateFilter',
             'openOnly',
             'sort',
-            'dir'
+            'dir',
+            'workshopReadOnly'
         ));
     }
 

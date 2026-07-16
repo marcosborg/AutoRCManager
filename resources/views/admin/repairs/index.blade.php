@@ -23,6 +23,7 @@
         };
     @endphp
 
+    @if(!$workshopReadOnly)
     @can('repair_create')
         <div style="margin-bottom: 10px;" class="row">
             <div class="col-lg-12">
@@ -39,6 +40,7 @@
             </div>
         </div>
     @endcan
+    @endif
 
     <div class="row">
         <div class="col-lg-12">
@@ -179,6 +181,7 @@
                                                 @endif
                                             </td>
                                             <td>
+                                                @if(!$workshopReadOnly)
                                                 @can('workshop_state_edit')
                                                     <form method="POST" action="{{ route('admin.vehicles.workshop-state.update', $vehicle) }}">
                                                         @csrf
@@ -198,6 +201,9 @@
                                                 @else
                                                     {{ $vehicle->workshop_state->name ?? 'Sem estado' }}
                                                 @endcan
+                                                @else
+                                                    {{ $vehicle->workshop_state->name ?? 'Sem estado' }}
+                                                @endif
                                             </td>
                                             <td>
                                                 @if(!$vehicle->key)
@@ -215,6 +221,9 @@
                                                 <span class="badge {{ $row['open_count'] > 0 ? 'bg-yellow' : 'bg-green' }}">{{ $row['open_count'] }}</span>
                                             </td>
                                             <td>
+                                                @if($workshopReadOnly)
+                                                    <span class="text-muted">Apenas consulta</span>
+                                                @else
                                                 @can('vehicle_edit')
                                                     <a class="btn btn-xs btn-default" href="{{ route('admin.vehicles.edit', $vehicle) }}">
                                                         Abrir viatura
@@ -247,6 +256,7 @@
                                                         </form>
                                                     @endif
                                                 @endcan
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach

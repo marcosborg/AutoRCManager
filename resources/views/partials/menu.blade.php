@@ -351,7 +351,7 @@
                     </ul>
                 </li>
             @endcan
-            @if(\Illuminate\Support\Facades\Gate::allows('repair_menu_access') || \Illuminate\Support\Facades\Gate::allows('oficina_expertise_process_access'))
+            @if(\Illuminate\Support\Facades\Gate::allows('repair_menu_access') || \Illuminate\Support\Facades\Gate::allows('repair_access') || \Illuminate\Support\Facades\Gate::allows('oficina_expertise_process_access'))
                 <li class="treeview">
                     <a href="#">
                         <i class="fa-fw fas fa-screwdriver">
