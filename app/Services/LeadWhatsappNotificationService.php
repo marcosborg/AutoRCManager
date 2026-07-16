@@ -114,9 +114,14 @@ class LeadWhatsappNotificationService
         }
 
         $plainToken = Str::random(72);
+        $assignmentHistoryId = $lead->assignment_histories()
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->value('id');
         $accessToken = LeadAccessToken::create([
             'lead_id' => $lead->id,
             'user_id' => $user->id,
+            'assignment_history_id' => $assignmentHistoryId,
             'token_hash' => hash('sha256', $plainToken),
             'expires_at' => now()->addDays(7),
             'first_open_deadline_at' => now()->addHour(),

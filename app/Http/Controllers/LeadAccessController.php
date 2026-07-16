@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatConversation;
 use App\Models\LeadAccessToken;
+use App\Models\LeadContactEvent;
 use App\Services\LeadAccessEscalationService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -42,10 +43,46 @@ class LeadAccessController extends Controller
         $lead = $accessToken->lead;
         $messages = $this->messagesFor($lead);
         $customerPhone = $this->normalizePhone($lead->phone);
-        $callUrl = $customerPhone ? 'tel:+' . $customerPhone : null;
-        $whatsappUrl = $customerPhone ? $this->whatsappUrl($customerPhone, $lead) : null;
+        $callUrl = $customerPhone ? route('lead-access.contact', [$token, 'call']) : null;
+        $whatsappUrl = $customerPhone ? route('lead-access.contact', [$token, 'whatsapp']) : null;
 
         return view('leadAccess.show', compact('lead', 'accessToken', 'messages', 'callUrl', 'whatsappUrl'));
+    }
+
+    public function contact(string $token, string $channel)
+    {
+        abort_if(! preg_match('/^[A-Za-z0-9]{40,120}$/', $token), Response::HTTP_NOT_FOUND);
+
+        $accessToken = LeadAccessToken::with('lead')
+            ->where('token_hash', hash('sha256', $token))
+            ->first();
+
+        abort_if(
+            ! $accessToken
+            || ! $accessToken->isUsable()
+            || ! $accessToken->last_used_at
+            || ! $accessToken->assignment_history_id
+            || (int) $accessToken->lead?->assigned_user_id !== (int) $accessToken->user_id,
+            Response::HTTP_GONE
+        );
+
+        $phone = $this->normalizePhone($accessToken->lead->phone);
+        abort_if(! $phone, Response::HTTP_NOT_FOUND);
+
+        LeadContactEvent::create([
+            'lead_id' => $accessToken->lead_id,
+            'user_id' => $accessToken->user_id,
+            'assignment_history_id' => $accessToken->assignment_history_id,
+            'access_token_id' => $accessToken->id,
+            'channel' => $channel,
+            'clicked_at' => now(),
+        ]);
+
+        $destination = $channel === 'call'
+            ? 'tel:+'.$phone
+            : $this->whatsappUrl($phone, $accessToken->lead);
+
+        return redirect()->away($destination);
     }
 
     private function messagesFor($lead)

@@ -1,6 +1,9 @@
 @extends('layouts.admin')
 @section('content')
 <div class="content">
+    @can('lead_performance_access')
+        <a class="btn btn-primary" style="margin-bottom:10px" href="{{ route('admin.leads.performance') }}"><i class="fa fa-line-chart"></i> Desempenho</a>
+    @endcan
     <div class="row">
         <div class="col-lg-12">
             <div class="panel panel-default">

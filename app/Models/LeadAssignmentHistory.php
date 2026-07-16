@@ -38,4 +38,14 @@ class LeadAssignmentHistory extends Model
     {
         return $this->belongsTo(User::class, 'assigned_by_id');
     }
+
+    public function access_tokens()
+    {
+        return $this->hasMany(LeadAccessToken::class, 'assignment_history_id');
+    }
+
+    public function contact_events()
+    {
+        return $this->hasMany(LeadContactEvent::class, 'assignment_history_id');
+    }
 }

@@ -15,6 +15,7 @@ class LeadAccessToken extends Model
     protected $fillable = [
         'lead_id',
         'user_id',
+        'assignment_history_id',
         'token_hash',
         'expires_at',
         'first_open_deadline_at',
@@ -43,6 +44,16 @@ class LeadAccessToken extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function assignment_history()
+    {
+        return $this->belongsTo(LeadAssignmentHistory::class);
+    }
+
+    public function contact_events()
+    {
+        return $this->hasMany(LeadContactEvent::class, 'access_token_id');
     }
 
     public function isUsable(): bool

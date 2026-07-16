@@ -12,6 +12,8 @@ Route::get('/home', function () {
 Auth::routes(['register' => false]);
 
 Route::get('lead-access/{token}', [\App\Http\Controllers\LeadAccessController::class, 'show'])->name('lead-access.show');
+Route::get('lead-access/{token}/contact/{channel}', [\App\Http\Controllers\LeadAccessController::class, 'contact'])
+    ->where('channel', 'call|whatsapp')->name('lead-access.contact');
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'middleware' => ['auth']], function () {
     Route::get('/', 'HomeController@index')->name('home');
@@ -41,6 +43,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('gps-positions', 'GpsController@latest')->name('gps.positions');
     Route::post('leads/{lead}/notes', 'LeadController@storeNote')->name('leads.notes.store');
     Route::delete('leads/{lead}/notes/{note}', 'LeadController@destroyNote')->name('leads.notes.destroy');
+    Route::get('leads-performance', 'LeadPerformanceController@index')->name('leads.performance');
     Route::resource('leads', 'LeadController')->except(['create', 'store']);
 
     Route::resource('ai-assistants', 'AiAssistantController');
