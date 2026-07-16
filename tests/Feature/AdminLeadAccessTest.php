@@ -7,6 +7,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class AdminLeadAccessTest extends TestCase
@@ -81,6 +82,38 @@ class AdminLeadAccessTest extends TestCase
         $response->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->assertStringStartsWith('%PDF-', $response->getContent());
         $this->assertStringContainsString('attachment;', strtolower((string) $response->headers->get('content-disposition')));
+    }
+
+    public function test_management_api_lists_and_updates_leads(): void
+    {
+        $admin = $this->userWithRole('Admin', ['lead_access', 'lead_show', 'lead_edit']);
+        $seller = $this->userWithRole('Stand', ['lead_access']);
+        $lead = Lead::create([
+            'leadgen_id' => 'lead-api-'.uniqid(),
+            'page_id' => 'page-1',
+            'form_id' => 'form-1',
+            'full_name' => 'Cliente App',
+            'phone' => '910000002',
+            'status' => Lead::STATUS_NEW,
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $this->getJson('/api/v1/gestao/leads?search=Cliente+App')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $lead->id)
+            ->assertJsonStructure(['summary' => ['new', 'contacted', 'qualified', 'won', 'lost']]);
+
+        $this->putJson("/api/v1/gestao/leads/{$lead->id}", [
+            'status' => Lead::STATUS_CONTACTED,
+            'assigned_user_id' => $seller->id,
+        ])->assertOk()
+            ->assertJsonPath('data.status', Lead::STATUS_CONTACTED)
+            ->assertJsonPath('data.assigned_user_id', $seller->id);
+
+        $this->postJson("/api/v1/gestao/leads/{$lead->id}/notes", ['body' => 'Cliente contactado pela app.'])
+            ->assertOk()
+            ->assertJsonPath('data.notes.0.body', 'Cliente contactado pela app.');
     }
 
     private function userWithRole(string $roleTitle, array $permissionTitles): User

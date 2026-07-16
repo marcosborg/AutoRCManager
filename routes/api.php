@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\Mobile\AuthApiController;
 use App\Http\Controllers\Api\V1\Mobile\WorkshopApiController;
 use App\Http\Controllers\Api\V1\Mobile\WorkshopPlanningApiController;
 use App\Http\Controllers\Api\V1\Management\GestaoApiController;
+use App\Http\Controllers\Api\V1\Management\LeadApiController;
 use App\Http\Controllers\MetaLeadInboundController;
 use App\Http\Controllers\MetaWebhookController;
 use App\Http\Controllers\WhatsappNodeController;
@@ -111,6 +112,11 @@ Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', '
         Route::get('consignments', [GestaoApiController::class, 'consignments']);
         Route::get('trade-ins', [GestaoApiController::class, 'tradeIns']);
         Route::get('workshop', [GestaoApiController::class, 'workshop']);
+
+        Route::get('leads', [LeadApiController::class, 'index']);
+        Route::get('leads/{lead}', [LeadApiController::class, 'show']);
+        Route::put('leads/{lead}', [LeadApiController::class, 'update']);
+        Route::post('leads/{lead}/notes', [LeadApiController::class, 'storeNote']);
 
         Route::get('approvals-rafael', [GestaoApiController::class, 'approvalsRafael']);
         Route::post('approvals-rafael/lots/{vehicleGroup}/approve', [GestaoApiController::class, 'approveLot']);
