@@ -432,12 +432,6 @@ class VehicleController extends Controller
             $synchronizedGeneralState = GeneralState::query()
                 ->whereRaw('LOWER(name) = ?', [$generalStateName])
                 ->first();
-
-            if (! $synchronizedGeneralState) {
-                return back()->withErrors([
-                    'workshop_state_id' => "Não existe um Estado Geral '{$workshopState->name}' para sincronizar.",
-                ]);
-            }
         }
 
         DB::transaction(function () use ($vehicle, $workshopState, $synchronizedGeneralState): void {

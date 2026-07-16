@@ -123,7 +123,7 @@ class WorkshopStateTest extends TestCase
         $this->assertSame($repairCount, $vehicle->repairs()->count());
     }
 
-    public function test_state_synchronization_is_rejected_when_general_state_does_not_exist(): void
+    public function test_workshop_state_is_updated_when_synchronized_general_state_does_not_exist(): void
     {
         $user = $this->userWithPermissions(['workshop_state_edit']);
         $vehicle = $this->vehicleInState('OFICINA');
@@ -138,9 +138,12 @@ class WorkshopStateTest extends TestCase
             ->patch(route('admin.vehicles.workshop-state.update', $vehicle), [
                 'workshop_state_id' => $deliveredState->id,
             ])
-            ->assertSessionHasErrors('workshop_state_id');
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('message', 'Estado da Oficina atualizado.');
 
-        $this->assertNull($vehicle->fresh()->workshop_state_id);
+        $vehicle->refresh();
+        $this->assertSame($deliveredState->id, $vehicle->workshop_state_id);
+        $this->assertSame(0, strcasecmp('OFICINA', $vehicle->general_state->name));
     }
 
     public function test_starting_an_intervention_creates_only_one_open_repair(): void
