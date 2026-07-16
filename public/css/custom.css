@@ -98,6 +98,28 @@ body.has-global-horizontal-scrollbar .content-wrapper {
     padding-bottom: 18px;
 }
 
+/* Keep the navigation anchored to the viewport and scroll only its contents. */
+.main-sidebar {
+    position: fixed;
+    height: 100vh;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.main-sidebar > .sidebar {
+    height: calc(100vh - 50px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+    .main-sidebar > .sidebar {
+        height: calc(100vh - 100px);
+    }
+}
+
 @media (max-width: 767px) {
     .global-horizontal-scrollbar,
     body.sidebar-collapse .global-horizontal-scrollbar {

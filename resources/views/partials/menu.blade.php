@@ -1,5 +1,5 @@
 <aside class="main-sidebar">
-    <section class="sidebar" style="height: auto;">
+    <section class="sidebar">
         <ul class="sidebar-menu tree" data-widget="tree">
             <li>
                 <select class="searchable-field form-control" aria-label="Pesquisar viaturas e clientes">
