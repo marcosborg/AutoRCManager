@@ -176,7 +176,7 @@
                 </div>
 
                 <div role="tabpanel" class="tab-pane" id="cash-transfer">
-                    <form method="POST" action="{{ route('admin.cash.transfers.store') }}">
+                    <form method="POST" action="{{ route('admin.cash.transfers.store') }}" enctype="multipart/form-data">
                         @csrf
                         <div class="row">
                             <div class="col-md-2">
@@ -240,6 +240,11 @@
                                     <textarea class="form-control" name="notes" id="transfer_notes" rows="3"></textarea>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="transfer_proofs">Comprovativos <small>(recomendado)</small></label>
+                            <input class="form-control" type="file" name="proofs[]" id="transfer_proofs" accept="image/*,application/pdf" multiple>
                         </div>
 
                         <button type="submit" class="btn btn-primary">Registar transferência</button>

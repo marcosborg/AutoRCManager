@@ -194,6 +194,11 @@ class WorkshopPlanningApiController extends Controller
             'planned_start_date' => $item->planned_start_date?->format('Y-m-d'), 'planned_end_date' => $item->planned_end_date?->format('Y-m-d'),
             'status' => $item->status, 'status_label' => WorkshopIntervention::STATUS_SELECT[$item->status] ?? $item->status,
             'mechanics' => $item->mechanics->map(fn ($mechanic) => ['id' => $mechanic->id, 'name' => $mechanic->name])->values(),
+            'active_mechanics' => $logs
+                ->whereNull('finished_at')
+                ->unique('user_id')
+                ->map(fn (RepairWorkLog $log) => ['id' => (int) $log->user_id, 'name' => $log->user?->name ?? 'Desconhecido'])
+                ->values(),
             'work_logs' => $logs->map(fn (RepairWorkLog $log) => ['id' => $log->id, 'user_id' => $log->user_id, 'user_name' => $log->user?->name, 'started_at' => $log->getRawOriginal('started_at'), 'finished_at' => $log->getRawOriginal('finished_at'), 'duration_minutes' => $log->duration_minutes])->values(),
             'my_work_in_progress' => $logs->contains(fn ($log) => (int) $log->user_id === (int) $user->id && ! $log->finished_at),
             'completed_at' => $item->completed_at?->toIso8601String(),

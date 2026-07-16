@@ -59,6 +59,7 @@ class Vehicle extends Model implements HasMedia
 
     protected $fillable = [
         'general_state_id',
+        'workshop_state_id',
         'license',
         'foreign_license',
         'our_registration',
@@ -179,6 +180,11 @@ class Vehicle extends Model implements HasMedia
     public function general_state()
     {
         return $this->belongsTo(GeneralState::class, 'general_state_id');
+    }
+
+    public function workshop_state()
+    {
+        return $this->belongsTo(WorkshopState::class, 'workshop_state_id');
     }
 
     public function import_process()

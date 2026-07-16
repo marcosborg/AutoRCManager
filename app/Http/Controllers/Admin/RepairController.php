@@ -10,25 +10,28 @@ use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\MassDestroyRepairRequest;
 use App\Http\Requests\StoreRepairRequest;
 use App\Http\Requests\UpdateRepairRequest;
-use App\Models\Repair;
-use App\Models\RepairWorkLog;
-use App\Models\RepairState;
-use App\Models\PartOrder;
-use App\Models\Vehicle;
 use App\Models\Brand;
+use App\Models\GeneralState;
+use App\Models\PartOrder;
+use App\Models\Repair;
+use App\Models\RepairState;
+use App\Models\RepairWorkLog;
+use App\Models\Vehicle;
+use App\Models\WorkshopState;
+use App\Services\RepairWorkLogService;
 use App\Support\LicensePlate;
+use Carbon\Carbon;
 use Gate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
-use App\Models\GeneralState;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
 
 class RepairController extends Controller
 {
-    use MediaUploadingTrait, CsvImportTrait;
+    use CsvImportTrait, MediaUploadingTrait;
 
     public function index(Request $request)
     {
@@ -42,9 +45,9 @@ class RepairController extends Controller
             $table->addColumn('actions', '&nbsp;');
 
             $table->editColumn('actions', function ($row) {
-                $viewGate      = 'repair_show';
-                $editGate      = 'repair_edit';
-                $deleteGate    = 'repair_delete';
+                $viewGate = 'repair_show';
+                $editGate = 'repair_edit';
+                $deleteGate = 'repair_delete';
                 $crudRoutePart = 'repairs';
 
                 return view('partials.datatablesActions', compact(
@@ -80,7 +83,7 @@ class RepairController extends Controller
                 }
                 $links = [];
                 foreach ($row->checkin as $media) {
-                    $links[] = '<a href="' . $media->getUrl() . '" target="_blank"><img src="' . $media->getUrl('thumb') . '" width="50px" height="50px"></a>';
+                    $links[] = '<a href="'.$media->getUrl().'" target="_blank"><img src="'.$media->getUrl('thumb').'" width="50px" height="50px"></a>';
                 }
 
                 return implode(' ', $links);
@@ -90,265 +93,265 @@ class RepairController extends Controller
                 return $row->kilometers ? $row->kilometers : '';
             });
             $table->editColumn('front_windshield', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->front_windshield ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->front_windshield ? 'checked' : null).'>';
             });
             $table->editColumn('front_windshield_text', function ($row) {
                 return $row->front_windshield_text ? $row->front_windshield_text : '';
             });
             $table->editColumn('front_lights', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->front_lights ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->front_lights ? 'checked' : null).'>';
             });
             $table->editColumn('front_lights_text', function ($row) {
                 return $row->front_lights_text ? $row->front_lights_text : '';
             });
             $table->editColumn('rear_lights', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->rear_lights ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->rear_lights ? 'checked' : null).'>';
             });
             $table->editColumn('rear_lights_text', function ($row) {
                 return $row->rear_lights_text ? $row->rear_lights_text : '';
             });
             $table->editColumn('horn_functionality', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->horn_functionality ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->horn_functionality ? 'checked' : null).'>';
             });
             $table->editColumn('horn_functionality_text', function ($row) {
                 return $row->horn_functionality_text ? $row->horn_functionality_text : '';
             });
             $table->editColumn('wiper_blades_water_level', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->wiper_blades_water_level ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->wiper_blades_water_level ? 'checked' : null).'>';
             });
             $table->editColumn('wiper_blades_water_level_text', function ($row) {
                 return $row->wiper_blades_water_level_text ? $row->wiper_blades_water_level_text : '';
             });
             $table->editColumn('brake_clutch_oil_level', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->brake_clutch_oil_level ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->brake_clutch_oil_level ? 'checked' : null).'>';
             });
             $table->editColumn('brake_clutch_oil_level_text', function ($row) {
                 return $row->brake_clutch_oil_level_text ? $row->brake_clutch_oil_level_text : '';
             });
             $table->editColumn('electrical_systems', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->electrical_systems ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->electrical_systems ? 'checked' : null).'>';
             });
             $table->editColumn('electrical_systems_text', function ($row) {
                 return $row->electrical_systems_text ? $row->electrical_systems_text : '';
             });
             $table->editColumn('engine_coolant_level', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->engine_coolant_level ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->engine_coolant_level ? 'checked' : null).'>';
             });
             $table->editColumn('engine_coolant_level_text', function ($row) {
                 return $row->engine_coolant_level_text ? $row->engine_coolant_level_text : '';
             });
             $table->editColumn('engine_oil_level', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->engine_oil_level ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->engine_oil_level ? 'checked' : null).'>';
             });
             $table->editColumn('engine_oil_level_text', function ($row) {
                 return $row->engine_oil_level_text ? $row->engine_oil_level_text : '';
             });
             $table->editColumn('filters_air_cabin_oil_fuel', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->filters_air_cabin_oil_fuel ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->filters_air_cabin_oil_fuel ? 'checked' : null).'>';
             });
             $table->editColumn('filters_air_cabin_oil_fuel_text', function ($row) {
                 return $row->filters_air_cabin_oil_fuel_text ? $row->filters_air_cabin_oil_fuel_text : '';
             });
             $table->editColumn('check_leaks_engine_gearbox_steering', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->check_leaks_engine_gearbox_steering ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->check_leaks_engine_gearbox_steering ? 'checked' : null).'>';
             });
             $table->editColumn('check_leaks_engine_gearbox_steering_text', function ($row) {
                 return $row->check_leaks_engine_gearbox_steering_text ? $row->check_leaks_engine_gearbox_steering_text : '';
             });
             $table->editColumn('brake_pads_disks', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->brake_pads_disks ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->brake_pads_disks ? 'checked' : null).'>';
             });
             $table->editColumn('brake_pads_disks_text', function ($row) {
                 return $row->brake_pads_disks_text ? $row->brake_pads_disks_text : '';
             });
             $table->editColumn('shock_absorbers', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->shock_absorbers ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->shock_absorbers ? 'checked' : null).'>';
             });
             $table->editColumn('shock_absorbers_text', function ($row) {
                 return $row->shock_absorbers_text ? $row->shock_absorbers_text : '';
             });
             $table->editColumn('tire_condition', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->tire_condition ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->tire_condition ? 'checked' : null).'>';
             });
             $table->editColumn('tire_condition_text', function ($row) {
                 return $row->tire_condition_text ? $row->tire_condition_text : '';
             });
             $table->editColumn('battery', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->battery ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->battery ? 'checked' : null).'>';
             });
             $table->editColumn('battery_text', function ($row) {
                 return $row->battery_text ? $row->battery_text : '';
             });
             $table->editColumn('spare_tire_vest_triangle_tools', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->spare_tire_vest_triangle_tools ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->spare_tire_vest_triangle_tools ? 'checked' : null).'>';
             });
             $table->editColumn('spare_tire_vest_triangle_tools_text', function ($row) {
                 return $row->spare_tire_vest_triangle_tools_text ? $row->spare_tire_vest_triangle_tools_text : '';
             });
             $table->editColumn('check_clearance', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->check_clearance ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->check_clearance ? 'checked' : null).'>';
             });
             $table->editColumn('check_clearance_text', function ($row) {
                 return $row->check_clearance_text ? $row->check_clearance_text : '';
             });
             $table->editColumn('check_shields', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->check_shields ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->check_shields ? 'checked' : null).'>';
             });
             $table->editColumn('check_shields_text', function ($row) {
                 return $row->check_shields_text ? $row->check_shields_text : '';
             });
             $table->editColumn('paint_condition', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->paint_condition ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->paint_condition ? 'checked' : null).'>';
             });
             $table->editColumn('paint_condition_text', function ($row) {
                 return $row->paint_condition_text ? $row->paint_condition_text : '';
             });
             $table->editColumn('dents', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->dents ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->dents ? 'checked' : null).'>';
             });
             $table->editColumn('dents_text', function ($row) {
                 return $row->dents_text ? $row->dents_text : '';
             });
             $table->editColumn('diverse_strips', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->diverse_strips ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->diverse_strips ? 'checked' : null).'>';
             });
             $table->editColumn('diverse_strips_text', function ($row) {
                 return $row->diverse_strips_text ? $row->diverse_strips_text : '';
             });
             $table->editColumn('diverse_plastics_check_scratches', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->diverse_plastics_check_scratches ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->diverse_plastics_check_scratches ? 'checked' : null).'>';
             });
             $table->editColumn('diverse_plastics_check_scratches_text', function ($row) {
                 return $row->diverse_plastics_check_scratches_text ? $row->diverse_plastics_check_scratches_text : '';
             });
             $table->editColumn('wheels', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->wheels ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->wheels ? 'checked' : null).'>';
             });
             $table->editColumn('wheels_text', function ($row) {
                 return $row->wheels_text ? $row->wheels_text : '';
             });
             $table->editColumn('bolts_paint', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->bolts_paint ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->bolts_paint ? 'checked' : null).'>';
             });
             $table->editColumn('bolts_paint_text', function ($row) {
                 return $row->bolts_paint_text ? $row->bolts_paint_text : '';
             });
             $table->editColumn('seat_belts', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->seat_belts ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->seat_belts ? 'checked' : null).'>';
             });
             $table->editColumn('seat_belts_text', function ($row) {
                 return $row->seat_belts_text ? $row->seat_belts_text : '';
             });
             $table->editColumn('radio', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->radio ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->radio ? 'checked' : null).'>';
             });
             $table->editColumn('radio_text', function ($row) {
                 return $row->radio_text ? $row->radio_text : '';
             });
             $table->editColumn('air_conditioning', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->air_conditioning ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->air_conditioning ? 'checked' : null).'>';
             });
             $table->editColumn('air_conditioning_text', function ($row) {
                 return $row->air_conditioning_text ? $row->air_conditioning_text : '';
             });
             $table->editColumn('front_rear_window_functionality', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->front_rear_window_functionality ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->front_rear_window_functionality ? 'checked' : null).'>';
             });
             $table->editColumn('front_rear_window_functionality_text', function ($row) {
                 return $row->front_rear_window_functionality_text ? $row->front_rear_window_functionality_text : '';
             });
             $table->editColumn('seats_upholstery', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->seats_upholstery ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->seats_upholstery ? 'checked' : null).'>';
             });
             $table->editColumn('seats_upholstery_text', function ($row) {
                 return $row->seats_upholstery_text ? $row->seats_upholstery_text : '';
             });
             $table->editColumn('sun_visors', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->sun_visors ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->sun_visors ? 'checked' : null).'>';
             });
             $table->editColumn('sun_visors_text', function ($row) {
                 return $row->sun_visors_text ? $row->sun_visors_text : '';
             });
             $table->editColumn('carpets', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->carpets ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->carpets ? 'checked' : null).'>';
             });
             $table->editColumn('carpets_text', function ($row) {
                 return $row->carpets_text ? $row->carpets_text : '';
             });
             $table->editColumn('trunk_shelf', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->trunk_shelf ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->trunk_shelf ? 'checked' : null).'>';
             });
             $table->editColumn('trunk_shelf_text', function ($row) {
                 return $row->trunk_shelf_text ? $row->trunk_shelf_text : '';
             });
             $table->editColumn('buttons', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->buttons ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->buttons ? 'checked' : null).'>';
             });
             $table->editColumn('buttons_text', function ($row) {
                 return $row->buttons_text ? $row->buttons_text : '';
             });
             $table->editColumn('door_panels', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->door_panels ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->door_panels ? 'checked' : null).'>';
             });
             $table->editColumn('door_panels_text', function ($row) {
                 return $row->door_panels_text ? $row->door_panels_text : '';
             });
             $table->editColumn('locks', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->locks ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->locks ? 'checked' : null).'>';
             });
             $table->editColumn('locks_text', function ($row) {
                 return $row->locks_text ? $row->locks_text : '';
             });
             $table->editColumn('interior_covers_headlights_taillights', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->interior_covers_headlights_taillights ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->interior_covers_headlights_taillights ? 'checked' : null).'>';
             });
             $table->editColumn('interior_covers_headlights_taillights_text', function ($row) {
                 return $row->interior_covers_headlights_taillights_text ? $row->interior_covers_headlights_taillights_text : '';
             });
             $table->editColumn('open_close_doors_remote_control_all_functions', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->open_close_doors_remote_control_all_functions ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->open_close_doors_remote_control_all_functions ? 'checked' : null).'>';
             });
             $table->editColumn('open_close_doors_remote_control_all_functions_text', function ($row) {
                 return $row->open_close_doors_remote_control_all_functions_text ? $row->open_close_doors_remote_control_all_functions_text : '';
             });
             $table->editColumn('turn_on_ac_check_glass', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->turn_on_ac_check_glass ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->turn_on_ac_check_glass ? 'checked' : null).'>';
             });
             $table->editColumn('turn_on_ac_check_glass_text', function ($row) {
                 return $row->turn_on_ac_check_glass_text ? $row->turn_on_ac_check_glass_text : '';
             });
             $table->editColumn('check_engine_lift_hood', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->check_engine_lift_hood ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->check_engine_lift_hood ? 'checked' : null).'>';
             });
             $table->editColumn('check_engine_lift_hood_text', function ($row) {
                 return $row->check_engine_lift_hood_text ? $row->check_engine_lift_hood_text : '';
             });
             $table->editColumn('connect_vehicle_to_scanner_check_errors', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->connect_vehicle_to_scanner_check_errors ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->connect_vehicle_to_scanner_check_errors ? 'checked' : null).'>';
             });
             $table->editColumn('connect_vehicle_to_scanner_check_errors_text', function ($row) {
                 return $row->connect_vehicle_to_scanner_check_errors_text ? $row->connect_vehicle_to_scanner_check_errors_text : '';
             });
             $table->editColumn('check_chassis_confirm_with_registration', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->check_chassis_confirm_with_registration ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->check_chassis_confirm_with_registration ? 'checked' : null).'>';
             });
             $table->editColumn('check_chassis_confirm_with_registration_text', function ($row) {
                 return $row->check_chassis_confirm_with_registration_text ? $row->check_chassis_confirm_with_registration_text : '';
             });
             $table->editColumn('manufacturer_plate', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->manufacturer_plate ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->manufacturer_plate ? 'checked' : null).'>';
             });
             $table->editColumn('manufacturer_plate_text', function ($row) {
                 return $row->manufacturer_plate_text ? $row->manufacturer_plate_text : '';
             });
             $table->editColumn('check_chassis_stickers', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->check_chassis_stickers ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->check_chassis_stickers ? 'checked' : null).'>';
             });
             $table->editColumn('check_chassis_stickers_text', function ($row) {
                 return $row->check_chassis_stickers_text ? $row->check_chassis_stickers_text : '';
             });
             $table->editColumn('check_gearbox_oil', function ($row) {
-                return '<input type="checkbox" disabled ' . ($row->check_gearbox_oil ? 'checked' : null) . '>';
+                return '<input type="checkbox" disabled '.($row->check_gearbox_oil ? 'checked' : null).'>';
             });
             $table->editColumn('check_gearbox_oil_text', function ($row) {
                 return $row->check_gearbox_oil_text ? $row->check_gearbox_oil_text : '';
@@ -362,7 +365,7 @@ class RepairController extends Controller
                 }
                 $links = [];
                 foreach ($row->checkout as $media) {
-                    $links[] = '<a href="' . $media->getUrl() . '" target="_blank"><img src="' . $media->getUrl('thumb') . '" width="50px" height="50px"></a>';
+                    $links[] = '<a href="'.$media->getUrl().'" target="_blank"><img src="'.$media->getUrl('thumb').'" width="50px" height="50px"></a>';
                 }
 
                 return implode(' ', $links);
@@ -376,9 +379,8 @@ class RepairController extends Controller
             });
 
             $table->addColumn('checklist_percentage', function ($row) {
-                return $row->checklist_percentage . '%';
+                return $row->checklist_percentage.'%';
             });
-
 
             $table->rawColumns(['actions', 'placeholder', 'vehicle', 'checkin', 'user', 'front_windshield', 'front_lights', 'rear_lights', 'horn_functionality', 'wiper_blades_water_level', 'brake_clutch_oil_level', 'electrical_systems', 'engine_coolant_level', 'engine_oil_level', 'filters_air_cabin_oil_fuel', 'check_leaks_engine_gearbox_steering', 'brake_pads_disks', 'shock_absorbers', 'tire_condition', 'battery', 'spare_tire_vest_triangle_tools', 'check_clearance', 'check_shields', 'paint_condition', 'dents', 'diverse_strips', 'diverse_plastics_check_scratches', 'wheels', 'bolts_paint', 'seat_belts', 'radio', 'air_conditioning', 'front_rear_window_functionality', 'seats_upholstery', 'sun_visors', 'carpets', 'trunk_shelf', 'buttons', 'door_panels', 'locks', 'interior_covers_headlights_taillights', 'open_close_doors_remote_control_all_functions', 'turn_on_ac_check_glass', 'check_engine_lift_hood', 'connect_vehicle_to_scanner_check_errors', 'check_chassis_confirm_with_registration', 'manufacturer_plate', 'check_chassis_stickers', 'check_gearbox_oil', 'checkout', 'repair_state']);
 
@@ -386,21 +388,32 @@ class RepairController extends Controller
         }
 
         $licenseFilter = trim((string) $request->query('license', ''));
-        $stateFilter = $request->query('state');
+        $stateFilter = $request->query('workshop_state');
         $openOnly = $request->boolean('open_only');
         $sort = (string) $request->query('sort', 'latest');
         $dir = strtolower((string) $request->query('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $repairStates = RepairState::query()
+        $workshopStates = WorkshopState::query()
+            ->orderBy('position')
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get();
 
-        $allGroupedRepairs = Repair::with(['vehicle.brand', 'vehicle.general_state', 'repair_state'])
-            ->orderByDesc('created_at')
+        $workshopGeneralStateId = GeneralState::query()
+            ->whereRaw('LOWER(name) = ?', ['oficina'])
+            ->value('id');
+
+        $allWorkshopVehicles = Vehicle::query()
+            ->with([
+                'brand',
+                'general_state',
+                'workshop_state',
+                'repairs' => fn ($query) => $query->with('repair_state')->orderByDesc('created_at'),
+            ])
+            ->when($workshopGeneralStateId, fn ($query) => $query->where('general_state_id', $workshopGeneralStateId))
+            ->when(! $workshopGeneralStateId, fn ($query) => $query->whereRaw('1 = 0'))
             ->get()
-            ->groupBy('vehicle_id')
-            ->map(function ($vehicleRepairs) {
-                $sorted = $vehicleRepairs->sortByDesc('created_at')->values();
+            ->map(function (Vehicle $vehicle): array {
+                $sorted = $vehicle->repairs->sortByDesc('created_at')->values();
                 $latest = $sorted->first();
 
                 $isOpen = function ($item) {
@@ -409,32 +422,24 @@ class RepairController extends Controller
 
                 $openRepair = $sorted->first($isOpen);
                 $openCount = $sorted->filter($isOpen)->count();
-                $current = $openRepair ?: $latest;
-                $currentStateId = $current?->repair_state_id;
-                $currentStateName = $current?->repair_state?->name ?? ($openRepair ? 'Aberta' : 'Fechada');
 
                 return [
-                    'vehicle' => $latest?->vehicle,
+                    'vehicle' => $vehicle,
                     'latest' => $latest,
                     'open' => $openRepair,
                     'count' => $sorted->count(),
                     'open_count' => $openCount,
-                    'current_state_id' => $currentStateId,
-                    'current_state_name' => $currentStateName,
                 ];
             })
-            ->filter(fn ($row) => $row['vehicle'] !== null)
             ->values();
 
         $workshopSummary = [
-            'vehicles_sent' => $allGroupedRepairs->count(),
-            'total_interventions' => (int) $allGroupedRepairs->sum('count'),
-            'vehicles_currently_in_workshop' => $allGroupedRepairs
-                ->filter(fn ($row) => (int) $row['open_count'] > 0)
-                ->count(),
+            'vehicles_sent' => $allWorkshopVehicles->count(),
+            'total_interventions' => (int) $allWorkshopVehicles->sum('count'),
+            'vehicles_currently_in_workshop' => $allWorkshopVehicles->count(),
         ];
 
-        $groupedRepairs = $allGroupedRepairs
+        $groupedRepairs = $allWorkshopVehicles
             ->filter(function ($row) use ($licenseFilter, $stateFilter, $openOnly) {
                 $vehicle = $row['vehicle'];
 
@@ -450,10 +455,10 @@ class RepairController extends Controller
 
                 if ($stateFilter !== null && $stateFilter !== '') {
                     if ($stateFilter === '__null') {
-                        if ($row['current_state_id'] !== null) {
+                        if ($vehicle->workshop_state_id !== null) {
                             return false;
                         }
-                    } elseif ((int) $row['current_state_id'] !== (int) $stateFilter) {
+                    } elseif ((int) $vehicle->workshop_state_id !== (int) $stateFilter) {
                         return false;
                     }
                 }
@@ -467,6 +472,7 @@ class RepairController extends Controller
             ->sortBy(function ($row) use ($sort) {
                 if ($sort === 'license') {
                     $vehicle = $row['vehicle'];
+
                     return mb_strtolower((string) ($vehicle?->license ?? $vehicle?->foreign_license ?? ''));
                 }
 
@@ -474,14 +480,14 @@ class RepairController extends Controller
                     return (int) ($row['open_count'] ?? 0);
                 }
 
-                return optional($row['latest']?->created_at)->timestamp ?? 0;
+                return optional($row['vehicle']?->updated_at)->timestamp ?? 0;
             }, SORT_REGULAR, $dir === 'desc')
             ->values();
 
         return view('admin.repairs.index', compact(
             'groupedRepairs',
             'workshopSummary',
-            'repairStates',
+            'workshopStates',
             'licenseFilter',
             'stateFilter',
             'openOnly',
@@ -506,11 +512,11 @@ class RepairController extends Controller
         $repair = Repair::create($request->all());
 
         foreach ($request->input('checkin', []) as $file) {
-            $repair->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('checkin');
+            $repair->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('checkin');
         }
 
         foreach ($request->input('checkout', []) as $file) {
-            $repair->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('checkout');
+            $repair->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('checkout');
         }
 
         if ($media = $request->input('ck-media', false)) {
@@ -631,7 +637,7 @@ class RepairController extends Controller
         $media = $repair->checkin->pluck('file_name')->toArray();
         foreach ($request->input('checkin', []) as $file) {
             if (count($media) === 0 || ! in_array($file, $media)) {
-                $repair->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('checkin');
+                $repair->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('checkin');
             }
         }
 
@@ -645,7 +651,7 @@ class RepairController extends Controller
         $media = $repair->checkout->pluck('file_name')->toArray();
         foreach ($request->input('checkout', []) as $file) {
             if (count($media) === 0 || ! in_array($file, $media)) {
-                $repair->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('checkout');
+                $repair->addMedia(storage_path('tmp/uploads/'.basename($file)))->toMediaCollection('checkout');
             }
         }
 
@@ -667,7 +673,7 @@ class RepairController extends Controller
             ->with('message', 'Reparacao iniciada com sucesso.');
     }
 
-    public function finishRepair(Repair $repair)
+    public function finishRepair(Repair $repair, RepairWorkLogService $workLogs)
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
@@ -677,10 +683,15 @@ class RepairController extends Controller
                 ->withErrors(['repair_started_at' => 'Inicie a reparacao antes de finalizar.']);
         }
 
-        if (! $repair->getRawOriginal('repair_finished_at')) {
-            $repair->repair_finished_at = now();
-            $repair->save();
-        }
+        DB::transaction(function () use ($repair, $workLogs) {
+            $repair = Repair::query()->lockForUpdate()->findOrFail($repair->id);
+            $workLogs->closeForRepair($repair);
+
+            if (! $repair->getRawOriginal('repair_finished_at')) {
+                $repair->repair_finished_at = now();
+                $repair->save();
+            }
+        });
 
         return redirect()
             ->route('admin.repairs.edit', $repair->id)
@@ -705,51 +716,22 @@ class RepairController extends Controller
             ->with('message', 'Intervencao reaberta com sucesso.');
     }
 
-    public function startWork(Repair $repair)
+    public function startWork(Repair $repair, RepairWorkLogService $workLogs)
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $openLog = RepairWorkLog::where('user_id', Auth::id())
-            ->whereNull('finished_at')
-            ->first();
-
-        if ($openLog && (int) $openLog->repair_id !== (int) $repair->id) {
-            return redirect()->route('admin.repairs.edit', $repair->id)
-                ->withErrors(['repair_work' => 'Já tem outro trabalho em curso. Termine-o antes de iniciar este.']);
-        }
-
-        if (! $openLog) {
-            RepairWorkLog::create(['repair_id' => $repair->id, 'user_id' => Auth::id(), 'started_at' => now()]);
-        }
+        $workLogs->start($repair, Auth::user());
 
         return redirect()
             ->route('admin.repairs.edit', $repair->id)
             ->with('message', 'Trabalho iniciado para este mecanico.');
     }
 
-    public function finishWork(Repair $repair)
+    public function finishWork(Repair $repair, RepairWorkLogService $workLogs)
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $openLog = RepairWorkLog::where('repair_id', $repair->id)
-            ->where('user_id', Auth::id())
-            ->whereNull('finished_at')
-            ->latest('started_at')
-            ->first();
-
-        if (! $openLog) {
-            return redirect()
-                ->route('admin.repairs.edit', $repair->id)
-                ->withErrors(['repair_work' => 'Nao existe trabalho em curso para este mecanico.']);
-        }
-
-        $end = now();
-        $minutes = Carbon::parse($openLog->started_at)->diffInMinutes($end);
-
-        $openLog->update([
-            'finished_at' => $end,
-            'duration_minutes' => $minutes,
-        ]);
+        $workLogs->finish($repair, Auth::user());
 
         return redirect()
             ->route('admin.repairs.edit', $repair->id)
@@ -775,6 +757,28 @@ class RepairController extends Controller
         return redirect()
             ->route('admin.repairs.edit', $newRepair->id)
             ->with('message', 'Nova intervencao criada com sucesso.');
+    }
+
+    public function startIntervention(Vehicle $vehicle)
+    {
+        abort_if(Gate::denies('repair_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        if (RepairRules::hasOpenRepairs($vehicle->id)) {
+            return back()->withErrors([
+                'vehicle_id' => 'Feche a intervenção aberta antes de iniciar uma nova para esta viatura.',
+            ]);
+        }
+
+        $repair = Repair::create([
+            'vehicle_id' => $vehicle->id,
+            'work_type' => 'workshop',
+            'kilometers' => is_numeric($vehicle->kilometers) ? (int) $vehicle->kilometers : null,
+            'timestamp' => now()->format('Y-m-d H:i:s'),
+        ]);
+
+        return redirect()
+            ->route('admin.repairs.edit', $repair)
+            ->with('message', 'Intervenção iniciada com sucesso.');
     }
 
     public function show(Repair $repair)
@@ -810,10 +814,10 @@ class RepairController extends Controller
     {
         abort_if(Gate::denies('repair_create') && Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $model         = new Repair();
-        $model->id     = $request->input('crud_id', 0);
+        $model = new Repair;
+        $model->id = $request->input('crud_id', 0);
         $model->exists = true;
-        $media         = $model->addMediaFromRequest('upload')->toMediaCollection('ck-media');
+        $media = $model->addMediaFromRequest('upload')->toMediaCollection('ck-media');
 
         return response()->json(['id' => $media->id, 'url' => $media->getUrl()], Response::HTTP_CREATED);
     }

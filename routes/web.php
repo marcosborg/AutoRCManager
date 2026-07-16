@@ -24,6 +24,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('cash/departments', 'CashController@storeDepartment')->name('cash.departments.store');
     Route::post('cash/categories', 'CashController@storeCategory')->name('cash.categories.store');
     Route::post('cash/boxes', 'CashController@storeCashBox')->name('cash.boxes.store');
+    Route::get('workshop-cash', 'WorkshopCashController@index')->name('workshop-cash.index');
+    Route::post('workshop-cash/expenses', 'WorkshopCashController@storeExpense')->name('workshop-cash.expenses.store');
+    Route::post('workshop-cash/transfers', 'WorkshopCashController@storeTransfer')->name('workshop-cash.transfers.store');
+    Route::post('workshop-cash/categories', 'WorkshopCashController@storeCategory')->name('workshop-cash.categories.store');
+    Route::put('workshop-cash/categories/{cashCategory}', 'WorkshopCashController@updateCategory')->name('workshop-cash.categories.update');
     Route::post('system-shutdown', 'SystemShutdownController@store')->name('system-shutdown.store');
     Route::get('system-maintenance', 'SystemMaintenanceController@index')->name('system-maintenance.index');
     Route::post('system-maintenance/run', 'SystemMaintenanceController@run')->name('system-maintenance.run');
@@ -96,6 +101,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('vehicles/{vehicle}/generic-payments/{payment}', 'VehicleController@destroyGenericPayment')->name('vehicles.generic-payments.destroy');
     Route::delete('vehicles/{vehicle}/client-payments/{payment}', 'VehicleController@destroyClientPayment')->name('vehicles.client-payments.destroy');
     Route::post('vehicles/{vehicle}/send-to-workshop', 'VehicleController@sendToWorkshop')->name('vehicles.send-to-workshop');
+    Route::patch('vehicles/{vehicle}/workshop-state', 'VehicleController@updateWorkshopState')->name('vehicles.workshop-state.update');
     Route::post('vehicles/{vehicle}/suspended-sale', 'VehicleController@suspendSale')->name('vehicles.suspended-sale.store');
     Route::delete('vehicles/{vehicle}/suspended-sale', 'VehicleController@cancelSuspendedSale')->name('vehicles.suspended-sale.destroy');
     Route::get('vehicle-trade-ins', 'VehicleTradeInController@index')->name('vehicle-trade-ins.index');
@@ -166,6 +172,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repairs/media', 'RepairController@storeMedia')->name('repairs.storeMedia');
     Route::post('repairs/ckmedia', 'RepairController@storeCKEditorImages')->name('repairs.storeCKEditorImages');
     Route::post('repairs/{repair}/new-intervention', 'RepairController@newIntervention')->name('repairs.newIntervention');
+    Route::post('vehicles/{vehicle}/start-intervention', 'RepairController@startIntervention')->name('vehicles.start-intervention');
     Route::post('repairs/{repair}/start', 'RepairController@startRepair')->name('repairs.start');
     Route::post('repairs/{repair}/finish', 'RepairController@finishRepair')->name('repairs.finish');
     Route::post('repairs/{repair}/reopen', 'RepairController@reopenRepair')->name('repairs.reopen');
@@ -200,6 +207,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('repair-states/parse-csv-import', 'RepairStatesController@parseCsvImport')->name('repair-states.parseCsvImport');
     Route::post('repair-states/process-csv-import', 'RepairStatesController@processCsvImport')->name('repair-states.processCsvImport');
     Route::resource('repair-states', 'RepairStatesController');
+
+    Route::resource('workshop-states', 'WorkshopStateController')->except(['create', 'show', 'edit']);
 
     // General State
     Route::delete('general-states/destroy', 'GeneralStateController@massDestroy')->name('general-states.massDestroy');

@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Domain\Repairs\RepairRules;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\MassDestroyVehicleRequest;
 use App\Http\Requests\StoreVehicleRequest;
 use App\Http\Requests\UpdateVehicleRequest;
+use App\Http\Requests\UpdateVehicleWorkshopStateRequest;
 use App\Models\AccountOperation;
 use App\Models\Brand;
 use App\Models\Carrier;
@@ -18,7 +18,6 @@ use App\Models\PaymentMethod;
 use App\Models\PaymentStatus;
 use App\Models\PickupState;
 use App\Models\Provenience;
-use App\Models\Repair;
 use App\Models\StandCashPaymentApproval;
 use App\Models\Suplier;
 use App\Models\Vehicle;
@@ -26,6 +25,7 @@ use App\Models\VehicleClientPayment;
 use App\Models\VehicleGenericPayment;
 use App\Models\VehicleSupplierPayment;
 use App\Models\VehicleTradeIn;
+use App\Models\WorkshopState;
 use App\Services\SaleClosureApprovalService;
 use App\Services\VehicleImportProcessService;
 use App\Services\VehicleLotService;
@@ -306,8 +306,6 @@ class VehicleController extends Controller
             'import_process',
         ];
         $vehicle->load($relations);
-        $hasOpenRepairs = RepairRules::hasOpenRepairs($vehicle->id);
-
         $financialEntries = collect();
         $financialTotalCost = 0.0;
         $financialTotalRevenue = 0.0;
@@ -382,7 +380,6 @@ class VehicleController extends Controller
             'clientPaymentsOutstanding',
             'canConvertTradeIns',
             'canManageSupplierPayments',
-            'hasOpenRepairs',
             'activeSuspendedSale',
             'suspendedSales',
             'importProcess',
@@ -390,43 +387,68 @@ class VehicleController extends Controller
         ));
     }
 
-    public function sendToWorkshop(Request $request, Vehicle $vehicle)
+    public function sendToWorkshop(Vehicle $vehicle)
     {
         abort_if(! $this->canSendVehicleToWorkshop(), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $data = $request->validate([
-            'work_type' => ['required', 'string', 'in:workshop,painting'],
-            'kilometers' => ['nullable', 'integer', 'min:0', 'max:2147483647'],
-            'fuel_level_in_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'expected_completion_date' => ['nullable', 'date_format:'.config('panel.date_format')],
-            'obs_1' => ['nullable', 'string'],
-        ]);
+        $workshopGeneralStateId = GeneralState::query()
+            ->whereRaw('LOWER(name) = ?', ['oficina'])
+            ->value('id');
+        $defaultWorkshopState = WorkshopState::default();
 
-        if (RepairRules::hasOpenRepairs($vehicle->id)) {
-            return redirect()
-                ->route('admin.vehicles.edit', $vehicle)
-                ->withErrors(['workshop' => 'Ja existe uma intervencao aberta para esta viatura.']);
+        if (! $workshopGeneralStateId || ! $defaultWorkshopState) {
+            return back()->withErrors([
+                'workshop' => 'Não foi possível localizar o Estado Geral OFICINA ou o Estado da Oficina predefinido.',
+            ]);
         }
 
-        $repair = Repair::create([
-            'vehicle_id' => $vehicle->id,
-            'work_type' => $data['work_type'],
-            'kilometers' => $data['kilometers'] ?? $vehicle->kilometers,
-            'fuel_level_in_percentage' => $data['fuel_level_in_percentage'] ?? null,
-            'expected_completion_date' => $data['expected_completion_date'] ?? null,
-            'obs_1' => $data['obs_1'] ?? null,
-            'timestamp' => now()->format('Y-m-d H:i:s'),
-        ]);
-
-        if (Gate::allows('repair_edit')) {
-            return redirect()
-                ->route('admin.repairs.edit', $repair)
-                ->with('message', 'Viatura enviada para oficina e intervencao criada.');
-        }
+        DB::transaction(function () use ($vehicle, $workshopGeneralStateId, $defaultWorkshopState): void {
+            $vehicle->update([
+                'general_state_id' => $workshopGeneralStateId,
+                'workshop_state_id' => $defaultWorkshopState->id,
+            ]);
+        });
 
         return redirect()
             ->route('admin.vehicles.edit', $vehicle)
-            ->with('message', 'Viatura enviada para oficina e intervencao criada.');
+            ->with('message', 'Viatura enviada para oficina. A intervenção será criada quando o trabalho for iniciado.');
+    }
+
+    public function updateWorkshopState(UpdateVehicleWorkshopStateRequest $request, Vehicle $vehicle)
+    {
+        $workshopState = WorkshopState::query()->findOrFail($request->integer('workshop_state_id'));
+
+        if (! $workshopState->is_active && (int) $vehicle->workshop_state_id !== $workshopState->id) {
+            return back()->withErrors(['workshop_state_id' => 'O Estado da Oficina selecionado está desativado.']);
+        }
+
+        $generalStateName = match (mb_strtolower($workshopState->name)) {
+            'vendida', 'vendidos' => 'vendida',
+            'entregue', 'entregues' => 'entregue',
+            default => null,
+        };
+        $synchronizedGeneralState = null;
+        if ($generalStateName) {
+            $synchronizedGeneralState = GeneralState::query()
+                ->whereRaw('LOWER(name) = ?', [$generalStateName])
+                ->first();
+
+            if (! $synchronizedGeneralState) {
+                return back()->withErrors([
+                    'workshop_state_id' => "Não existe um Estado Geral '{$workshopState->name}' para sincronizar.",
+                ]);
+            }
+        }
+
+        DB::transaction(function () use ($vehicle, $workshopState, $synchronizedGeneralState): void {
+            $vehicle->workshop_state_id = $workshopState->id;
+            if ($synchronizedGeneralState) {
+                $vehicle->general_state_id = $synchronizedGeneralState->id;
+            }
+            $vehicle->save();
+        });
+
+        return back()->with('message', 'Estado da Oficina atualizado.');
     }
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle, VehicleImportProcessService $importProcessService)

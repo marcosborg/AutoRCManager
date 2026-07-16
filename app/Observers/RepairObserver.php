@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Domain\Repairs\RepairStatus;
 use App\Models\GeneralState;
 use App\Models\Repair;
+use App\Models\WorkshopState;
 
 class RepairObserver
 {
@@ -32,11 +33,21 @@ class RepairObserver
             ->orderBy('id')
             ->value('id');
 
-        if (! $workshopStateId || (int) $vehicle->general_state_id === (int) $workshopStateId) {
+        if (! $workshopStateId) {
             return;
         }
 
-        $vehicle->general_state_id = $workshopStateId;
-        $vehicle->save();
+        $updates = [];
+        if ((int) $vehicle->general_state_id !== (int) $workshopStateId) {
+            $updates['general_state_id'] = $workshopStateId;
+        }
+
+        if (! $vehicle->workshop_state_id) {
+            $updates['workshop_state_id'] = WorkshopState::default()?->id;
+        }
+
+        if ($updates !== []) {
+            $vehicle->update(array_filter($updates));
+        }
     }
 }

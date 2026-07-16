@@ -15,7 +15,7 @@
 
             return route('admin.repairs.index', [
                 'license' => $licenseFilter !== '' ? $licenseFilter : null,
-                'state' => $stateFilter !== null && $stateFilter !== '' ? $stateFilter : null,
+                'workshop_state' => $stateFilter !== null && $stateFilter !== '' ? $stateFilter : null,
                 'open_only' => $openOnly ? 1 : null,
                 'sort' => $column,
                 'dir' => $nextDir,
@@ -33,6 +33,9 @@
                     {{ trans('global.app_csvImport') }}
                 </button>
                 @include('csvImport.modal', ['model' => 'Repair', 'route' => 'admin.repairs.parseCsvImport'])
+                @can('workshop_state_access')
+                    <a class="btn btn-default" href="{{ route('admin.workshop-states.index') }}">Estados da Oficina</a>
+                @endcan
             </div>
         </div>
     @endcan
@@ -53,7 +56,7 @@
                     <div class="info-box">
                         <span class="info-box-icon bg-green"><i class="fa fa-wrench"></i></span>
                         <div class="info-box-content">
-                            <span class="info-box-text">Total de envios/intervencoes</span>
+                            <span class="info-box-text">Total de intervenções</span>
                             <span class="info-box-number">{{ $workshopSummary['total_interventions'] }}</span>
                         </div>
                     </div>
@@ -88,13 +91,13 @@
                         </div>
 
                         <div class="form-group" style="margin-right: 10px;">
-                            <label for="state" style="margin-right: 6px;">Estado</label>
-                            <select class="form-control" id="state" name="state">
+                            <label for="workshop_state" style="margin-right: 6px;">Estado da Oficina</label>
+                            <select class="form-control" id="workshop_state" name="workshop_state">
                                 <option value="">Todos</option>
                                 <option value="__null" {{ $stateFilter === '__null' ? 'selected' : '' }}>Sem estado</option>
-                                @foreach($repairStates as $state)
+                                @foreach($workshopStates as $state)
                                     <option value="{{ $state->id }}" {{ (string) $stateFilter === (string) $state->id ? 'selected' : '' }}>
-                                        {{ $state->name }}
+                                        {{ $state->name }}{{ $state->is_active ? '' : ' (inativo)' }}
                                     </option>
                                 @endforeach
                             </select>
@@ -115,12 +118,12 @@
 
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    Intervencoes por viatura
+                    Viaturas na oficina
                     <span class="badge" style="margin-left: 8px;">{{ $groupedRepairs->count() }}</span>
                 </div>
                 <div class="panel-body">
                     @if($groupedRepairs->isEmpty())
-                        <p class="text-muted">Ainda nao existem intervencoes registadas.</p>
+                        <p class="text-muted">Não existem viaturas na oficina com estes filtros.</p>
                     @else
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped table-hover">
@@ -138,7 +141,8 @@
                                                 Ultima intervencao{!! $sortIcon('latest') !!}
                                             </a>
                                         </th>
-                                        <th>Estado oficina</th>
+                                        <th>Estado da Oficina</th>
+                                        <th>Ações necessárias</th>
                                         <th>Total intervencoes</th>
                                         <th>
                                             <a href="{{ $sortUrl('open_count') }}">
@@ -167,14 +171,41 @@
                                                 {{ $vehicle->general_state->name ?? '-' }}
                                             </td>
                                             <td>
-                                                <span>#{{ $latest->id }}</span><br>
-                                                <small class="text-muted">{{ optional($latest->created_at)->format('Y-m-d H:i') }}</small>
+                                                @if($latest)
+                                                    <span>#{{ $latest->id }}</span><br>
+                                                    <small class="text-muted">{{ optional($latest->created_at)->format('Y-m-d H:i') }}</small>
+                                                @else
+                                                    <span class="text-muted">Sem intervenções</span>
+                                                @endif
                                             </td>
                                             <td>
-                                                @if($open)
-                                                    <span class="label label-warning">Intervencao aberta</span>
+                                                @can('workshop_state_edit')
+                                                    <form method="POST" action="{{ route('admin.vehicles.workshop-state.update', $vehicle) }}">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <select class="form-control input-sm" name="workshop_state_id" onchange="this.form.submit()">
+                                                            @foreach($workshopStates as $workshopState)
+                                                                <option
+                                                                    value="{{ $workshopState->id }}"
+                                                                    {{ (int) $vehicle->workshop_state_id === $workshopState->id ? 'selected' : '' }}
+                                                                    {{ !$workshopState->is_active && (int) $vehicle->workshop_state_id !== $workshopState->id ? 'disabled' : '' }}
+                                                                >
+                                                                    {{ $workshopState->name }}{{ $workshopState->is_active ? '' : ' (inativo)' }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </form>
                                                 @else
-                                                    <span class="label label-success">Sem abertas</span>
+                                                    {{ $vehicle->workshop_state->name ?? 'Sem estado' }}
+                                                @endcan
+                                            </td>
+                                            <td>
+                                                @if(!$vehicle->key)
+                                                    <span class="label label-danger" data-second-key-warning="{{ $vehicle->id }}">
+                                                        <i class="fa fa-key"></i> Fazer segunda chave
+                                                    </span>
+                                                @else
+                                                    <span class="text-muted">-</span>
                                                 @endif
                                             </td>
                                             <td>
@@ -184,9 +215,18 @@
                                                 <span class="badge {{ $row['open_count'] > 0 ? 'bg-yellow' : 'bg-green' }}">{{ $row['open_count'] }}</span>
                                             </td>
                                             <td>
-                                                <a class="btn btn-xs btn-primary" href="{{ route('admin.repairs.edit', $latest->id) }}">
-                                                    Abrir ultima
-                                                </a>
+                                                @can('vehicle_edit')
+                                                    <a class="btn btn-xs btn-default" href="{{ route('admin.vehicles.edit', $vehicle) }}">
+                                                        Abrir viatura
+                                                    </a>
+                                                @elsecan('vehicle_show')
+                                                    <a class="btn btn-xs btn-default" href="{{ route('admin.vehicles.show', $vehicle) }}">
+                                                        Ver viatura
+                                                    </a>
+                                                @endcan
+                                                @if($latest)
+                                                    <a class="btn btn-xs btn-primary" href="{{ route('admin.repairs.edit', $latest) }}">Abrir última</a>
+                                                @endif
                                                 @if($open && $open->id !== $latest->id)
                                                     <a class="btn btn-xs btn-info" href="{{ route('admin.repairs.edit', $open->id) }}">
                                                         Abrir em curso
@@ -194,9 +234,9 @@
                                                 @endif
                                                 @can('repair_create')
                                                     @if(!$open)
-                                                        <form method="POST" action="{{ route('admin.repairs.newIntervention', $latest->id) }}" style="display:inline;">
+                                                        <form method="POST" action="{{ route('admin.vehicles.start-intervention', $vehicle) }}" style="display:inline;">
                                                             @csrf
-                                                            <button class="btn btn-xs btn-success" type="submit">Nova intervencao</button>
+                                                            <button class="btn btn-xs btn-success" type="submit">Iniciar intervenção</button>
                                                         </form>
                                                     @endif
                                                 @endcan

@@ -7,12 +7,15 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class AccountOperation extends Model
+class AccountOperation extends Model implements HasMedia
 {
-    use SoftDeletes, Auditable, HasFactory;
+    use Auditable, HasFactory, InteractsWithMedia, SoftDeletes;
 
     public const TYPE_INCOME = 'income';
+
     public const TYPE_OUTCOME = 'outcome';
 
     public $table = 'account_operations';
@@ -34,6 +37,8 @@ class AccountOperation extends Model
         'accounted_at',
         'accounted_by',
         'transfer_group_id',
+        'created_by_id',
+        'cash_transfer_id',
     ];
 
     protected $casts = [
@@ -84,6 +89,21 @@ class AccountOperation extends Model
         return $this->belongsTo(User::class, 'accounted_by');
     }
 
+    public function created_by()
+    {
+        return $this->belongsTo(User::class, 'created_by_id');
+    }
+
+    public function cash_transfer()
+    {
+        return $this->belongsTo(CashTransfer::class);
+    }
+
+    public function getProofsAttribute()
+    {
+        return $this->getMedia('proofs');
+    }
+
     public function getDateAttribute($value)
     {
         return $value ? Carbon::parse($value)->format(config('panel.date_format')) : null;
@@ -98,7 +118,7 @@ class AccountOperation extends Model
 
     public function getDisplayDescriptionAttribute(): string
     {
-        return $this->description ?: ($this->account_item->name ?? 'Movimento #' . $this->id);
+        return $this->description ?: ($this->account_item->name ?? 'Movimento #'.$this->id);
     }
 
     public function getEffectiveTypeAttribute(): ?string

@@ -11,9 +11,11 @@ use App\Models\RepairState;
 use App\Models\RepairWorkLog;
 use App\Models\PartOrder;
 use App\Models\Vehicle;
+use App\Services\RepairWorkLogService;
 use Carbon\Carbon;
 use Gate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -33,7 +35,7 @@ class WorkshopApiController extends Controller
         abort_if(Gate::denies('repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $query = Repair::query()
-            ->with(['media', 'vehicle:id,license,foreign_license,brand_id,model', 'vehicle.brand:id,name', 'vehicle.media', 'repair_state:id,name'])
+            ->with(['media', 'vehicle:id,license,foreign_license,brand_id,model', 'vehicle.brand:id,name', 'vehicle.media', 'repair_state:id,name', 'workLogs.user:id,name'])
             ->whereNotNull('vehicle_id')
             ->whereHas('vehicle')
             ->orderByDesc('id');
@@ -138,7 +140,7 @@ class WorkshopApiController extends Controller
         ]);
     }
 
-    public function finishRepair(Repair $repair)
+    public function finishRepair(Repair $repair, RepairWorkLogService $workLogs)
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
@@ -148,63 +150,37 @@ class WorkshopApiController extends Controller
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        if (! $repair->getRawOriginal('repair_finished_at')) {
-            $repair->repair_finished_at = now();
-            $repair->save();
-        }
+        DB::transaction(function () use ($repair, $workLogs) {
+            $repair = Repair::query()->lockForUpdate()->findOrFail($repair->id);
+            $workLogs->closeForRepair($repair);
+
+            if (! $repair->getRawOriginal('repair_finished_at')) {
+                $repair->repair_finished_at = now();
+                $repair->save();
+            }
+        });
 
         return response()->json([
             'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
         ]);
     }
 
-    public function startWork(Repair $repair, Request $request)
+    public function startWork(Repair $repair, Request $request, RepairWorkLogService $workLogs)
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $openLog = RepairWorkLog::where('user_id', $request->user()->id)
-            ->whereNull('finished_at')
-            ->first();
-
-        if ($openLog && (int) $openLog->repair_id !== (int) $repair->id) {
-            return response()->json(['message' => 'Ja tem outro trabalho em curso. Termine-o antes de iniciar este.'], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
-        if (! $openLog) {
-            RepairWorkLog::create([
-                'repair_id' => $repair->id,
-                'user_id' => $request->user()->id,
-                'started_at' => now(),
-            ]);
-        }
+        $workLogs->start($repair, $request->user());
 
         return response()->json([
             'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
         ]);
     }
 
-    public function finishWork(Repair $repair, Request $request)
+    public function finishWork(Repair $repair, Request $request, RepairWorkLogService $workLogs)
     {
         abort_if(Gate::denies('repair_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $openLog = RepairWorkLog::where('repair_id', $repair->id)
-            ->where('user_id', $request->user()->id)
-            ->whereNull('finished_at')
-            ->latest('id')
-            ->first();
-
-        if (! $openLog) {
-            return response()->json([
-                'message' => 'Nao existe trabalho em curso para este mecanico.',
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
-        $startedAt = Carbon::parse((string) $openLog->started_at);
-        $endedAt = now();
-        $openLog->update([
-            'finished_at' => $endedAt,
-            'duration_minutes' => $startedAt->diffInMinutes($endedAt),
-        ]);
+        $workLogs->finish($repair, $request->user());
 
         return response()->json([
             'data' => $this->repairDetailPayload($repair->fresh($this->repairDetailRelations())),
@@ -450,6 +426,7 @@ class WorkshopApiController extends Controller
             'repair_finished_at' => $finishedAt,
             'repair_duration_minutes' => $repair->repair_duration_minutes,
             'cover_photo' => $this->repairCoverPhotoPayload($repair),
+            'active_mechanics' => $this->activeMechanics($repair),
         ];
     }
 
@@ -621,6 +598,7 @@ class WorkshopApiController extends Controller
                 ]),
             'work_total_minutes' => $totalWorkMinutes,
             'mechanic_totals' => $mechanicTotals,
+            'active_mechanics' => $this->activeMechanics($repair),
             'can_create_new_intervention' => $canCreateNewIntervention,
             'vehicle_repairs' => $vehicleRepairs->map(function (Repair $item) use ($repair) {
                 return [
@@ -744,6 +722,19 @@ class WorkshopApiController extends Controller
             'parts',
             'workLogs.user:id,name',
         ];
+    }
+
+    private function activeMechanics(Repair $repair): array
+    {
+        return $repair->workLogs
+            ->whereNull('finished_at')
+            ->unique('user_id')
+            ->map(fn (RepairWorkLog $log) => [
+                'id' => (int) $log->user_id,
+                'name' => $log->user?->name ?? 'Desconhecido',
+            ])
+            ->values()
+            ->all();
     }
 
     private function visibleChecklistDefinitions(Repair $repair)

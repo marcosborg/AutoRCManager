@@ -2,9 +2,7 @@
 
 namespace App\Observers;
 
-use App\Domain\Repairs\RepairRules;
 use App\Mail\VehicleStateChangedMail;
-use App\Models\Repair;
 use App\Models\Vehicle;
 use App\Models\VehicleStateTransfer;
 use App\Services\ManagementAlertService;
@@ -29,14 +27,6 @@ class VehicleObserver
             ]);
 
             $newState = \App\Models\GeneralState::find($vehicle->general_state_id);
-
-            if ($vehicle->general_state_id == 3 && $vehicle->client_id == 1) {
-                if (! RepairRules::hasOpenRepairs($vehicle->id)) {
-                    Repair::create([
-                        'vehicle_id' => $vehicle->id,
-                    ]);
-                }
-            }
 
             if ($newState && $newState->notification) {
                 $emails = array_map('trim', explode(',', $newState->emails));
