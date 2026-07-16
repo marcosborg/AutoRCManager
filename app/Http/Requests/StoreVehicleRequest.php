@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Vehicle;
+use App\Support\RolePreview;
 use Gate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -201,7 +202,7 @@ class StoreVehicleRequest extends FormRequest
                 'numeric',
             ],
             'mes_iuc' => [
-                'nullable',
+                RolePreview::hasAnyEffectiveRole($this->user(), ['Stand', 'Stand Adm']) ? 'required' : 'nullable',
                 'string',
                 'max:20',
             ],

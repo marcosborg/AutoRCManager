@@ -129,6 +129,21 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
+                                <div class="form-group {{ $errors->has('mes_iuc') ? 'has-error' : '' }}">
+                                    <label class="{{ $iucMonthRequired ? 'required' : '' }}" for="mes_iuc">{{ trans('cruds.vehicle.fields.mes_iuc') }}</label>
+                                    <select class="form-control" name="mes_iuc" id="mes_iuc" {{ $iucMonthRequired ? 'required' : '' }}>
+                                        <option value></option>
+                                        @foreach(['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'] as $iucMonth)
+                                            <option value="{{ $iucMonth }}" {{ old('mes_iuc') === $iucMonth ? 'selected' : '' }}>{{ $iucMonth }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if($errors->has('mes_iuc'))
+                                        <span class="help-block" role="alert">{{ $errors->first('mes_iuc') }}</span>
+                                    @endif
+                                    <span class="help-block">{{ trans('cruds.vehicle.fields.mes_iuc_helper') }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="form-group {{ $errors->has('color') ? 'has-error' : '' }}">
                                     <label for="color">{{ trans('cruds.vehicle.fields.color') }}</label>
                                     <input class="form-control" type="text" name="color" id="color" value="{{ old('color', '') }}">

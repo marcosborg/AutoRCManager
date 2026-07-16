@@ -1192,8 +1192,8 @@
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.sales_iuc_helper') }}</span>
                                 </div>
                                 <div class="form-group {{ $errors->has('mes_iuc') ? 'has-error' : '' }}">
-                                    <label for="mes_iuc">{{ trans('cruds.vehicle.fields.mes_iuc') }}</label>
-                                    <select class="form-control" name="mes_iuc" id="mes_iuc">
+                                    <label class="{{ $iucMonthRequired ? 'required' : '' }}" for="mes_iuc">{{ trans('cruds.vehicle.fields.mes_iuc') }}</label>
+                                    <select class="form-control" name="mes_iuc" id="mes_iuc" {{ $iucMonthRequired ? 'required' : '' }}>
                                         <option value></option>
                                         @foreach([
                                             'Janeiro',

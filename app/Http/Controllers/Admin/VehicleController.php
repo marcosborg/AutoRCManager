@@ -230,8 +230,9 @@ class VehicleController extends Controller
         $proveniences = Provenience::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $financial_institutions = FinancialInstitution::where('active', true)->orderBy('name')->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $purchasingSuppliers = Suplier::orderBy('name')->pluck('name', 'name');
+        $iucMonthRequired = RolePreview::hasAnyEffectiveRole(auth()->user(), ['Stand', 'Stand Adm']);
 
-        return view('admin.vehicles.create', compact('general_states', 'brands', 'carriers', 'clients', 'proveniences', 'financial_institutions', 'payment_statuses', 'pickup_states', 'purchasingSuppliers', 'supliers'));
+        return view('admin.vehicles.create', compact('general_states', 'brands', 'carriers', 'clients', 'proveniences', 'financial_institutions', 'payment_statuses', 'pickup_states', 'purchasingSuppliers', 'supliers', 'iucMonthRequired'));
     }
 
     public function store(StoreVehicleRequest $request)
@@ -344,6 +345,7 @@ class VehicleController extends Controller
         $importProcess = $vehicle->import_process;
         $showImportProcessTab = Gate::allows('vehicle_import_process_access')
             && ($this->isAdjudicationState($vehicle) || $importProcess);
+        $iucMonthRequired = RolePreview::hasAnyEffectiveRole(auth()->user(), ['Stand', 'Stand Adm']);
 
         return view('admin.vehicles.edit', compact(
             'purchase_categories',
@@ -384,6 +386,7 @@ class VehicleController extends Controller
             'suspendedSales',
             'importProcess',
             'showImportProcessTab',
+            'iucMonthRequired',
         ));
     }
 
