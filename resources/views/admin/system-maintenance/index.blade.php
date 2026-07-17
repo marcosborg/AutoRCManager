@@ -24,6 +24,14 @@
                                 <input type="hidden" name="action" value="clear-all">
                                 <button type="submit" class="btn btn-danger">Limpar configuracao e cache</button>
                             </form>
+                            <form method="POST"
+                                  action="{{ route('admin.system-maintenance.run') }}"
+                                  style="display:inline-block;margin-bottom:8px;"
+                                  onsubmit="return confirm('Confirma a aplicacao das migracoes pendentes na base de dados?');">
+                                @csrf
+                                <input type="hidden" name="action" value="migrate">
+                                <button type="submit" class="btn btn-danger">php artisan migrate --force</button>
+                            </form>
 
                             @if(session('command_output'))
                                 <pre style="margin-top:15px;white-space:pre-wrap;">{{ session('command_output') }}</pre>

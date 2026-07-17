@@ -26,6 +26,10 @@ class SystemMaintenanceController extends Controller
             'label' => 'Limpar configuracao e cache',
             'commands' => ['config:clear', 'cache:clear'],
         ],
+        'migrate' => [
+            'label' => 'Migracoes da base de dados',
+            'commands' => ['migrate --force'],
+        ],
     ];
 
     public function index()
