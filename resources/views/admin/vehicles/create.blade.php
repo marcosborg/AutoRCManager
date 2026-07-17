@@ -9,19 +9,29 @@
                     {{ trans('global.create') }} {{ trans('cruds.vehicle.title_singular') }}
                 </div>
                 <div class="panel-body">
+                    @if($errors->any())
+                        <div class="alert alert-danger" role="alert">
+                            <strong>Não foi possível criar a viatura.</strong>
+                            <ul class="mb-0">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     <form method="POST" action="{{ route("admin.vehicles.store") }}" enctype="multipart/form-data">
                         @csrf
                         <div class="row">
                             <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('general_state') ? 'has-error' : '' }}">
+                                <div class="form-group {{ $errors->has('general_state_id') ? 'has-error' : '' }}">
                                     <label class="required" for="general_state_id">{{ trans('cruds.vehicle.fields.general_state') }}</label>
                                     <select class="form-control select2" name="general_state_id" id="general_state_id" required>
                                         @foreach($general_states as $id => $entry)
                                         <option value="{{ $id }}" {{ old('general_state_id') == $id ? 'selected' : '' }}>{{ $entry }}</option>
                                         @endforeach
                                     </select>
-                                    @if($errors->has('general_state'))
-                                    <span class="help-block" role="alert">{{ $errors->first('general_state') }}</span>
+                                    @if($errors->has('general_state_id'))
+                                    <span class="help-block" role="alert">{{ $errors->first('general_state_id') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.general_state_helper') }}</span>
                                 </div>
@@ -47,15 +57,15 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="form-group {{ $errors->has('brand') ? 'has-error' : '' }}">
+                                <div class="form-group {{ $errors->has('brand_id') ? 'has-error' : '' }}">
                                     <label for="brand_id">{{ trans('cruds.vehicle.fields.brand') }}</label>
                                     <select class="form-control select2" name="brand_id" id="brand_id">
                                         @foreach($brands as $id => $entry)
                                             <option value="{{ $id }}" {{ old('brand_id') == $id ? 'selected' : '' }}>{{ $entry }}</option>
                                         @endforeach
                                     </select>
-                                    @if($errors->has('brand'))
-                                        <span class="help-block" role="alert">{{ $errors->first('brand') }}</span>
+                                    @if($errors->has('brand_id'))
+                                        <span class="help-block" role="alert">{{ $errors->first('brand_id') }}</span>
                                     @endif
                                     <span class="help-block">{{ trans('cruds.vehicle.fields.brand_helper') }}</span>
                                 </div>

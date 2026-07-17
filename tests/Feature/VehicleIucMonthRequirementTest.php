@@ -76,6 +76,23 @@ class VehicleIucMonthRequirementTest extends TestCase
             ->assertDontSee('id="mes_iuc" required', false);
     }
 
+    public function test_create_form_explains_validation_failures(): void
+    {
+        $stand = $this->userWithRole('Stand', ['vehicle_create']);
+
+        $this->actingAs($stand)
+            ->from(route('admin.vehicles.create'))
+            ->post(route('admin.vehicles.store'), [])
+            ->assertRedirect(route('admin.vehicles.create'))
+            ->assertSessionHasErrors(['general_state_id', 'mes_iuc']);
+
+        $this->actingAs($stand)
+            ->get(route('admin.vehicles.create'))
+            ->assertOk()
+            ->assertSee('Não foi possível criar a viatura.')
+            ->assertSee('has-error', false);
+    }
+
     private function userWithRole(string $roleTitle, array $permissionTitles): User
     {
         $user = User::query()->create([
