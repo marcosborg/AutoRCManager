@@ -52,6 +52,7 @@ class MetaLeadWebhookTest extends TestCase
     {
         Notification::fake();
         config([
+            'ai_assistant.lead_delivery_channel' => 'whatsapp',
             'ai_assistant.lead_whatsapp_cc_phones' => ['912239578', '913333333'],
             'services.meta.form_id' => '829801293296262',
             'services.meta.access_token' => 'page-token',
@@ -108,7 +109,7 @@ class MetaLeadWebhookTest extends TestCase
             'services.meta.graph_version' => 'v25.0',
         ]);
 
-        $this->seller('Vendedor Meta');
+        $seller = $this->seller('Vendedor Meta');
 
         Http::fake([
             'graph.facebook.com/v25.0/lead-duplicado*' => Http::response([
@@ -125,6 +126,15 @@ class MetaLeadWebhookTest extends TestCase
         $this->postJson('/api/meta/webhook', $payload)->assertOk();
 
         $this->assertSame(1, Lead::where('leadgen_id', 'lead-duplicado')->count());
+        $lead = Lead::where('leadgen_id', 'lead-duplicado')->firstOrFail();
+
+        Notification::assertSentTo(
+            $lead->assigned_user,
+            NewLeadNotification::class,
+            fn (NewLeadNotification $notification, array $channels) => in_array('mail', $channels, true)
+                && in_array('database', $channels, true)
+        );
+        $this->assertDatabaseMissing('lead_whatsapp_notifications', ['lead_id' => $lead->id]);
     }
 
     public function test_webhook_ignores_other_configured_form_ids(): void
@@ -191,7 +201,7 @@ class MetaLeadWebhookTest extends TestCase
     {
         Notification::fake();
         config([
-            'ai_assistant.lead_delivery_channel' => 'smtp',
+            'ai_assistant.lead_delivery_channel' => 'whatsapp',
             'services.meta.form_id' => '829801293296262',
             'services.meta.access_token' => 'page-token',
             'services.meta.graph_version' => 'v25.0',

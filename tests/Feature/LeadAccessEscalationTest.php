@@ -22,6 +22,8 @@ class LeadAccessEscalationTest extends TestCase
     {
         parent::setUp();
 
+        config(['ai_assistant.lead_delivery_channel' => 'whatsapp']);
+
         $role = Role::firstOrCreate(['title' => 'Stand']);
         DB::table('role_user')->where('role_id', $role->id)->delete();
     }

@@ -17,7 +17,13 @@ class NewLeadNotification extends Notification
 
     public function via($notifiable): array
     {
-        return ['database'];
+        $channels = ['database'];
+
+        if (config('ai_assistant.lead_delivery_channel') !== 'whatsapp') {
+            array_unshift($channels, 'mail');
+        }
+
+        return $channels;
     }
 
     public function toMail($notifiable): MailMessage

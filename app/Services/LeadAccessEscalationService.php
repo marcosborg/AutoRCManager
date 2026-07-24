@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Lead;
 use App\Models\LeadAccessToken;
+use App\Notifications\NewLeadNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -91,7 +92,11 @@ class LeadAccessEscalationService
                 }
             }
 
-            app(LeadWhatsappNotificationService::class)->queueForLead($lead->fresh('assigned_user'), $assignedUser);
+            if (config('ai_assistant.lead_delivery_channel') !== 'whatsapp') {
+                $assignedUser->notify(new NewLeadNotification($lead->fresh()));
+            } else {
+                app(LeadWhatsappNotificationService::class)->queueForLead($lead->fresh('assigned_user'), $assignedUser);
+            }
 
             Log::channel('meta_leads')->info('Lead transitada por link nao aberto.', [
                 'lead_id' => $lead->id,

@@ -91,6 +91,15 @@ class LeadWhatsappNotificationService
 
     public function queueForLead(Lead $lead, ?User $user = null): ?LeadWhatsappNotification
     {
+        if (config('ai_assistant.lead_delivery_channel') !== 'whatsapp') {
+            Log::channel('meta_leads')->info('Notificacao WhatsApp ignorada; entrega de leads configurada por email.', [
+                'lead_id' => $lead->id,
+                'assigned_user_id' => $user?->id ?: $lead->assigned_user_id,
+            ]);
+
+            return null;
+        }
+
         $lead->loadMissing('assigned_user');
         $user = $user ?: $lead->assigned_user;
 
