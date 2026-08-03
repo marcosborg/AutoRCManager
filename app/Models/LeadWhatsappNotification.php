@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\SendWhatsappLeadNotification;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,13 +28,26 @@ class LeadWhatsappNotification extends Model
         'metadata',
         'sent_at',
         'failed_at',
+        'provider_status_at',
     ];
 
     protected $casts = [
         'metadata' => 'array',
         'sent_at' => 'datetime',
         'failed_at' => 'datetime',
+        'provider_status_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (LeadWhatsappNotification $notification): void {
+            if (config('whatsapp.transport') === 'cloud'
+                && $notification->status === self::STATUS_PENDING
+                && $notification->phone) {
+                SendWhatsappLeadNotification::dispatch($notification->id)->afterCommit();
+            }
+        });
+    }
 
     protected function serializeDate(DateTimeInterface $date): string
     {

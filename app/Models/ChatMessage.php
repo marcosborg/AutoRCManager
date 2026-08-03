@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\SendWhatsappChatMessage;
 use App\Traits\Auditable;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -37,12 +38,25 @@ class ChatMessage extends Model
         'delivery_status',
         'metadata',
         'sent_at',
+        'provider_status_at',
     ];
 
     protected $casts = [
         'metadata' => 'array',
         'sent_at' => 'datetime',
+        'provider_status_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (ChatMessage $message): void {
+            if (config('whatsapp.transport') === 'cloud'
+                && $message->sender === 'assistant'
+                && $message->delivery_status === 'pending') {
+                SendWhatsappChatMessage::dispatch($message->id)->afterCommit();
+            }
+        });
+    }
 
     protected function serializeDate(DateTimeInterface $date): string
     {

@@ -29,6 +29,7 @@ class MetaLeadWebhookTest extends TestCase
         $role = Role::firstOrCreate(['title' => 'Stand']);
         DB::table('role_user')->where('role_id', $role->id)->delete();
         LeadSalesRotation::query()->delete();
+        config(['ai_assistant.lead_delivery_channel' => 'email']);
     }
 
     public function test_webhook_verification_accepts_valid_token(): void

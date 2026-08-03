@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\LeadWhatsappFallbackMail;
-use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\LeadWhatsappNotification;
 use App\Services\AiLeadAssistantService;
 use App\Services\LeadAccessEscalationService;
+use App\Services\LeadWhatsappNotificationFailureHandler;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Arr;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -18,6 +15,10 @@ class WhatsappNodeController extends Controller
 {
     public function incomingMessage(Request $request, AiLeadAssistantService $assistantService)
     {
+        if (config('whatsapp.transport') === 'cloud') {
+            return response()->json(['message' => 'The Node bridge is disabled while Cloud API transport is active.'], Response::HTTP_CONFLICT);
+        }
+
         $payload = $request->validate([
             'channel' => ['nullable', 'string', 'max:50'],
             'phone' => ['required_without:from', 'nullable', 'string', 'max:255'],
@@ -39,7 +40,7 @@ class WhatsappNodeController extends Controller
 
     public function outgoingMessages(Request $request)
     {
-        if ((bool) config('ai_assistant.chat_standby', false)) {
+        if ((bool) config('ai_assistant.chat_standby', false) || config('whatsapp.transport') === 'cloud') {
             return response()->json(['data' => []]);
         }
 
@@ -108,6 +109,10 @@ class WhatsappNodeController extends Controller
 
     public function humanOutgoingMessage(Request $request, AiLeadAssistantService $assistantService)
     {
+        if (config('whatsapp.transport') === 'cloud') {
+            return response()->json(['message' => 'The Node bridge is disabled while Cloud API transport is active.'], Response::HTTP_CONFLICT);
+        }
+
         $payload = $request->validate([
             'channel' => ['nullable', 'string', 'max:50'],
             'phone' => ['required_without:to', 'nullable', 'string', 'max:255'],
@@ -149,6 +154,10 @@ class WhatsappNodeController extends Controller
 
     public function leadNotifications(Request $request, LeadAccessEscalationService $escalationService)
     {
+        if (config('whatsapp.transport') === 'cloud') {
+            return response()->json(['data' => []]);
+        }
+
         $limit = min(max((int) $request->integer('limit', 20), 1), 100);
         $escalationService->expireUnopenedTokens($limit);
 
@@ -196,77 +205,13 @@ class WhatsappNodeController extends Controller
             'metadata' => ['nullable', 'array'],
         ]);
 
-        $metadata = $this->cleanMetadata(array_merge($notification->metadata ?? [], $data['metadata'] ?? [], [
-            'error' => $data['error'] ?? null,
-        ]));
-
-        $notification->update([
-            'status' => LeadWhatsappNotification::STATUS_FAILED,
-            'failed_at' => now(),
-            'metadata' => $metadata,
-        ]);
-
-        $fallbackMetadata = $this->sendLeadEmailFallback($notification->fresh(['lead', 'user']), $data['error'] ?? null);
-        if ($fallbackMetadata !== []) {
-            $notification->update([
-                'metadata' => $this->cleanMetadata(array_merge($notification->metadata ?? [], $fallbackMetadata)),
-            ]);
-        }
+        app(LeadWhatsappNotificationFailureHandler::class)->handle(
+            $notification,
+            $data['error'] ?? null,
+            $data['metadata'] ?? []
+        );
 
         return response()->json(['ok' => true]);
-    }
-
-    private function sendLeadEmailFallback(LeadWhatsappNotification $notification, ?string $failureReason): array
-    {
-        if (($notification->metadata['email_fallback_sent_at'] ?? null) !== null) {
-            return [];
-        }
-
-        $email = trim((string) ($notification->user?->email ?? ''));
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            Log::channel('meta_leads')->warning('Fallback email de lead ignorado por email invalido.', [
-                'lead_whatsapp_notification_id' => $notification->id,
-                'lead_id' => $notification->lead_id,
-                'user_id' => $notification->user_id,
-                'email' => $email,
-            ]);
-
-            return [
-                'email_fallback_status' => 'skipped',
-                'email_fallback_error' => 'invalid_recipient_email',
-            ];
-        }
-
-        try {
-            Mail::to($email)->send(new LeadWhatsappFallbackMail($notification, $failureReason));
-
-            Log::channel('meta_leads')->info('Fallback email de lead enviado.', [
-                'lead_whatsapp_notification_id' => $notification->id,
-                'lead_id' => $notification->lead_id,
-                'user_id' => $notification->user_id,
-                'email' => $email,
-            ]);
-
-            return [
-                'email_fallback_status' => 'sent',
-                'email_fallback_recipient' => $email,
-                'email_fallback_sent_at' => now()->toDateTimeString(),
-            ];
-        } catch (\Throwable $exception) {
-            Log::channel('meta_leads')->error('Falha no fallback email de lead.', [
-                'lead_whatsapp_notification_id' => $notification->id,
-                'lead_id' => $notification->lead_id,
-                'user_id' => $notification->user_id,
-                'email' => $email,
-                'error' => $exception->getMessage(),
-            ]);
-
-            return [
-                'email_fallback_status' => 'failed',
-                'email_fallback_recipient' => $email,
-                'email_fallback_error' => $exception->getMessage(),
-            ];
-        }
     }
 
     private function cleanMetadata(array $metadata): array
@@ -274,33 +219,4 @@ class WhatsappNodeController extends Controller
         return array_filter($metadata, fn ($value) => $value !== null && $value !== '');
     }
 
-    public function conversations(Request $request)
-    {
-        $conversations = ChatConversation::query()
-            ->with(['lead', 'channel', 'assistant'])
-            ->latest('last_message_at')
-            ->paginate((int) $request->integer('per_page', 25));
-
-        return response()->json($conversations);
-    }
-
-    public function conversation(ChatConversation $conversation)
-    {
-        return response()->json($conversation->load(['lead', 'channel', 'assistant', 'messages']));
-    }
-
-    public function takeover(ChatConversation $conversation, AiLeadAssistantService $assistantService)
-    {
-        return response()->json($assistantService->markTakenOver($conversation));
-    }
-
-    public function release(ChatConversation $conversation, AiLeadAssistantService $assistantService)
-    {
-        return response()->json($assistantService->releaseToAi($conversation));
-    }
-
-    public function close(ChatConversation $conversation, AiLeadAssistantService $assistantService)
-    {
-        return response()->json($assistantService->close($conversation));
-    }
 }

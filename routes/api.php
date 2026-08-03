@@ -9,10 +9,14 @@ use App\Http\Controllers\Api\V1\Management\LeadApiController;
 use App\Http\Controllers\MetaLeadInboundController;
 use App\Http\Controllers\MetaWebhookController;
 use App\Http\Controllers\WhatsappNodeController;
+use App\Http\Controllers\WhatsappWebhookController;
+use App\Http\Controllers\ChatConversationController;
 
 Route::get('meta/webhook', [MetaWebhookController::class, 'verify'])->name('meta.webhook.verify');
 Route::post('meta/webhook', [MetaWebhookController::class, 'receive'])->name('meta.webhook.receive');
 Route::post('meta/leads/inbound', [MetaLeadInboundController::class, 'store'])->name('meta.leads.inbound');
+Route::get('whatsapp/webhook', [WhatsappWebhookController::class, 'verify'])->name('whatsapp.webhook.verify');
+Route::post('whatsapp/webhook', [WhatsappWebhookController::class, 'receive'])->name('whatsapp.webhook.receive');
 
 Route::middleware('node.token')->group(function () {
     Route::post('whatsapp/incoming-message', [WhatsappNodeController::class, 'incomingMessage'])->name('whatsapp.incoming-message');
@@ -25,11 +29,14 @@ Route::middleware('node.token')->group(function () {
     Route::post('whatsapp/lead-notifications/{notification}/sent', [WhatsappNodeController::class, 'markLeadNotificationSent'])->name('whatsapp.lead-notifications.sent');
     Route::post('whatsapp/lead-notifications/{notification}/failed', [WhatsappNodeController::class, 'markLeadNotificationFailed'])->name('whatsapp.lead-notifications.failed');
 
-    Route::get('chat/conversations', [WhatsappNodeController::class, 'conversations'])->name('chat.conversations.index');
-    Route::get('chat/conversations/{conversation}', [WhatsappNodeController::class, 'conversation'])->name('chat.conversations.show');
-    Route::post('chat/conversations/{conversation}/takeover', [WhatsappNodeController::class, 'takeover'])->name('chat.conversations.takeover');
-    Route::post('chat/conversations/{conversation}/release', [WhatsappNodeController::class, 'release'])->name('chat.conversations.release');
-    Route::post('chat/conversations/{conversation}/close', [WhatsappNodeController::class, 'close'])->name('chat.conversations.close');
+});
+
+Route::middleware('auth:sanctum')->prefix('chat')->name('chat.')->group(function () {
+    Route::get('conversations', [ChatConversationController::class, 'index'])->name('conversations.index');
+    Route::get('conversations/{conversation}', [ChatConversationController::class, 'show'])->name('conversations.show');
+    Route::post('conversations/{conversation}/takeover', [ChatConversationController::class, 'takeover'])->name('conversations.takeover');
+    Route::post('conversations/{conversation}/release', [ChatConversationController::class, 'release'])->name('conversations.release');
+    Route::post('conversations/{conversation}/close', [ChatConversationController::class, 'close'])->name('conversations.close');
 });
 
 Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', 'middleware' => ['auth:sanctum']], function () {

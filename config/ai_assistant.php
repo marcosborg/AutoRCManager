@@ -12,9 +12,7 @@ return [
     'auto_reply_enabled' => filter_var(env('AI_AUTO_REPLY_ENABLED', true), FILTER_VALIDATE_BOOL),
     'human_takeover_idle_release_minutes' => (int) env('AI_HUMAN_TAKEOVER_IDLE_RELEASE_MINUTES', 5),
     'lead_context_reset_minutes' => (int) env('AI_LEAD_CONTEXT_RESET_MINUTES', 60),
-    // Temporary operational switch: WhatsApp delivery is disabled while the
-    // integration is unavailable. Change this back to "whatsapp" once fixed.
-    'lead_delivery_channel' => 'email',
+    'lead_delivery_channel' => env('AI_LEAD_DELIVERY_CHANNEL', 'email'),
     'lead_email_cc_addresses' => array_values(array_filter(array_map(
         'trim',
         explode(',', (string) env('AI_LEAD_EMAIL_CC_ADDRESSES', ''))
