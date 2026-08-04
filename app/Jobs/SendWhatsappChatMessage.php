@@ -40,7 +40,6 @@ class SendWhatsappChatMessage implements ShouldQueue
             $result = $api->sendTemplate($phone, $template['name'], $template['language'], [
                 $message->conversation->lead?->name ?: 'Cliente',
                 $message->conversation->lead?->vehicle_title ?: 'o seu pedido de informação',
-                $message->conversation->assistant?->company_name ?: config('ai_assistant.company_name'),
             ]);
         } else {
             $lastCustomerMessageAt = $message->conversation->messages()
