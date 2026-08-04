@@ -1209,6 +1209,11 @@
                                 </div>
                                 <div class="form-group {{ $errors->has('mes_iuc') ? 'has-error' : '' }}">
                                     <label class="{{ $iucMonthRequired ? 'required' : '' }}" for="mes_iuc">{{ trans('cruds.vehicle.fields.mes_iuc') }}</label>
+                                    @if($iucMonthRequired && !$vehicle->mes_iuc)
+                                        <div class="alert alert-warning" style="padding: 8px 10px;">
+                                            Selecione o Mês do IUC para poder gravar alterações, incluindo mudanças de estado.
+                                        </div>
+                                    @endif
                                     <select class="form-control" name="mes_iuc" id="mes_iuc" {{ $iucMonthRequired ? 'required' : '' }}>
                                         <option value></option>
                                         @foreach([
@@ -1918,7 +1923,36 @@
                 return;
             }
 
-            if (form.reportValidity && !form.reportValidity()) {
+            if (form.checkValidity && !form.checkValidity()) {
+                var invalidField = form.querySelector(':invalid');
+                if (invalidField) {
+                    var tabPane = invalidField.closest('.tab-pane');
+                    if (tabPane && tabPane.id) {
+                        var tabLink = document.querySelector('a[data-toggle="tab"][href="#' + tabPane.id + '"]');
+                        if (tabLink && window.jQuery) {
+                            $(tabLink).tab('show');
+                        }
+                    }
+
+                    var collapsedPanel = invalidField.closest('.panel-collapse.collapse');
+                    if (collapsedPanel && window.jQuery) {
+                        $(collapsedPanel).collapse('show');
+                    }
+
+                    window.setTimeout(function () {
+                        invalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        invalidField.focus();
+                        if (invalidField.reportValidity) {
+                            invalidField.reportValidity();
+                        }
+                    }, 200);
+
+                    if (window.showVehicleAjaxAlert) {
+                        var label = form.querySelector('label[for="' + invalidField.id + '"]');
+                        var fieldName = label ? label.textContent.trim() : 'um campo obrigatório';
+                        window.showVehicleAjaxAlert('warning', 'Preencha ' + fieldName + ' antes de gravar.');
+                    }
+                }
                 return;
             }
 

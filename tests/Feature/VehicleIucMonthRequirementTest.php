@@ -70,7 +70,8 @@ class VehicleIucMonthRequirementTest extends TestCase
             ->assertSee('id="mes_iuc" required', false);
         $this->actingAs($stand)->get(route('admin.vehicles.edit', $vehicle))
             ->assertOk()
-            ->assertSee('id="mes_iuc" required', false);
+            ->assertSee('id="mes_iuc" required', false)
+            ->assertSee('Selecione o Mês do IUC para poder gravar alterações, incluindo mudanças de estado.');
         $this->actingAs($other)->get(route('admin.vehicles.create'))
             ->assertOk()
             ->assertDontSee('id="mes_iuc" required', false);
