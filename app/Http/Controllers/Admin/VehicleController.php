@@ -358,6 +358,7 @@ class VehicleController extends Controller
         $suspendedSales = $vehicle->suspended_sales->sortByDesc('created_at')->values();
         $importProcess = $vehicle->import_process;
         $showImportProcessTab = Gate::allows('vehicle_import_process_access')
+            && trim((string) $vehicle->foreign_license) !== ''
             && ($this->isAdjudicationState($vehicle) || $importProcess);
         $iucMonthRequired = RolePreview::hasAnyEffectiveRole(auth()->user(), ['Stand', 'Stand Adm']);
 

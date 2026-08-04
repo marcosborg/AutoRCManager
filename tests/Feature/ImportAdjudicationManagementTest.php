@@ -76,6 +76,18 @@ class ImportAdjudicationManagementTest extends TestCase
         $this->assertSame('ARC', $vehicle->fresh()->our_registration);
     }
 
+    public function test_import_process_tab_is_hidden_without_a_foreign_license(): void
+    {
+        $admin = $this->userWithRole('Admin');
+        $vehicle = $this->adjudicationVehicle('TEMP-FOREIGN');
+        $vehicle->update(['foreign_license' => null]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.vehicles.edit', $vehicle))
+            ->assertOk()
+            ->assertDontSee('Importação / Adjudicação');
+    }
+
     public function test_legalization_creates_a_twenty_day_management_deadline_without_duplicates(): void
     {
         Carbon::setTestNow('2026-07-14 10:00:00');
