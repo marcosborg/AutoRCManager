@@ -351,7 +351,7 @@
                     </ul>
                 </li>
             @endcan
-            @if(\Illuminate\Support\Facades\Gate::allows('repair_menu_access') || \Illuminate\Support\Facades\Gate::allows('repair_access') || \Illuminate\Support\Facades\Gate::allows('oficina_expertise_process_access'))
+            @if(\Illuminate\Support\Facades\Gate::allows('repair_menu_access') || \Illuminate\Support\Facades\Gate::allows('repair_access') || \Illuminate\Support\Facades\Gate::allows('oficina_expertise_process_access') || \Illuminate\Support\Facades\Gate::allows('painting_job_access'))
                 <li class="treeview">
                     <a href="#">
                         <i class="fa-fw fas fa-screwdriver">
@@ -361,6 +361,11 @@
                         <span class="pull-right-container"><i class="fa fa-fw fa-angle-left pull-right"></i></span>
                     </a>
                     <ul class="treeview-menu">
+                        @can('painting_job_access')
+                            <li class="{{ request()->is('admin/painting-jobs') || request()->is('admin/painting-jobs/*') ? 'active' : '' }}">
+                                <a href="{{ route('admin.painting-jobs.index') }}"><i class="fa-fw fas fa-paint-roller"></i><span>Pintura</span></a>
+                            </li>
+                        @endcan
                         @can('repair_access')
                             <li class="{{ request()->is("admin/repairs") || request()->is("admin/repairs/*") ? "active" : "" }}">
                                 <a href="{{ route("admin.repairs.index") }}">

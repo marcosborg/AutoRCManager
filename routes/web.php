@@ -194,6 +194,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('external-services', 'ExternalServiceController')->except(['show']);
     Route::patch('oficina-expertise-processes/{oficina_expertise_process}/status', 'OficinaExpertiseProcessController@updateStatus')->name('oficina-expertise-processes.update-status');
     Route::resource('oficina-expertise-processes', 'OficinaExpertiseProcessController');
+    Route::post('painting-jobs/{paintingJob}/complete', 'PaintingJobController@complete')->name('painting-jobs.complete');
+    Route::post('painting-jobs/{paintingJob}/reopen', 'PaintingJobController@reopen')->name('painting-jobs.reopen');
+    Route::resource('painting-jobs', 'PaintingJobController')->parameters(['painting-jobs' => 'paintingJob'])->except(['destroy']);
     Route::post('workshop-interventions/{workshopIntervention}/start', 'WorkshopInterventionController@start')->name('workshop-interventions.start');
     Route::post('workshop-interventions/{workshopIntervention}/finish', 'WorkshopInterventionController@finish')->name('workshop-interventions.finish');
     Route::post('workshop-interventions/{workshopIntervention}/complete', 'WorkshopInterventionController@complete')->name('workshop-interventions.complete');

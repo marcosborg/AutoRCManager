@@ -4,6 +4,7 @@ use App\Models\VehiclePosition;
 use App\Http\Controllers\Api\V1\Mobile\AuthApiController;
 use App\Http\Controllers\Api\V1\Mobile\WorkshopApiController;
 use App\Http\Controllers\Api\V1\Mobile\WorkshopPlanningApiController;
+use App\Http\Controllers\Api\V1\Mobile\PaintingJobApiController;
 use App\Http\Controllers\Api\V1\Management\GestaoApiController;
 use App\Http\Controllers\Api\V1\Management\LeadApiController;
 use App\Http\Controllers\MetaLeadInboundController;
@@ -151,6 +152,11 @@ Route::prefix('mobile')->group(function () {
         Route::post('workshop/repairs/{repair}/signatures', [WorkshopApiController::class, 'storeSignatures']);
         Route::post('workshop/repairs/{repair}/media', [WorkshopApiController::class, 'uploadMedia']);
         Route::delete('workshop/repairs/{repair}/media/{mediaId}', [WorkshopApiController::class, 'deleteMedia']);
+
+        Route::get('workshop/painting-jobs', [PaintingJobApiController::class, 'index']);
+        Route::get('workshop/painting-jobs/{paintingJob}', [PaintingJobApiController::class, 'show']);
+        Route::put('workshop/painting-jobs/{paintingJob}', [PaintingJobApiController::class, 'update']);
+        Route::post('workshop/painting-jobs/{paintingJob}/complete', [PaintingJobApiController::class, 'complete']);
 
         Route::get('workshop/garage-vehicles', [WorkshopApiController::class, 'garageVehicles']);
         Route::get('workshop/vehicles', [WorkshopApiController::class, 'vehicles']);

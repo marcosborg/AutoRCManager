@@ -94,4 +94,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(LeadWhatsappNotification::class);
     }
+
+    public function assignedPaintingJobs()
+    {
+        return $this->hasMany(PaintingJob::class, 'painter_id');
+    }
 }

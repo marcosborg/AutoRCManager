@@ -163,6 +163,11 @@ class Vehicle extends Model implements HasMedia
         return $date->format('Y-m-d H:i:s');
     }
 
+    public function paintingJobs()
+    {
+        return $this->hasMany(PaintingJob::class);
+    }
+
     public function setLicenseAttribute($value): void
     {
         $this->attributes['license'] = LicensePlate::formatNational($value);
