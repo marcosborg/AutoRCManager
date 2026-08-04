@@ -128,6 +128,33 @@ class WorkshopStateTest extends TestCase
         $this->assertNull($vehicle->fresh()->workshop_state_id);
     }
 
+    public function test_management_app_workshop_endpoint_mirrors_vehicle_listing_and_filters(): void
+    {
+        $user = $this->userWithPermissions(['repair_access']);
+        $deliveredState = WorkshopState::query()->updateOrCreate(
+            ['name' => 'Entregues'],
+            ['position' => 2, 'is_active' => true]
+        );
+        $vehicle = $this->vehicleInState('OFICINA', '16-AA-16');
+        $vehicle->update(['workshop_state_id' => $deliveredState->id]);
+        Repair::query()->create(['vehicle_id' => $vehicle->id]);
+        $withoutState = $this->vehicleInState('OFICINA', '17-AA-17');
+        $withoutState->update(['workshop_state_id' => null]);
+
+        $this->actingAs($user)
+            ->getJson('/api/v1/gestao/workshop?workshop_state='.$deliveredState->id)
+            ->assertOk()
+            ->assertJsonPath('summary.delivered_workshop_state_id', $deliveredState->id)
+            ->assertJsonFragment(['license' => '16-AA-16', 'workshop_state' => 'Entregues'])
+            ->assertJsonMissing(['license' => '17-AA-17']);
+
+        $this->actingAs($user)
+            ->getJson('/api/v1/gestao/workshop?workshop_state=__null')
+            ->assertOk()
+            ->assertJsonFragment(['license' => '17-AA-17', 'workshop_state' => null])
+            ->assertJsonMissing(['license' => '16-AA-16']);
+    }
+
     public function test_workshop_page_offers_vehicle_access_without_starting_an_intervention(): void
     {
         $user = $this->userWithPermissions(['repair_access', 'vehicle_edit']);

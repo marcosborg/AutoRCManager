@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api\V1\Management;
 
 use App\Domain\Consignments\ConsignmentStatus;
+use App\Domain\Repairs\RepairStatus;
 use App\Http\Controllers\Controller;
 use App\Models\GeneralState;
 use App\Models\LotPayment;
 use App\Models\ManagementAlert;
 use App\Models\Repair;
 use App\Models\Vehicle;
+use App\Models\WorkshopState;
 use App\Models\VehicleConsignment;
 use App\Models\VehicleGroup;
 use App\Models\VehicleTradeIn;
@@ -204,23 +206,116 @@ class GestaoApiController extends Controller
         ]);
     }
 
-    public function workshop()
+    public function workshop(Request $request)
     {
         abort_if(Gate::denies('repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        $states = WorkshopState::query()
+            ->orderBy('position')
+            ->orderBy('name')
+            ->get(['id', 'name', 'is_active']);
+        $deliveredStateId = $states
+            ->first(fn (WorkshopState $state) => strcasecmp($state->name, 'Entregues') === 0)?->id;
+        $workshopGeneralStateId = GeneralState::query()
+            ->whereRaw('LOWER(name) = ?', ['oficina'])
+            ->value('id');
+
+        $vehicles = Vehicle::query()
+            ->with([
+                'brand',
+                'workshop_state',
+                'repairs' => fn ($query) => $query->with('repair_state')->orderByDesc('created_at'),
+            ])
+            ->when($workshopGeneralStateId, fn ($query) => $query->where('general_state_id', $workshopGeneralStateId))
+            ->when(! $workshopGeneralStateId, fn ($query) => $query->whereRaw('1 = 0'))
+            ->get()
+            ->map(function (Vehicle $vehicle): array {
+                $repairs = $vehicle->repairs->sortByDesc('created_at')->values();
+                $isOpen = fn (Repair $repair) => RepairStatus::isOpen(
+                    $repair->repair_state_id,
+                    $repair->getRawOriginal('repair_finished_at')
+                );
+                $latest = $repairs->first();
+
+                return [
+                    'id' => $vehicle->id,
+                    'vehicle_id' => $vehicle->id,
+                    'vehicle' => $this->vehicleLabel($vehicle),
+                    'license' => $vehicle->license ?: $vehicle->foreign_license,
+                    'brand' => $vehicle->brand->name ?? null,
+                    'model' => $vehicle->model,
+                    'workshop_state_id' => $vehicle->workshop_state_id,
+                    'workshop_state' => $vehicle->workshop_state->name ?? null,
+                    'interventions_count' => $repairs->count(),
+                    'open_interventions_count' => $repairs->filter($isOpen)->count(),
+                    'needs_second_key' => ! (bool) $vehicle->key,
+                    'latest_intervention' => $latest ? [
+                        'id' => $latest->id,
+                        'state' => $latest->repair_state->name ?? null,
+                        'created_at' => optional($latest->created_at)->format('Y-m-d H:i'),
+                    ] : null,
+                    'updated_at' => optional($vehicle->updated_at)->format('Y-m-d H:i'),
+                    '_updated_timestamp' => optional($vehicle->updated_at)->timestamp ?? 0,
+                ];
+            });
+
+        $summary = [
+            'vehicles_delivered' => $deliveredStateId === null
+                ? 0
+                : $vehicles->where('workshop_state_id', $deliveredStateId)->count(),
+            'delivered_workshop_state_id' => $deliveredStateId,
+            'total_interventions' => (int) $vehicles->sum('interventions_count'),
+            'vehicles_currently_in_workshop' => $vehicles->count(),
+        ];
+
+        $search = trim((string) $request->query('search', ''));
+        $state = $request->query('workshop_state');
+        $openOnly = $request->boolean('open_only');
+        $sort = (string) $request->query('sort', 'latest');
+        $direction = strtolower((string) $request->query('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $filteredVehicles = $vehicles
+            ->filter(function (array $item) use ($search, $state, $openOnly): bool {
+                if ($search !== '') {
+                    $haystack = mb_strtolower(implode(' ', array_filter([
+                        $item['license'], $item['brand'], $item['model'], $item['vehicle'],
+                    ])));
+                    if (! str_contains($haystack, mb_strtolower($search))) {
+                        return false;
+                    }
+                }
+
+                if ($state === '__null' && $item['workshop_state_id'] !== null) {
+                    return false;
+                }
+                if ($state !== null && $state !== '' && $state !== '__null'
+                    && (int) $item['workshop_state_id'] !== (int) $state) {
+                    return false;
+                }
+
+                return ! $openOnly || $item['open_interventions_count'] > 0;
+            })
+            ->sortBy(function (array $item) use ($sort) {
+                return match ($sort) {
+                    'license' => mb_strtolower((string) $item['license']),
+                    'open_count' => $item['open_interventions_count'],
+                    default => $item['_updated_timestamp'],
+                };
+            }, SORT_REGULAR, $direction === 'desc')
+            ->map(fn (array $item) => collect($item)->except('_updated_timestamp')->all())
+            ->values();
+
         return response()->json([
-            'data' => Repair::with(['vehicle.brand', 'repair_state'])
-                ->latest()
-                ->limit(200)
-                ->get()
-                ->map(fn (Repair $repair) => [
-                    'id' => $repair->id,
-                    'vehicle_id' => $repair->vehicle_id,
-                    'vehicle' => $this->vehicleLabel($repair->vehicle),
-                    'state' => $repair->repair_state->name ?? null,
-                    'timestamp' => $repair->timestamp,
-                    'created_at' => optional($repair->created_at)->format('Y-m-d H:i'),
-                ]),
+            'data' => $filteredVehicles,
+            'states' => $states,
+            'summary' => $summary,
+            'filters' => [
+                'search' => $search,
+                'workshop_state' => $state,
+                'open_only' => $openOnly,
+                'sort' => $sort,
+                'dir' => $direction,
+            ],
         ]);
     }
 
