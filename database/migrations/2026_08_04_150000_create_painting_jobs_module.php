@@ -79,7 +79,7 @@ return new class extends Migration
         }
 
         $this->migrateLegacyPaintingRepairs();
-        $this->removeLegacyPaintingInterventionType();
+        $this->archiveLegacyPaintingInterventionType();
         $this->seedLegacyDetails();
     }
 
@@ -116,11 +116,10 @@ return new class extends Migration
                         'updated_at' => now(),
                     ]
                 );
-                DB::table('repairs')->where('id', $repair->id)->update(['work_type' => 'workshop']);
             });
     }
 
-    private function removeLegacyPaintingInterventionType(): void
+    private function archiveLegacyPaintingInterventionType(): void
     {
         if (! Schema::hasTable('workshop_intervention_types')) {
             return;
@@ -136,7 +135,6 @@ return new class extends Migration
                 if (! $repair) {
                     return;
                 }
-                DB::table('repairs')->where('id', $repair->id)->update(['work_type' => 'workshop']);
                 $this->migrateLegacyPaintingRepairsForWorkshopRepair($repair, $item);
                 $job = DB::table('painting_jobs')->where('legacy_repair_id', $item->repair_id)->first();
             }
@@ -148,8 +146,12 @@ return new class extends Migration
                 ]);
             }
         });
-        DB::table('workshop_interventions')->whereIn('type_id', $typeIds)->delete();
-        DB::table('workshop_intervention_types')->whereIn('id', $typeIds)->delete();
+        // Preserve the historical planning records. Inactivating the type removes it
+        // from new planning without deleting tasks, work logs or their audit trail.
+        DB::table('workshop_intervention_types')->whereIn('id', $typeIds)->update([
+            'is_active' => false,
+            'updated_at' => now(),
+        ]);
     }
 
     private function migrateLegacyPaintingRepairsForWorkshopRepair(object $repair, object $item): void
