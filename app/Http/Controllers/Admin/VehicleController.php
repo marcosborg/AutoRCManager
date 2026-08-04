@@ -469,7 +469,15 @@ class VehicleController extends Controller
 
     public function updateWorkshopState(UpdateVehicleWorkshopStateRequest $request, Vehicle $vehicle)
     {
-        $workshopState = WorkshopState::query()->findOrFail($request->integer('workshop_state_id'));
+        $workshopStateId = $request->validated('workshop_state_id');
+
+        if ($workshopStateId === null) {
+            $vehicle->update(['workshop_state_id' => null]);
+
+            return back()->with('message', 'Estado da Oficina atualizado.');
+        }
+
+        $workshopState = WorkshopState::query()->findOrFail($workshopStateId);
 
         if (! $workshopState->is_active && (int) $vehicle->workshop_state_id !== $workshopState->id) {
             return back()->withErrors(['workshop_state_id' => 'O Estado da Oficina selecionado está desativado.']);

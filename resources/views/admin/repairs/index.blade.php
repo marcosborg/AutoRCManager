@@ -46,31 +46,37 @@
         <div class="col-lg-12">
             <div class="row">
                 <div class="col-md-4 col-sm-6">
-                    <div class="info-box">
-                        <span class="info-box-icon bg-aqua"><i class="fa fa-car"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Viaturas enviadas</span>
-                            <span class="info-box-number">{{ $workshopSummary['vehicles_sent'] }}</span>
+                    <a href="{{ route('admin.repairs.index', ['workshop_state' => $workshopSummary['delivered_workshop_state_id']]) }}" style="display: block; color: inherit;" aria-label="Ver viaturas entregues">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-aqua"><i class="fa fa-car"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Viaturas entregues</span>
+                                <span class="info-box-number">{{ $workshopSummary['vehicles_delivered'] }}</span>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-md-4 col-sm-6">
-                    <div class="info-box">
-                        <span class="info-box-icon bg-green"><i class="fa fa-wrench"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Total de intervenções</span>
-                            <span class="info-box-number">{{ $workshopSummary['total_interventions'] }}</span>
+                    <a href="{{ route('admin.repairs.index') }}" style="display: block; color: inherit;" aria-label="Ver todas as intervenções">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-green"><i class="fa fa-wrench"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Total de intervenções</span>
+                                <span class="info-box-number">{{ $workshopSummary['total_interventions'] }}</span>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-md-4 col-sm-6">
-                    <div class="info-box">
-                        <span class="info-box-icon bg-yellow"><i class="fa fa-tools"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Viaturas atualmente em oficina</span>
-                            <span class="info-box-number">{{ $workshopSummary['vehicles_currently_in_workshop'] }}</span>
+                    <a href="{{ route('admin.repairs.index') }}" style="display: block; color: inherit;" aria-label="Ver viaturas atualmente em oficina">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-yellow"><i class="fa fa-tools"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Viaturas atualmente em oficina</span>
+                                <span class="info-box-number">{{ $workshopSummary['vehicles_currently_in_workshop'] }}</span>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </div>
 
@@ -187,6 +193,7 @@
                                                         @csrf
                                                         @method('PATCH')
                                                         <select class="form-control input-sm" name="workshop_state_id" onchange="this.form.submit()">
+                                                            <option value="" {{ $vehicle->workshop_state_id === null ? 'selected' : '' }}>Sem estado</option>
                                                             @foreach($workshopStates as $workshopState)
                                                                 <option
                                                                     value="{{ $workshopState->id }}"

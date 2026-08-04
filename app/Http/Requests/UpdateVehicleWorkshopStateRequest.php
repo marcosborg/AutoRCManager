@@ -23,7 +23,7 @@ class UpdateVehicleWorkshopStateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'workshop_state_id' => ['required', 'integer', 'exists:workshop_states,id'],
+            'workshop_state_id' => ['nullable', 'integer', 'exists:workshop_states,id'],
         ];
     }
 }

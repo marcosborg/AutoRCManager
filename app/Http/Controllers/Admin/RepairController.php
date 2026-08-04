@@ -402,6 +402,8 @@ class RepairController extends Controller
             ->orderBy('position')
             ->orderBy('name')
             ->get();
+        $deliveredWorkshopStateId = $workshopStates
+            ->first(fn (WorkshopState $state) => strcasecmp($state->name, 'Entregues') === 0)?->id;
 
         $workshopGeneralStateId = GeneralState::query()
             ->whereRaw('LOWER(name) = ?', ['oficina'])
@@ -439,7 +441,11 @@ class RepairController extends Controller
             ->values();
 
         $workshopSummary = [
-            'vehicles_sent' => $allWorkshopVehicles->count(),
+            'vehicles_delivered' => $allWorkshopVehicles
+                ->filter(fn ($row) => $deliveredWorkshopStateId !== null
+                    && (int) $row['vehicle']->workshop_state_id === (int) $deliveredWorkshopStateId)
+                ->count(),
+            'delivered_workshop_state_id' => $deliveredWorkshopStateId,
             'total_interventions' => (int) $allWorkshopVehicles->sum('count'),
             'vehicles_currently_in_workshop' => $allWorkshopVehicles->count(),
         ];

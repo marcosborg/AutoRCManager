@@ -69,6 +69,30 @@ class WorkshopStateTest extends TestCase
         $this->assertSame(0, $outsideVehicle->repairs()->count());
     }
 
+    public function test_workshop_summary_counts_only_vehicles_with_delivered_workshop_state(): void
+    {
+        $user = $this->userWithPermissions(['repair_access']);
+        $deliveredState = WorkshopState::query()->updateOrCreate(
+            ['name' => 'Entregues'],
+            ['position' => 2, 'is_active' => true]
+        );
+        $otherState = $this->defaultWorkshopState();
+        Vehicle::query()
+            ->where('general_state_id', $this->generalState('OFICINA')->id)
+            ->update(['workshop_state_id' => $otherState->id]);
+
+        $this->vehicleInState('OFICINA', '12-AA-12')->update(['workshop_state_id' => $deliveredState->id]);
+        $this->vehicleInState('OFICINA', '13-AA-13')->update(['workshop_state_id' => $deliveredState->id]);
+        $this->vehicleInState('OFICINA', '14-AA-14')->update(['workshop_state_id' => $otherState->id]);
+
+        $this->actingAs($user)
+            ->get(route('admin.repairs.index'))
+            ->assertOk()
+            ->assertViewHas('workshopSummary', fn (array $summary) => $summary['vehicles_delivered'] === 2)
+            ->assertSee('Viaturas entregues')
+            ->assertSee(route('admin.repairs.index', ['workshop_state' => $deliveredState->id]), false);
+    }
+
     public function test_workshop_page_warns_when_vehicle_needs_a_second_key(): void
     {
         $user = $this->userWithPermissions(['repair_access']);
@@ -83,6 +107,25 @@ class WorkshopStateTest extends TestCase
             ->assertSee('Fazer segunda chave')
             ->assertSee('data-second-key-warning="'.$withoutSecondKey->id.'"', false)
             ->assertDontSee('data-second-key-warning="'.$withSecondKey->id.'"', false);
+    }
+
+    public function test_vehicle_without_workshop_state_shows_sem_estado_and_can_keep_that_value(): void
+    {
+        $user = $this->userWithPermissions(['repair_access', 'workshop_state_edit']);
+        $vehicle = $this->vehicleInState('OFICINA', '15-AA-15');
+        $vehicle->update(['workshop_state_id' => null]);
+
+        $this->actingAs($user)
+            ->get(route('admin.repairs.index', ['workshop_state' => '__null']))
+            ->assertOk()
+            ->assertSee('15-AA-15')
+            ->assertSee('<option value="" selected>Sem estado</option>', false);
+
+        $this->actingAs($user)
+            ->patch(route('admin.vehicles.workshop-state.update', $vehicle), ['workshop_state_id' => ''])
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull($vehicle->fresh()->workshop_state_id);
     }
 
     public function test_workshop_page_offers_vehicle_access_without_starting_an_intervention(): void
