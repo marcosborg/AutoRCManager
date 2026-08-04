@@ -459,6 +459,44 @@
                                                 </tbody>
                                             </table>
                                         </div>
+
+                                        <h4>Tempos por tarefa e mecanico</h4>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-condensed">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Tarefa</th>
+                                                        <th>Mecanico</th>
+                                                        <th>Tempo (min)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @forelse(($interventionTotals ?? collect()) as $task)
+                                                        @foreach($task['mechanics'] as $index => $mechanic)
+                                                            <tr>
+                                                                @if($index === 0)
+                                                                    <td rowspan="{{ count($task['mechanics']) + 1 }}">{{ $task['title'] }}</td>
+                                                                @endif
+                                                                <td>{{ $mechanic['name'] }}</td>
+                                                                <td>{{ $mechanic['minutes'] }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                        <tr>
+                                                            <td><strong>Total da tarefa</strong></td>
+                                                            <td><strong>{{ $task['minutes'] }}</strong></td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr><td colspan="3" class="text-muted">Sem tempos registados.</td></tr>
+                                                    @endforelse
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <th colspan="2">Total geral</th>
+                                                        <th>{{ $totalMechanicMinutes ?? 0 }}</th>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

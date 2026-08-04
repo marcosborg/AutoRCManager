@@ -48,7 +48,18 @@ class WorkshopInterventionExecutionService
                 throw ValidationException::withMessages(['intervention' => 'Um trabalho cancelado não pode ser concluído.']);
             }
 
-            $this->workLogs->closeForIntervention($intervention);
+            $currentUserHasOpenTimer = $intervention->workLogs()
+                ->where('user_id', $user->id)
+                ->whereNull('finished_at')
+                ->exists();
+
+            if ($currentUserHasOpenTimer) {
+                $this->workLogs->finish($intervention->repair, $user, $intervention);
+            }
+
+            if ($intervention->workLogs()->whereNull('finished_at')->exists()) {
+                return;
+            }
 
             $intervention->update([
                 'status' => 'completed',

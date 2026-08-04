@@ -59,7 +59,7 @@ class WorkshopInterventionPlanningTest extends TestCase
         $response->assertOk()->assertJsonPath('data.0.id', $assigned->id)->assertJsonCount(1, 'data');
     }
 
-    public function test_mechanic_can_only_run_one_timer_and_completion_closes_team_timers_without_closing_repair(): void
+    public function test_mechanics_have_independent_timers_and_only_the_last_completion_closes_the_task(): void
     {
         $first = $this->userWithRole('Mecânico');
         $second = $this->userWithRole('Mecânico');
@@ -75,11 +75,60 @@ class WorkshopInterventionPlanningTest extends TestCase
             ->assertJsonPath('data.active_mechanics.0.id', $first->id)
             ->assertJsonPath('data.active_mechanics.1.id', $second->id);
         $this->assertSame(2, RepairWorkLog::where('workshop_intervention_id', $item->id)->whereNull('finished_at')->count());
-        $this->actingAs($first, 'sanctum')->postJson("/api/mobile/workshop/planning/interventions/{$item->id}/complete")->assertOk();
+        $this->actingAs($first, 'sanctum')->postJson("/api/mobile/workshop/planning/interventions/{$item->id}/complete")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'in_progress')
+            ->assertJsonPath('data.my_work_in_progress', false);
+
+        $this->assertSame('in_progress', $item->fresh()->status);
+        $this->assertSame(1, RepairWorkLog::where('workshop_intervention_id', $item->id)->whereNull('finished_at')->count());
+        $this->assertDatabaseHas('repair_work_logs', [
+            'workshop_intervention_id' => $item->id,
+            'user_id' => $second->id,
+            'finished_at' => null,
+        ]);
+
+        $this->actingAs($second, 'sanctum')->postJson("/api/mobile/workshop/planning/interventions/{$item->id}/complete")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'completed');
 
         $this->assertSame('completed', $item->fresh()->status);
         $this->assertSame(0, RepairWorkLog::where('workshop_intervention_id', $item->id)->whereNull('finished_at')->count());
         $this->assertSame($repairFinishedAtBefore, $item->repair->fresh()->getRawOriginal('repair_finished_at'));
+    }
+
+    public function test_different_mechanics_can_run_different_tasks_for_the_same_vehicle_at_the_same_time(): void
+    {
+        $first = $this->userWithRole('Mecânico');
+        $second = $this->userWithRole('Mecânico');
+        $firstTask = $this->makeIntervention([$first->id], 'Diagnóstico');
+        $secondTask = $this->makeIntervention([$second->id], 'Pintura');
+
+        $this->actingAs($first, 'sanctum')
+            ->postJson("/api/mobile/workshop/planning/interventions/{$firstTask->id}/start")
+            ->assertOk();
+        $this->actingAs($second, 'sanctum')
+            ->postJson("/api/mobile/workshop/planning/interventions/{$secondTask->id}/start")
+            ->assertOk();
+
+        $this->assertSame(2, RepairWorkLog::query()
+            ->where('repair_id', $firstTask->repair_id)
+            ->whereNull('finished_at')
+            ->count());
+
+        $this->actingAs($first, 'sanctum')
+            ->postJson("/api/mobile/workshop/planning/interventions/{$firstTask->id}/finish")
+            ->assertOk();
+
+        $this->assertFalse(RepairWorkLog::query()
+            ->where('workshop_intervention_id', $firstTask->id)
+            ->whereNull('finished_at')
+            ->exists());
+        $this->assertTrue(RepairWorkLog::query()
+            ->where('workshop_intervention_id', $secondTask->id)
+            ->where('user_id', $second->id)
+            ->whereNull('finished_at')
+            ->exists());
     }
 
     public function test_unassigned_mechanic_cannot_start_planned_work(): void

@@ -568,7 +568,7 @@ class RepairController extends Controller
             })
             ->toArray());
 
-        $workLogs = RepairWorkLog::with('user')
+        $workLogs = RepairWorkLog::with(['user', 'workshopIntervention:id,title'])
             ->where('repair_id', $repair->id)
             ->orderByDesc('started_at')
             ->get();
@@ -601,6 +601,29 @@ class RepairController extends Controller
 
         $totalMechanicMinutes = (int) $mechanicTotals->sum('minutes');
 
+        $interventionTotals = $workLogs
+            ->groupBy(fn (RepairWorkLog $log) => $log->workshop_intervention_id ?: 'general')
+            ->map(function ($logs) {
+                $duration = function (RepairWorkLog $log): int {
+                    if ($log->duration_minutes !== null) {
+                        return (int) $log->duration_minutes;
+                    }
+
+                    return Carbon::parse($log->started_at)->diffInMinutes($log->finished_at ? Carbon::parse($log->finished_at) : now());
+                };
+                $mechanics = $logs->groupBy('user_id')->map(fn ($mechanicLogs) => [
+                    'name' => $mechanicLogs->first()->user?->name ?? 'Desconhecido',
+                    'minutes' => (int) $mechanicLogs->sum($duration),
+                ])->values();
+
+                return [
+                    'title' => $logs->first()->workshopIntervention?->title ?? 'Trabalho geral da reparação',
+                    'mechanics' => $mechanics,
+                    'minutes' => (int) $mechanics->sum('minutes'),
+                ];
+            })
+            ->values();
+
         $partOrders = PartOrder::with(['items', 'suplier'])
             ->where(function ($query) use ($repair) {
                 $query->where('repair_id', $repair->id);
@@ -624,6 +647,7 @@ class RepairController extends Controller
             'currentUserOpenWork',
             'mechanicTotals',
             'totalMechanicMinutes',
+            'interventionTotals',
             'partOrders'
         ));
     }

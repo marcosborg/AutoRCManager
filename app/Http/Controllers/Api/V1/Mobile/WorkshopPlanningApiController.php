@@ -185,6 +185,20 @@ class WorkshopPlanningApiController extends Controller
     private function payload(WorkshopIntervention $item, User $user): array
     {
         $logs = $item->workLogs;
+        $durationMinutes = fn (RepairWorkLog $log): int => $log->duration_minutes !== null
+            ? (int) $log->duration_minutes
+            : max(0, \Carbon\Carbon::parse((string) $log->started_at)->diffInMinutes(
+                $log->finished_at ? \Carbon\Carbon::parse((string) $log->finished_at) : now()
+            ));
+
+        $mechanicTotals = $logs
+            ->groupBy('user_id')
+            ->map(fn ($mechanicLogs) => [
+                'user_id' => (int) $mechanicLogs->first()->user_id,
+                'name' => $mechanicLogs->first()->user?->name ?? 'Desconhecido',
+                'minutes' => (int) $mechanicLogs->sum($durationMinutes),
+            ])
+            ->values();
 
         return [
             'id' => $item->id, 'repair_id' => $item->repair_id,
@@ -199,7 +213,9 @@ class WorkshopPlanningApiController extends Controller
                 ->unique('user_id')
                 ->map(fn (RepairWorkLog $log) => ['id' => (int) $log->user_id, 'name' => $log->user?->name ?? 'Desconhecido'])
                 ->values(),
-            'work_logs' => $logs->map(fn (RepairWorkLog $log) => ['id' => $log->id, 'user_id' => $log->user_id, 'user_name' => $log->user?->name, 'started_at' => $log->getRawOriginal('started_at'), 'finished_at' => $log->getRawOriginal('finished_at'), 'duration_minutes' => $log->duration_minutes])->values(),
+            'work_logs' => $logs->map(fn (RepairWorkLog $log) => ['id' => $log->id, 'user_id' => $log->user_id, 'user_name' => $log->user?->name, 'started_at' => $log->getRawOriginal('started_at'), 'finished_at' => $log->getRawOriginal('finished_at'), 'duration_minutes' => $durationMinutes($log)])->values(),
+            'mechanic_totals' => $mechanicTotals,
+            'work_total_minutes' => (int) $mechanicTotals->sum('minutes'),
             'my_work_in_progress' => $logs->contains(fn ($log) => (int) $log->user_id === (int) $user->id && ! $log->finished_at),
             'completed_at' => $item->completed_at?->toIso8601String(),
         ];

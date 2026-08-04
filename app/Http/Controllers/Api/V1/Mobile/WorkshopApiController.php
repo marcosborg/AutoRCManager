@@ -461,7 +461,9 @@ class WorkshopApiController extends Controller
         $repair->loadMissing($this->repairDetailRelations());
 
         $totalPartsAmount = (float) $repair->parts->sum('amount');
-        $totalWorkMinutes = (int) $repair->workLogs->sum('duration_minutes');
+        $durationMinutes = fn (RepairWorkLog $log): int => $log->duration_minutes !== null
+            ? (int) $log->duration_minutes
+            : max(0, Carbon::parse((string) $log->started_at)->diffInMinutes($log->finished_at ? Carbon::parse((string) $log->finished_at) : now()));
 
         $vehicleRepairs = collect();
         $canCreateNewIntervention = false;
@@ -485,23 +487,33 @@ class WorkshopApiController extends Controller
 
         $mechanicTotals = $repair->workLogs
             ->groupBy('user_id')
-            ->map(function ($logs) {
-                $minutes = (int) $logs->sum(function ($log) {
-                    if ($log->duration_minutes !== null) {
-                        return (int) $log->duration_minutes;
-                    }
-
-                    if ($log->finished_at) {
-                        return Carbon::parse((string) $log->started_at)->diffInMinutes(Carbon::parse((string) $log->finished_at));
-                    }
-
-                    return Carbon::parse((string) $log->started_at)->diffInMinutes(now());
-                });
+            ->map(function ($logs) use ($durationMinutes) {
+                $minutes = (int) $logs->sum(fn ($log) => $durationMinutes($log));
 
                 return [
                     'user_id' => (int) $logs->first()->user_id,
                     'name' => $logs->first()->user?->name ?? 'Desconhecido',
                     'minutes' => $minutes,
+                ];
+            })
+            ->values();
+        $totalWorkMinutes = (int) $mechanicTotals->sum('minutes');
+
+        $interventionTotals = $repair->workLogs
+            ->groupBy(fn (RepairWorkLog $log) => $log->workshop_intervention_id ?: 'general')
+            ->map(function ($logs) use ($durationMinutes) {
+                $intervention = $logs->first()->workshopIntervention;
+                $mechanics = $logs->groupBy('user_id')->map(fn ($mechanicLogs) => [
+                    'user_id' => (int) $mechanicLogs->first()->user_id,
+                    'name' => $mechanicLogs->first()->user?->name ?? 'Desconhecido',
+                    'minutes' => (int) $mechanicLogs->sum($durationMinutes),
+                ])->values();
+
+                return [
+                    'workshop_intervention_id' => $intervention?->id,
+                    'title' => $intervention?->title ?? 'Trabalho geral da reparação',
+                    'mechanics' => $mechanics,
+                    'total_minutes' => (int) $mechanics->sum('minutes'),
                 ];
             })
             ->values();
@@ -594,10 +606,12 @@ class WorkshopApiController extends Controller
                     'user_name' => $log->user?->name,
                     'started_at' => $log->getRawOriginal('started_at'),
                     'finished_at' => $log->getRawOriginal('finished_at'),
-                    'duration_minutes' => (int) ($log->duration_minutes ?? 0),
+                    'intervention_title' => $log->workshopIntervention?->title ?? 'Trabalho geral da reparação',
+                    'duration_minutes' => $durationMinutes($log),
                 ]),
             'work_total_minutes' => $totalWorkMinutes,
             'mechanic_totals' => $mechanicTotals,
+            'intervention_totals' => $interventionTotals,
             'active_mechanics' => $this->activeMechanics($repair),
             'can_create_new_intervention' => $canCreateNewIntervention,
             'vehicle_repairs' => $vehicleRepairs->map(function (Repair $item) use ($repair) {
@@ -721,6 +735,7 @@ class WorkshopApiController extends Controller
             'repair_state:id,name',
             'parts',
             'workLogs.user:id,name',
+            'workLogs.workshopIntervention:id,title',
         ];
     }
 
