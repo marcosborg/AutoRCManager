@@ -154,7 +154,7 @@ class WhatsappNodeController extends Controller
 
     public function leadNotifications(Request $request, LeadAccessEscalationService $escalationService)
     {
-        if (config('whatsapp.transport') === 'cloud') {
+        if (! config('whatsapp.legacy_polling_enabled')) {
             return response()->json(['data' => []]);
         }
 

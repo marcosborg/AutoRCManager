@@ -13,19 +13,21 @@ class LeadWhatsappNotificationService
 {
     public function resendNotifications(?string $since = null, array $leadIds = []): array
     {
+        if ($since !== null) {
+            throw new \InvalidArgumentException('O reenvio em massa por data foi desativado. Indique IDs de leads explícitos.');
+        }
+
         $query = Lead::query()
             ->with('assigned_user')
             ->whereNull('deleted_at')
             ->orderBy('created_at');
 
         $leadIds = array_values(array_filter(array_map('intval', $leadIds)));
-        if ($leadIds !== []) {
-            $query->whereIn('id', $leadIds);
-        } elseif ($since) {
-            $query->where('created_at', '>=', $since);
-        } else {
-            throw new \InvalidArgumentException('Indique since ou leadIds.');
+        if ($leadIds === []) {
+            throw new \InvalidArgumentException('Indique pelo menos um ID de lead explícito.');
         }
+
+        $query->whereIn('id', $leadIds);
 
         $stats = [
             'queued' => 0,

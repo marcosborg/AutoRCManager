@@ -22,7 +22,7 @@ class SystemMaintenanceLeadNotificationsTest extends TestCase
         Lead::query()->delete();
     }
 
-    public function test_admin_can_resend_lead_notifications_and_node_endpoint_returns_pending_data(): void
+    public function test_admin_can_resend_specific_lead_notifications_and_legacy_endpoint_is_disabled(): void
     {
         config(['ai_assistant.node_api_token' => 'node-token']);
 
@@ -31,7 +31,7 @@ class SystemMaintenanceLeadNotificationsTest extends TestCase
         $lead = $this->lead($seller, '2026-06-30 19:12:00');
 
         $response = $this->actingAs($admin)->post(route('admin.system-maintenance.resend-lead-notifications'), [
-            'since' => '2026-06-30 19:11:00',
+            'lead_ids' => (string) $lead->id,
         ]);
 
         $response->assertRedirect(route('admin.system-maintenance.index'));
@@ -46,11 +46,7 @@ class SystemMaintenanceLeadNotificationsTest extends TestCase
             'Authorization' => 'Bearer node-token',
         ])
             ->assertOk()
-            ->assertJsonFragment([
-                'lead_id' => $lead->id,
-                'user_id' => $seller->id,
-                'phone' => '351912000001',
-            ]);
+            ->assertExactJson(['data' => []]);
     }
 
     public function test_resend_skips_existing_pending_notification_for_same_lead_and_seller(): void
@@ -67,11 +63,19 @@ class SystemMaintenanceLeadNotificationsTest extends TestCase
         ]);
 
         $result = app(LeadWhatsappNotificationService::class)
-            ->resendNotifications('2026-06-30 19:11:00');
+            ->resendNotifications(null, [$lead->id]);
 
         $this->assertSame(0, $result['queued']);
         $this->assertSame(1, $result['skipped']);
         $this->assertCount(1, LeadWhatsappNotification::where('lead_id', $lead->id)->where('user_id', $seller->id)->get());
+    }
+
+    public function test_bulk_resend_by_date_is_rejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        app(LeadWhatsappNotificationService::class)
+            ->resendNotifications('2026-06-30 19:11:00');
     }
 
     public function test_non_admin_cannot_resend_lead_notifications(): void
@@ -79,7 +83,7 @@ class SystemMaintenanceLeadNotificationsTest extends TestCase
         $user = $this->userWithRole('Stand');
 
         $this->actingAs($user)->post(route('admin.system-maintenance.resend-lead-notifications'), [
-            'since' => '2026-06-30 19:11:00',
+            'lead_ids' => '1',
         ])->assertForbidden();
     }
 

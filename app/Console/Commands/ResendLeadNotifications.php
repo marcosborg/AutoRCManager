@@ -8,7 +8,6 @@ use Illuminate\Console\Command;
 class ResendLeadNotifications extends Command
 {
     protected $signature = 'leads:resend-notifications
-                            {--since= : Data/hora minima das leads, ex: "2026-06-25 23:00:00"}
                             {--lead-id=* : ID especifico de lead a reenviar}';
 
     protected $description = 'Coloca notificacoes de leads na fila usando o canal configurado.';
@@ -16,15 +15,13 @@ class ResendLeadNotifications extends Command
     public function handle(LeadWhatsappNotificationService $notificationService): int
     {
         $leadIds = array_filter(array_map('intval', (array) $this->option('lead-id')));
-        $since = $this->option('since');
-
-        if ($leadIds === [] && ! $since) {
-            $this->error('Indique --since ou --lead-id.');
+        if ($leadIds === []) {
+            $this->error('Indique pelo menos uma opção --lead-id. O reenvio em massa por data está desativado.');
 
             return self::FAILURE;
         }
 
-        $stats = $notificationService->resendNotifications($since, $leadIds);
+        $stats = $notificationService->resendNotifications(null, $leadIds);
 
         foreach ($stats['skipped_reasons'] as $reason) {
             $this->warn($reason);

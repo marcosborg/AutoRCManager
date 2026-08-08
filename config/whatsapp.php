@@ -2,6 +2,7 @@
 
 return [
     'transport' => env('WHATSAPP_TRANSPORT', 'email'),
+    'legacy_polling_enabled' => env('WHATSAPP_LEGACY_POLLING_ENABLED', false),
     'graph_version' => env('WHATSAPP_GRAPH_VERSION', env('META_GRAPH_VERSION', 'v25.0')),
     'waba_id' => env('WHATSAPP_WABA_ID'),
     'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),

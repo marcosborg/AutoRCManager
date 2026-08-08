@@ -39,7 +39,6 @@ class SystemMaintenanceController extends Controller
         return view('admin.system-maintenance.index', [
             'mailConfig' => $this->mailConfig(),
             'leadConfig' => $this->leadConfig(),
-            'defaultLeadNotificationSince' => '2026-06-30 19:11:00',
         ]);
     }
 
@@ -72,19 +71,28 @@ class SystemMaintenanceController extends Controller
         $this->authorizeRealAdmin();
 
         $data = $request->validate([
-            'since' => ['required', 'date_format:Y-m-d H:i:s'],
+            'lead_ids' => ['required', 'string', 'max:255'],
         ]);
 
+        $leadIds = array_values(array_unique(array_filter(array_map(
+            'intval',
+            preg_split('/[\s,;]+/', $data['lead_ids']) ?: []
+        ))));
+
+        if ($leadIds === []) {
+            return back()->withErrors(['lead_ids' => 'Indique pelo menos um ID de lead.'])->withInput();
+        }
+
         Log::channel('meta_leads')->info('Pedido admin para reenfileirar notificacoes WhatsApp de leads.', [
-            'since' => $data['since'],
+            'lead_ids' => $leadIds,
             'user_id' => optional($request->user())->id,
             'ip' => $request->ip(),
         ]);
 
-        $result = $notificationService->resendNotifications($data['since']);
+        $result = $notificationService->resendNotifications(null, $leadIds);
 
         $this->audit($request, 'resend-lead-whatsapp-notifications', ['leads:resend-notifications'], [
-            'since' => $data['since'],
+            'lead_ids' => $leadIds,
             'queued' => $result['queued'],
             'skipped' => $result['skipped'],
             'errors_count' => count($result['errors']),
@@ -95,7 +103,7 @@ class SystemMaintenanceController extends Controller
             ->route('admin.system-maintenance.index')
             ->with('message', 'Reenfileiramento de notificacoes WhatsApp concluido.')
             ->with('lead_resend_result', $result)
-            ->with('lead_resend_since', $data['since']);
+            ->with('lead_resend_ids', implode(', ', $leadIds));
     }
 
     private function authorizeRealAdmin(): void

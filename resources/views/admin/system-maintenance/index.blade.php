@@ -41,25 +41,25 @@
 
                             <h4>Leads WhatsApp</h4>
                             <p class="text-muted">
-                                Reenfileira notificacoes pendentes para o Node enviar aos stands.
+                                Reenvia apenas leads identificadas explicitamente. O reenvio em massa por data está desativado.
                             </p>
                             <form method="POST"
                                   action="{{ route('admin.system-maintenance.resend-lead-notifications') }}"
-                                  onsubmit="return confirm('Confirma o reenfileiramento de notificacoes WhatsApp de leads desde a data indicada?');">
+                                  onsubmit="return confirm('Confirma o reenvio das leads identificadas?');">
                                 @csrf
-                                <div class="form-group {{ $errors->has('since') ? 'has-error' : '' }}">
-                                    <label for="lead-notifications-since">Desde</label>
+                                <div class="form-group {{ $errors->has('lead_ids') ? 'has-error' : '' }}">
+                                    <label for="lead-notifications-ids">IDs das leads</label>
                                     <input type="text"
-                                           id="lead-notifications-since"
-                                           name="since"
+                                           id="lead-notifications-ids"
+                                           name="lead_ids"
                                            class="form-control"
-                                           value="{{ old('since', session('lead_resend_since', $defaultLeadNotificationSince)) }}"
-                                           placeholder="YYYY-MM-DD HH:MM:SS"
+                                           value="{{ old('lead_ids', session('lead_resend_ids')) }}"
+                                           placeholder="Ex.: 123, 456"
                                            required>
-                                    @if($errors->has('since'))
-                                        <span class="help-block">{{ $errors->first('since') }}</span>
+                                    @if($errors->has('lead_ids'))
+                                        <span class="help-block">{{ $errors->first('lead_ids') }}</span>
                                     @else
-                                        <span class="help-block">Formato esperado: 2026-06-30 19:11:00</span>
+                                        <span class="help-block">Separe IDs por vírgulas, ponto e vírgula ou espaços.</span>
                                     @endif
                                 </div>
                                 <button type="submit" class="btn btn-danger">
@@ -70,7 +70,7 @@
                             @php($leadResult = session('lead_resend_result'))
                             @if($leadResult)
                                 <div class="alert alert-info" style="margin-top:15px;">
-                                    <strong>Resultado do reenfileiramento desde {{ session('lead_resend_since') }}:</strong>
+                                    <strong>Resultado do reenvio das leads {{ session('lead_resend_ids') }}:</strong>
                                     <ul style="margin-top:8px;">
                                         <li>Leads colocadas na fila: {{ $leadResult['queued'] }}</li>
                                         <li>Leads ignoradas: {{ $leadResult['skipped'] }}</li>
