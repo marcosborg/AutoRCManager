@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class SendWhatsappLeadNotification implements ShouldQueue
@@ -26,6 +27,14 @@ class SendWhatsappLeadNotification implements ShouldQueue
 
     public function handle(WhatsappCloudApi $api): void
     {
+        if (! config('whatsapp.lead_notifications_enabled')) {
+            Log::channel('meta_leads')->warning('Envio WhatsApp de lead bloqueado pelo interruptor de emergência.', [
+                'lead_whatsapp_notification_id' => $this->notificationId,
+            ]);
+
+            return;
+        }
+
         $notification = LeadWhatsappNotification::with(['lead', 'user'])->find($this->notificationId);
         if (! $notification || $notification->status !== LeadWhatsappNotification::STATUS_PENDING || ! $notification->phone) {
             return;
