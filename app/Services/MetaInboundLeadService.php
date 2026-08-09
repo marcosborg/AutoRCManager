@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Lead;
 use App\Notifications\NewLeadNotification;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -36,6 +37,7 @@ class MetaInboundLeadService
                     'payload' => $payload,
                     'purchase_timeline' => $normalized['purchase_timeline'],
                     'wants_visit' => $normalized['wants_visit'],
+                    'source_created_at' => $normalized['source_created_at'],
                 ],
                 'status' => Lead::STATUS_NEW,
             ]
@@ -65,7 +67,9 @@ class MetaInboundLeadService
                 ]);
             }
 
-            app(LeadWhatsappNotificationService::class)->queueForLead($lead->fresh('assigned_user'), $assignedUser);
+            if ($this->shouldQueueWhatsappNotification($normalized)) {
+                app(LeadWhatsappNotificationService::class)->queueForLead($lead->fresh('assigned_user'), $assignedUser);
+            }
         }
 
         app(AiLeadAssistantService::class)->syncFromMetaLead($lead->fresh());
@@ -77,6 +81,48 @@ class MetaInboundLeadService
         ]);
 
         return $lead->fresh(['assigned_user']);
+    }
+
+    private function shouldQueueWhatsappNotification(array $normalized): bool
+    {
+        if (config('ai_assistant.lead_delivery_channel') !== 'whatsapp') {
+            return true;
+        }
+
+        $createdTime = $normalized['source_created_at'] ?? null;
+        $maxAgeMinutes = (int) config('ai_assistant.lead_notification_max_age_minutes', 10);
+
+        if (! $createdTime) {
+            Log::channel('meta_leads')->warning('Lead inbound sem data de criação; notificação WhatsApp suprimida.', [
+                'leadgen_id' => $normalized['leadgen_id'] ?? null,
+            ]);
+
+            return false;
+        }
+
+        try {
+            $ageMinutes = Carbon::parse($createdTime)->diffInMinutes(now(), false);
+        } catch (\Throwable $exception) {
+            Log::channel('meta_leads')->warning('Lead inbound com data de criação inválida; notificação WhatsApp suprimida.', [
+                'leadgen_id' => $normalized['leadgen_id'] ?? null,
+                'created_time' => $createdTime,
+            ]);
+
+            return false;
+        }
+
+        if ($ageMinutes > $maxAgeMinutes) {
+            Log::channel('meta_leads')->info('Lead inbound histórica importada sem notificação WhatsApp.', [
+                'leadgen_id' => $normalized['leadgen_id'] ?? null,
+                'created_time' => $createdTime,
+                'age_minutes' => $ageMinutes,
+                'max_age_minutes' => $maxAgeMinutes,
+            ]);
+
+            return false;
+        }
+
+        return true;
     }
 
     private function leadgenId(array $data, array $payload): string
@@ -103,6 +149,7 @@ class MetaInboundLeadService
             'form_id' => (string) ($data['form_id'] ?? $payload['formId'] ?? config('services.meta.form_id') ?? 'inbound'),
             'ad_id' => $data['ad_id'] ?? $payload['adId'] ?? null,
             'adgroup_id' => $data['adgroup_id'] ?? $payload['adsetId'] ?? null,
+            'source_created_at' => $data['created_time'] ?? $payload['created_time'] ?? $payload['createdTime'] ?? null,
             'full_name' => $fullName,
             'first_name' => $data['first_name'] ?? null,
             'last_name' => $data['last_name'] ?? null,

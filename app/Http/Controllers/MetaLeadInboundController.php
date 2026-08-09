@@ -25,6 +25,7 @@ class MetaLeadInboundController extends Controller
             'form_id' => ['nullable', 'string', 'max:255'],
             'ad_id' => ['nullable', 'string', 'max:255'],
             'adgroup_id' => ['nullable', 'string', 'max:255'],
+            'created_time' => ['nullable', 'date'],
             'full_name' => ['nullable', 'string', 'max:255'],
             'first_name' => ['nullable', 'string', 'max:255'],
             'last_name' => ['nullable', 'string', 'max:255'],

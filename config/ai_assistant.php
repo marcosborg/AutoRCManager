@@ -13,6 +13,7 @@ return [
     'human_takeover_idle_release_minutes' => (int) env('AI_HUMAN_TAKEOVER_IDLE_RELEASE_MINUTES', 5),
     'lead_context_reset_minutes' => (int) env('AI_LEAD_CONTEXT_RESET_MINUTES', 60),
     'lead_delivery_channel' => env('AI_LEAD_DELIVERY_CHANNEL', 'email'),
+    'lead_notification_max_age_minutes' => (int) env('AI_LEAD_NOTIFICATION_MAX_AGE_MINUTES', 10),
     'lead_email_cc_addresses' => array_values(array_filter(array_map(
         'trim',
         explode(',', (string) env('AI_LEAD_EMAIL_CC_ADDRESSES', ''))
