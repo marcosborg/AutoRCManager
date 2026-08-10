@@ -40,6 +40,12 @@
                             <hr>
 
                             <h4>Leads WhatsApp</h4>
+                            <table class="table table-bordered table-condensed">
+                                <tr><th>Recebidas/em processamento</th><td>{{ $leadDeliveryStatus['received'] }}</td></tr>
+                                <tr><th>Recuperadas agendadas</th><td>{{ $leadDeliveryStatus['scheduled'] }}</td></tr>
+                                <tr><th>Receções falhadas</th><td>{{ $leadDeliveryStatus['failed_ingestions'] }}</td></tr>
+                                <tr><th>Notificações falhadas</th><td>{{ $leadDeliveryStatus['failed_notifications'] }}</td></tr>
+                            </table>
                             <p class="text-muted">
                                 Reenvia apenas leads identificadas explicitamente. O reenvio em massa por data está desativado.
                             </p>

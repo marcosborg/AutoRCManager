@@ -7,6 +7,7 @@ use App\Models\LeadAccessToken;
 use App\Models\LeadWhatsappNotification;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class LeadWhatsappNotificationService
@@ -59,7 +60,7 @@ class LeadWhatsappNotificationService
                         continue;
                     }
 
-                    $notification = $this->queueForLead($lead, $lead->assigned_user);
+                    $notification = $this->queueForLead($lead, $lead->assigned_user, true);
                     if ($notification && $notification->status === LeadWhatsappNotification::STATUS_PENDING && $notification->phone) {
                         $stats['queued']++;
                         $stats['queued_ids'][] = $notification->id;
@@ -91,7 +92,7 @@ class LeadWhatsappNotificationService
         return $stats;
     }
 
-    public function queueForLead(Lead $lead, ?User $user = null): ?LeadWhatsappNotification
+    public function queueForLead(Lead $lead, ?User $user = null, bool $recovered = false): ?LeadWhatsappNotification
     {
         if (config('ai_assistant.lead_delivery_channel') !== 'whatsapp') {
             Log::channel('meta_leads')->info('Notificacao WhatsApp ignorada; entrega de leads configurada por email.', [
@@ -113,59 +114,54 @@ class LeadWhatsappNotificationService
             return null;
         }
 
-        $existing = $this->pendingNotificationFor($lead, $user);
-        if ($existing) {
-            Log::channel('meta_leads')->info('Notificacao WhatsApp pendente ja existente para lead/vendedor.', [
+        $deliveryKey = "lead:{$lead->id}:user:{$user->id}";
+
+        return DB::transaction(function () use ($lead, $user, $recovered, $deliveryKey) {
+            $existing = LeadWhatsappNotification::query()->where('delivery_key', $deliveryKey)->lockForUpdate()->first();
+            if ($existing) {
+                return $existing;
+            }
+
+            $plainToken = Str::random(72);
+            $assignmentHistoryId = $lead->assignment_histories()->where('user_id', $user->id)->latest('id')->value('id');
+            $accessToken = LeadAccessToken::create([
                 'lead_id' => $lead->id,
-                'assigned_user_id' => $user->id,
-                'lead_whatsapp_notification_id' => $existing->id,
+                'user_id' => $user->id,
+                'assignment_history_id' => $assignmentHistoryId,
+                'token_hash' => hash('sha256', $plainToken),
+                'expires_at' => now()->addDays(7),
+                'first_open_deadline_at' => now()->addHour(),
             ]);
 
-            return $existing;
-        }
-
-        $plainToken = Str::random(72);
-        $assignmentHistoryId = $lead->assignment_histories()
-            ->where('user_id', $user->id)
-            ->latest('id')
-            ->value('id');
-        $accessToken = LeadAccessToken::create([
-            'lead_id' => $lead->id,
-            'user_id' => $user->id,
-            'assignment_history_id' => $assignmentHistoryId,
-            'token_hash' => hash('sha256', $plainToken),
-            'expires_at' => now()->addDays(7),
-            'first_open_deadline_at' => now()->addHour(),
-        ]);
-
-        $message = $this->messageFor($lead, $user, $plainToken);
-
-        $phone = $this->normalizePhone($user->mobile_phone);
-        $metadata = [
-            'reason' => $phone ? null : 'missing_user_mobile_phone',
-            'raw_mobile_phone' => $user->mobile_phone,
-            'normalized_mobile_phone' => $phone,
-        ];
-
-        $notification = LeadWhatsappNotification::create([
+            $phone = $this->normalizePhone($user->mobile_phone);
+            $scheduledFor = $this->scheduledFor($user->id, $recovered);
+            $notification = LeadWhatsappNotification::create([
             'lead_id' => $lead->id,
             'user_id' => $user->id,
             'access_token_id' => $accessToken->id,
             'phone' => $phone,
-            'message' => $message,
+            'message' => $this->messageFor($lead, $user, $plainToken),
             'status' => $phone ? LeadWhatsappNotification::STATUS_PENDING : LeadWhatsappNotification::STATUS_FAILED,
+            'delivery_key' => $deliveryKey,
+            'scheduled_for' => $scheduledFor,
             'failed_at' => $phone ? null : now(),
-            'metadata' => $metadata,
-        ]);
-
-        if (! $phone) {
-            Log::channel('meta_leads')->warning('Vendedor sem telemovel para lead WhatsApp.', [
-                'lead_id' => $lead->id,
-                'assigned_user_id' => $user->id,
+            'metadata' => [
+                'reason' => $phone ? null : 'missing_user_mobile_phone',
+                'raw_mobile_phone' => $user->mobile_phone,
+                'normalized_mobile_phone' => $phone,
+                'recovered' => $recovered,
+            ],
             ]);
-        }
 
-        return $notification;
+            if (! $phone) {
+                Log::channel('meta_leads')->warning('Vendedor sem telemovel para lead WhatsApp.', [
+                    'lead_id' => $lead->id,
+                    'assigned_user_id' => $user->id,
+                ]);
+            }
+
+            return $notification;
+        });
     }
 
     public function pendingNotificationFor(Lead $lead, User $user): ?LeadWhatsappNotification
@@ -175,6 +171,25 @@ class LeadWhatsappNotificationService
             ->where('user_id', $user->id)
             ->where('status', LeadWhatsappNotification::STATUS_PENDING)
             ->first();
+    }
+
+    private function scheduledFor(int $userId, bool $recovered): \Illuminate\Support\Carbon
+    {
+        $now = now();
+        if (! $recovered) {
+            return $now;
+        }
+
+        $lastScheduled = LeadWhatsappNotification::query()
+            ->where('user_id', $userId)
+            ->where('status', LeadWhatsappNotification::STATUS_PENDING)
+            ->whereNotNull('scheduled_for')
+            ->lockForUpdate()
+            ->max('scheduled_for');
+
+        return $lastScheduled && \Illuminate\Support\Carbon::parse($lastScheduled)->gte($now)
+            ? \Illuminate\Support\Carbon::parse($lastScheduled)->addMinute()
+            : $now;
     }
 
     private function messageFor(Lead $lead, User $user, string $plainToken): string

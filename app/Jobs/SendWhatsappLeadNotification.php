@@ -40,6 +40,14 @@ class SendWhatsappLeadNotification implements ShouldQueue
             return;
         }
 
+        if ($notification->scheduled_for && $notification->scheduled_for->isFuture()) {
+            $this->release(max(1, now()->diffInSeconds($notification->scheduled_for)));
+            return;
+        }
+
+        $notification->increment('attempts');
+        $notification->update(['attempted_at' => now()]);
+
         $template = config('whatsapp.templates.seller_lead');
         preg_match('/https?:\/\/\S+/', $notification->message, $urlMatch);
         $buttonValue = isset($urlMatch[0]) ? basename(parse_url($urlMatch[0], PHP_URL_PATH)) : null;

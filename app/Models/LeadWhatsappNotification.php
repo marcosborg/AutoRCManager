@@ -25,8 +25,12 @@ class LeadWhatsappNotification extends Model
         'message',
         'status',
         'external_id',
+        'delivery_key',
         'metadata',
         'sent_at',
+        'scheduled_for',
+        'attempted_at',
+        'attempts',
         'failed_at',
         'provider_status_at',
     ];
@@ -34,6 +38,8 @@ class LeadWhatsappNotification extends Model
     protected $casts = [
         'metadata' => 'array',
         'sent_at' => 'datetime',
+        'scheduled_for' => 'datetime',
+        'attempted_at' => 'datetime',
         'failed_at' => 'datetime',
         'provider_status_at' => 'datetime',
     ];

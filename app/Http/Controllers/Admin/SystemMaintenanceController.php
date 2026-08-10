@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\LeadIngestion;
+use App\Models\LeadWhatsappNotification;
 use App\Services\LeadWhatsappNotificationService;
 use App\Support\RolePreview;
 use Illuminate\Http\Request;
@@ -39,6 +41,12 @@ class SystemMaintenanceController extends Controller
         return view('admin.system-maintenance.index', [
             'mailConfig' => $this->mailConfig(),
             'leadConfig' => $this->leadConfig(),
+            'leadDeliveryStatus' => [
+                'received' => LeadIngestion::whereIn('status', [LeadIngestion::STATUS_RECEIVED, LeadIngestion::STATUS_QUEUED, LeadIngestion::STATUS_PROCESSING])->count(),
+                'failed_ingestions' => LeadIngestion::where('status', LeadIngestion::STATUS_FAILED)->count(),
+                'scheduled' => LeadWhatsappNotification::where('status', LeadWhatsappNotification::STATUS_PENDING)->whereNotNull('scheduled_for')->where('scheduled_for', '>', now())->count(),
+                'failed_notifications' => LeadWhatsappNotification::where('status', LeadWhatsappNotification::STATUS_FAILED)->count(),
+            ],
         ]);
     }
 
@@ -133,6 +141,7 @@ class SystemMaintenanceController extends Controller
         return [
             'Lead delivery' => 'WhatsApp',
             'Lead WhatsApp CC' => 'desativado',
+            'Reconciliação Meta' => config('services.meta.lead_reconciliation.enabled') ? 'ativa' : 'aguarda token Meta',
         ];
     }
 

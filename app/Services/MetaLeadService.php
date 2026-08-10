@@ -99,7 +99,11 @@ class MetaLeadService
                 ]);
             }
 
-            app(LeadWhatsappNotificationService::class)->queueForLead($lead->fresh('assigned_user'), $assignedUser);
+            app(LeadWhatsappNotificationService::class)->queueForLead(
+                $lead->fresh('assigned_user'),
+                $assignedUser,
+                (bool) ($webhookValue['recovered'] ?? false)
+            );
         }
 
         app(AiLeadAssistantService::class)->syncFromMetaLead($lead->fresh());

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\ProcessMetaInboundLeadJob;
+use App\Models\LeadIngestion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -40,10 +42,41 @@ class MetaLeadInboundController extends Controller
 
         $payload = $request->all();
 
-        ProcessMetaInboundLeadJob::dispatch($data, $payload);
+        $externalId = (string) ($data['leadgen_id'] ?? $payload['leadgenId'] ?? '');
+        if ($externalId === '') {
+            $externalId = 'payload:' . hash('sha256', json_encode($payload));
+        }
+
+        $ingestion = DB::transaction(function () use ($data, $payload, $externalId) {
+            $ingestion = LeadIngestion::firstOrCreate(
+                ['source' => 'meta_make', 'external_id' => $externalId],
+                [
+                    'status' => LeadIngestion::STATUS_RECEIVED,
+                    'source_created_at' => $data['created_time'] ?? null,
+                    'received_at' => now(),
+                    'payload' => $payload,
+                ]
+            );
+
+            if (! $ingestion->lead_id && ($ingestion->wasRecentlyCreated || in_array($ingestion->status, [
+                LeadIngestion::STATUS_RECEIVED,
+                LeadIngestion::STATUS_FAILED,
+            ], true))) {
+                $ingestion->update([
+                    'status' => LeadIngestion::STATUS_QUEUED,
+                    'last_error' => null,
+                    'payload' => $payload,
+                    'source_created_at' => $data['created_time'] ?? $ingestion->source_created_at,
+                ]);
+                ProcessMetaInboundLeadJob::dispatch($data, $payload, $ingestion->id)->afterCommit();
+            }
+
+            return $ingestion;
+        });
 
         Log::channel('meta_leads')->info('Lead inbound colocada na fila.', [
-            'leadgen_id' => $data['leadgen_id'] ?? $payload['leadgenId'] ?? null,
+            'leadgen_id' => $externalId,
+            'ingestion_id' => $ingestion->id,
         ]);
 
         return response()->json(['ok' => true, 'queued' => true], Response::HTTP_ACCEPTED);

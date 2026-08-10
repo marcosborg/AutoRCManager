@@ -67,9 +67,11 @@ class MetaInboundLeadService
                 ]);
             }
 
-            if ($this->shouldQueueWhatsappNotification($normalized)) {
-                app(LeadWhatsappNotificationService::class)->queueForLead($lead->fresh('assigned_user'), $assignedUser);
-            }
+            app(LeadWhatsappNotificationService::class)->queueForLead(
+                $lead->fresh('assigned_user'),
+                $assignedUser,
+                $this->isRecoveredLead($normalized)
+            );
         }
 
         app(AiLeadAssistantService::class)->syncFromMetaLead($lead->fresh());
@@ -83,46 +85,18 @@ class MetaInboundLeadService
         return $lead->fresh(['assigned_user']);
     }
 
-    private function shouldQueueWhatsappNotification(array $normalized): bool
+    private function isRecoveredLead(array $normalized): bool
     {
-        if (config('ai_assistant.lead_delivery_channel') !== 'whatsapp') {
-            return true;
-        }
-
         $createdTime = $normalized['source_created_at'] ?? null;
-        $maxAgeMinutes = (int) config('ai_assistant.lead_notification_max_age_minutes', 10);
-
         if (! $createdTime) {
-            Log::channel('meta_leads')->warning('Lead inbound sem data de criação; notificação WhatsApp suprimida.', [
-                'leadgen_id' => $normalized['leadgen_id'] ?? null,
-            ]);
-
             return false;
         }
 
         try {
-            $ageMinutes = Carbon::parse($createdTime)->diffInMinutes(now(), false);
+            return Carbon::parse($createdTime)->lt(now()->subMinutes(5));
         } catch (\Throwable $exception) {
-            Log::channel('meta_leads')->warning('Lead inbound com data de criação inválida; notificação WhatsApp suprimida.', [
-                'leadgen_id' => $normalized['leadgen_id'] ?? null,
-                'created_time' => $createdTime,
-            ]);
-
             return false;
         }
-
-        if ($ageMinutes > $maxAgeMinutes) {
-            Log::channel('meta_leads')->info('Lead inbound histórica importada sem notificação WhatsApp.', [
-                'leadgen_id' => $normalized['leadgen_id'] ?? null,
-                'created_time' => $createdTime,
-                'age_minutes' => $ageMinutes,
-                'max_age_minutes' => $maxAgeMinutes,
-            ]);
-
-            return false;
-        }
-
-        return true;
     }
 
     private function leadgenId(array $data, array $payload): string

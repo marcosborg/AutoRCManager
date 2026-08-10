@@ -92,6 +92,7 @@ class ReconcileMetaLeads extends Command
                         'ad_id' => $item['ad_id'] ?? null,
                         'adgroup_id' => $item['adgroup_id'] ?? null,
                         'created_time' => $createdAt->toIso8601String(),
+                        'recovered' => true,
                     ];
 
                     if (! $dryRun) {
