@@ -60,6 +60,24 @@ class MetaLeadDeliveryPipelineTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_recovered_notifications_stay_spaced_with_real_clock_microseconds(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-10 18:00:00.750000'));
+        config(['ai_assistant.lead_delivery_channel' => 'whatsapp']);
+        $seller = $this->seller();
+        $service = app(LeadWhatsappNotificationService::class);
+
+        $first = Lead::create(['leadgen_id' => 'microsecond-1', 'page_id' => 'page', 'form_id' => 'form', 'assigned_user_id' => $seller->id, 'status' => Lead::STATUS_NEW]);
+        $second = Lead::create(['leadgen_id' => 'microsecond-2', 'page_id' => 'page', 'form_id' => 'form', 'assigned_user_id' => $seller->id, 'status' => Lead::STATUS_NEW]);
+
+        $firstNotification = $service->queueForLead($first, $seller, true);
+        $secondNotification = $service->queueForLead($second, $seller, true);
+
+        $this->assertSame('2026-08-10 18:00:00', $firstNotification->scheduled_for->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-08-10 18:01:00', $secondNotification->scheduled_for->format('Y-m-d H:i:s'));
+        Carbon::setTestNow();
+    }
+
     public function test_delayed_meta_lead_is_queued_instead_of_being_silenced(): void
     {
         config(['ai_assistant.lead_delivery_channel' => 'whatsapp']);

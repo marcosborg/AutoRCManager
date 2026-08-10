@@ -183,7 +183,10 @@ class LeadWhatsappNotificationService
 
     private function scheduledFor(int $userId, bool $recovered): \Illuminate\Support\Carbon
     {
-        $now = now();
+        // MariaDB stores the timestamp with second precision. Normalising here
+        // avoids a notification created a few milliseconds earlier being seen
+        // as already in the past by the next lead for the same seller.
+        $now = now()->startOfSecond();
         if (! $recovered) {
             return $now;
         }
@@ -195,9 +198,15 @@ class LeadWhatsappNotificationService
             ->lockForUpdate()
             ->max('scheduled_for');
 
-        return $lastScheduled && \Illuminate\Support\Carbon::parse($lastScheduled)->gte($now)
-            ? \Illuminate\Support\Carbon::parse($lastScheduled)->addMinute()
-            : $now;
+        if (! $lastScheduled) {
+            return $now;
+        }
+
+        return \Illuminate\Support\Carbon::parse($lastScheduled)
+            ->addMinute()
+            ->greaterThan($now)
+                ? \Illuminate\Support\Carbon::parse($lastScheduled)->addMinute()
+                : $now;
     }
 
     private function messageFor(Lead $lead, User $user, string $plainToken): string
