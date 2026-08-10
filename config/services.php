@@ -40,6 +40,17 @@ return [
         'access_token' => env('META_PAGE_ACCESS_TOKEN'),
         'graph_version' => env('META_GRAPH_VERSION', 'v25.0'),
         'inbound_token' => env('META_INBOUND_WEBHOOK_TOKEN'),
+        'lead_reconciliation' => [
+            // Keep this disabled until a System User token with leads access is configured.
+            'enabled' => env('META_LEAD_RECONCILIATION_ENABLED', false),
+            'form_ids' => array_values(array_filter(array_map(
+                'trim',
+                explode(',', (string) env('META_LEAD_RECONCILIATION_FORM_IDS', env('META_FORM_ID', '')))
+            ))),
+            'lookback_minutes' => (int) env('META_LEAD_RECONCILIATION_LOOKBACK_MINUTES', 1440),
+            'page_size' => (int) env('META_LEAD_RECONCILIATION_PAGE_SIZE', 100),
+            'max_pages_per_form' => (int) env('META_LEAD_RECONCILIATION_MAX_PAGES', 10),
+        ],
     ],
 
 ];
