@@ -15,6 +15,17 @@
                     <p><strong>Financiamento:</strong> {{ $lead->financing ?: '-' }}</p>
                     <p><strong>Retoma:</strong> {{ $lead->trade_in ?: '-' }}</p>
                     <p><strong>Vendedor:</strong> {{ $lead->assigned_user->name ?? '-' }}</p>
+                    <p><strong>Entrega ao vendedor:</strong>
+                        @if($lead->seller_notification_status === 'sent')
+                            Enviado{{ $lead->seller_notified_at ? ' em ' . $lead->seller_notified_at->format('Y-m-d H:i') : '' }}
+                        @elseif($lead->seller_notification_status === 'pending')
+                            Pendente
+                        @elseif($lead->seller_notification_status === 'failed')
+                            Falhado
+                        @else
+                            Por enviar
+                        @endif
+                    </p>
                     <p><strong>Meta leadgen:</strong> {{ $lead->leadgen_id }}</p>
                     <p><strong>Page/Form:</strong> {{ $lead->page_id }} / {{ $lead->form_id }}</p>
                     @can('lead_edit')

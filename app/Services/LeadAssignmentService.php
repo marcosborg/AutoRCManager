@@ -46,7 +46,12 @@ class LeadAssignmentService
 
             $nextUser = $this->nextUser($salespeople, $rotation->last_user_id);
 
-            $lead->update(['assigned_user_id' => $nextUser->id]);
+            $lead->update([
+                'assigned_user_id' => $nextUser->id,
+                'seller_notification_status' => 'pending',
+                'seller_notified_user_id' => null,
+                'seller_notified_at' => null,
+            ]);
             $lead->assignment_histories()->create([
                 'user_id' => $nextUser->id,
                 'reason' => $reason,

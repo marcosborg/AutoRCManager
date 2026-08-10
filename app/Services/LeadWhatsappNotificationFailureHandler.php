@@ -19,6 +19,13 @@ class LeadWhatsappNotificationFailureHandler
             'metadata' => $metadata,
         ]);
 
+        $notification->loadMissing('lead');
+        $notification->lead?->where('assigned_user_id', $notification->user_id)->update([
+            'seller_notification_status' => 'failed',
+            'seller_notified_user_id' => null,
+            'seller_notified_at' => null,
+        ]);
+
         if (($metadata['email_fallback_sent_at'] ?? null) !== null) {
             return;
         }

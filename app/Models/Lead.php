@@ -45,11 +45,15 @@ class Lead extends Model
         'trade_in',
         'raw_data',
         'assigned_user_id',
+        'seller_notification_status',
+        'seller_notified_user_id',
+        'seller_notified_at',
         'status',
     ];
 
     protected $casts = [
         'raw_data' => 'array',
+        'seller_notified_at' => 'datetime',
     ];
 
     protected function serializeDate(DateTimeInterface $date): string

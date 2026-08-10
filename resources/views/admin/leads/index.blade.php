@@ -22,11 +22,13 @@
                                 <th>Orcamento</th>
                                 <th>Veiculo</th>
                                 <th>Vendedor</th>
+                                <th>Entrega</th>
                                 <th>Estado</th>
                                 <th>&nbsp;</th>
                             </tr>
                             <tr>
                                 <td></td>
+                                <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td>
@@ -74,7 +76,7 @@ $(function () {
     text: '<i class="fa fa-file-pdf-o"></i> Exportar PDF',
     className: 'btn-danger',
     action: function (e, dt) {
-      let keys = {1:'id', 2:'date', 3:'source', 4:'name', 5:'phone', 6:'email', 7:'budget', 8:'vehicle', 9:'seller', 10:'status'}
+      let keys = {1:'id', 2:'date', 3:'source', 4:'name', 5:'phone', 6:'email', 7:'budget', 8:'vehicle', 9:'seller', 10:'delivery', 11:'status'}
       let params = new URLSearchParams()
       if (dt.search()) params.set('search', dt.search())
       Object.keys(keys).forEach(function (index) {
@@ -103,6 +105,7 @@ $(function () {
       { data: 'budget', name: 'budget' },
       { data: 'vehicle_interest', name: 'vehicle_interest' },
       { data: 'assigned_user_name', name: 'assigned_user.name' },
+      { data: 'seller_delivery', name: 'seller_notification_status', orderable: false },
       { data: 'status', name: 'status' },
       { data: 'actions', name: '{{ trans('global.actions') }}', orderable: false, searchable: false }
     ],

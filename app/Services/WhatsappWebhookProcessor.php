@@ -125,6 +125,12 @@ class WhatsappWebhookProcessor
                     'last_cloud_status' => $status,
                 ]),
             ]);
+
+            $notification->lead?->where('assigned_user_id', $notification->user_id)->update([
+                'seller_notification_status' => 'sent',
+                'seller_notified_user_id' => $notification->user_id,
+                'seller_notified_at' => $occurredAt,
+            ]);
         }
     }
 

@@ -80,6 +80,12 @@ class MetaLeadDeliveryPipelineTest extends TestCase
             'user_id' => $lead->assigned_user_id,
             'status' => LeadWhatsappNotification::STATUS_PENDING,
         ]);
+        $this->assertDatabaseHas('leads', [
+            'id' => $lead->id,
+            'seller_notification_status' => 'pending',
+            'seller_notified_user_id' => null,
+            'seller_notified_at' => null,
+        ]);
     }
 
     private function seller(): User

@@ -52,6 +52,7 @@ class LeadController extends Controller
             $table->editColumn('budget', fn (Lead $row) => $row->budget ?: '');
             $table->editColumn('vehicle_interest', fn (Lead $row) => $row->vehicle_interest ?: '');
             $table->addColumn('assigned_user_name', fn (Lead $row) => $row->assigned_user?->name ?: '');
+            $table->addColumn('seller_delivery', fn (Lead $row) => $this->sellerDeliveryLabel($row));
             $table->editColumn('status', fn (Lead $row) => Lead::STATUS_SELECT[$row->status] ?? $row->status);
             $table->filterColumn('full_name', function ($query, $keyword) {
                 $query->where(function ($subQuery) use ($keyword) {
@@ -187,6 +188,12 @@ class LeadController extends Controller
         ]);
 
         $oldAssignedUserId = $lead->assigned_user_id;
+        if ((int) $oldAssignedUserId !== (int) ($data['assigned_user_id'] ?? 0)) {
+            $data['seller_notification_status'] = 'pending';
+            $data['seller_notified_user_id'] = null;
+            $data['seller_notified_at'] = null;
+        }
+
         $lead->update($data);
 
         if ((int) $oldAssignedUserId !== (int) ($data['assigned_user_id'] ?? 0)) {
@@ -198,6 +205,16 @@ class LeadController extends Controller
         }
 
         return redirect()->route('admin.leads.show', $lead)->with('message', 'Lead atualizado.');
+    }
+
+    private function sellerDeliveryLabel(Lead $lead): string
+    {
+        return match ($lead->seller_notification_status) {
+            'sent' => 'Enviado',
+            'pending' => 'Pendente',
+            'failed' => 'Falhado',
+            default => 'Por enviar',
+        };
     }
 
     public function destroy(Lead $lead)

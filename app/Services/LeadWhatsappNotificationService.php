@@ -153,6 +153,14 @@ class LeadWhatsappNotificationService
             ],
             ]);
 
+            if ((int) $lead->assigned_user_id === (int) $user->id) {
+                $lead->update([
+                    'seller_notification_status' => $phone ? 'pending' : 'failed',
+                    'seller_notified_user_id' => null,
+                    'seller_notified_at' => null,
+                ]);
+            }
+
             if (! $phone) {
                 Log::channel('meta_leads')->warning('Vendedor sem telemovel para lead WhatsApp.', [
                     'lead_id' => $lead->id,
