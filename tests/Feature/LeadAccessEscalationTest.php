@@ -22,7 +22,10 @@ class LeadAccessEscalationTest extends TestCase
     {
         parent::setUp();
 
-        config(['ai_assistant.lead_delivery_channel' => 'whatsapp']);
+        config([
+            'ai_assistant.lead_delivery_channel' => 'whatsapp',
+            'ai_assistant.lead_reassign_unopened_enabled' => true,
+        ]);
 
         $role = Role::firstOrCreate(['title' => 'Stand']);
         DB::table('role_user')->where('role_id', $role->id)->delete();
@@ -82,6 +85,32 @@ class LeadAccessEscalationTest extends TestCase
         $this->assertSame('351911000003', $notification->phone);
         $this->assertSame(LeadWhatsappNotification::STATUS_PENDING, $notification->status);
         $this->assertNotNull($notification->access_token?->first_open_deadline_at);
+    }
+
+    public function test_unopened_link_stays_with_assigned_seller_when_reassignment_is_disabled(): void
+    {
+        config(['ai_assistant.lead_reassign_unopened_enabled' => false]);
+
+        $seller = $this->standUser('seller-no-reassign@example.com', '911000007');
+        $lead = $this->leadFor($seller);
+        $plainToken = Str::random(72);
+        $accessToken = LeadAccessToken::create([
+            'lead_id' => $lead->id,
+            'user_id' => $seller->id,
+            'token_hash' => hash('sha256', $plainToken),
+            'expires_at' => now()->addDays(7),
+            'first_open_deadline_at' => now()->subMinute(),
+        ]);
+
+        $this->get(route('lead-access.show', $plainToken))->assertOk();
+
+        $accessToken->refresh();
+        $lead->refresh();
+
+        $this->assertNull($accessToken->revoked_at);
+        $this->assertNotNull($accessToken->last_used_at);
+        $this->assertSame($seller->id, $lead->assigned_user_id);
+        $this->assertSame(0, LeadWhatsappNotification::where('lead_id', $lead->id)->count());
     }
 
     public function test_lead_rotation_restarts_after_all_eligible_sellers_timeout(): void

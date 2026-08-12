@@ -13,6 +13,10 @@ return [
     'human_takeover_idle_release_minutes' => (int) env('AI_HUMAN_TAKEOVER_IDLE_RELEASE_MINUTES', 5),
     'lead_context_reset_minutes' => (int) env('AI_LEAD_CONTEXT_RESET_MINUTES', 60),
     'lead_delivery_channel' => env('AI_LEAD_DELIVERY_CHANNEL', 'email'),
+    // A lead pertence ao vendedor a quem foi atribuída. A reatribuição por não
+    // abertura do link é opt-in, pois pode transformar uma única lead em várias
+    // notificações para vendedores diferentes.
+    'lead_reassign_unopened_enabled' => filter_var(env('AI_LEAD_REASSIGN_UNOPENED_ENABLED', false), FILTER_VALIDATE_BOOL),
     'lead_notification_max_age_minutes' => (int) env('AI_LEAD_NOTIFICATION_MAX_AGE_MINUTES', 10),
     'lead_email_cc_addresses' => array_values(array_filter(array_map(
         'trim',

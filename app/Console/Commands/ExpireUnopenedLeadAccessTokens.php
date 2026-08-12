@@ -13,6 +13,12 @@ class ExpireUnopenedLeadAccessTokens extends Command
 
     public function handle(LeadAccessEscalationService $escalationService): int
     {
+        if (! config('ai_assistant.lead_reassign_unopened_enabled')) {
+            $this->info('Reatribuicao automatica de leads por link nao aberto esta desativada.');
+
+            return self::SUCCESS;
+        }
+
         $limit = max(1, (int) $this->option('limit'));
         $expired = $escalationService->expireUnopenedTokens($limit);
 

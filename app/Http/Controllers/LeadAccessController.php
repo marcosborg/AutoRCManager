@@ -26,10 +26,18 @@ class LeadAccessController extends Controller
         }
 
         if ($accessToken->firstOpenDeadlinePassed()) {
-            $escalationService->expireTokenAndReassign($accessToken);
-            $accessToken->refresh();
+            if (config('ai_assistant.lead_reassign_unopened_enabled')) {
+                $escalationService->expireTokenAndReassign($accessToken);
+                $accessToken->refresh();
 
-            return response()->view('leadAccess.transferred', compact('accessToken'), Response::HTTP_GONE);
+                return response()->view('leadAccess.transferred', compact('accessToken'), Response::HTTP_GONE);
+            }
+
+            // When reassignment is disabled, an unread notification must not
+            // make the seller lose the lead. Keep the existing seven-day token
+            // usable and record the first legitimate opening normally below.
+            $accessToken->update(['first_open_deadline_at' => null]);
+            $accessToken->refresh();
         }
 
         abort_if(! $accessToken->isUsable(), Response::HTTP_NOT_FOUND);
