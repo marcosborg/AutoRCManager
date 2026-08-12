@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\ProcessMetaInboundLeadJob;
+use App\Jobs\SendWhatsappLeadNotification;
 use App\Mail\LeadWhatsappFallbackMail;
 use App\Models\Lead;
 use App\Models\LeadWhatsappNotification;
@@ -10,6 +11,7 @@ use App\Models\LeadSalesRotation;
 use App\Models\Role;
 use App\Models\User;
 use App\Notifications\NewLeadNotification;
+use App\Services\WhatsappCloudApi;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -318,6 +320,48 @@ class MetaLeadWebhookTest extends TestCase
         $this->assertSame('sent', $notification->metadata['email_fallback_status']);
         $this->assertSame($seller->email, $notification->metadata['email_fallback_recipient']);
         $this->assertNotEmpty($notification->metadata['email_fallback_sent_at']);
+    }
+
+    public function test_invalid_cloud_token_immediately_marks_lead_failed_and_sends_email_fallback(): void
+    {
+        Mail::fake();
+        Queue::fake();
+        config([
+            'whatsapp.transport' => 'cloud',
+            'whatsapp.lead_notifications_enabled' => true,
+            'whatsapp.phone_number_id' => 'phone-id',
+            'whatsapp.access_token' => 'invalid-token',
+        ]);
+
+        $seller = $this->seller('Sergio Token Fallback', '912000005');
+        $lead = Lead::create([
+            'leadgen_id' => 'lead-invalid-token',
+            'page_id' => 'page-1',
+            'form_id' => 'form-1',
+            'full_name' => 'Cliente Token Invalido',
+            'phone' => '912345678',
+            'assigned_user_id' => $seller->id,
+            'status' => Lead::STATUS_NEW,
+        ]);
+        $notification = LeadWhatsappNotification::create([
+            'lead_id' => $lead->id,
+            'user_id' => $seller->id,
+            'phone' => '351912000005',
+            'message' => 'Nova lead atribuida',
+            'status' => LeadWhatsappNotification::STATUS_PENDING,
+        ]);
+
+        Http::fake([
+            'graph.facebook.com/*' => Http::response(['error' => ['message' => 'Authentication Error']], 401),
+        ]);
+
+        (new SendWhatsappLeadNotification($notification->id))->handle(app(WhatsappCloudApi::class));
+
+        $notification->refresh();
+        $this->assertSame(LeadWhatsappNotification::STATUS_FAILED, $notification->status);
+        $this->assertSame('authentication', $notification->metadata['failure_kind']);
+        $this->assertSame('sent', $notification->metadata['email_fallback_status']);
+        Mail::assertSent(LeadWhatsappFallbackMail::class, fn (LeadWhatsappFallbackMail $mail) => $mail->hasTo($seller->email));
     }
 
     private function webhookPayload(string $leadgenId, string $formId = '829801293296262'): array

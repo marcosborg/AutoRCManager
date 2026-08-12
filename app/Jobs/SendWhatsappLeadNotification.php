@@ -51,13 +51,30 @@ class SendWhatsappLeadNotification implements ShouldQueue
         $template = config('whatsapp.templates.seller_lead');
         preg_match('/https?:\/\/\S+/', $notification->message, $urlMatch);
         $buttonValue = isset($urlMatch[0]) ? basename(parse_url($urlMatch[0], PHP_URL_PATH)) : null;
-        $result = $api->sendTemplate($notification->phone, $template['name'], $template['language'], [
-            $notification->user?->name ?: 'Comercial',
-            $notification->lead?->full_name ?: 'Sem nome',
-            $notification->lead?->phone ?: '-',
-            $notification->lead?->vehicle_interest ?: '-',
-            $notification->lead?->budget ?: '-',
-        ], $buttonValue);
+        try {
+            $result = $api->sendTemplate($notification->phone, $template['name'], $template['language'], [
+                $notification->user?->name ?: 'Comercial',
+                $notification->lead?->full_name ?: 'Sem nome',
+                $notification->lead?->phone ?: '-',
+                $notification->lead?->vehicle_interest ?: '-',
+                $notification->lead?->budget ?: '-',
+            ], $buttonValue);
+        } catch (Throwable $exception) {
+            // A token invalidado nunca recupera com tentativas. Em vez de manter a
+            // lead escondida na fila, registamos a falha e notificamos o vendedor
+            // imediatamente por e-mail.
+            if ($this->isAuthenticationFailure($exception)) {
+                app(LeadWhatsappNotificationFailureHandler::class)->handle(
+                    $notification,
+                    $exception->getMessage(),
+                    ['transport' => 'cloud', 'failure_kind' => 'authentication']
+                );
+
+                return;
+            }
+
+            throw $exception;
+        }
 
         $notification->update([
             'status' => LeadWhatsappNotification::STATUS_SENT,
@@ -86,5 +103,14 @@ class SendWhatsappLeadNotification implements ShouldQueue
             $exception->getMessage(),
             ['transport' => 'cloud']
         );
+    }
+
+    private function isAuthenticationFailure(Throwable $exception): bool
+    {
+        $message = strtolower($exception->getMessage());
+
+        return str_contains($message, 'whatsapp cloud api error (401)')
+            || str_contains($message, 'authentication error')
+            || str_contains($message, 'invalid oauth access token');
     }
 }
