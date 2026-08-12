@@ -4,6 +4,9 @@ return [
     'transport' => env('WHATSAPP_TRANSPORT', 'email'),
     'legacy_polling_enabled' => env('WHATSAPP_LEGACY_POLLING_ENABLED', false),
     'lead_notifications_enabled' => env('WHATSAPP_LEAD_NOTIFICATIONS_ENABLED', false),
+    // A resposta inicial da Cloud API apenas confirma que a Meta aceitou o pedido.
+    // Sem recibo delivered/read após este período, aplicamos contingência por e-mail.
+    'delivery_timeout_minutes' => (int) env('WHATSAPP_DELIVERY_TIMEOUT_MINUTES', 15),
     'graph_version' => env('WHATSAPP_GRAPH_VERSION', env('META_GRAPH_VERSION', 'v25.0')),
     'waba_id' => env('WHATSAPP_WABA_ID'),
     'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),

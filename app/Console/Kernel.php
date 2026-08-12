@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('part-payments:check-overdue')->dailyAt('07:05');
         $schedule->command('leads:expire-unopened-access')->everyMinute()->withoutOverlapping();
         $schedule->command('meta:reconcile-leads')->everyFiveMinutes()->withoutOverlapping();
+        $schedule->command('leads:fail-undelivered-whatsapp')->everyFiveMinutes()->withoutOverlapping();
     }
 
     /**
