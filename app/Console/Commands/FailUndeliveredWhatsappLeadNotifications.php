@@ -8,7 +8,9 @@ use Illuminate\Console\Command;
 
 class FailUndeliveredWhatsappLeadNotifications extends Command
 {
-    protected $signature = 'leads:fail-undelivered-whatsapp {--limit=100 : Numero maximo de notificacoes a processar}';
+    protected $signature = 'leads:fail-undelivered-whatsapp
+        {--limit=100 : Numero maximo de notificacoes a processar}
+        {--lookback-hours=48 : Ignora notificacoes antigas para evitar contingencias retroativas em massa}';
 
     protected $description = 'Aplica contingencia quando a Meta aceitou uma lead mas nao confirmou a entrega no WhatsApp.';
 
@@ -16,10 +18,12 @@ class FailUndeliveredWhatsappLeadNotifications extends Command
     {
         $minutes = max(1, (int) config('whatsapp.delivery_timeout_minutes', 15));
         $cutoff = now()->subMinutes($minutes);
+        $lookback = now()->subHours(max(1, (int) $this->option('lookback-hours')));
 
         $notifications = LeadWhatsappNotification::query()
             ->where('status', LeadWhatsappNotification::STATUS_SENT)
             ->whereNotNull('external_id')
+            ->where('sent_at', '>=', $lookback)
             ->where('provider_status_at', '<=', $cutoff)
             ->orderBy('provider_status_at')
             ->limit((int) $this->option('limit'))

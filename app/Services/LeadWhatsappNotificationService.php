@@ -6,6 +6,7 @@ use App\Models\Lead;
 use App\Models\LeadAccessToken;
 use App\Models\LeadWhatsappNotification;
 use App\Models\User;
+use App\Jobs\SendWhatsappLeadNotification;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -57,6 +58,47 @@ class LeadWhatsappNotificationService
                     if ($pending) {
                         $stats['skipped']++;
                         $stats['skipped_reasons'][] = "Lead {$lead->id}: ja existe notificacao pendente {$pending->id} para {$lead->assigned_user->name}.";
+                        continue;
+                    }
+
+                    $deliveryKey = "lead:{$lead->id}:user:{$lead->assigned_user->id}";
+                    $existing = LeadWhatsappNotification::query()
+                        ->where('delivery_key', $deliveryKey)
+                        ->first();
+
+                    if ($existing) {
+                        $deliveryStatus = (string) data_get($existing->metadata, 'delivery_status', '');
+                        if ($existing->status === LeadWhatsappNotification::STATUS_SENT
+                            && in_array($deliveryStatus, ['delivered', 'read'], true)) {
+                            $stats['skipped']++;
+                            $stats['skipped_reasons'][] = "Lead {$lead->id}: entrega ja confirmada ({$deliveryStatus}).";
+                            continue;
+                        }
+
+                        $existing->update([
+                            'status' => LeadWhatsappNotification::STATUS_PENDING,
+                            'scheduled_for' => $this->scheduledFor($lead->assigned_user->id, true),
+                            'external_id' => null,
+                            'sent_at' => null,
+                            'attempted_at' => null,
+                            'provider_status_at' => null,
+                            'failed_at' => null,
+                            'attempts' => 0,
+                            'metadata' => array_merge($existing->metadata ?? [], [
+                                'delivery_status' => 'retry_requested',
+                                'retry_requested_at' => now()->toDateTimeString(),
+                            ]),
+                        ]);
+
+                        $lead->update([
+                            'seller_notification_status' => 'pending',
+                            'seller_notified_user_id' => null,
+                            'seller_notified_at' => null,
+                        ]);
+
+                        SendWhatsappLeadNotification::dispatch($existing->id)->afterCommit();
+                        $stats['queued']++;
+                        $stats['queued_ids'][] = $existing->id;
                         continue;
                     }
 
