@@ -1,21 +1,35 @@
 <?php
 
-use App\Models\VehiclePosition;
-use App\Http\Controllers\Api\V1\Mobile\AuthApiController;
-use App\Http\Controllers\Api\V1\Mobile\WorkshopApiController;
-use App\Http\Controllers\Api\V1\Mobile\WorkshopPlanningApiController;
-use App\Http\Controllers\Api\V1\Mobile\PaintingJobApiController;
+use App\Http\Controllers\Api\V1\IntegrationCatalogController;
+use App\Http\Controllers\Api\V1\IntegrationConsignmentController;
+use App\Http\Controllers\Api\V1\IntegrationTokenController;
 use App\Http\Controllers\Api\V1\Management\GestaoApiController;
 use App\Http\Controllers\Api\V1\Management\LeadApiController;
+use App\Http\Controllers\Api\V1\Mobile\AuthApiController;
+use App\Http\Controllers\Api\V1\Mobile\PaintingJobApiController;
+use App\Http\Controllers\Api\V1\Mobile\WorkshopApiController;
+use App\Http\Controllers\Api\V1\Mobile\WorkshopPlanningApiController;
+use App\Http\Controllers\Api\V1\PasswordResetApiController;
+use App\Http\Controllers\Api\V1\ProfileApiController;
+use App\Http\Controllers\ChatConversationController;
+use App\Http\Controllers\LeadAccessController;
 use App\Http\Controllers\MetaLeadInboundController;
 use App\Http\Controllers\MetaWebhookController;
 use App\Http\Controllers\WhatsappNodeController;
 use App\Http\Controllers\WhatsappWebhookController;
-use App\Http\Controllers\ChatConversationController;
+use App\Models\VehiclePosition;
+use Illuminate\Support\Facades\Gate;
 
 Route::get('meta/webhook', [MetaWebhookController::class, 'verify'])->name('meta.webhook.verify');
 Route::post('meta/webhook', [MetaWebhookController::class, 'receive'])->name('meta.webhook.receive');
 Route::post('meta/leads/inbound', [MetaLeadInboundController::class, 'store'])->name('meta.leads.inbound');
+Route::post('v1/auth/forgot-password', [PasswordResetApiController::class, 'forgot'])->middleware('throttle:5,1');
+Route::post('v1/auth/reset-password', [PasswordResetApiController::class, 'reset'])->middleware('throttle:5,1');
+Route::middleware([\Illuminate\Session\Middleware\StartSession::class, 'backoffice.api.response'])
+    ->prefix('v1/lead-access')->group(function () {
+        Route::get('{token}', [LeadAccessController::class, 'show']);
+        Route::get('{token}/contact/{channel}', [LeadAccessController::class, 'contact'])->where('channel', 'call|whatsapp');
+    });
 Route::get('whatsapp/webhook', [WhatsappWebhookController::class, 'verify'])->name('whatsapp.webhook.verify');
 Route::post('whatsapp/webhook', [WhatsappWebhookController::class, 'receive'])->name('whatsapp.webhook.receive');
 
@@ -38,6 +52,40 @@ Route::middleware('auth:sanctum')->prefix('chat')->name('chat.')->group(function
     Route::post('conversations/{conversation}/takeover', [ChatConversationController::class, 'takeover'])->name('conversations.takeover');
     Route::post('conversations/{conversation}/release', [ChatConversationController::class, 'release'])->name('conversations.release');
     Route::post('conversations/{conversation}/close', [ChatConversationController::class, 'close'])->name('conversations.close');
+});
+
+Route::middleware('auth:sanctum')->prefix('v1/integration')->group(function () {
+    Route::get('tokens', [IntegrationTokenController::class, 'index']);
+    Route::post('tokens', [IntegrationTokenController::class, 'store'])->middleware('throttle:10,1');
+    Route::delete('tokens/{token}', [IntegrationTokenController::class, 'destroy']);
+    Route::get('catalog/{resource}', [IntegrationCatalogController::class, 'index']);
+    Route::get('catalog/{resource}/{id}', [IntegrationCatalogController::class, 'show']);
+    Route::post('consignments', [IntegrationConsignmentController::class, 'store']);
+    Route::put('consignments/{consignment}', [IntegrationConsignmentController::class, 'update']);
+    Route::delete('consignments/{consignment}', [IntegrationConsignmentController::class, 'destroy']);
+});
+
+Route::middleware('auth:sanctum')->prefix('v1/profile')->group(function () {
+    Route::get('/', [ProfileApiController::class, 'show']);
+    Route::put('/', [ProfileApiController::class, 'update']);
+    Route::put('password', [ProfileApiController::class, 'password']);
+    Route::delete('/', [ProfileApiController::class, 'destroy']);
+});
+
+// Preserve the backoffice controllers and their business rules for complete
+// administrator integration access. The response middleware converts views
+// and redirects into JSON while leaving JSON and downloads untouched.
+Route::prefix('v1/backoffice')->middleware([
+    'auth:sanctum',
+    'backoffice.api.admin',
+    \Illuminate\Cookie\Middleware\EncryptCookies::class,
+    \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+    \Illuminate\Session\Middleware\StartSession::class,
+    'backoffice.api.response',
+])->group(function () {
+    foreach (require __DIR__.'/backoffice-api-map.php' as $route) {
+        Route::match($route[0], $route[1], $route[2]);
+    }
 });
 
 Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', 'middleware' => ['auth:sanctum']], function () {
@@ -83,6 +131,8 @@ Route::group(['prefix' => 'v1', 'as' => 'api.', 'namespace' => 'Api\V1\Admin', '
 
     // Ultimas posicoes por tracker (opcional simples).
     Route::get('gps/positions/{trackerId?}', function (?string $trackerId = null) {
+        Gate::authorize('vehicle_access');
+
         $latestIds = VehiclePosition::query()
             ->when($trackerId, fn ($query) => $query->where('tracker_id', $trackerId))
             ->selectRaw('MAX(id) as id')
