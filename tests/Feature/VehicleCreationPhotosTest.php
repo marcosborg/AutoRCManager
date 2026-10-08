@@ -101,28 +101,55 @@ class VehicleCreationPhotosTest extends TestCase
         $this->assertSame([], Storage::disk('vehicle-creation-photos')->allFiles());
     }
 
-    public function test_partial_upload_failure_rolls_back_vehicle_and_removes_files(): void
+    public function test_partial_failure_preserves_vehicle_and_other_photos_and_reports_only_failed_file(): void
     {
         $payload = $this->payload();
         $mediaCount = Media::count();
-        $uploaded = 0;
-        Event::listen(MediaHasBeenAdded::class, function () use (&$uploaded) {
-            if (++$uploaded === 2) {
+        $shouldFail = true;
+        Event::listen(MediaHasBeenAdded::class, function ($event) use (&$shouldFail) {
+            if ($shouldFail && $event->media->file_name === 'failed.jpg') {
                 throw new \RuntimeException('Simulated photo storage failure');
             }
         });
 
-        $this->withoutExceptionHandling();
-        try {
-            $this->actingAs($this->user())->post(route('admin.vehicles.store'), $payload + [
-                'initial_photo_files' => [UploadedFile::fake()->image('a.jpg'), UploadedFile::fake()->image('b.jpg')],
-            ]);
-            $this->fail('The upload should have failed.');
-        } catch (\RuntimeException $exception) {
-            $this->assertSame('Simulated photo storage failure', $exception->getMessage());
+        $response = $this->actingAs($this->user())->post(route('admin.vehicles.store'), $payload + [
+            'initial_photo_files' => [UploadedFile::fake()->image('first.jpg'), UploadedFile::fake()->image('failed.jpg')],
+            'vehicle_photo_files' => [UploadedFile::fake()->image('cover.jpg'), UploadedFile::fake()->image('last.jpg')],
+        ]);
+        $vehicle = Vehicle::where('license', $payload['license'])->firstOrFail();
+        $response->assertRedirect(route('admin.vehicles.edit', $vehicle))
+            ->assertSessionHas('failed_vehicle_photos', [['name' => 'failed.jpg', 'group' => 'Fotografias da aquisição']]);
+        $this->assertSame(1, Vehicle::where('license', $payload['license'])->count());
+        $this->assertSame(['first.jpg'], $vehicle->getMedia('inicial')->pluck('file_name')->all());
+        $this->assertSame(['cover.jpg', 'last.jpg'], $vehicle->getMedia('photos')->pluck('file_name')->all());
+        $this->assertSame($mediaCount + 3, Media::count());
+        $this->assertFalse(collect(Storage::disk('vehicle-creation-photos')->allFiles())->contains(fn ($path) => str_contains($path, 'failed')));
+        foreach ($vehicle->media as $media) {
+            Storage::disk('vehicle-creation-photos')->assertExists($media->getPathRelativeToRoot());
         }
-        $this->assertDatabaseMissing('vehicles', ['license' => $payload['license']]);
-        $this->assertSame($mediaCount, Media::count());
+        $shouldFail = false;
+        $failed = app(\App\Services\VehicleCreationPhotoService::class)->store($vehicle, [
+            'inicial' => [UploadedFile::fake()->image('failed.jpg')],
+        ]);
+        $this->assertSame([], $failed);
+        $this->assertSame(1, Vehicle::where('license', $payload['license'])->count());
+        $this->assertSame($mediaCount + 4, Media::count());
+        $this->assertSame(['first.jpg', 'failed.jpg'], $vehicle->fresh()->getMedia('inicial')->pluck('file_name')->all());
+    }
+
+    public function test_all_photo_failures_still_preserve_the_created_vehicle(): void
+    {
+        $payload = $this->payload();
+        Event::listen(MediaHasBeenAdded::class, function () {
+            throw new \RuntimeException('Simulated photo storage failure');
+        });
+        $response = $this->actingAs($this->user())->post(route('admin.vehicles.store'), $payload + [
+            'vehicle_photo_files' => [UploadedFile::fake()->image('failed.jpg')],
+        ]);
+        $vehicle = Vehicle::where('license', $payload['license'])->firstOrFail();
+        $response->assertRedirect(route('admin.vehicles.edit', $vehicle))
+            ->assertSessionHas('failed_vehicle_photos', [['name' => 'failed.jpg', 'group' => 'Fotografias atuais']]);
+        $this->assertCount(0, $vehicle->media);
         $this->assertSame([], Storage::disk('vehicle-creation-photos')->allFiles());
     }
 
