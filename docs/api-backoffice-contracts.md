@@ -349,8 +349,10 @@ Este índice aponta para a implementação e a validação efetivas de cada oper
 | `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/client-payments/{payment}` | [VehicleController::destroyClientPayment](../app/Http/Controllers/Admin/VehicleController.php#L923) | No controlador |
 | `GET` | `/api/v1/backoffice/vehicles/{vehicle}/edit` | [VehicleController::edit](../app/Http/Controllers/Admin/VehicleController.php#L284) | — |
 | `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/generic-payments/{payment}` | [VehicleController::destroyGenericPayment](../app/Http/Controllers/Admin/VehicleController.php#L906) | No controlador |
-| `GET` | `/api/v1/backoffice/vehicles/{vehicle}/notes` | [VehicleNoteController::index](../app/Http/Controllers/Admin/VehicleNoteController.php#L15) | — |
-| `POST` | `/api/v1/backoffice/vehicles/{vehicle}/notes` | [VehicleNoteController::store](../app/Http/Controllers/Admin/VehicleNoteController.php#L24) | No controlador |
+| `GET` | `/api/v1/backoffice/vehicles/{vehicle}/notes` | [VehicleNoteController::index](../app/Http/Controllers/Admin/VehicleNoteController.php#L16) | — |
+| `POST` | `/api/v1/backoffice/vehicles/{vehicle}/notes` | [VehicleNoteController::store](../app/Http/Controllers/Admin/VehicleNoteController.php#L25) | No controlador |
+| `GET` | `/api/v1/backoffice/vehicles/{vehicle}/notes/{note}` | [VehicleNoteController::history](../app/Http/Controllers/Admin/VehicleNoteController.php#L57) | — |
+| `PATCH` | `/api/v1/backoffice/vehicles/{vehicle}/notes/{note}` | [VehicleNoteController::update](../app/Http/Controllers/Admin/VehicleNoteController.php#L65) | No controlador |
 | `POST` | `/api/v1/backoffice/vehicles/{vehicle}/send-to-workshop` | [VehicleController::sendToWorkshop](../app/Http/Controllers/Admin/VehicleController.php#L425) | — |
 | `POST` | `/api/v1/backoffice/vehicles/{vehicle}/start-intervention` | [RepairController::startIntervention](../app/Http/Controllers/Admin/RepairController.php#L808) | — |
 | `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/supplier-payments/{payment}` | [VehicleController::destroySupplierPayment](../app/Http/Controllers/Admin/VehicleController.php#L889) | No controlador |

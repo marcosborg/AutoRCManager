@@ -11,6 +11,17 @@ class VehicleNote extends Model
 
     protected $fillable = ['vehicle_id', 'author_id', 'author_name', 'body', 'submission_token'];
 
+    public function revisions()
+    {
+        return AuditLog::where('description', 'vehicle_note:edited')
+            ->where('subject_id', $this->id)->where('subject_type', self::class.'#'.$this->id);
+    }
+
+    public function revisionToken(): string
+    {
+        return hash('sha256', json_encode([$this->body, $this->revisions()->max('id')]));
+    }
+
     public function vehicle()
     {
         return $this->belongsTo(Vehicle::class);

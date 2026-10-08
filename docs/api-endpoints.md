@@ -431,6 +431,8 @@ Base: `/api`. Consultar [api-integracao.md](api-integracao.md) para autentica√ß√
 | `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/generic-payments/{payment}` |
 | `GET` | `/api/v1/backoffice/vehicles/{vehicle}/notes` |
 | `POST` | `/api/v1/backoffice/vehicles/{vehicle}/notes` |
+| `GET` | `/api/v1/backoffice/vehicles/{vehicle}/notes/{note}` |
+| `PATCH` | `/api/v1/backoffice/vehicles/{vehicle}/notes/{note}` |
 | `POST` | `/api/v1/backoffice/vehicles/{vehicle}/send-to-workshop` |
 | `POST` | `/api/v1/backoffice/vehicles/{vehicle}/start-intervention` |
 | `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/supplier-payments/{payment}` |
