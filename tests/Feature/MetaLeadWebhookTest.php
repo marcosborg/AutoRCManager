@@ -365,7 +365,20 @@ class MetaLeadWebhookTest extends TestCase
         Mail::assertSent(LeadWhatsappFallbackMail::class, fn (LeadWhatsappFallbackMail $mail) => $mail->hasTo($seller->email));
     }
 
-    public function test_accepted_but_undelivered_whatsapp_lead_falls_back_to_email_after_timeout(): void
+    public static function undeliveredCases(): array
+    {
+        return [
+            'expired receipt wait' => [16, 'sent', true],
+            'still within wait' => [5, 'sent', false],
+            'delivery confirmed' => [16, 'delivered', false],
+            'read confirmed' => [16, 'read', false],
+            'outside lookback' => [49 * 60, 'sent', false],
+            'no recorded send' => [null, 'sent', false],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('undeliveredCases')]
+    public function test_accepted_but_undelivered_whatsapp_lead_falls_back_to_email_after_timeout(?int $minutesSinceSent, string $deliveryStatus, bool $shouldFail): void
     {
         Mail::fake();
         config(['whatsapp.delivery_timeout_minutes' => 15]);
@@ -386,14 +399,21 @@ class MetaLeadWebhookTest extends TestCase
             'message' => 'Nova lead atribuida',
             'status' => LeadWhatsappNotification::STATUS_SENT,
             'external_id' => 'wamid.delivery-timeout',
-            'provider_status_at' => now()->subMinutes(16),
-            'metadata' => ['delivery_status' => 'sent'],
+            'sent_at' => $minutesSinceSent === null ? null : now()->subMinutes($minutesSinceSent),
+            'provider_status_at' => now()->subMinutes($minutesSinceSent ?? 16),
+            'metadata' => ['delivery_status' => $deliveryStatus],
         ]);
 
         $this->artisan(FailUndeliveredWhatsappLeadNotifications::class)
             ->assertSuccessful();
 
         $notification->refresh();
+        if (! $shouldFail) {
+            $this->assertSame(LeadWhatsappNotification::STATUS_SENT, $notification->status);
+            $this->assertArrayNotHasKey('email_fallback_status', $notification->metadata);
+            Mail::assertNotSent(LeadWhatsappFallbackMail::class, fn (LeadWhatsappFallbackMail $mail) => $mail->hasTo($seller->email));
+            return;
+        }
         $this->assertSame(LeadWhatsappNotification::STATUS_FAILED, $notification->status);
         $this->assertSame('delivery_timeout', $notification->metadata['failure_kind']);
         $this->assertSame('sent', $notification->metadata['email_fallback_status']);
