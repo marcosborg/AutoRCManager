@@ -1650,7 +1650,7 @@
                                                                 <th>Data</th>
                                                                 <th>Nome</th>
                                                                 <th>Valor</th>
-                                                                <th style="width:40px;"></th>
+                                                                <th style="min-width:160px;">Anulação</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -1673,7 +1673,12 @@
                                                                         <input class="form-control" type="number" step="0.01" min="0" name="repair_parts[{{ $index }}][amount]" value="{{ $part['amount'] ?? '' }}">
                                                                     </td>
                                                                     <td class="text-center">
-                                                                        <button type="button" class="btn btn-xs btn-danger js-remove-repair-part">&times;</button>
+                                                                        @if(!empty($part['id']))
+                                                                            <label><input type="checkbox" data-cancel-part name="repair_parts[{{ $index }}][cancel]" value="1" {{ !empty($part['cancel']) ? 'checked' : '' }}> Anular peça #{{ $part['id'] }}</label>
+                                                                            <input class="form-control" type="text" data-cancellation-reason name="repair_parts[{{ $index }}][cancellation_reason]" value="{{ $part['cancellation_reason'] ?? '' }}" maxlength="500" minlength="3" placeholder="Motivo da anulação" aria-label="Motivo da anulação da peça {{ $part['id'] }}">
+                                                                        @else
+                                                                            <button type="button" class="btn btn-xs btn-danger js-remove-repair-part">&times;</button>
+                                                                        @endif
                                                                     </td>
                                                                 </tr>
                                                             @empty
@@ -1702,7 +1707,7 @@
                                                     </table>
                                                 </div>
                                                 <button type="button" class="btn btn-xs btn-primary" id="add-repair-part-row">Adicionar peça</button>
-                                                <p class="help-block">Pode corrigir as linhas existentes. Ao gravar, fica registado quem alterou e quais eram os dados anteriores.</p>
+                                                <p class="help-block">Pode corrigir as linhas existentes ou marcar Anular e indicar o motivo. A anulação só é aplicada ao gravar; o registo e os valores anteriores ficam no histórico.</p>
                                                 @include('admin.repairs.partials.partHistory')
                                                 @if($errors->has('repair_parts'))
                                                     <span class="help-block" role="alert">{{ $errors->first('repair_parts') }}</span>
@@ -2042,6 +2047,18 @@ Dropzone.options.checkoutDropzone = {
         if (!tableBody || !addBtn) {
             return;
         }
+
+        function updateCancellation(checkbox) {
+            const row = checkbox.closest('tr');
+            const reason = row.querySelector('[data-cancellation-reason]');
+            reason.disabled = !checkbox.checked;
+            reason.required = checkbox.checked;
+            row.classList.toggle('danger', checkbox.checked);
+        }
+        tableBody.querySelectorAll('[data-cancel-part]').forEach(updateCancellation);
+        tableBody.addEventListener('change', function (event) {
+            if (event.target.matches('[data-cancel-part]')) updateCancellation(event.target);
+        });
 
         function reindexRows() {
             const rows = tableBody.querySelectorAll('tr');

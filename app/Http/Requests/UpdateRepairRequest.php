@@ -235,6 +235,8 @@ class UpdateRepairRequest extends FormRequest
             ],
             'repair_parts_revision' => ['nullable', 'string', 'size:64'],
             'repair_parts.*.id' => ['nullable', 'integer', 'min:1', 'distinct'],
+            'repair_parts.*.cancel' => ['nullable', 'boolean'],
+            'repair_parts.*.cancellation_reason' => ['nullable', 'string', 'max:500'],
             'repair_parts.*.supplier' => [
                 'string',
                 'nullable',
