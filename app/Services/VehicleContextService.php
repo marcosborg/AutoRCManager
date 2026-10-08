@@ -9,7 +9,7 @@ class VehicleContextService
 {
     public function forVehicle(Vehicle $vehicle): array
     {
-        $vehicle->loadMissing(['general_state', 'workshop_state']);
+        $vehicle->loadMissing(['general_state', 'workshop_state', 'suplier']);
         $at = now();
         $locations = $vehicle->locations()->with('operational_unit')
             ->where('starts_at', '<=', $at)
@@ -22,6 +22,8 @@ class VehicleContextService
             ->limit(2)->get();
 
         return [
+            'destination_company' => Vehicle::DESTINATION_COMPANIES[$vehicle->destination_company] ?? 'Por confirmar',
+            'supplier' => $vehicle->suplier?->name ?: 'Por confirmar',
             'general_state' => $vehicle->general_state?->name ?: 'Por definir',
             'workshop_state' => $vehicle->workshop_state?->name ?: 'Por definir',
             'location' => $locations->count() === 1 ? ($locations->first()->operational_unit?->name ?: 'Por confirmar') : 'Por confirmar',

@@ -62,7 +62,7 @@
                                 </tr>
                                 <tr>
                                     <th>
-                                        {{ trans('cruds.vehicle.fields.our_registration') }}
+                                        Registo anterior de empresa/fornecedor
                                     </th>
                                     <td>
                                         {{ $vehicle->our_registration }}

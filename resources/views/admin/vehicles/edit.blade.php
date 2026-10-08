@@ -2894,6 +2894,8 @@
                 }
             }).done(function (response) {
                 showAjaxAlert('success', response.message || 'Atualizado com sucesso');
+                const companyLabels = @json(\App\Models\Vehicle::DESTINATION_COMPANIES);
+                $('#vehicle-summary-destination-company').text(companyLabels[formData.get('destination_company')] || 'Por confirmar');
                 refreshPaymentsPanels();
                 clearPaymentEntryFields();
                 refreshAcquisitionExpensesTotal();

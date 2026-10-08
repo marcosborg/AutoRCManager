@@ -58,7 +58,14 @@ class Vehicle extends Model implements HasMedia
         'deleted_at',
     ];
 
+    public const DESTINATION_COMPANIES = [
+        'geracao_determinada' => 'Geração Determinada',
+        'auto_rafael' => 'Auto Rafael',
+        'freerent' => 'Freerent',
+    ];
+
     protected $fillable = [
+        'destination_company',
         'general_state_id',
         'workshop_state_id',
         'license',
