@@ -89,6 +89,10 @@ class StoreVehicleRequest extends FormRequest
             'photos' => [
                 'array',
             ],
+            'initial_photo_files' => ['sometimes', 'array', 'max:10'],
+            'initial_photo_files.*' => ['required', 'image', 'mimes:jpg,jpeg,png,gif', 'max:2048'],
+            'vehicle_photo_files' => ['sometimes', 'array', 'max:10'],
+            'vehicle_photo_files.*' => ['required', 'image', 'mimes:jpg,jpeg,png,gif', 'max:2048'],
             'payment_date' => [
                 'date_format:'.config('panel.date_format'),
                 'nullable',
@@ -229,9 +233,27 @@ class StoreVehicleRequest extends FormRequest
     public function withValidator(Validator $validator)
     {
         $validator->after(function (Validator $validator) {
+            $files = array_merge(
+                (array) $this->file('initial_photo_files', []),
+                (array) $this->file('vehicle_photo_files', [])
+            );
+            $totalSize = collect($files)->sum(fn ($file) => $file instanceof \Illuminate\Http\UploadedFile && $file->isValid() ? $file->getSize() : 0);
+            if ($totalSize > 6 * 1024 * 1024) {
+                $validator->errors()->add('initial_photo_files', 'As fotografias não podem ultrapassar 6 MB no total.');
+            }
             $this->validateUniqueNormalizedLicense($validator, 'license');
             $this->validateUniqueNormalizedLicense($validator, 'foreign_license');
         });
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'initial_photo_files' => 'fotografias na aquisição',
+            'initial_photo_files.*' => 'fotografia na aquisição',
+            'vehicle_photo_files' => 'fotografias atuais',
+            'vehicle_photo_files.*' => 'fotografia atual',
+        ];
     }
 
     private function validateUniqueNormalizedLicense(Validator $validator, string $field): void
