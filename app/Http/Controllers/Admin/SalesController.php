@@ -23,6 +23,13 @@ class SalesController extends Controller
 {
     use CsvImportTrait, MediaUploadingTrait;
 
+    public function create()
+    {
+        abort_if(Gate::denies('vehicle_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        return redirect()->route('admin.vehicles.create');
+    }
+
     public function index(Request $request, $general_state_id = null)
     {
         abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
