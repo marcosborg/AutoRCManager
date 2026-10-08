@@ -24,7 +24,8 @@
                                 </a>
                             @endif
                         </div>
-                        @include('admin.vehicles.partials.lotFinancialStatus')
+                        @include('admin.vehicles.partials.stateLocationSummary')
+                    @include('admin.vehicles.partials.lotFinancialStatus')
                         <table class="table table-bordered table-striped">
                             <tbody>
                                 <tr>
