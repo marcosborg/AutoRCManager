@@ -24,6 +24,8 @@ class PartReceipt extends Model implements HasMedia
         'observations',
     ];
 
+    protected $casts = ['received_at' => 'datetime', 'received_items' => 'array'];
+
     protected $appends = [
         'attachments',
     ];

@@ -21,6 +21,9 @@ class StorePartReceiptRequest extends FormRequest
             'received_by_id' => ['nullable', 'integer', 'exists:users,id'],
             'signature_name' => ['nullable', 'string', 'max:191'],
             'observations' => ['nullable', 'string'],
+            'receipt_revision' => ['nullable', 'string', 'size:64'],
+            'quantities' => ['nullable', 'array'],
+            'quantities.*' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'max:10240'],
         ];

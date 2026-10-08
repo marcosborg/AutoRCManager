@@ -107,6 +107,11 @@
 </div>
 <hr>
 <h4>Peças pedidas</h4>
+@if($order)
+<div class="table-responsive"><table class="table table-bordered"><caption>Receção de peças</caption><thead><tr><th>Peça</th><th>Encomendado</th><th>Recebido</th><th>Pendente</th></tr></thead><tbody>
+@foreach($order->items as $receiptItem)<tr><td>{{ $receiptItem->description }}</td><td>{{ $receiptItem->quantity }}</td><td>{{ $receiptItem->receivedAmount() }}</td><td>{{ max(0, $receiptItem->quantity - $receiptItem->receivedAmount()) }}</td></tr>@endforeach
+</tbody></table></div>
+@endif
 <div class="table-responsive">
     <table class="table table-bordered" id="part-order-items-table">
         <thead>

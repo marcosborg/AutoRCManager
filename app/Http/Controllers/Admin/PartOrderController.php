@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\PartOrderNotificationService;
 use Gate;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -94,9 +95,12 @@ class PartOrderController extends Controller
 
     public function update(UpdatePartOrderRequest $request, PartOrder $partOrder)
     {
-        $partOrder->update($this->orderData($request));
-        $this->syncItems($partOrder, $request->input('items', []));
-        $partOrder->refreshReceiptStatus();
+        DB::transaction(function () use ($request, $partOrder) {
+            $partOrder = PartOrder::whereKey($partOrder->id)->lockForUpdate()->firstOrFail();
+            $partOrder->update($this->orderData($request));
+            $this->syncItems($partOrder, $request->input('items', []));
+            $partOrder->refreshReceiptStatus();
+        });
 
         return redirect()->route('admin.part-orders.edit', $partOrder)->with('message', 'Encomenda atualizada com sucesso.');
     }
@@ -239,6 +243,6 @@ class PartOrderController extends Controller
             $keptIds[] = $item->id;
         }
 
-        $partOrder->items()->whereNotIn('id', $keptIds ?: [0])->delete();
+        $partOrder->items()->whereNotIn('id', $keptIds ?: [0])->get()->each->delete();
     }
 }

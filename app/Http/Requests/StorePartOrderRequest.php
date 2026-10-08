@@ -31,7 +31,7 @@ class StorePartOrderRequest extends FormRequest
             'items.*.description' => ['nullable', 'string', 'max:191'],
             'items.*.quantity' => ['nullable', 'numeric', 'min:0.01'],
             'items.*.iva_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'items.*.status' => ['nullable', 'in:pending,ordered,shipped,received,installed,returned'],
+            'items.*.status' => ['nullable', 'in:pending,ordered,shipped,partially_received,received,installed,returned'],
             'items.*.observations' => ['nullable', 'string'],
         ];
     }
