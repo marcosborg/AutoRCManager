@@ -378,7 +378,10 @@ class VehicleController extends Controller
             && ($this->isAdjudicationState($vehicle) || $importProcess);
         $iucMonthRequired = RolePreview::hasAnyEffectiveRole(auth()->user(), ['Stand', 'Stand Adm']);
 
+        $vehicleContext = app(\App\Services\VehicleContextService::class)->forVehicle($vehicle);
+
         return view('admin.vehicles.edit', compact(
+            'vehicleContext',
             'purchase_categories',
             'sale_categories',
             'payment_methods',
@@ -800,7 +803,10 @@ class VehicleController extends Controller
         $showWorkshopSection = $this->isWorkshopState($vehicle);
         $vehicleFinancialStatus = $lotService->financialStatusForVehicle($vehicle);
 
+        $vehicleContext = app(\App\Services\VehicleContextService::class)->forVehicle($vehicle);
+
         return view('admin.vehicles.show', compact(
+            'vehicleContext',
             'vehicle',
             'financialEntries',
             'financialTotalCost',
