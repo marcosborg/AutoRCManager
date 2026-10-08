@@ -9,6 +9,7 @@ use App\Http\Requests\UpdatePartReceiptRequest;
 use App\Models\PartOrder;
 use App\Models\PartReceipt;
 use App\Models\User;
+use App\Services\PartReceiptService;
 use Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -38,9 +39,8 @@ class PartReceiptController extends Controller
 
     public function store(StorePartReceiptRequest $request)
     {
-        $receipt = PartReceipt::create($request->safe()->except('attachments'));
+        $receipt = app(PartReceiptService::class)->save($request->safe()->except('attachments'));
         $this->storeAttachments($receipt, $request);
-        $this->markOrderReceived($receipt->part_order);
 
         return redirect()->route('admin.part-receipts.edit', $receipt)->with('message', 'Rececao registada com sucesso.');
     }
@@ -56,9 +56,8 @@ class PartReceiptController extends Controller
 
     public function update(UpdatePartReceiptRequest $request, PartReceipt $partReceipt)
     {
-        $partReceipt->update($request->safe()->except('attachments'));
+        $partReceipt = app(PartReceiptService::class)->save($request->safe()->except('attachments'), $partReceipt);
         $this->storeAttachments($partReceipt, $request);
-        $this->markOrderReceived($partReceipt->part_order);
 
         return redirect()->route('admin.part-receipts.edit', $partReceipt)->with('message', 'Rececao atualizada com sucesso.');
     }
@@ -76,14 +75,16 @@ class PartReceiptController extends Controller
     {
         abort_if(Gate::denies('part_receipt_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $partReceipt->delete();
+        app(PartReceiptService::class)->save(['part_order_id' => $partReceipt->part_order_id, 'receipt_revision' => app(PartReceiptService::class)->revision($partReceipt)], $partReceipt, true);
 
         return redirect()->route('admin.part-receipts.index');
     }
 
     private function formData(?PartReceipt $partReceipt = null, ?Request $request = null): array
     {
+        $selectedOrderId = old('part_order_id', $request?->integer('part_order_id') ?: $partReceipt?->part_order_id);
         return [
+            'receiptOrder' => PartOrder::with('items')->find($selectedOrderId),
             'partReceipt' => $partReceipt,
             'partOrders' => PartOrder::with('vehicle.brand')->orderByDesc('id')->limit(500)->get()->mapWithKeys(function (PartOrder $order) {
                 $vehicle = $order->vehicle;
@@ -95,7 +96,7 @@ class PartReceiptController extends Controller
                 return [$order->id => $label];
             }),
             'users' => User::orderBy('name')->pluck('name', 'id'),
-            'selectedOrderId' => $request?->integer('part_order_id') ?: $partReceipt?->part_order_id,
+            'selectedOrderId' => $selectedOrderId,
         ];
     }
 
@@ -106,16 +107,4 @@ class PartReceiptController extends Controller
         }
     }
 
-    private function markOrderReceived(?PartOrder $order): void
-    {
-        if (! $order) {
-            return;
-        }
-
-        $order->items()
-            ->whereIn('status', ['pending', 'ordered', 'shipped'])
-            ->update(['status' => 'received']);
-
-        $order->refreshReceiptStatus();
-    }
 }

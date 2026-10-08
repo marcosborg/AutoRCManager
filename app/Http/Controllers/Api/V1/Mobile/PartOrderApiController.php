@@ -10,6 +10,7 @@ use App\Models\Suplier;
 use App\Models\Vehicle;
 use App\Services\PartOrderNotificationService;
 use Gate;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -128,13 +129,18 @@ class PartOrderApiController extends Controller
             'observations' => ['nullable', 'string'],
         ]);
 
-        $partOrder->items()->create([
-            'reference' => $data['reference'] ?? null,
-            'description' => $data['description'],
-            'quantity' => $data['quantity'] ?? 1,
-            'observations' => $data['observations'] ?? null,
-            'status' => 'pending',
-        ]);
+        DB::transaction(function () use ($partOrder, $data) {
+            $order = PartOrder::whereKey($partOrder->id)->lockForUpdate()->firstOrFail();
+            abort_if(in_array($order->status, ['received', 'cancelled'], true), Response::HTTP_UNPROCESSABLE_ENTITY, 'Encomenda fechada.');
+            $order->items()->create([
+                'reference' => $data['reference'] ?? null,
+                'description' => $data['description'],
+                'quantity' => $data['quantity'] ?? 1,
+                'observations' => $data['observations'] ?? null,
+                'status' => 'pending',
+            ]);
+            $order->refreshReceiptStatus();
+        });
 
         return response()->json(['data' => $this->payload($partOrder->fresh(['vehicle.brand', 'repair', 'suplier', 'items']))], Response::HTTP_CREATED);
     }
@@ -155,12 +161,18 @@ class PartOrderApiController extends Controller
             'observations' => ['nullable', 'string'],
         ]);
 
-        $item->update([
-            'reference' => $data['reference'] ?? null,
-            'description' => $data['description'],
-            'quantity' => $data['quantity'] ?? 1,
-            'observations' => $data['observations'] ?? null,
-        ]);
+        DB::transaction(function () use ($partOrder, $item, $data) {
+            $order = PartOrder::whereKey($partOrder->id)->lockForUpdate()->firstOrFail();
+            abort_if(in_array($order->status, ['received', 'cancelled'], true), Response::HTTP_UNPROCESSABLE_ENTITY, 'Encomenda fechada.');
+            $item = $order->items()->whereKey($item->id)->lockForUpdate()->firstOrFail();
+            $item->update([
+                'reference' => $data['reference'] ?? null,
+                'description' => $data['description'],
+                'quantity' => $data['quantity'] ?? 1,
+                'observations' => $data['observations'] ?? null,
+            ]);
+            $order->refreshReceiptStatus();
+        });
 
         return response()->json(['data' => $this->payload($partOrder->fresh(['vehicle.brand', 'repair', 'suplier', 'items']))]);
     }
@@ -174,7 +186,12 @@ class PartOrderApiController extends Controller
             return response()->json(['message' => 'Encomenda fechada.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $item->delete();
+        DB::transaction(function () use ($partOrder, $item) {
+            $order = PartOrder::whereKey($partOrder->id)->lockForUpdate()->firstOrFail();
+            abort_if(in_array($order->status, ['received', 'cancelled'], true), Response::HTTP_UNPROCESSABLE_ENTITY, 'Encomenda fechada.');
+            $order->items()->whereKey($item->id)->lockForUpdate()->firstOrFail()->delete();
+            $order->refreshReceiptStatus();
+        });
 
         return response()->json(['data' => $this->payload($partOrder->fresh(['vehicle.brand', 'repair', 'suplier', 'items']))]);
     }

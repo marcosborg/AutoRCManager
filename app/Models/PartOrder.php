@@ -43,6 +43,8 @@ class PartOrder extends Model
         'notes',
     ];
 
+    protected $casts = ['expected_delivery_date' => 'date', 'actual_delivery_date' => 'date', 'delay_alert_sent_at' => 'datetime'];
+
     protected $dates = [
         'expected_delivery_date',
         'actual_delivery_date',
@@ -100,7 +102,7 @@ class PartOrder extends Model
     public function refreshReceiptStatus(): void
     {
         $items = $this->items()->get();
-        if ($items->isEmpty()) {
+        if ($items->isEmpty() || $this->status === 'cancelled') {
             return;
         }
 
@@ -113,8 +115,10 @@ class PartOrder extends Model
             return;
         }
 
-        if ($receivedCount > 0) {
-            $this->update(['status' => 'partially_received']);
+        if ($receivedCount > 0 || $items->contains(fn ($item) => $item->receivedAmount() > 0)) {
+            $this->update(['status' => 'partially_received', 'actual_delivery_date' => null]);
+        } elseif (in_array($this->status, ['received', 'partially_received'], true)) {
+            $this->update(['status' => 'ordered', 'actual_delivery_date' => null]);
         }
     }
 }
