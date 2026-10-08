@@ -109,6 +109,9 @@
                     {{ trans('global.edit') }} {{ trans('cruds.vehicle.title_singular') }}
                 </div>
                 <div class="panel-body">
+                    @unless($vehicle->trashed())
+                        <p><a class="btn btn-default" href="{{ route('admin.vehicles.notes.index', $vehicle) }}" target="_blank" rel="noopener"><i class="fa fa-comments" aria-hidden="true"></i> Notas internas <small>(abre noutro separador)</small></a></p>
+                    @endunless
                     @if($vehicle->trashed())
                         <div class="alert alert-warning">
                             <strong>Viatura eliminada.</strong> Pode editar os dados sem recuperar a viatura.

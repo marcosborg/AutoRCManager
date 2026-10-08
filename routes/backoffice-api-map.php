@@ -347,6 +347,8 @@ return [
     [['DELETE'], 'vehicles/{vehicle}/client-payments/{payment}', '\\App\\Http\\Controllers\\Admin\\VehicleController@destroyClientPayment'],
     [['GET'], 'vehicles/{vehicle}/edit', '\\App\\Http\\Controllers\\Admin\\VehicleController@edit'],
     [['DELETE'], 'vehicles/{vehicle}/generic-payments/{payment}', '\\App\\Http\\Controllers\\Admin\\VehicleController@destroyGenericPayment'],
+    [['GET'], 'vehicles/{vehicle}/notes', '\\App\\Http\\Controllers\\Admin\\VehicleNoteController@index'],
+    [['POST'], 'vehicles/{vehicle}/notes', '\\App\\Http\\Controllers\\Admin\\VehicleNoteController@store'],
     [['POST'], 'vehicles/{vehicle}/send-to-workshop', '\\App\\Http\\Controllers\\Admin\\VehicleController@sendToWorkshop'],
     [['POST'], 'vehicles/{vehicle}/start-intervention', '\\App\\Http\\Controllers\\Admin\\RepairController@startIntervention'],
     [['DELETE'], 'vehicles/{vehicle}/supplier-payments/{payment}', '\\App\\Http\\Controllers\\Admin\\VehicleController@destroySupplierPayment'],
