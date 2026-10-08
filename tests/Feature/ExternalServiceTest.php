@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\ExternalService;
+use App\Models\Brand;
+use App\Models\GeneralState;
 use App\Models\Role;
 use App\Models\Vehicle;
 use App\Services\VehicleProfitabilityService;
@@ -18,20 +20,32 @@ class ExternalServiceTest extends TestCase
     public function test_external_service_form_uses_only_license_plate_and_an_invoice_file(): void
     {
         $user = Role::where('title', 'Chefe oficina')->firstOrFail()->users()->firstOrFail();
-        $vehicle = Vehicle::with('brand')->whereNotNull('license')->firstOrFail();
+        $vehicle = Vehicle::create([
+            'license' => uniqid('EXT-'),
+            'brand_id' => Brand::firstOrCreate(['name' => 'External service test brand'])->id,
+            'general_state_id' => GeneralState::firstOrCreate(['name' => 'EXTERNAL SERVICE TEST'])->id,
+        ]);
 
         $response = $this->actingAs($user)->get(route('admin.external-services.create'));
 
-        $response->assertOk()
-            ->assertSee('Matrícula')
-            ->assertSee('name="invoice_file"', false)
-            ->assertSee($vehicle->license)
-            ->assertDontSee('Reparação')
-            ->assertDontSee('N.º fatura');
-
-        if ($vehicle->brand?->name) {
-            $response->assertDontSee($vehicle->license.' '.$vehicle->brand->name);
+        $response->assertOk();
+        $document = new \DOMDocument();
+        $previousErrors = libxml_use_internal_errors(true);
+        try {
+            $document->loadHTML('<?xml encoding="UTF-8">'.$response->getContent());
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previousErrors);
         }
+        $xpath = new \DOMXPath($document);
+        $form = '//form[@action="'.route('admin.external-services.store').'"]';
+        $this->assertSame(1, $xpath->query($form)->length);
+        $option = $xpath->query($form.'//select[@name="vehicle_id"]/option[@value="'.$vehicle->id.'"]');
+        $this->assertSame(1, $option->length);
+        $this->assertSame($vehicle->license, trim($option->item(0)->textContent));
+        $this->assertSame(1, $xpath->query($form.'//input[@name="invoice_file" and @type="file"]')->length);
+        $this->assertSame(0, $xpath->query($form.'//*[@name="repair_id" or @name="invoice_number"]')->length);
+
     }
 
     public function test_workshop_user_can_create_an_external_service_that_counts_as_a_workshop_cost(): void

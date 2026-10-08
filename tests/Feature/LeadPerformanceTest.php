@@ -32,7 +32,7 @@ class LeadPerformanceTest extends TestCase
         $this->assertSame(3, LeadContactEvent::where('assignment_history_id', $assignment->id)->count());
 
         $admin = $this->userWithRole('Admin', ['lead_performance_access', 'lead_access', 'lead_show']);
-        $response = $this->actingAs($admin)->get(route('admin.leads.performance'));
+        $response = $this->actingAs($admin)->get(route('admin.leads.performance', ['seller_id' => $seller->id]));
 
         $response->assertOk()
             ->assertSee($seller->name)
@@ -57,7 +57,7 @@ class LeadPerformanceTest extends TestCase
         $lead->update(['assigned_user_id' => $replacement->id]);
         $this->get(route('lead-access.contact', [$plainToken, 'call']))->assertGone();
 
-        $this->assertDatabaseCount('lead_contact_events', 0);
+        $this->assertSame(0, LeadContactEvent::where('assignment_history_id', $assignment->id)->count());
         $this->assertSame($assignment->id, $token->assignment_history_id);
         $this->assertSame($seller->id, $token->user_id);
     }
@@ -71,13 +71,13 @@ class LeadPerformanceTest extends TestCase
         $this->get(route('lead-access.contact', [$second[3], 'whatsapp']));
 
         $admin = $this->userWithRole('Adm', ['lead_performance_access', 'lead_access', 'lead_show']);
-        $all = $this->actingAs($admin)->get(route('admin.leads.performance'));
+        $all = $this->actingAs($admin)->get(route('admin.leads.performance', ['seller_id' => $first[0]->id]));
         $all->assertOk()->assertSee('50,0%');
 
-        $whatsapp = $this->actingAs($admin)->get(route('admin.leads.performance', ['source' => 'whatsapp']));
+        $whatsapp = $this->actingAs($admin)->get(route('admin.leads.performance', ['source' => 'whatsapp', 'seller_id' => $first[0]->id]));
         $whatsapp->assertOk()->assertSee('100,0%');
 
-        $call = $this->actingAs($admin)->get(route('admin.leads.performance', ['channel' => 'call']));
+        $call = $this->actingAs($admin)->get(route('admin.leads.performance', ['channel' => 'call', 'seller_id' => $first[0]->id]));
         $call->assertOk()->assertDontSee('100,0%');
     }
 
@@ -85,8 +85,10 @@ class LeadPerformanceTest extends TestCase
     {
         $seller = $this->userWithRole('Stand', []);
         $lead = $this->lead($seller, 'form');
+        $measurementStartedAt = LeadAssignmentHistory::whereHas('access_tokens', fn ($query) => $query->whereNotNull('assignment_history_id'))->min('created_at');
+        $legacyDate = \Illuminate\Support\Carbon::parse($measurementStartedAt ?? now())->startOfDay()->subDay();
         $legacyHistory = LeadAssignmentHistory::create(['lead_id' => $lead->id, 'user_id' => $seller->id, 'reason' => 'legacy']);
-        $legacyHistory->created_at = now()->subDay();
+        $legacyHistory->created_at = $legacyDate;
         $legacyHistory->save();
         $legacyToken = LeadAccessToken::create([
             'lead_id' => $lead->id,
@@ -95,11 +97,11 @@ class LeadPerformanceTest extends TestCase
             'expires_at' => now()->addDay(),
             'last_used_at' => now(),
         ]);
-        $legacyToken->created_at = now()->subDay()->addMinute();
+        $legacyToken->created_at = $legacyDate->copy()->addMinute();
         $legacyToken->save();
         $admin = $this->userWithRole('Admin', ['lead_performance_access']);
 
-        $this->actingAs($admin)->get(route('admin.leads.performance'))
+        $this->actingAs($admin)->get(route('admin.leads.performance', ['seller_id' => $seller->id, 'date_start' => $legacyDate->format('Y-m-d')]))
             ->assertOk()
             ->assertSee('Sem oportunidades instrumentadas neste período.')
             ->assertSee('Histórico anterior à medição de contactos')
