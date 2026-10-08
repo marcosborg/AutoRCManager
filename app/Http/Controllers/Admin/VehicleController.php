@@ -28,6 +28,7 @@ use App\Models\VehicleTradeIn;
 use App\Models\WorkshopState;
 use App\Services\SaleClosureApprovalService;
 use App\Services\VehicleImportProcessService;
+use App\Services\VehicleCreationPhotoService;
 use App\Services\VehicleLotService;
 use App\Services\VehicleProfitabilityService;
 use App\Services\VehicleSuspendedSaleService;
@@ -249,7 +250,7 @@ class VehicleController extends Controller
         return view('admin.vehicles.create', compact('general_states', 'brands', 'carriers', 'clients', 'proveniences', 'financial_institutions', 'payment_statuses', 'pickup_states', 'purchasingSuppliers', 'supliers', 'iucMonthRequired'));
     }
 
-    public function store(StoreVehicleRequest $request)
+    public function store(StoreVehicleRequest $request, VehicleCreationPhotoService $photos)
     {
         $payload = $request->all();
 
@@ -262,25 +263,15 @@ class VehicleController extends Controller
         $payload['is_invoiced'] = $request->boolean('is_invoiced');
         $payload = $this->filterPayloadToExistingVehicleColumns($payload);
 
-        $vehicle = DB::transaction(function () use ($payload, $request) {
-            $vehicle = Vehicle::create($payload);
+        $vehicle = DB::transaction(fn () => Vehicle::create($payload));
+        $failed = $photos->store($vehicle, [
+            'inicial' => $request->file('initial_photo_files', []),
+            'photos' => $request->file('vehicle_photo_files', []),
+        ]);
 
-            try {
-                foreach (['initial_photo_files' => 'inicial', 'vehicle_photo_files' => 'photos'] as $field => $collection) {
-                    foreach ($request->file($field, []) as $file) {
-                        $vehicle->addMedia($file)->toMediaCollection($collection);
-                    }
-                }
-            } catch (\Throwable $exception) {
-                // Remove files before rolling back their database records, including a failed conversion.
-                $vehicle->media()->get()->each->delete();
-                throw $exception;
-            }
-
-            return $vehicle;
-        });
-
-        return redirect()->route('admin.vehicles.edit', $vehicle->id)->with('message', 'Criado com sucesso');
+        return redirect()->route('admin.vehicles.edit', $vehicle->id)
+            ->with('message', 'Criado com sucesso')
+            ->with('failed_vehicle_photos', $failed);
     }
 
     public function edit(Vehicle $vehicle, VehicleLotService $lotService, VehicleProfitabilityService $profitabilityService)

@@ -115,6 +115,17 @@
                             <a class="btn btn-default btn-xs pull-right" href="{{ route('admin.vehicles.deleted') }}">Voltar às viaturas eliminadas</a>
                         </div>
                     @endif
+                    @if(session('failed_vehicle_photos'))
+                        <div class="alert alert-warning" role="alert">
+                            <strong>A viatura foi criada. Algumas fotografias não ficaram guardadas.</strong>
+                            <p>As restantes fotografias mantêm-se. Adicione apenas as seguintes no respetivo grupo e grave a ficha:</p>
+                            <ul>
+                                @foreach(session('failed_vehicle_photos') as $photo)
+                                    <li>{{ $photo['group'] }}: {{ $photo['name'] }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     @include('admin.vehicles.partials.stateLocationSummary')
                     @include('admin.vehicles.partials.lotFinancialStatus')
                     <form id="vehicle-trade-in-create-form" method="POST" action="{{ route('admin.vehicles.trade-ins.store', $vehicle) }}" enctype="multipart/form-data">
@@ -598,6 +609,7 @@
                                     <label for="inicial">{{ trans('cruds.vehicle.fields.inicial') }}</label>
                                     <div class="needsclick dropzone" id="inicial-dropzone">
                                     </div>
+                                    <span class="help-block">Se um envio falhar, use “Tentar novamente” nessa foto. No fim, grave a ficha.</span>
                                     @if($errors->has('inicial'))
                                         <span class="help-block" role="alert">{{ $errors->first('inicial') }}</span>
                                     @endif
@@ -842,6 +854,7 @@
                                     <label for="inicial">{{ trans('cruds.vehicle.fields.inicial') }}</label>
                                     <div class="needsclick dropzone" id="inicial-dropzone">
                                     </div>
+                                    <span class="help-block">Se um envio falhar, use “Tentar novamente” nessa foto. No fim, grave a ficha.</span>
                                     @if($errors->has('inicial'))
                                         <span class="help-block" role="alert">{{ $errors->first('inicial') }}</span>
                                     @endif
@@ -1528,6 +1541,7 @@
                                     <label for="photos">{{ trans('cruds.vehicle.fields.photos') }}</label>
                                     <div class="needsclick dropzone" id="photos-dropzone">
                                     </div>
+                                    <span class="help-block">Se um envio falhar, use “Tentar novamente” nessa foto. No fim, grave a ficha.</span>
                                     @if($errors->has('photos'))
                                         <span class="help-block" role="alert">{{ $errors->first('photos') }}</span>
                                     @endif
@@ -1858,6 +1872,7 @@
 @endsection
 
 @section('scripts')
+@include('admin.vehicles.partials.photoUploadRecovery')
 
 @can('client_create')
 <script>
@@ -2265,11 +2280,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 
 <script>
-    var uploadedPhotosMap = {}
     var photosSortable = null
 
     function getPhotoFileName(file) {
-        return (typeof file.file_name !== 'undefined') ? file.file_name : uploadedPhotosMap[file.name]
+        return (typeof file.file_name !== 'undefined') ? file.file_name : file.uploadedPhotoName
     }
 
     function refreshCoverPhotoBadge() {
@@ -2309,7 +2323,7 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10, width: 4096, height: 4096 },
         success: function (file, response) {
-            uploadedPhotosMap[file.name] = response.name
+            file.uploadedPhotoName = response.name
             if (file.previewElement) {
                 file.previewElement.dataset.photoName = response.name
             }
@@ -2321,6 +2335,7 @@
             syncPhotoInputsOrder()
         },
         init: function () {
+            VehiclePhotoUploads.attach(this)
             setupPhotosSorting()
 
             @if(isset($vehicle) && $vehicle->photos)
@@ -2361,7 +2376,7 @@
             })
         },
         error: function (file, response) {
-            var message = $.type(response) === 'string' ? response : response.errors.file
+            var message = VehiclePhotoUploads.errorMessage(response)
             file.previewElement.classList.add('dz-error')
             var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
             for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
@@ -2458,7 +2473,6 @@
 </script>
 
 <script>
-    var uploadedInicialMap = {}
     Dropzone.options.inicialDropzone = {
         url: '{{ route('admin.vehicles.storeMedia') }}',
         maxFilesize: 10,
@@ -2468,14 +2482,15 @@
         params: { size: 10, width: 4096, height: 4096 },
         success: function (file, response) {
             $('#vehicle-edit-form').append('<input type="hidden" name="inicial[]" value="' + response.name + '">')
-            uploadedInicialMap[file.name] = response.name
+            file.uploadedPhotoName = response.name
         },
         removedfile: function (file) {
             file.previewElement.remove()
-            var name = (typeof file.file_name !== 'undefined') ? file.file_name : uploadedInicialMap[file.name]
+            var name = (typeof file.file_name !== 'undefined') ? file.file_name : file.uploadedPhotoName
             $('#vehicle-edit-form').find('input[name="inicial[]"][value="' + name + '"]').remove()
         },
         init: function () {
+            VehiclePhotoUploads.attach(this)
             @if(isset($vehicle) && $vehicle->inicial)
                 var files = {!! json_encode($vehicle->inicial) !!}
                 for (var i in files) {
@@ -2504,7 +2519,7 @@
             @endif
         },
         error: function (file, response) {
-            var message = $.type(response) === 'string' ? response : response.errors.file
+            var message = VehiclePhotoUploads.errorMessage(response)
             file.previewElement.classList.add('dz-error')
             var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
             for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
@@ -2848,6 +2863,11 @@
         form.addEventListener('submit', function (event) {
             event.preventDefault();
             if (isSubmitting) return;
+            const photoProblem = VehiclePhotoUploads.blockReason();
+            if (photoProblem) {
+                showAjaxAlert('warning', photoProblem);
+                return;
+            }
 
             isSubmitting = true;
             setLoadingState(true);
