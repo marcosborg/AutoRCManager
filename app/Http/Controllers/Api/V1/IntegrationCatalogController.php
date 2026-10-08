@@ -66,6 +66,9 @@ class IntegrationCatalogController extends Controller
             abort_if(isset($data['status']) && $data['status'] !== VehicleTradeIn::STATUS_CONVERTED, 403);
             $query->where('status', VehicleTradeIn::STATUS_CONVERTED);
         }
+        if ($resource === 'painting-jobs' && Gate::denies('painting_job_create')) {
+            $query->where('painter_id', $request->user()->id);
+        }
 
         return response()->json($query->orderBy('id')->paginate($data['per_page'] ?? 25));
     }
@@ -76,6 +79,9 @@ class IntegrationCatalogController extends Controller
         $query = $model::query()->select($fields);
         if ($resource === 'trade-ins' && ! $this->canManageTradeIns($request)) {
             $query->where('status', VehicleTradeIn::STATUS_CONVERTED);
+        }
+        if ($resource === 'painting-jobs' && Gate::denies('painting_job_create')) {
+            $query->where('painter_id', $request->user()->id);
         }
 
         return response()->json(['data' => $query->findOrFail($id)]);

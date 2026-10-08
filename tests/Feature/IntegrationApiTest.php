@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\GeneralState;
+use App\Models\PaintingJob;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -72,6 +73,19 @@ class IntegrationApiTest extends TestCase
             $table->softDeletes();
             $table->timestamps();
         });
+        Schema::create('painting_jobs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('vehicle_id')->nullable();
+            $table->unsignedBigInteger('legacy_repair_id')->nullable();
+            $table->unsignedBigInteger('painter_id')->nullable();
+            $table->string('status');
+            $table->string('license')->nullable();
+            $table->date('entry_date')->nullable();
+            $table->date('exit_date')->nullable();
+            $table->timestamp('completed_at')->nullable();
+            $table->softDeletes();
+            $table->timestamps();
+        });
     }
 
     public function test_catalog_requires_authentication_and_permission(): void
@@ -105,6 +119,33 @@ class IntegrationApiTest extends TestCase
         Sanctum::actingAs($this->makeUser('vehicle_trade_in_access'));
 
         $this->getJson('/api/v1/integration/catalog/trade-ins?status=pending')->assertForbidden();
+    }
+
+    public function test_painter_catalog_only_exposes_assigned_painting_jobs(): void
+    {
+        $painter = $this->makeUser('painting_job_access');
+        $painter->roles->first()->permissions()->attach(Permission::firstOrCreate(['title' => 'painting_job_show']));
+        $otherPainter = $this->makeUser();
+        $assigned = PaintingJob::create(['painter_id' => $painter->id, 'status' => PaintingJob::STATUS_OPEN]);
+        $unassigned = PaintingJob::create(['painter_id' => $otherPainter->id, 'status' => PaintingJob::STATUS_OPEN]);
+        Sanctum::actingAs($painter);
+
+        $this->getJson('/api/v1/integration/catalog/painting-jobs')
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.id', $assigned->id);
+        $this->getJson('/api/v1/integration/catalog/painting-jobs/'.$assigned->id)->assertOk();
+        $this->getJson('/api/v1/integration/catalog/painting-jobs/'.$unassigned->id)->assertNotFound();
+
+        $manager = $this->makeUser('painting_job_access');
+        $manager->roles->first()->permissions()->attach([
+            Permission::firstOrCreate(['title' => 'painting_job_show'])->id,
+            Permission::firstOrCreate(['title' => 'painting_job_create'])->id,
+        ]);
+        Sanctum::actingAs($manager);
+
+        $this->getJson('/api/v1/integration/catalog/painting-jobs')->assertOk()->assertJsonPath('total', 2);
+        $this->getJson('/api/v1/integration/catalog/painting-jobs/'.$unassigned->id)->assertOk();
     }
 
     public function test_consignment_write_requires_the_matching_permission(): void
