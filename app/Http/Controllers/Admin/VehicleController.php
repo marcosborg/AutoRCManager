@@ -262,7 +262,23 @@ class VehicleController extends Controller
         $payload['is_invoiced'] = $request->boolean('is_invoiced');
         $payload = $this->filterPayloadToExistingVehicleColumns($payload);
 
-        $vehicle = Vehicle::create($payload);
+        $vehicle = DB::transaction(function () use ($payload, $request) {
+            $vehicle = Vehicle::create($payload);
+
+            try {
+                foreach (['initial_photo_files' => 'inicial', 'vehicle_photo_files' => 'photos'] as $field => $collection) {
+                    foreach ($request->file($field, []) as $file) {
+                        $vehicle->addMedia($file)->toMediaCollection($collection);
+                    }
+                }
+            } catch (\Throwable $exception) {
+                // Remove files before rolling back their database records, including a failed conversion.
+                $vehicle->media()->get()->each->delete();
+                throw $exception;
+            }
+
+            return $vehicle;
+        });
 
         return redirect()->route('admin.vehicles.edit', $vehicle->id)->with('message', 'Criado com sucesso');
     }
