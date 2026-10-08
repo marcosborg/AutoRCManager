@@ -1,6 +1,8 @@
 <section class="panel panel-default" aria-label="Situação e localização da viatura">
     <div class="panel-heading"><strong>Situação e localização</strong></div>
     <div class="panel-body">
+        <p><strong>Empresa de destino:</strong> <span id="vehicle-summary-destination-company">{{ $vehicleContext['destination_company'] }}</span></p>
+        <p><strong>Fornecedor (a quem foi comprada):</strong> {{ $vehicleContext['supplier'] }}</p>
         <div class="row">
             <div class="col-sm-4"><dl><dt>Estado geral</dt><dd>{{ $vehicleContext['general_state'] }}</dd></dl></div>
             <div class="col-sm-4"><dl><dt>Estado na oficina</dt><dd>{{ $vehicleContext['workshop_state'] }}</dd></dl></div>

@@ -33,6 +33,8 @@ class UpdateVehicleRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'suplier_id' => ['nullable', 'integer', 'exists:supliers,id'],
+            'destination_company' => ['nullable', 'string', \Illuminate\Validation\Rule::in(array_keys(Vehicle::DESTINATION_COMPANIES))],
             'our_registration' => [
                 'nullable',
                 'string',

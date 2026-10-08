@@ -27,7 +27,7 @@ class ImportAdjudicationManagementTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_vehicle_uses_existing_suppliers_as_purchasing_companies(): void
+    public function test_vehicle_keeps_suppliers_separate_from_destination_companies(): void
     {
         $admin = $this->userWithRole('Admin');
         $supplier = Suplier::create([
@@ -52,7 +52,7 @@ class ImportAdjudicationManagementTest extends TestCase
             ->get(route('admin.vehicles.edit', $vehicle))
             ->assertOk()
             ->assertSee('Importação / Adjudicação')
-            ->assertSee('Empresa compradora');
+            ->assertSee('Empresa de destino');
 
         $this->actingAs($admin)
             ->from(route('admin.vehicles.edit', $vehicle))

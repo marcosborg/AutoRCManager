@@ -58,7 +58,14 @@ class Vehicle extends Model implements HasMedia
         'deleted_at',
     ];
 
+    public const DESTINATION_COMPANIES = [
+        'geracao_determinada' => 'Geração Determinada',
+        'auto_rafael' => 'Auto Rafael',
+        'freerent' => 'Freerent',
+    ];
+
     protected $fillable = [
+        'destination_company',
         'general_state_id',
         'workshop_state_id',
         'license',
@@ -182,6 +189,16 @@ class Vehicle extends Model implements HasMedia
     {
         $this->addMediaConversion('thumb')->fit('crop', 50, 50);
         $this->addMediaConversion('preview')->fit('crop', 120, 120);
+    }
+
+    public function scopeForDestinationCompany(Builder $query, string $company): Builder
+    {
+        if ($company === 'unassigned') {
+            return $query->where(fn (Builder $q) => $q->whereNull('vehicles.destination_company')
+                ->orWhereNotIn('vehicles.destination_company', array_keys(self::DESTINATION_COMPANIES)));
+        }
+
+        return $query->where('vehicles.destination_company', $company);
     }
 
     public function scopeInStock(Builder $query): Builder

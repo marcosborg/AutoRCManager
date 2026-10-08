@@ -113,6 +113,24 @@
         </a>
     </div>
 
+    @can('vehicle_access')
+    <section class="panel panel-default" aria-label="Stock por empresa de destino">
+        <div class="panel-heading"><strong>Stock por empresa de destino</strong></div>
+        <div class="panel-body">
+            <p>Viaturas sem empresa atribuída aparecem em “Por confirmar”. O fornecedor não determina a empresa de destino.</p>
+            <div class="row">
+                @foreach(\App\Models\Vehicle::DESTINATION_COMPANIES + ['unassigned' => 'Por confirmar'] as $code => $label)
+                    <div class="col-sm-3">
+                        <a href="{{ route('admin.vehicles.index', ['dashboard_filter' => 'stock', 'destination_company' => $code]) }}">
+                            {{ $label }}: <strong>{{ $business['stock_by_company'][$code] }}</strong>
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </section>
+    @endcan
+
     <div class="dashboard-metrics">
         <a href="{{ route('admin.part-orders.index', ['delayed' => 1]) }}">
             <div class="small-box bg-red">

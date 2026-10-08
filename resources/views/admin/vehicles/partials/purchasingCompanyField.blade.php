@@ -1,28 +1,32 @@
-@php
-    $selectedPurchasingSupplier = old('our_registration', isset($vehicle) ? $vehicle->our_registration : null);
-    $availablePurchasingSuppliers = collect($purchasingSuppliers ?? []);
-
-    if ($selectedPurchasingSupplier && !$availablePurchasingSuppliers->has($selectedPurchasingSupplier)) {
-        $availablePurchasingSuppliers->put($selectedPurchasingSupplier, $selectedPurchasingSupplier);
-    }
-@endphp
-<div class="form-group {{ $errors->has('our_registration') ? 'has-error' : '' }}">
-    <label for="our_registration">{{ trans('cruds.vehicle.fields.our_registration') }}</label>
-    <div class="input-group">
-        <select class="form-control" name="our_registration" id="our_registration">
-            <option value></option>
-            @foreach($availablePurchasingSuppliers as $value => $name)
-                <option value="{{ $value }}" {{ $selectedPurchasingSupplier === $value ? 'selected' : '' }}>{{ $name }}</option>
+<div class="form-group {{ $errors->has('destination_company') ? 'has-error' : '' }}">
+    <label for="destination_company">Empresa de destino</label>
+    <select class="form-control" name="destination_company" id="destination_company">
+        <option value="">Por confirmar</option>
+        @foreach(\App\Models\Vehicle::DESTINATION_COMPANIES as $value => $name)
+            <option value="{{ $value }}" {{ old('destination_company', isset($vehicle) ? $vehicle->destination_company : null) === $value ? 'selected' : '' }}>{{ $name }}</option>
+        @endforeach
+    </select>
+    @error('destination_company')
+        <span class="help-block" role="alert">{{ $message }}</span>
+    @enderror
+    <span class="help-block">Empresa do grupo a que a viatura se destina. Indique a quem foi comprada no campo Fornecedor.</span>
+    @can('suplier_create')
+        <a href="{{ route('admin.supliers.create') }}" target="_blank" rel="noopener">Novo fornecedor</a>
+    @endcan
+    @if(isset($vehicle) && $vehicle->our_registration)
+        <p class="help-block"><strong>Registo anterior de empresa/fornecedor:</strong> {{ $vehicle->our_registration }}. Mantido para consulta; confirme a empresa de destino acima.</p>
+    @endif
+</div>
+@unless(isset($vehicle))
+    <div class="form-group {{ $errors->has('suplier_id') ? 'has-error' : '' }}">
+        <label for="suplier_id">Fornecedor (a quem foi comprada)</label>
+        <select class="form-control select2" name="suplier_id" id="suplier_id">
+            @foreach($supliers as $id => $name)
+                <option value="{{ $id }}" {{ (string) old('suplier_id') === (string) $id ? 'selected' : '' }}>{{ $name }}</option>
             @endforeach
         </select>
-        @can('suplier_create')
-            <span class="input-group-btn">
-                <a class="btn btn-default" href="{{ route('admin.supliers.create') }}" target="_blank" rel="noopener">Novo fornecedor</a>
-            </span>
-        @endcan
+        @error('suplier_id')
+            <span class="help-block" role="alert">{{ $message }}</span>
+        @enderror
     </div>
-    @if($errors->has('our_registration'))
-        <span class="help-block" role="alert">{{ $errors->first('our_registration') }}</span>
-    @endif
-    <span class="help-block">A lista é gerida em Configurações → Fornecedores. Depois de criar um fornecedor, atualize esta página.</span>
-</div>
+@endunless

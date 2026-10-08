@@ -1,6 +1,19 @@
 @extends('layouts.admin')
 @section('content')
 <div class="content">
+    <form method="GET" action="{{ route('admin.vehicles.index') }}" class="form-inline" style="margin-bottom:15px">
+        @if(request('dashboard_filter'))
+            <input type="hidden" name="dashboard_filter" value="{{ request('dashboard_filter') }}">
+        @endif
+        <label for="destination-company-filter">Empresa de destino</label>
+        <select class="form-control" name="destination_company" id="destination-company-filter">
+            <option value="">Todas as empresas</option>
+            @foreach(\App\Models\Vehicle::DESTINATION_COMPANIES + ['unassigned' => 'Por confirmar'] as $code => $label)
+                <option value="{{ $code }}" {{ request('destination_company') === $code ? 'selected' : '' }}>{{ $label }}</option>
+            @endforeach
+        </select>
+        <button type="submit" class="btn btn-default">Filtrar</button>
+    </form>
     @if($dashboardFilter)
         <div class="alert alert-info clearfix">
             <strong>Filtro do dashboard:</strong> {{ $dashboardFilter }}
@@ -34,7 +47,7 @@
                                 <th>{{ trans('cruds.vehicle.fields.general_state') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.license') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.foreign_license') }}</th>
-                                <th>{{ trans('cruds.vehicle.fields.our_registration') }}</th>
+                                <th>Empresa de destino</th>
                                 <th>{{ trans('cruds.vehicle.fields.brand') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.model') }}</th>
                                 <th>{{ trans('cruds.vehicle.fields.month') }}</th>
@@ -63,14 +76,7 @@
                                 </td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
                                 <td><input class="search" type="text" placeholder="{{ trans('global.search') }}"></td>
-                                <td>
-                                    <select class="search" strict="true">
-                                        <option value>{{ trans('global.all') }}</option>
-                                        @foreach($supliers->sortBy('name') as $suplier)
-                                            <option value="{{ $suplier->name }}">{{ $suplier->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
+                                <td></td>
                                 <td>
                                     <select class="search">
                                         <option value>{{ trans('global.all') }}</option>
@@ -172,14 +178,14 @@ $(function () {
     serverSide: true,
     retrieve: true,
     aaSorting: [],
-    ajax: @json(route('admin.vehicles.index', request()->only('dashboard_filter'))),
+    ajax: @json(route('admin.vehicles.index', request()->only('dashboard_filter', 'destination_company'))),
     columns: [
         { data: 'placeholder', name: 'placeholder' },
         { data: 'vehicle_thumb', name: 'vehicle_thumb', orderable: false, searchable: false },
         { data: 'general_state_name', name: 'general_state.name' },
         { data: 'license', name: 'license' },
         { data: 'foreign_license', name: 'foreign_license' },
-        { data: 'our_registration', name: 'our_registration' },
+        { data: 'destination_company', name: 'destination_company', searchable: false },
         { data: 'brand_name', name: 'brand.name' },
         { data: 'model', name: 'model' },
         { data: 'month', name: 'month' },

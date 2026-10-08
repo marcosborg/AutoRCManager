@@ -92,12 +92,19 @@ class HomeController
                 ]);
         }
 
+        $stockByCompany = array_fill_keys(array_merge(array_keys(Vehicle::DESTINATION_COMPANIES), ['unassigned']), 0);
+        foreach (Vehicle::query()->inStock()->select('destination_company')->selectRaw('COUNT(*) as total')->groupBy('destination_company')->get() as $group) {
+            $key = array_key_exists($group->destination_company ?? '', Vehicle::DESTINATION_COMPANIES) ? $group->destination_company : 'unassigned';
+            $stockByCompany[$key] += (int) $group->total;
+        }
+
         $business = [
             'month_count' => $soldThisMonth->count(),
             'month_total' => $soldThisMonth->sum(fn (Vehicle $vehicle) => $this->salesTotal($vehicle)),
             'year_count' => $soldThisYear->count(),
             'year_total' => $soldThisYear->sum(fn (Vehicle $vehicle) => $this->salesTotal($vehicle)),
-            'stock_count' => Vehicle::query()->inStock()->count(),
+            'stock_count' => array_sum($stockByCompany),
+            'stock_by_company' => $stockByCompany,
             'clients_count' => Client::query()->count(),
         ];
 
