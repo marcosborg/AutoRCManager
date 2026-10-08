@@ -52,9 +52,14 @@ class VehicleController extends Controller
     {
         abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        $request->validate(['destination_company' => ['nullable', 'string', \Illuminate\Validation\Rule::in(array_merge(array_keys(Vehicle::DESTINATION_COMPANIES), ['unassigned']))]]);
+
         if ($request->ajax()) {
             $query = Vehicle::with(['general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client', 'source_trade_in', 'media'])->select(sprintf('%s.*', (new Vehicle)->table));
             $this->applyDashboardFilter($query, $request->query('dashboard_filter'));
+            if ($request->filled('destination_company')) {
+                $query->forDestinationCompany($request->query('destination_company'));
+            }
             $table = Datatables::of($query);
 
             $table->filter(function ($query) use ($request) {
@@ -99,6 +104,8 @@ class VehicleController extends Controller
             $table->filterColumn('foreign_license', function ($query, $keyword) {
                 LicensePlate::applySearch($query, (string) $keyword, ['foreign_license']);
             });
+            $table->editColumn('destination_company', fn ($row) => Vehicle::DESTINATION_COMPANIES[$row->destination_company] ?? 'Por confirmar');
+
             $table->editColumn('our_registration', function ($row) {
                 return $row->our_registration ? $row->our_registration : '';
             });
