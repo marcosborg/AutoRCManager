@@ -128,7 +128,7 @@ Este índice aponta para a implementação e a validação efetivas de cada oper
 | `GET` | `/api/v1/backoffice/gps-positions` | [GpsController::latest](../app/Http/Controllers/Admin/GpsController.php#L16) | No controlador |
 | `GET` | `/api/v1/backoffice/import-configuration` | [ImportConfigurationController::index](../app/Http/Controllers/Admin/ImportConfigurationController.php#L15) | — |
 | `PUT` | `/api/v1/backoffice/import-configuration/tolls-recipient` | [ImportConfigurationController::updateTollsRecipient](../app/Http/Controllers/Admin/ImportConfigurationController.php#L33) | [UpdateOperationalAlertRecipientsRequest](../app/Http/Requests/UpdateOperationalAlertRecipientsRequest.php) |
-| `GET` | `/api/v1/backoffice/iuc-due/export` | [HomeController::exportIucDue](../app/Http/Controllers/Admin/HomeController.php#L161) | — |
+| `GET` | `/api/v1/backoffice/iuc-due/export` | [HomeController::exportIucDue](../app/Http/Controllers/Admin/HomeController.php#L168) | — |
 | `GET` | `/api/v1/backoffice/leads` | [LeadController::index](../app/Http/Controllers/Admin/LeadController.php#L19) | No controlador |
 | `GET` | `/api/v1/backoffice/leads-performance` | [LeadPerformanceController::index](../app/Http/Controllers/Admin/LeadPerformanceController.php#L25) | No controlador |
 | `GET` | `/api/v1/backoffice/leads-performance/pdf` | [LeadPerformanceController::export](../app/Http/Controllers/Admin/LeadPerformanceController.php#L18) | No controlador |
@@ -164,15 +164,15 @@ Este índice aponta para a implementação e a validação efetivas de cada oper
 | `POST` | `/api/v1/backoffice/painting-jobs/{paintingJob}/complete` | [PaintingJobController::complete](../app/Http/Controllers/Admin/PaintingJobController.php#L101) | No controlador |
 | `GET` | `/api/v1/backoffice/painting-jobs/{paintingJob}/edit` | [PaintingJobController::edit](../app/Http/Controllers/Admin/PaintingJobController.php#L77) | — |
 | `POST` | `/api/v1/backoffice/painting-jobs/{paintingJob}/reopen` | [PaintingJobController::reopen](../app/Http/Controllers/Admin/PaintingJobController.php#L112) | No controlador |
-| `GET` | `/api/v1/backoffice/part-orders` | [PartOrderController::index](../app/Http/Controllers/Admin/PartOrderController.php#L22) | No controlador |
-| `POST` | `/api/v1/backoffice/part-orders` | [PartOrderController::store](../app/Http/Controllers/Admin/PartOrderController.php#L76) | [StorePartOrderRequest](../app/Http/Requests/StorePartOrderRequest.php) |
-| `GET` | `/api/v1/backoffice/part-orders/create` | [PartOrderController::create](../app/Http/Controllers/Admin/PartOrderController.php#L69) | No controlador |
-| `POST` | `/api/v1/backoffice/part-orders/{partOrder}/items/{item}/quotes` | [PartOrderController::storeQuote](../app/Http/Controllers/Admin/PartOrderController.php#L122) | No controlador |
-| `POST` | `/api/v1/backoffice/part-orders/{partOrder}/items/{item}/quotes/{quote}/select` | [PartOrderController::selectQuote](../app/Http/Controllers/Admin/PartOrderController.php#L141) | — |
-| `GET` | `/api/v1/backoffice/part-orders/{part_order}` | [PartOrderController::show](../app/Http/Controllers/Admin/PartOrderController.php#L104) | — |
-| `PUT/PATCH` | `/api/v1/backoffice/part-orders/{part_order}` | [PartOrderController::update](../app/Http/Controllers/Admin/PartOrderController.php#L95) | [UpdatePartOrderRequest](../app/Http/Requests/UpdatePartOrderRequest.php) |
-| `DELETE` | `/api/v1/backoffice/part-orders/{part_order}` | [PartOrderController::destroy](../app/Http/Controllers/Admin/PartOrderController.php#L113) | — |
-| `GET` | `/api/v1/backoffice/part-orders/{part_order}/edit` | [PartOrderController::edit](../app/Http/Controllers/Admin/PartOrderController.php#L86) | — |
+| `GET` | `/api/v1/backoffice/part-orders` | [PartOrderController::index](../app/Http/Controllers/Admin/PartOrderController.php#L23) | No controlador |
+| `POST` | `/api/v1/backoffice/part-orders` | [PartOrderController::store](../app/Http/Controllers/Admin/PartOrderController.php#L77) | [StorePartOrderRequest](../app/Http/Requests/StorePartOrderRequest.php) |
+| `GET` | `/api/v1/backoffice/part-orders/create` | [PartOrderController::create](../app/Http/Controllers/Admin/PartOrderController.php#L70) | No controlador |
+| `POST` | `/api/v1/backoffice/part-orders/{partOrder}/items/{item}/quotes` | [PartOrderController::storeQuote](../app/Http/Controllers/Admin/PartOrderController.php#L126) | No controlador |
+| `POST` | `/api/v1/backoffice/part-orders/{partOrder}/items/{item}/quotes/{quote}/select` | [PartOrderController::selectQuote](../app/Http/Controllers/Admin/PartOrderController.php#L145) | — |
+| `GET` | `/api/v1/backoffice/part-orders/{part_order}` | [PartOrderController::show](../app/Http/Controllers/Admin/PartOrderController.php#L108) | — |
+| `PUT/PATCH` | `/api/v1/backoffice/part-orders/{part_order}` | [PartOrderController::update](../app/Http/Controllers/Admin/PartOrderController.php#L96) | [UpdatePartOrderRequest](../app/Http/Requests/UpdatePartOrderRequest.php) |
+| `DELETE` | `/api/v1/backoffice/part-orders/{part_order}` | [PartOrderController::destroy](../app/Http/Controllers/Admin/PartOrderController.php#L117) | — |
+| `GET` | `/api/v1/backoffice/part-orders/{part_order}/edit` | [PartOrderController::edit](../app/Http/Controllers/Admin/PartOrderController.php#L87) | — |
 | `GET` | `/api/v1/backoffice/part-payments` | [PartPaymentController::index](../app/Http/Controllers/Admin/PartPaymentController.php#L18) | No controlador |
 | `POST` | `/api/v1/backoffice/part-payments` | [PartPaymentController::store](../app/Http/Controllers/Admin/PartPaymentController.php#L49) | [StorePartPaymentRequest](../app/Http/Requests/StorePartPaymentRequest.php) |
 | `GET` | `/api/v1/backoffice/part-payments/create` | [PartPaymentController::create](../app/Http/Controllers/Admin/PartPaymentController.php#L42) | No controlador |
@@ -180,12 +180,12 @@ Este índice aponta para a implementação e a validação efetivas de cada oper
 | `PUT/PATCH` | `/api/v1/backoffice/part-payments/{part_payment}` | [PartPaymentController::update](../app/Http/Controllers/Admin/PartPaymentController.php#L63) | [UpdatePartPaymentRequest](../app/Http/Requests/UpdatePartPaymentRequest.php) |
 | `DELETE` | `/api/v1/backoffice/part-payments/{part_payment}` | [PartPaymentController::destroy](../app/Http/Controllers/Admin/PartPaymentController.php#L79) | — |
 | `GET` | `/api/v1/backoffice/part-payments/{part_payment}/edit` | [PartPaymentController::edit](../app/Http/Controllers/Admin/PartPaymentController.php#L56) | — |
-| `GET` | `/api/v1/backoffice/part-receipts` | [PartReceiptController::index](../app/Http/Controllers/Admin/PartReceiptController.php#L20) | No controlador |
-| `POST` | `/api/v1/backoffice/part-receipts` | [PartReceiptController::store](../app/Http/Controllers/Admin/PartReceiptController.php#L39) | [StorePartReceiptRequest](../app/Http/Requests/StorePartReceiptRequest.php) |
-| `GET` | `/api/v1/backoffice/part-receipts/create` | [PartReceiptController::create](../app/Http/Controllers/Admin/PartReceiptController.php#L32) | No controlador |
-| `GET` | `/api/v1/backoffice/part-receipts/{part_receipt}` | [PartReceiptController::show](../app/Http/Controllers/Admin/PartReceiptController.php#L66) | — |
+| `GET` | `/api/v1/backoffice/part-receipts` | [PartReceiptController::index](../app/Http/Controllers/Admin/PartReceiptController.php#L21) | No controlador |
+| `POST` | `/api/v1/backoffice/part-receipts` | [PartReceiptController::store](../app/Http/Controllers/Admin/PartReceiptController.php#L40) | [StorePartReceiptRequest](../app/Http/Requests/StorePartReceiptRequest.php) |
+| `GET` | `/api/v1/backoffice/part-receipts/create` | [PartReceiptController::create](../app/Http/Controllers/Admin/PartReceiptController.php#L33) | No controlador |
+| `GET` | `/api/v1/backoffice/part-receipts/{part_receipt}` | [PartReceiptController::show](../app/Http/Controllers/Admin/PartReceiptController.php#L65) | — |
 | `PUT/PATCH` | `/api/v1/backoffice/part-receipts/{part_receipt}` | [PartReceiptController::update](../app/Http/Controllers/Admin/PartReceiptController.php#L57) | [UpdatePartReceiptRequest](../app/Http/Requests/UpdatePartReceiptRequest.php) |
-| `DELETE` | `/api/v1/backoffice/part-receipts/{part_receipt}` | [PartReceiptController::destroy](../app/Http/Controllers/Admin/PartReceiptController.php#L75) | — |
+| `DELETE` | `/api/v1/backoffice/part-receipts/{part_receipt}` | [PartReceiptController::destroy](../app/Http/Controllers/Admin/PartReceiptController.php#L74) | — |
 | `GET` | `/api/v1/backoffice/part-receipts/{part_receipt}/edit` | [PartReceiptController::edit](../app/Http/Controllers/Admin/PartReceiptController.php#L48) | — |
 | `GET` | `/api/v1/backoffice/payment-methods` | [PaymentMethodController::index](../app/Http/Controllers/Admin/PaymentMethodController.php#L16) | — |
 | `POST` | `/api/v1/backoffice/payment-methods` | [PaymentMethodController::store](../app/Http/Controllers/Admin/PaymentMethodController.php#L32) | [StorePaymentMethodRequest](../app/Http/Requests/StorePaymentMethodRequest.php) |
@@ -237,24 +237,24 @@ Este índice aponta para a implementação e a validação efetivas de cada oper
 | `PUT/PATCH` | `/api/v1/backoffice/repair-states/{repair_state}` | [RepairStatesController::update](../app/Http/Controllers/Admin/RepairStatesController.php#L82) | [UpdateRepairStateRequest](../app/Http/Requests/UpdateRepairStateRequest.php) |
 | `DELETE` | `/api/v1/backoffice/repair-states/{repair_state}` | [RepairStatesController::destroy](../app/Http/Controllers/Admin/RepairStatesController.php#L96) | — |
 | `GET` | `/api/v1/backoffice/repair-states/{repair_state}/edit` | [RepairStatesController::edit](../app/Http/Controllers/Admin/RepairStatesController.php#L75) | — |
-| `GET` | `/api/v1/backoffice/repairs` | [RepairController::index](../app/Http/Controllers/Admin/RepairController.php#L37) | No controlador |
-| `POST` | `/api/v1/backoffice/repairs` | [RepairController::store](../app/Http/Controllers/Admin/RepairController.php#L522) | [StoreRepairRequest](../app/Http/Requests/StoreRepairRequest.php) |
-| `POST` | `/api/v1/backoffice/repairs/ckmedia` | [RepairController::storeCKEditorImages](../app/Http/Controllers/Admin/RepairController.php#L849) | No controlador |
-| `GET` | `/api/v1/backoffice/repairs/create` | [RepairController::create](../app/Http/Controllers/Admin/RepairController.php#L511) | — |
-| `DELETE` | `/api/v1/backoffice/repairs/destroy` | [RepairController::massDestroy](../app/Http/Controllers/Admin/RepairController.php#L838) | [MassDestroyRepairRequest](../app/Http/Requests/MassDestroyRepairRequest.php) |
+| `GET` | `/api/v1/backoffice/repairs` | [RepairController::index](../app/Http/Controllers/Admin/RepairController.php#L39) | No controlador |
+| `POST` | `/api/v1/backoffice/repairs` | [RepairController::store](../app/Http/Controllers/Admin/RepairController.php#L524) | [StoreRepairRequest](../app/Http/Requests/StoreRepairRequest.php) |
+| `POST` | `/api/v1/backoffice/repairs/ckmedia` | [RepairController::storeCKEditorImages](../app/Http/Controllers/Admin/RepairController.php#L859) | No controlador |
+| `GET` | `/api/v1/backoffice/repairs/create` | [RepairController::create](../app/Http/Controllers/Admin/RepairController.php#L513) | — |
+| `DELETE` | `/api/v1/backoffice/repairs/destroy` | [RepairController::massDestroy](../app/Http/Controllers/Admin/RepairController.php#L848) | [MassDestroyRepairRequest](../app/Http/Requests/MassDestroyRepairRequest.php) |
 | `POST` | `/api/v1/backoffice/repairs/media` | [RepairController::storeMedia](../app/Http/Controllers/Traits/MediaUploadingTrait.php#L9) | No controlador |
 | `POST` | `/api/v1/backoffice/repairs/parse-csv-import` | [RepairController::parseCsvImport](../app/Http/Controllers/Traits/CsvImportTrait.php#L65) | No controlador |
 | `POST` | `/api/v1/backoffice/repairs/process-csv-import` | [RepairController::processCsvImport](../app/Http/Controllers/Traits/CsvImportTrait.php#L12) | No controlador |
-| `GET` | `/api/v1/backoffice/repairs/{repair}` | [RepairController::show](../app/Http/Controllers/Admin/RepairController.php#L820) | — |
-| `PUT/PATCH` | `/api/v1/backoffice/repairs/{repair}` | [RepairController::update](../app/Http/Controllers/Admin/RepairController.php#L661) | [UpdateRepairRequest](../app/Http/Requests/UpdateRepairRequest.php) |
-| `DELETE` | `/api/v1/backoffice/repairs/{repair}` | [RepairController::destroy](../app/Http/Controllers/Admin/RepairController.php#L829) | — |
-| `GET` | `/api/v1/backoffice/repairs/{repair}/edit` | [RepairController::edit](../app/Http/Controllers/Admin/RepairController.php#L541) | — |
-| `POST` | `/api/v1/backoffice/repairs/{repair}/finish` | [RepairController::finishRepair](../app/Http/Controllers/Admin/RepairController.php#L712) | — |
-| `POST` | `/api/v1/backoffice/repairs/{repair}/new-intervention` | [RepairController::newIntervention](../app/Http/Controllers/Admin/RepairController.php#L777) | — |
-| `POST` | `/api/v1/backoffice/repairs/{repair}/reopen` | [RepairController::reopenRepair](../app/Http/Controllers/Admin/RepairController.php#L737) | — |
-| `POST` | `/api/v1/backoffice/repairs/{repair}/start` | [RepairController::startRepair](../app/Http/Controllers/Admin/RepairController.php#L697) | — |
-| `POST` | `/api/v1/backoffice/repairs/{repair}/work/finish` | [RepairController::finishWork](../app/Http/Controllers/Admin/RepairController.php#L766) | — |
-| `POST` | `/api/v1/backoffice/repairs/{repair}/work/start` | [RepairController::startWork](../app/Http/Controllers/Admin/RepairController.php#L755) | — |
+| `GET` | `/api/v1/backoffice/repairs/{repair}` | [RepairController::show](../app/Http/Controllers/Admin/RepairController.php#L830) | — |
+| `PUT/PATCH` | `/api/v1/backoffice/repairs/{repair}` | [RepairController::update](../app/Http/Controllers/Admin/RepairController.php#L667) | [UpdateRepairRequest](../app/Http/Requests/UpdateRepairRequest.php) |
+| `DELETE` | `/api/v1/backoffice/repairs/{repair}` | [RepairController::destroy](../app/Http/Controllers/Admin/RepairController.php#L839) | — |
+| `GET` | `/api/v1/backoffice/repairs/{repair}/edit` | [RepairController::edit](../app/Http/Controllers/Admin/RepairController.php#L543) | — |
+| `POST` | `/api/v1/backoffice/repairs/{repair}/finish` | [RepairController::finishRepair](../app/Http/Controllers/Admin/RepairController.php#L722) | — |
+| `POST` | `/api/v1/backoffice/repairs/{repair}/new-intervention` | [RepairController::newIntervention](../app/Http/Controllers/Admin/RepairController.php#L787) | — |
+| `POST` | `/api/v1/backoffice/repairs/{repair}/reopen` | [RepairController::reopenRepair](../app/Http/Controllers/Admin/RepairController.php#L747) | — |
+| `POST` | `/api/v1/backoffice/repairs/{repair}/start` | [RepairController::startRepair](../app/Http/Controllers/Admin/RepairController.php#L707) | — |
+| `POST` | `/api/v1/backoffice/repairs/{repair}/work/finish` | [RepairController::finishWork](../app/Http/Controllers/Admin/RepairController.php#L776) | — |
+| `POST` | `/api/v1/backoffice/repairs/{repair}/work/start` | [RepairController::startWork](../app/Http/Controllers/Admin/RepairController.php#L765) | — |
 | `POST` | `/api/v1/backoffice/role-preview` | [RolePreviewController::store](../app/Http/Controllers/Admin/RolePreviewController.php#L13) | No controlador |
 | `DELETE` | `/api/v1/backoffice/role-preview` | [RolePreviewController::destroy](../app/Http/Controllers/Admin/RolePreviewController.php#L27) | No controlador |
 | `GET` | `/api/v1/backoffice/roles` | [RolesController::index](../app/Http/Controllers/Admin/RolesController.php#L22) | No controlador |
@@ -332,33 +332,35 @@ Este índice aponta para a implementação e a validação efetivas de cada oper
 | `GET` | `/api/v1/backoffice/vehicle-trade-ins/pending` | [VehicleTradeInController::pending](../app/Http/Controllers/Admin/VehicleTradeInController.php#L433) | — |
 | `POST` | `/api/v1/backoffice/vehicle-trade-ins/{tradeIn}/convert` | [VehicleTradeInController::convert](../app/Http/Controllers/Admin/VehicleTradeInController.php#L149) | No controlador |
 | `POST` | `/api/v1/backoffice/vehicle-trade-ins/{tradeIn}/reject` | [VehicleTradeInController::reject](../app/Http/Controllers/Admin/VehicleTradeInController.php#L177) | No controlador |
-| `GET` | `/api/v1/backoffice/vehicles` | [VehicleController::index](../app/Http/Controllers/Admin/VehicleController.php#L50) | No controlador |
-| `POST` | `/api/v1/backoffice/vehicles` | [VehicleController::store](../app/Http/Controllers/Admin/VehicleController.php#L252) | [StoreVehicleRequest](../app/Http/Requests/StoreVehicleRequest.php) |
-| `GET` | `/api/v1/backoffice/vehicles-deleted` | [VehicleController::deleted](../app/Http/Controllers/Admin/VehicleController.php#L807) | — |
-| `GET` | `/api/v1/backoffice/vehicles-deleted/{vehicle}` | [VehicleController::showDeleted](../app/Http/Controllers/Admin/VehicleController.php#L819) | — |
-| `PUT` | `/api/v1/backoffice/vehicles-deleted/{vehicle}` | [VehicleController::updateDeleted](../app/Http/Controllers/Admin/VehicleController.php#L836) | [UpdateVehicleRequest](../app/Http/Requests/UpdateVehicleRequest.php) |
-| `GET` | `/api/v1/backoffice/vehicles-deleted/{vehicle}/edit` | [VehicleController::editDeleted](../app/Http/Controllers/Admin/VehicleController.php#L826) | — |
-| `POST` | `/api/v1/backoffice/vehicles-deleted/{vehicle}/restore` | [VehicleController::restore](../app/Http/Controllers/Admin/VehicleController.php#L846) | — |
-| `POST` | `/api/v1/backoffice/vehicles/ckmedia` | [VehicleController::storeCKEditorImages](../app/Http/Controllers/Admin/VehicleController.php#L929) | No controlador |
-| `GET` | `/api/v1/backoffice/vehicles/create` | [VehicleController::create](../app/Http/Controllers/Admin/VehicleController.php#L227) | — |
-| `DELETE` | `/api/v1/backoffice/vehicles/destroy` | [VehicleController::massDestroy](../app/Http/Controllers/Admin/VehicleController.php#L858) | [MassDestroyVehicleRequest](../app/Http/Requests/MassDestroyVehicleRequest.php) |
+| `GET` | `/api/v1/backoffice/vehicles` | [VehicleController::index](../app/Http/Controllers/Admin/VehicleController.php#L51) | No controlador |
+| `POST` | `/api/v1/backoffice/vehicles` | [VehicleController::store](../app/Http/Controllers/Admin/VehicleController.php#L260) | [StoreVehicleRequest](../app/Http/Requests/StoreVehicleRequest.php) |
+| `GET` | `/api/v1/backoffice/vehicles-deleted` | [VehicleController::deleted](../app/Http/Controllers/Admin/VehicleController.php#L827) | — |
+| `GET` | `/api/v1/backoffice/vehicles-deleted/{vehicle}` | [VehicleController::showDeleted](../app/Http/Controllers/Admin/VehicleController.php#L839) | — |
+| `PUT` | `/api/v1/backoffice/vehicles-deleted/{vehicle}` | [VehicleController::updateDeleted](../app/Http/Controllers/Admin/VehicleController.php#L856) | [UpdateVehicleRequest](../app/Http/Requests/UpdateVehicleRequest.php) |
+| `GET` | `/api/v1/backoffice/vehicles-deleted/{vehicle}/edit` | [VehicleController::editDeleted](../app/Http/Controllers/Admin/VehicleController.php#L846) | — |
+| `POST` | `/api/v1/backoffice/vehicles-deleted/{vehicle}/restore` | [VehicleController::restore](../app/Http/Controllers/Admin/VehicleController.php#L866) | — |
+| `POST` | `/api/v1/backoffice/vehicles/ckmedia` | [VehicleController::storeCKEditorImages](../app/Http/Controllers/Admin/VehicleController.php#L949) | No controlador |
+| `GET` | `/api/v1/backoffice/vehicles/create` | [VehicleController::create](../app/Http/Controllers/Admin/VehicleController.php#L235) | — |
+| `DELETE` | `/api/v1/backoffice/vehicles/destroy` | [VehicleController::massDestroy](../app/Http/Controllers/Admin/VehicleController.php#L878) | [MassDestroyVehicleRequest](../app/Http/Requests/MassDestroyVehicleRequest.php) |
 | `POST` | `/api/v1/backoffice/vehicles/media` | [VehicleController::storeMedia](../app/Http/Controllers/Traits/MediaUploadingTrait.php#L9) | No controlador |
-| `GET` | `/api/v1/backoffice/vehicles/{vehicle}` | [VehicleController::show](../app/Http/Controllers/Admin/VehicleController.php#L774) | — |
-| `PUT/PATCH` | `/api/v1/backoffice/vehicles/{vehicle}` | [VehicleController::update](../app/Http/Controllers/Admin/VehicleController.php#L510) | [UpdateVehicleRequest](../app/Http/Requests/UpdateVehicleRequest.php) |
-| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}` | [VehicleController::destroy](../app/Http/Controllers/Admin/VehicleController.php#L798) | — |
-| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/client-payments/{payment}` | [VehicleController::destroyClientPayment](../app/Http/Controllers/Admin/VehicleController.php#L903) | No controlador |
-| `GET` | `/api/v1/backoffice/vehicles/{vehicle}/edit` | [VehicleController::edit](../app/Http/Controllers/Admin/VehicleController.php#L270) | — |
-| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/generic-payments/{payment}` | [VehicleController::destroyGenericPayment](../app/Http/Controllers/Admin/VehicleController.php#L886) | No controlador |
-| `POST` | `/api/v1/backoffice/vehicles/{vehicle}/send-to-workshop` | [VehicleController::sendToWorkshop](../app/Http/Controllers/Admin/VehicleController.php#L408) | — |
-| `POST` | `/api/v1/backoffice/vehicles/{vehicle}/start-intervention` | [RepairController::startIntervention](../app/Http/Controllers/Admin/RepairController.php#L798) | — |
-| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/supplier-payments/{payment}` | [VehicleController::destroySupplierPayment](../app/Http/Controllers/Admin/VehicleController.php#L869) | No controlador |
-| `POST` | `/api/v1/backoffice/vehicles/{vehicle}/suspended-sale` | [VehicleController::suspendSale](../app/Http/Controllers/Admin/VehicleController.php#L735) | No controlador |
-| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/suspended-sale` | [VehicleController::cancelSuspendedSale](../app/Http/Controllers/Admin/VehicleController.php#L758) | No controlador |
+| `GET` | `/api/v1/backoffice/vehicles/{vehicle}` | [VehicleController::show](../app/Http/Controllers/Admin/VehicleController.php#L791) | — |
+| `PUT/PATCH` | `/api/v1/backoffice/vehicles/{vehicle}` | [VehicleController::update](../app/Http/Controllers/Admin/VehicleController.php#L527) | [UpdateVehicleRequest](../app/Http/Requests/UpdateVehicleRequest.php) |
+| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}` | [VehicleController::destroy](../app/Http/Controllers/Admin/VehicleController.php#L818) | — |
+| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/client-payments/{payment}` | [VehicleController::destroyClientPayment](../app/Http/Controllers/Admin/VehicleController.php#L923) | No controlador |
+| `GET` | `/api/v1/backoffice/vehicles/{vehicle}/edit` | [VehicleController::edit](../app/Http/Controllers/Admin/VehicleController.php#L284) | — |
+| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/generic-payments/{payment}` | [VehicleController::destroyGenericPayment](../app/Http/Controllers/Admin/VehicleController.php#L906) | No controlador |
+| `GET` | `/api/v1/backoffice/vehicles/{vehicle}/notes` | [VehicleNoteController::index](../app/Http/Controllers/Admin/VehicleNoteController.php#L15) | — |
+| `POST` | `/api/v1/backoffice/vehicles/{vehicle}/notes` | [VehicleNoteController::store](../app/Http/Controllers/Admin/VehicleNoteController.php#L24) | No controlador |
+| `POST` | `/api/v1/backoffice/vehicles/{vehicle}/send-to-workshop` | [VehicleController::sendToWorkshop](../app/Http/Controllers/Admin/VehicleController.php#L425) | — |
+| `POST` | `/api/v1/backoffice/vehicles/{vehicle}/start-intervention` | [RepairController::startIntervention](../app/Http/Controllers/Admin/RepairController.php#L808) | — |
+| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/supplier-payments/{payment}` | [VehicleController::destroySupplierPayment](../app/Http/Controllers/Admin/VehicleController.php#L889) | No controlador |
+| `POST` | `/api/v1/backoffice/vehicles/{vehicle}/suspended-sale` | [VehicleController::suspendSale](../app/Http/Controllers/Admin/VehicleController.php#L752) | No controlador |
+| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/suspended-sale` | [VehicleController::cancelSuspendedSale](../app/Http/Controllers/Admin/VehicleController.php#L775) | No controlador |
 | `GET` | `/api/v1/backoffice/vehicles/{vehicle}/timeline` | [VehicleTimelineController::show](../app/Http/Controllers/Admin/VehicleTimelineController.php#L13) | — |
 | `GET` | `/api/v1/backoffice/vehicles/{vehicle}/timeline/export/pdf` | [VehicleTimelineExportController::exportPdf](../app/Http/Controllers/Admin/VehicleTimelineExportController.php#L15) | — |
 | `POST` | `/api/v1/backoffice/vehicles/{vehicle}/trade-ins` | [VehicleTradeInController::store](../app/Http/Controllers/Admin/VehicleTradeInController.php#L112) | No controlador |
-| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/workshop` | [VehicleController::removeFromWorkshop](../app/Http/Controllers/Admin/VehicleController.php#L435) | — |
-| `PATCH` | `/api/v1/backoffice/vehicles/{vehicle}/workshop-state` | [VehicleController::updateWorkshopState](../app/Http/Controllers/Admin/VehicleController.php#L471) | [UpdateVehicleWorkshopStateRequest](../app/Http/Requests/UpdateVehicleWorkshopStateRequest.php) |
+| `DELETE` | `/api/v1/backoffice/vehicles/{vehicle}/workshop` | [VehicleController::removeFromWorkshop](../app/Http/Controllers/Admin/VehicleController.php#L452) | — |
+| `PATCH` | `/api/v1/backoffice/vehicles/{vehicle}/workshop-state` | [VehicleController::updateWorkshopState](../app/Http/Controllers/Admin/VehicleController.php#L488) | [UpdateVehicleWorkshopStateRequest](../app/Http/Requests/UpdateVehicleWorkshopStateRequest.php) |
 | `GET` | `/api/v1/backoffice/workshop-cash` | [WorkshopCashController::index](../app/Http/Controllers/Admin/WorkshopCashController.php#L24) | No controlador |
 | `POST` | `/api/v1/backoffice/workshop-cash/categories` | [WorkshopCashController::storeCategory](../app/Http/Controllers/Admin/WorkshopCashController.php#L110) | [StoreWorkshopCashCategoryRequest](../app/Http/Requests/StoreWorkshopCashCategoryRequest.php) |
 | `PUT` | `/api/v1/backoffice/workshop-cash/categories/{cashCategory}` | [WorkshopCashController::updateCategory](../app/Http/Controllers/Admin/WorkshopCashController.php#L120) | No controlador |

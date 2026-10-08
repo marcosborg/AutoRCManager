@@ -127,6 +127,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('vehicles-deleted/{vehicle}/edit', 'VehicleController@editDeleted')->name('vehicles.deleted.edit');
     Route::put('vehicles-deleted/{vehicle}', 'VehicleController@updateDeleted')->name('vehicles.deleted.update');
     Route::post('vehicles-deleted/{vehicle}/restore', 'VehicleController@restore')->name('vehicles.restore');
+    Route::get('vehicles/{vehicle}/notes', 'VehicleNoteController@index')->name('vehicles.notes.index');
+    Route::post('vehicles/{vehicle}/notes', 'VehicleNoteController@store')->name('vehicles.notes.store');
     Route::resource('vehicles', 'VehicleController');
     Route::get('vehicles/{vehicle}/timeline', 'VehicleTimelineController@show')->name('vehicles.timeline');
     Route::get('vehicles/{vehicle}/timeline/export/pdf', 'VehicleTimelineExportController@exportPdf')->name('vehicles.timeline.export.pdf');

@@ -9,6 +9,9 @@
                     {{ trans('global.show') }} {{ trans('cruds.vehicle.title') }}
                 </div>
                 <div class="panel-body">
+                    @unless($vehicle->trashed())
+                        <p><a class="btn btn-default" href="{{ route('admin.vehicles.notes.index', $vehicle) }}" target="_blank" rel="noopener"><i class="fa fa-comments" aria-hidden="true"></i> Notas internas <small>(abre noutro separador)</small></a></p>
+                    @endunless
                     <div class="form-group">
                         <div class="form-group">
                             <a class="btn btn-default" href="{{ $vehicle->trashed() ? route('admin.vehicles.deleted') : route('admin.vehicles.index') }}">
