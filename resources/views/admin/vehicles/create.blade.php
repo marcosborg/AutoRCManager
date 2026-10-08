@@ -19,7 +19,7 @@
                             </ul>
                         </div>
                     @endif
-                    <form method="POST" action="{{ route("admin.vehicles.store") }}" enctype="multipart/form-data">
+                    <form id="vehicle-create-form" method="POST" action="{{ route("admin.vehicles.store") }}" enctype="multipart/form-data">
                         @csrf
                         <div class="row">
                             <div class="col-md-3">
@@ -194,6 +194,28 @@
                                 </div>
                             </div>
                         </div>
+                        <fieldset>
+                            <legend>Fotografias da viatura</legend>
+                            <p class="help-block">Pode juntar fotografias já nesta entrada ou mais tarde, ao editar a viatura. Até 10 por grupo, 2 MB por fotografia e 6 MB no total. Formatos: JPG, PNG e GIF.</p>
+                            @if($errors->any())
+                                <p class="text-warning">Se tinha escolhido fotografias, selecione-as novamente antes de guardar.</p>
+                            @endif
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label for="initial_photo_files">{{ trans('cruds.vehicle.fields.inicial') }}</label>
+                                    <input type="file" id="initial_photo_files" name="initial_photo_files[]" accept="image/jpeg,image/png,image/gif" multiple aria-describedby="initial-photos-help">
+                                    <p class="help-block" id="initial-photos-help">Registo do estado em que a viatura foi adquirida.</p>
+                                    <div id="initial_photo_files-preview" class="row" aria-live="polite"></div>
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label for="vehicle_photo_files">Fotos atuais da viatura</label>
+                                    <input type="file" id="vehicle_photo_files" name="vehicle_photo_files[]" accept="image/jpeg,image/png,image/gif" multiple aria-describedby="vehicle-photos-help">
+                                    <p class="help-block" id="vehicle-photos-help">A primeira fotografia será a capa. Pode alterar a ordem na edição.</p>
+                                    <div id="vehicle_photo_files-preview" class="row" aria-live="polite"></div>
+                                </div>
+                            </div>
+                            <p id="photo-upload-error" class="text-danger" role="alert"></p>
+                        </fieldset>
                         <div class="form-group">
                             <button class="btn btn-danger" type="submit">
                                 {{ trans('global.save') }}
@@ -205,4 +227,59 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+@parent
+<script>
+    (function () {
+        var inputs = [document.getElementById('initial_photo_files'), document.getElementById('vehicle_photo_files')];
+        var error = document.getElementById('photo-upload-error');
+        var previewUrls = {};
+
+        function validatePhotos() {
+            var totalSize = 0;
+            var message = '';
+            inputs.forEach(function (input) {
+                if (input.files.length > 10) message = 'Escolha até 10 fotografias por grupo.';
+                Array.from(input.files).forEach(function (file) {
+                    totalSize += file.size;
+                    if (file.size > 2 * 1024 * 1024) message = 'Cada fotografia pode ter no máximo 2 MB.';
+                    if (!/\.(jpe?g|png|gif)$/i.test(file.name)) message = 'Escolha fotografias JPG, PNG ou GIF.';
+                });
+            });
+            if (totalSize > 6 * 1024 * 1024) message = 'As fotografias não podem ultrapassar 6 MB no total.';
+            error.textContent = message;
+            return !message;
+        }
+
+        inputs.forEach(function (input) {
+            input.addEventListener('change', function () {
+                var preview = document.getElementById(input.id + '-preview');
+                (previewUrls[input.id] || []).forEach(function (url) { URL.revokeObjectURL(url); });
+                previewUrls[input.id] = [];
+                preview.replaceChildren();
+                Array.from(input.files).slice(0, 10).forEach(function (file) {
+                    if (!/^image\/(jpeg|png|gif)$/.test(file.type) || file.size > 2 * 1024 * 1024) return;
+                    var image = document.createElement('img');
+                    image.src = URL.createObjectURL(file);
+                    previewUrls[input.id].push(image.src);
+                    image.alt = file.name;
+                    image.width = 100;
+                    image.height = 75;
+                    image.style.objectFit = 'cover';
+                    image.style.margin = '5px';
+                    preview.appendChild(image);
+                });
+                validatePhotos();
+            });
+        });
+        document.getElementById('vehicle-create-form').addEventListener('submit', function (event) {
+            if (!validatePhotos()) {
+                event.preventDefault();
+                error.scrollIntoView({ block: 'center' });
+            }
+        });
+    })();
+</script>
 @endsection
