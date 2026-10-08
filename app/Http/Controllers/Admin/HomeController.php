@@ -97,7 +97,7 @@ class HomeController
             'month_total' => $soldThisMonth->sum(fn (Vehicle $vehicle) => $this->salesTotal($vehicle)),
             'year_count' => $soldThisYear->count(),
             'year_total' => $soldThisYear->sum(fn (Vehicle $vehicle) => $this->salesTotal($vehicle)),
-            'stock_count' => Vehicle::query()->whereNull('sale_date')->count(),
+            'stock_count' => Vehicle::query()->inStock()->count(),
             'clients_count' => Client::query()->count(),
         ];
 

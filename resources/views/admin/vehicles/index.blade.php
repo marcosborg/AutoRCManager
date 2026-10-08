@@ -4,6 +4,9 @@
     @if($dashboardFilter)
         <div class="alert alert-info clearfix">
             <strong>Filtro do dashboard:</strong> {{ $dashboardFilter }}
+            @if(request('dashboard_filter') === 'stock')
+                <p class="help-block">Viaturas não eliminadas, sem data de venda e sem estado de vendida. Inclui os restantes estados, como oficina, aluguer e adjudicação.</p>
+            @endif
             <a class="btn btn-default btn-xs pull-right" href="{{ route('admin.vehicles.index') }}">Mostrar todas</a>
         </div>
     @endif
