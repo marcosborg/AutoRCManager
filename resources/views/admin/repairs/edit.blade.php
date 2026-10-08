@@ -1641,6 +1641,7 @@
                                             <div class="panel-body">
                                                 <p class="text-muted">Lançamento manual do material usado na reparação. Não está ligado às encomendas de peças.</p>
                                                 <div class="table-responsive">
+                                                    <input type="hidden" name="repair_parts_revision" value="{{ session()->hasOldInput('repair_parts') ? old('repair_parts_revision', '') : $repairPartsRevision }}">
                                                     <table class="table table-bordered" id="repair-parts-table">
                                                         <thead>
                                                             <tr>
@@ -1656,6 +1657,7 @@
                                                             @forelse(($repairParts ?? []) as $index => $part)
                                                                 <tr>
                                                                     <td>
+                                                                        <input type="hidden" name="repair_parts[{{ $index }}][id]" value="{{ $part['id'] ?? '' }}">
                                                                         <input class="form-control" type="text" name="repair_parts[{{ $index }}][supplier]" value="{{ $part['supplier'] ?? '' }}">
                                                                     </td>
                                                                     <td>
@@ -1700,6 +1702,8 @@
                                                     </table>
                                                 </div>
                                                 <button type="button" class="btn btn-xs btn-primary" id="add-repair-part-row">Adicionar peça</button>
+                                                <p class="help-block">Pode corrigir as linhas existentes. Ao gravar, fica registado quem alterou e quais eram os dados anteriores.</p>
+                                                @include('admin.repairs.partials.partHistory')
                                                 @if($errors->has('repair_parts'))
                                                     <span class="help-block" role="alert">{{ $errors->first('repair_parts') }}</span>
                                                 @endif

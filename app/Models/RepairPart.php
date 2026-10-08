@@ -14,6 +14,11 @@ class RepairPart extends Model
 
     public $table = 'repair_parts';
 
+    protected $casts = [
+        'part_date' => 'date',
+        'amount' => 'decimal:2',
+    ];
+
     protected $dates = [
         'part_date',
         'created_at',
@@ -40,4 +45,3 @@ class RepairPart extends Model
         return $this->belongsTo(Repair::class, 'repair_id');
     }
 }
-
