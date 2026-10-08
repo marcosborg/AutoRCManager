@@ -19,6 +19,8 @@ use App\Models\RepairWorkLog;
 use App\Models\Vehicle;
 use App\Models\WorkshopState;
 use App\Services\RepairWorkLogService;
+use App\Services\RepairPartService;
+use App\Models\AuditLog;
 use App\Support\LicensePlate;
 use App\Support\RolePreview;
 use Carbon\Carbon;
@@ -559,6 +561,8 @@ class RepairController extends Controller
 
         $currentIsOpen = RepairStatus::isOpen($repair->repair_state_id, $repair->getRawOriginal('repair_finished_at'));
         $canCreateNewIntervention = ! RepairRules::hasOpenRepairs($repair->vehicle_id) || ! $currentIsOpen;
+        $repairPartsRevision = app(RepairPartService::class)->revision($repair);
+        $repairPartsHistory = AuditLog::where('description', 'repair_part:changed')->where('properties->repair_id', $repair->id)->orderByDesc('id')->limit(50)->get();
         $repairParts = old('repair_parts', $repair->parts
             ->sortBy('part_date')
             ->values()
@@ -649,6 +653,8 @@ class RepairController extends Controller
             'vehicleRepairs',
             'canCreateNewIntervention',
             'repairParts',
+            'repairPartsRevision',
+            'repairPartsHistory',
             'workLogs',
             'currentUserOpenWork',
             'mechanicTotals',
@@ -660,8 +666,12 @@ class RepairController extends Controller
 
     public function update(UpdateRepairRequest $request, Repair $repair)
     {
-        $repair->update($request->all());
-        $this->syncRepairParts($repair, $request->input('repair_parts', []));
+        DB::transaction(function () use ($request, $repair) {
+            if ($request->has('repair_parts') || $request->has('repair_parts_revision')) {
+                app(RepairPartService::class)->sync($repair, $request->input('repair_parts') ?? [], $request->input('repair_parts_revision'));
+            }
+            $repair->update($request->all());
+        });
 
         if (count($repair->checkin) > 0) {
             foreach ($repair->checkin as $media) {
@@ -858,51 +868,4 @@ class RepairController extends Controller
         return response()->json(['id' => $media->id, 'url' => $media->getUrl()], Response::HTTP_CREATED);
     }
 
-    private function syncRepairParts(Repair $repair, array $rows): void
-    {
-        $normalizedRows = collect($rows)
-            ->map(function ($row) {
-                $supplier = trim((string) ($row['supplier'] ?? ''));
-                $invoiceNumber = trim((string) ($row['invoice_number'] ?? ''));
-                $partName = trim((string) ($row['part_name'] ?? ''));
-                $amountRaw = $row['amount'] ?? null;
-
-                if ($amountRaw === '' || $amountRaw === null) {
-                    $amount = null;
-                } else {
-                    $amount = (float) str_replace(',', '.', (string) $amountRaw);
-                }
-
-                $partDate = null;
-                if (! empty($row['part_date'])) {
-                    try {
-                        $partDate = Carbon::parse($row['part_date'])->format('Y-m-d');
-                    } catch (\Throwable $e) {
-                        $partDate = null;
-                    }
-                }
-
-                return [
-                    'supplier' => $supplier !== '' ? $supplier : null,
-                    'invoice_number' => $invoiceNumber !== '' ? $invoiceNumber : null,
-                    'part_date' => $partDate,
-                    'part_name' => $partName !== '' ? $partName : null,
-                    'amount' => $amount,
-                ];
-            })
-            ->filter(function ($row) {
-                return $row['supplier'] !== null
-                    || $row['invoice_number'] !== null
-                    || $row['part_date'] !== null
-                    || $row['part_name'] !== null
-                    || $row['amount'] !== null;
-            })
-            ->values();
-
-        $repair->parts()->delete();
-
-        foreach ($normalizedRows as $row) {
-            $repair->parts()->create($row);
-        }
-    }
 }

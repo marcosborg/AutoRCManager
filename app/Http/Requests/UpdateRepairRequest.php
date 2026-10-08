@@ -233,6 +233,8 @@ class UpdateRepairRequest extends FormRequest
                 'array',
                 'nullable',
             ],
+            'repair_parts_revision' => ['nullable', 'string', 'size:64'],
+            'repair_parts.*.id' => ['nullable', 'integer', 'min:1', 'distinct'],
             'repair_parts.*.supplier' => [
                 'string',
                 'nullable',
