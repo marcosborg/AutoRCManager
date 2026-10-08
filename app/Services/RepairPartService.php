@@ -37,7 +37,18 @@ class RepairPartService
                 throw ValidationException::withMessages(['repair_parts' => 'Existe uma peça inválida ou repetida nesta reparação. Atualize a página.']);
             }
             $kept = [];
+            $cancellations = [];
             foreach ($rows as $row) {
+                if (! empty($row['cancel'])) {
+                    $reason = trim((string) ($row['cancellation_reason'] ?? ''));
+                    if (empty($row['id']) || mb_strlen($reason) < 3 || mb_strlen($reason) > 500) {
+                        throw ValidationException::withMessages(['repair_parts' => 'Para anular uma peça guardada, indique um motivo entre 3 e 500 caracteres.']);
+                    }
+                    $cancellations[(int) $row['id']] = $reason;
+                }
+            }
+            foreach ($rows as $row) {
+                if (! empty($row['cancel'])) continue;
                 $values = [];
                 foreach (array_keys(self::FIELDS) as $field) {
                     $value = trim((string) ($row[$field] ?? ''));
@@ -54,9 +65,12 @@ class RepairPartService
                 $kept[] = $part->id;
             }
             foreach ($parts->except($kept) as $part) {
+                if (! isset($cancellations[$part->id])) {
+                    throw ValidationException::withMessages(['repair_parts' => 'Uma peça guardada não pode desaparecer da lista. Use Anular e indique o motivo.']);
+                }
                 $before = $this->snapshot($part);
                 $part->delete();
-                $this->record($part, $before, null, 'Remoção');
+                $this->record($part, $before, null, 'Anulação', $cancellations[$part->id]);
             }
         });
     }
@@ -70,13 +84,13 @@ class RepairPartService
         ];
     }
 
-    private function record(RepairPart $part, ?array $before, ?array $after, string $operation): void
+    private function record(RepairPart $part, ?array $before, ?array $after, string $operation, ?string $reason = null): void
     {
         AuditLog::create([
             'description' => 'repair_part:changed', 'subject_id' => $part->id,
             'subject_type' => RepairPart::class.'#'.$part->id, 'user_id' => auth()->id(), 'host' => request()->ip(),
             'properties' => ['repair_id' => $part->repair_id, 'operation' => $operation,
-                'actor_name' => auth()->user()?->name, 'before' => $before, 'after' => $after],
+                'actor_name' => auth()->user()?->name, 'before' => $before, 'after' => $after, 'reason' => $reason],
         ]);
     }
 }

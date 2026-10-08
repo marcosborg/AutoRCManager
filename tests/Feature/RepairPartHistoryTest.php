@@ -75,12 +75,42 @@ class RepairPartHistoryTest extends TestCase
     {
         $repair = $this->repair();
         $part = $repair->parts()->create(['part_name' => 'Old', 'amount' => '40.00']);
-        $this->actingAs($this->user())->put(route('admin.repairs.update', $repair), $this->payload($repair, [['part_name' => 'New', 'amount' => '12.00']]))->assertSessionHasNoErrors();
+        $this->actingAs($this->user())->put(route('admin.repairs.update', $repair), $this->payload($repair, [$this->row($part, ['cancel' => 1, 'cancellation_reason' => 'Lançamento em duplicado']), ['part_name' => 'New', 'amount' => '12.00']]))->assertSessionHasNoErrors();
         $this->assertSoftDeleted('repair_parts', ['id' => $part->id]);
         $this->assertEquals(12, $repair->parts()->sum('amount'));
         $audit = AuditLog::where('description', 'repair_part:changed')->where('subject_id', $part->id)->firstOrFail();
-        $this->assertSame('Remoção', $audit->properties['operation']);
+        $this->assertSame('Anulação', $audit->properties['operation']);
+        $this->assertSame('Lançamento em duplicado', $audit->properties['reason']);
         $this->assertSame('40.00', $audit->properties['before']['amount']);
+    }
+
+    public function test_cancellation_requires_reason_and_omission_cannot_delete_saved_parts(): void
+    {
+        $repair = $this->repair();
+        $part = $repair->parts()->create(['part_name' => 'Keep', 'amount' => '40.00']);
+        $this->actingAs($this->user());
+        foreach (['', '  ', 'x'] as $reason) {
+            $this->put(route('admin.repairs.update', $repair), $this->payload($repair, [$this->row($part, ['cancel' => 1, 'cancellation_reason' => $reason])]))
+                ->assertSessionHasErrors('repair_parts');
+        }
+        $this->put(route('admin.repairs.update', $repair), $this->payload($repair, [['part_name' => 'Must roll back', 'amount' => '5.00']]))->assertSessionHasErrors('repair_parts');
+        $this->assertSame([$part->id], $repair->parts()->pluck('id')->all());
+        $this->assertEquals(40, $repair->parts()->sum('amount'));
+        $this->assertFalse($repair->parts()->where('part_name', 'Must roll back')->exists());
+    }
+
+    public function test_cancellation_cannot_be_replayed_and_is_visible_with_reason(): void
+    {
+        $repair = $this->repair();
+        $part = $repair->parts()->create(['part_name' => 'Cancel me', 'amount' => '10.00']);
+        $this->assertEquals(10, app(\App\Services\VehicleProfitabilityService::class)->build($repair->vehicle()->first())['workshop_parts']);
+        $payload = $this->payload($repair, [$this->row($part, ['cancel' => 1, 'cancellation_reason' => 'Peça não aplicada'])]);
+        $this->actingAs($this->user())->put(route('admin.repairs.update', $repair), $payload)->assertSessionHasNoErrors();
+        $this->get(route('admin.repairs.edit', $repair))->assertOk()->assertSee('Peça não aplicada')->assertSee('Anulação');
+        $this->put(route('admin.repairs.update', $repair), $payload)->assertSessionHasErrors('repair_parts');
+        $this->assertSame(1, AuditLog::where('description', 'repair_part:changed')->where('subject_id', $part->id)->count());
+        $this->assertEquals(0, $repair->parts()->sum('amount'));
+        $this->assertEquals(0, app(\App\Services\VehicleProfitabilityService::class)->build($repair->vehicle()->first())['workshop_parts']);
     }
 
     public function test_unauthorized_users_cannot_change_parts(): void
