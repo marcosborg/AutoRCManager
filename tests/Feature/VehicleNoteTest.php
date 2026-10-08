@@ -100,6 +100,70 @@ class VehicleNoteTest extends TestCase
         }
     }
 
+    public function test_correction_keeps_original_author_and_exposes_before_after_and_editor(): void
+    {
+        $vehicle = $this->vehicle(); $author = $this->user(['vehicle_edit']);
+        $this->actingAs($author)->post(route('admin.vehicles.notes.store', $vehicle), $this->payload('Confirmar uma chave.'));
+        $note = VehicleNote::where('vehicle_id', $vehicle->id)->sole();
+        $editor = $this->user(['vehicle_edit']);
+        $this->actingAs($editor)->patch(route('admin.vehicles.notes.update', [$vehicle, $note]), ['body' => 'Confirmar duas chaves.', 'revision' => $note->revisionToken()])->assertSessionHasNoErrors();
+        $this->assertSame('Confirmar duas chaves.', $note->fresh()->body);
+        $this->assertEquals($author->id, $note->fresh()->author_id);
+        $this->assertSame($author->name, $note->fresh()->author_name);
+        $entry = $note->revisions()->sole();
+        $this->assertEquals($editor->id, $entry->user_id);
+        $this->assertSame('Confirmar uma chave.', $entry->properties['before']);
+        $this->assertSame('Confirmar duas chaves.', $entry->properties['after']);
+        $this->get(route('admin.vehicles.notes.history', [$vehicle, $note]))->assertOk()->assertSee($author->name)->assertSee($editor->name)->assertSee('Confirmar uma chave.')->assertSee('Confirmar duas chaves.');
+        $this->get(route('admin.vehicles.notes.index', $vehicle))->assertSee('Confirmar duas chaves.')->assertDontSee('Confirmar uma chave.');
+    }
+
+    public function test_stale_correction_is_rejected_even_after_reverting_to_original_text(): void
+    {
+        $vehicle = $this->vehicle(); $this->actingAs($this->user(['vehicle_edit']));
+        $this->post(route('admin.vehicles.notes.store', $vehicle), $this->payload('Original'));
+        $note = VehicleNote::where('vehicle_id', $vehicle->id)->sole(); $firstRevision = $note->revisionToken();
+        $url = route('admin.vehicles.notes.update', [$vehicle, $note]);
+        $this->patch($url, ['body' => 'Corrigida', 'revision' => $firstRevision])->assertSessionHasNoErrors();
+        $this->patch($url, ['body' => 'Perdida', 'revision' => $firstRevision])->assertSessionHasErrors('body');
+        $this->patch($url, ['body' => 'Original', 'revision' => $note->fresh()->revisionToken()])->assertSessionHasNoErrors();
+        $this->patch($url, ['body' => 'Perdida', 'revision' => $firstRevision])->assertSessionHasErrors('body');
+        $this->assertSame('Original', $note->fresh()->body);
+        $this->assertSame(2, $note->revisions()->count());
+        $this->patch($url, ['body' => 'Original', 'revision' => $note->fresh()->revisionToken()])->assertSessionHasNoErrors();
+        $this->assertSame(2, $note->revisions()->count());
+    }
+
+    public function test_history_and_correction_respect_vehicle_and_permission_boundaries(): void
+    {
+        $vehicle = $this->vehicle(); $other = $this->vehicle(); $this->actingAs($this->user(['vehicle_edit']));
+        $this->post(route('admin.vehicles.notes.store', $vehicle), $this->payload('Nota reservada à viatura'));
+        $note = VehicleNote::where('vehicle_id', $vehicle->id)->sole();
+        $data = ['body' => 'Não gravar', 'revision' => $note->revisionToken()];
+        $this->patch(route('admin.vehicles.notes.update', [$other, $note]), $data)->assertNotFound();
+        $this->get(route('admin.vehicles.notes.history', [$other, $note]))->assertNotFound();
+        $this->actingAs($this->user(['vehicle_show']))->get(route('admin.vehicles.notes.history', [$vehicle, $note]))->assertOk()->assertDontSee('Guardar correção');
+        $this->patch(route('admin.vehicles.notes.update', [$vehicle, $note]), $data)->assertForbidden();
+        $this->actingAs($this->user([]))->get(route('admin.vehicles.notes.history', [$vehicle, $note]))->assertForbidden();
+        $this->assertSame('Nota reservada à viatura', $note->fresh()->body);
+        $this->assertSame(0, $note->revisions()->count());
+    }
+
+    public function test_corrections_are_validated_and_history_escapes_html(): void
+    {
+        $vehicle = $this->vehicle(); $this->actingAs($this->user(['vehicle_edit']));
+        $original = '<script>alert("antiga")</script>';
+        $this->post(route('admin.vehicles.notes.store', $vehicle), $this->payload($original));
+        $note = VehicleNote::where('vehicle_id', $vehicle->id)->sole(); $url = route('admin.vehicles.notes.update', [$vehicle, $note]);
+        foreach ([' ', str_repeat('a', 5001)] as $body) {
+            $this->patch($url, ['body' => $body, 'revision' => $note->revisionToken()])->assertSessionHasErrors('body');
+        }
+        $this->patch($url, ['body' => 'Texto válido'])->assertSessionHasErrors('revision');
+        $changed = '<img src=x onerror=alert(1)>';
+        $this->patch($url, ['body' => $changed, 'revision' => $note->revisionToken()])->assertSessionHasNoErrors();
+        $this->get(route('admin.vehicles.notes.history', [$vehicle, $note]))->assertSee($original)->assertDontSee($original, false)->assertSee($changed)->assertDontSee($changed, false);
+    }
+
     private function vehicle(): Vehicle
     {
         return Vehicle::create(['license' => uniqid('NOTE-')]);

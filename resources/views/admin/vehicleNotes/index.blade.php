@@ -26,6 +26,7 @@
         <article class="panel panel-default">
             <div class="panel-heading"><strong>{{ $note->author_name }}</strong> <span class="text-muted">· {{ $note->created_at->timezone('Europe/Lisbon')->format('d/m/Y H:i') }}</span></div>
             <div class="panel-body" style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ $note->body }}</div>
+            <div class="panel-footer"><a href="{{ route('admin.vehicles.notes.history', [$vehicle, $note]) }}">{{ Gate::allows('vehicle_edit') ? 'Ver histórico / corrigir nota' : 'Ver histórico' }}</a></div>
         </article>
     @empty
         <div class="alert alert-info">Ainda não existem notas internas para esta viatura.</div>
