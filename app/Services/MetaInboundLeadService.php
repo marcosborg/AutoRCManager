@@ -45,7 +45,7 @@ class MetaInboundLeadService
 
         if (! $lead->wasRecentlyCreated) {
             $this->fillMissingLeadData($lead, $normalized);
-            app(AiLeadAssistantService::class)->syncFromMetaLead($lead->fresh());
+            app(AiLeadAssistantService::class)->syncFromMetaLead($lead->fresh(), false);
 
             Log::channel('meta_leads')->info('Lead inbound duplicada ignorada.', [
                 'lead_id' => $lead->id,
