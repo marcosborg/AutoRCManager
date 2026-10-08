@@ -7,6 +7,7 @@ use App\Models\PaintingJob;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
@@ -126,8 +127,14 @@ class IntegrationApiTest extends TestCase
         $painter = $this->makeUser('painting_job_access');
         $painter->roles->first()->permissions()->attach(Permission::firstOrCreate(['title' => 'painting_job_show']));
         $otherPainter = $this->makeUser();
-        $assigned = PaintingJob::create(['painter_id' => $painter->id, 'status' => PaintingJob::STATUS_OPEN]);
-        $unassigned = PaintingJob::create(['painter_id' => $otherPainter->id, 'status' => PaintingJob::STATUS_OPEN]);
+        $existingJobs = PaintingJob::count();
+        $vehicleId = DB::getDriverName() === 'sqlite' ? null : Vehicle::create([
+            'license' => uniqid('PAINT-'),
+            'general_state_id' => GeneralState::firstOrCreate(['name' => 'API PAINTING TEST'])->id,
+        ])->id;
+        $jobData = ['vehicle_id' => $vehicleId, 'entry_date' => '2026-10-08', 'status' => PaintingJob::STATUS_OPEN];
+        $assigned = PaintingJob::create($jobData + ['painter_id' => $painter->id]);
+        $unassigned = PaintingJob::create($jobData + ['painter_id' => $otherPainter->id]);
         Sanctum::actingAs($painter);
 
         $this->getJson('/api/v1/integration/catalog/painting-jobs')
@@ -144,7 +151,7 @@ class IntegrationApiTest extends TestCase
         ]);
         Sanctum::actingAs($manager);
 
-        $this->getJson('/api/v1/integration/catalog/painting-jobs')->assertOk()->assertJsonPath('total', 2);
+        $this->getJson('/api/v1/integration/catalog/painting-jobs')->assertOk()->assertJsonPath('total', $existingJobs + 2);
         $this->getJson('/api/v1/integration/catalog/painting-jobs/'.$unassigned->id)->assertOk();
     }
 
