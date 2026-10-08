@@ -184,6 +184,21 @@ class Vehicle extends Model implements HasMedia
         $this->addMediaConversion('preview')->fit('crop', 120, 120);
     }
 
+    public function scopeInStock(Builder $query): Builder
+    {
+        return $query->whereNull('vehicles.sale_date')
+            ->whereDoesntHave('general_state', function (Builder $state) {
+                // Keep historical state labels effective even if the state is archived.
+                $state->withTrashed()->where(function (Builder $sold) {
+                    $sold->whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(TRIM(name))'), ['vendido', 'vendida', 'vendidos', 'vendidas'])
+                        ->orWhereRaw('LOWER(TRIM(name)) LIKE ?', ['vendido %'])
+                        ->orWhereRaw('LOWER(TRIM(name)) LIKE ?', ['vendida %'])
+                        ->orWhereRaw('LOWER(TRIM(name)) LIKE ?', ['vendidos %'])
+                        ->orWhereRaw('LOWER(TRIM(name)) LIKE ?', ['vendidas %']);
+                });
+            });
+    }
+
     public function general_state()
     {
         return $this->belongsTo(GeneralState::class, 'general_state_id');

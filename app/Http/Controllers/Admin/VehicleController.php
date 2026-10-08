@@ -1316,7 +1316,7 @@ class VehicleController extends Controller
                 now()->startOfYear()->toDateString(),
                 now()->endOfYear()->toDateString(),
             ]),
-            'stock' => $query->whereNull('sale_date'),
+            'stock' => $query->inStock(),
             default => null,
         };
     }
