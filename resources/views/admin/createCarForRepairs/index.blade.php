@@ -2,11 +2,47 @@
 @section('content')
 <div class="content">
 
+    <div class="panel panel-default">
+        <div class="panel-heading">Viatura já registada</div>
+        <div class="panel-body">
+            <p>Para reparar uma viatura de salvados, do stand ou da Freerent, procure a matrícula e inicie a reparação na ficha existente.</p>
+            <form method="GET" action="{{ route('admin.create-car-for-repairs.index') }}">
+                <div class="form-group">
+                    <label for="vehicle_search">Matrícula da viatura existente</label>
+                    <input class="form-control" id="vehicle_search" name="vehicle_search" maxlength="50" value="{{ $vehicleSearch }}" placeholder="Ex.: AA-00-BB">
+                </div>
+                <button class="btn btn-primary" type="submit">Procurar viatura</button>
+            </form>
+            @if($errors->has('vehicle_id'))
+                <p class="text-danger" role="alert">{{ $errors->first('vehicle_id') }}</p>
+            @endif
+            @if($vehicleSearch !== '')
+                <hr>
+                @forelse($existingVehicles as $existingVehicle)
+                    <div class="well well-sm">
+                        <p><strong>{{ $existingVehicle->license }}</strong> — {{ $existingVehicle->model }} · {{ $existingVehicle->general_state->name ?? 'Sem estado' }}</p>
+                        @can('repair_create')
+                            <form method="POST" action="{{ route('admin.vehicles.start-intervention', $existingVehicle) }}">
+                                @csrf
+                                <button class="btn btn-success" type="submit">Iniciar reparação nesta viatura</button>
+                            </form>
+                        @endcan
+                    </div>
+                @empty
+                    <p>Não foi encontrada uma viatura com esta matrícula. Confirme a matrícula ou registe uma viatura nova abaixo.</p>
+                @endforelse
+                @if($existingVehicles->count() === 50)
+                    <p>São apresentados até 50 resultados. Escreva a matrícula completa para encontrar a viatura.</p>
+                @endif
+            @endif
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-lg-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    {{ trans('global.create') }} {{ trans('cruds.vehicle.title_singular') }}
+                    Registar uma viatura nova para reparação
                 </div>
                 <div class="panel-body">
                     <form method="POST" action="{{ route("admin.create-car-for-repairs.store") }}" enctype="multipart/form-data">

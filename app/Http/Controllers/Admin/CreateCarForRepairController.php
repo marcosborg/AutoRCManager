@@ -14,13 +14,23 @@ use App\Models\Repair;
 use App\Models\Suplier;
 use App\Models\Vehicle;
 use Gate;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class CreateCarForRepairController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         abort_if(Gate::denies('create_car_for_repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $request->validate(['vehicle_search' => ['nullable', 'string', 'max:50']]);
+        $vehicleSearch = trim((string) $request->input('vehicle_search', ''));
+        $existingVehicles = $vehicleSearch === '' ? collect() : Vehicle::query()
+            ->searchByLicense($vehicleSearch)
+            ->with('general_state')
+            ->orderBy('license')
+            ->limit(50)
+            ->get();
 
         $general_states = GeneralState::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $brands = Brand::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
@@ -37,7 +47,9 @@ class CreateCarForRepairController extends Controller
             'clients',
             'payment_statuses',
             'pickup_states',
-            'supliers'
+            'supliers',
+            'vehicleSearch',
+            'existingVehicles'
         ));
     }
 
