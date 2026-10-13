@@ -6,7 +6,7 @@
         <div class="row">
             <div class="col-sm-4"><dl><dt>Estado geral</dt><dd>{{ $vehicleContext['general_state'] }}</dd></dl></div>
             <div class="col-sm-4"><dl><dt>Estado na oficina</dt><dd>{{ $vehicleContext['workshop_state'] }}</dd></dl></div>
-            <div class="col-sm-4"><dl><dt>Unidade atual registada</dt><dd>{{ $vehicleContext['location'] }}</dd></dl></div>
+            <div class="col-sm-4"><dl><dt>Localização registada da viatura</dt><dd>{{ $vehicleContext['location'] }}</dd><dd class="text-muted"><small>Local indicado no histórico de localizações, como stand ou oficina. “Por confirmar” significa que falta esse registo.</small></dd></dl></div>
         </div>
         @if($vehicleContext['storage_location'] !== '')
             <p><strong>Local de armazenamento indicado:</strong> {{ $vehicleContext['storage_location'] }}</p>

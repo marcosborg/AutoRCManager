@@ -320,6 +320,49 @@ class WorkshopStateTest extends TestCase
         $this->assertSame(1, $vehicle->repairs()->count());
     }
 
+    public function test_existing_stock_vehicles_can_be_found_and_repaired_without_creating_duplicates(): void
+    {
+        $user = $this->userWithPermissions(['create_car_for_repair_access', 'repair_create', 'repair_edit']);
+        $this->generalState('OFICINA');
+        $this->defaultWorkshopState();
+
+        foreach (['SALVADOS', 'STAND', 'FREERENT'] as $index => $state) {
+            $vehicle = $this->vehicleInState($state, 'DX-0'.$index.'-ZZ');
+            $vehicle->update(['destination_company' => 'freerent', 'model' => 'Dina regression '.$index]);
+            $supplierId = $vehicle->suplier_id;
+            $vehicleCount = Vehicle::query()->count();
+
+            $this->actingAs($user)
+                ->get(route('admin.create-car-for-repairs.index', ['vehicle_search' => 'DX0'.$index.'ZZ']))
+                ->assertOk()
+                ->assertSee($vehicle->license)
+                ->assertSee(route('admin.vehicles.start-intervention', $vehicle), false);
+
+            $response = $this->post(route('admin.vehicles.start-intervention', $vehicle));
+            $repair = $vehicle->repairs()->sole();
+            $response->assertRedirect(route('admin.repairs.edit', $repair));
+            $this->assertSame($vehicleCount, Vehicle::query()->count());
+            $vehicle->refresh();
+            $this->assertSame('freerent', $vehicle->destination_company);
+            $this->assertSame($supplierId, $vehicle->suplier_id);
+            $this->assertSame(0, strcasecmp('OFICINA', $vehicle->general_state->name));
+        }
+    }
+
+    public function test_finding_an_existing_vehicle_does_not_grant_permission_to_start_repairs(): void
+    {
+        $user = $this->userWithPermissions(['create_car_for_repair_access']);
+        $vehicle = $this->vehicleInState('SALVADOS', 'DX-99-ZZ');
+
+        $this->actingAs($user)
+            ->get(route('admin.create-car-for-repairs.index', ['vehicle_search' => 'DX99ZZ']))
+            ->assertOk()
+            ->assertSee('DX-99-ZZ')
+            ->assertDontSee('Iniciar reparação nesta viatura');
+        $this->post(route('admin.vehicles.start-intervention', $vehicle))->assertForbidden();
+        $this->assertSame(0, $vehicle->repairs()->count());
+    }
+
     public function test_default_state_cannot_be_deactivated_and_used_state_is_deactivated_instead_of_deleted(): void
     {
         $user = $this->userWithPermissions(['workshop_state_edit', 'workshop_state_delete']);

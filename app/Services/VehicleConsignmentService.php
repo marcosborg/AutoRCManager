@@ -90,7 +90,7 @@ class VehicleConsignmentService
     {
         return DB::transaction(function () use ($consignment, $data) {
             $wasClosed = $consignment->status === ConsignmentStatus::CLOSED || $consignment->ends_at;
-            $willBeClosed = ($data['status'] ?? null) === ConsignmentStatus::CLOSED;
+            $willBeClosed = ($data['status'] ?? null) === ConsignmentStatus::CLOSED || ! empty($data['ends_at']);
 
             if ($wasClosed && ! $willBeClosed) {
                 throw ValidationException::withMessages([
