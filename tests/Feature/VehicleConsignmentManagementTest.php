@@ -84,6 +84,10 @@ class VehicleConsignmentManagementTest extends TestCase
         $this->assertSame($otherVehicle->id, $consignment->vehicle_id);
         $this->assertSame($otherTo->id, $consignment->to_unit_id);
         $this->assertSame(ConsignmentStatus::CLOSED, $consignment->status);
+        $this->get(route('admin.vehicle-consignments.edit', $consignment))
+            ->assertOk()
+            ->assertSee('value="2026-07-02 11:00:00"', false)
+            ->assertSee('value="2026-07-03 12:00:00"', false);
         $this->assertDatabaseMissing('vehicle_locations', [
             'vehicle_id' => $vehicle->id,
             'operational_unit_id' => $to->id,
