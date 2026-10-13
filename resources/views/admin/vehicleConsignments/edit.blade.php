@@ -66,7 +66,7 @@
                         <div class="form-group {{ $errors->has('ends_at') ? 'has-error' : '' }}">
                             <label for="ends_at">{{ trans('cruds.vehicleConsignment.fields.ends_at') }}</label>
                             <input class="form-control datetime" type="text" name="ends_at" id="ends_at" value="{{ old('ends_at', optional($vehicleConsignment->ends_at)->format(config('panel.date_format').' '.config('panel.time_format'))) }}">
-                            <span class="help-block">Obrigatória ao encerrar. Uma consignação encerrada não pode voltar a ativa.</span>
+                            <span class="help-block">Ao preencher a data de fim e gravar, a consignação fica encerrada. Uma consignação encerrada não pode voltar a ativa.</span>
                             @if($errors->has('ends_at'))<span class="help-block">{{ $errors->first('ends_at') }}</span>@endif
                         </div>
 

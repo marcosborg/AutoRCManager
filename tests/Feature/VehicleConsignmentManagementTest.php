@@ -76,7 +76,7 @@ class VehicleConsignmentManagementTest extends TestCase
                 'to_unit_name' => null,
                 'starts_at' => '2026-07-02 11:00:00',
                 'ends_at' => '2026-07-03 12:00:00',
-                'status' => ConsignmentStatus::CLOSED,
+                'status' => ConsignmentStatus::ACTIVE, // Entering the end date must close it even if the select was left active.
             ])
             ->assertSessionHasNoErrors();
 
