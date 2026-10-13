@@ -1,4 +1,16 @@
 ﻿@extends('layouts.admin')
+@section('styles')
+@parent
+<style>
+    #repair-parts-table { min-width: 1100px; }
+    #repair-parts-table td:nth-child(1) { min-width: 180px; }
+    #repair-parts-table td:nth-child(2) { min-width: 145px; }
+    #repair-parts-table td:nth-child(3) { min-width: 165px; }
+    #repair-parts-table td:nth-child(4) { min-width: 250px; }
+    #repair-parts-table td:nth-child(5) { min-width: 140px; }
+    #repair-parts-table td:nth-child(6) { min-width: 180px; }
+</style>
+@endsection
 @section('content')
 @php($vehicle = $repair->vehicle)
 <div class="content">
