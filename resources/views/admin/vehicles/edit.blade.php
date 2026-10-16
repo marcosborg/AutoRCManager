@@ -2798,15 +2798,22 @@
             }, 3500);
         }
 
-        $(document).on('click', '.js-save-document-type', function () {
-            const button = this;
-            const row = button.closest('[data-document-file]');
+        const documentSaves = new Map();
+        function documentRows() {
+            return Array.from(form.querySelectorAll('[data-document-file]'));
+        }
+        function documentTypeDirty(row) {
+            return row.querySelector('.js-document-type').value !== row.dataset.savedType;
+        }
+        function saveDocumentType(row) {
+            if (documentSaves.has(row)) return documentSaves.get(row);
+            const button = row.querySelector('.js-save-document-type');
             const select = row.querySelector('.js-document-type');
             const status = row.querySelector('.js-document-type-status');
             button.disabled = true;
             select.disabled = true;
             status.textContent = 'A guardar…';
-            $.ajax({
+            const request = $.ajax({
                 url: button.dataset.url,
                 method: 'PATCH',
                 data: {
@@ -2816,6 +2823,7 @@
                 }
             }).done(function (response) {
                 row.dataset.revision = response.revision;
+                row.dataset.savedType = response.type;
                 select.value = response.type;
                 status.textContent = response.message;
                 $('#document-summary').replaceWith(response.summary_html);
@@ -2823,9 +2831,20 @@
                 status.textContent = xhr.responseJSON && xhr.responseJSON.message
                     ? xhr.responseJSON.message : 'Não foi possível guardar o tipo. Tente novamente.';
             }).always(function () {
-                button.disabled = false;
-                select.disabled = false;
+                documentSaves.delete(row);
+                button.disabled = isSubmitting;
+                select.disabled = isSubmitting;
             });
+            documentSaves.set(row, request);
+            return request;
+        }
+        $(document).on('click', '.js-save-document-type', function () {
+            if (!isSubmitting) saveDocumentType(this.closest('[data-document-file]'));
+        });
+        $(document).on('change', '.js-document-type', function () {
+            const row = this.closest('[data-document-file]');
+            row.querySelector('.js-document-type-status').textContent = documentTypeDirty(row)
+                ? 'Por guardar — use Guardar tipo ou Gravar a ficha.' : '';
         });
 
         function refreshPaymentsPanels() {
@@ -2837,6 +2856,7 @@
                 panelIds.forEach(function (panelId) {
                     const currentPanel = document.getElementById(panelId);
                     const freshPanel = doc.getElementById(panelId);
+                    if (panelId === 'document-classification' && (documentSaves.size || documentRows().some(documentTypeDirty))) return;
                     if (currentPanel && freshPanel) {
                         currentPanel.innerHTML = freshPanel.innerHTML;
                     }
@@ -2895,7 +2915,7 @@
 
         refreshAcquisitionExpensesTotal();
 
-        form.addEventListener('submit', function (event) {
+        form.addEventListener('submit', async function (event) {
             event.preventDefault();
             if (isSubmitting) return;
             const photoProblem = VehiclePhotoUploads.blockReason();
@@ -2915,6 +2935,25 @@
                 });
             }
 
+            // Save pending document choices before the form refresh can replace them.
+            documentRows().forEach(function (row) {
+                row.querySelector('.js-document-type').disabled = true;
+                row.querySelector('.js-save-document-type').disabled = true;
+            });
+            try {
+                for (const row of documentRows()) {
+                    if (documentSaves.has(row) || documentTypeDirty(row)) await saveDocumentType(row);
+                }
+            } catch (error) {
+                isSubmitting = false;
+                setLoadingState(false);
+                documentRows().forEach(function (row) {
+                    row.querySelector('.js-document-type').disabled = false;
+                    row.querySelector('.js-save-document-type').disabled = false;
+                });
+                showAjaxAlert('danger', 'Não foi possível guardar todos os tipos. A ficha não foi gravada. Confira a mensagem junto ao anexo; as escolhas continuam no ecrã.');
+                return;
+            }
             const formData = new FormData(form);
 
             $.ajax({
@@ -2927,13 +2966,13 @@
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 }
-            }).done(function (response) {
+            }).then(function (response) {
                 showAjaxAlert('success', response.message || 'Atualizado com sucesso');
                 const companyLabels = @json(\App\Models\Vehicle::DESTINATION_COMPANIES);
                 $('#vehicle-summary-destination-company').text(companyLabels[formData.get('destination_company')] || 'Por confirmar');
-                refreshPaymentsPanels();
                 clearPaymentEntryFields();
                 refreshAcquisitionExpensesTotal();
+                return refreshPaymentsPanels();
             }).fail(function (xhr) {
                 let message = 'Ocorreu um erro ao gravar.';
 
@@ -2950,6 +2989,10 @@
             }).always(function () {
                 isSubmitting = false;
                 setLoadingState(false);
+                documentRows().forEach(function (row) {
+                    row.querySelector('.js-document-type').disabled = false;
+                    row.querySelector('.js-save-document-type').disabled = false;
+                });
             });
         });
 
