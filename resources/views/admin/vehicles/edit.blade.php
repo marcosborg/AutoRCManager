@@ -2699,6 +2699,10 @@
         const form = document.getElementById('vehicle-edit-form');
         if (!form) return;
 
+        if (window.location.hash === '#vehicle-documents') {
+            $('a[href="#vehicle-documents"][data-toggle="tab"]').tab('show');
+        }
+
         const submitButtons = Array.from(document.querySelectorAll('button[type="submit"][form="vehicle-edit-form"], #vehicle-edit-form button[type="submit"], #vehicle-floating-save-button'));
         let isSubmitting = false;
 

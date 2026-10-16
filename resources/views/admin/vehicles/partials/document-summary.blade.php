@@ -1,13 +1,5 @@
 @php
-    $documentChecks = [
-        'purchase_and_sale_agreement' => trans('cruds.vehicle.fields.purchase_and_sale_agreement'),
-        'copy_of_the_citizen_card' => trans('cruds.vehicle.fields.copy_of_the_citizen_card'),
-        'tax_identification_card' => trans('cruds.vehicle.fields.tax_identification_card'),
-        'copy_of_the_stamp_duty_receipt' => trans('cruds.vehicle.fields.copy_of_the_stamp_duty_receipt'),
-        'vehicle_ownership_title' => 'DUA',
-        'release_of_reservation_or_mortgage' => 'Extinção de reserva / hipoteca',
-        'leasing_agreement' => trans('cruds.vehicle.fields.leasing_agreement'),
-    ];
+    $documentChecks = \App\Support\VehicleDocuments::checks();
     $unidentifiedGroups = [
         'DAV' => $vehicle->getMedia('dav')->filter(fn ($file) => \App\Support\VehicleDocuments::type($file) === 'unknown')->count(),
         'DUA / Inspeção' => $vehicle->getMedia('documents')->filter(fn ($file) => \App\Support\VehicleDocuments::type($file) === 'unknown')->count(),
