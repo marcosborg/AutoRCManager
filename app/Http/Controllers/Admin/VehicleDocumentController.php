@@ -22,7 +22,7 @@ class VehicleDocumentController extends Controller
             'scope' => ['nullable', Rule::in(['stock', 'all'])],
             'reason' => ['nullable', Rule::in(['any', 'checks', 'unidentified'])],
         ]);
-        $scope = $filters['scope'] ?? null;
+        $scope = $filters['scope'] ?? 'stock';
         $reason = $filters['reason'] ?? 'any';
         $vehicles = null;
         if ($scope) {

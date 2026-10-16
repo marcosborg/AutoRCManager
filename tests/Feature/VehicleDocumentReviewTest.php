@@ -147,7 +147,7 @@ class VehicleDocumentReviewTest extends TestCase
         foreach (['scope'=>'invalid', 'reason'=>'invalid', 'destination_company'=>'invalid'] as $key=>$value) {
             $this->getJson(route('admin.vehicles.documents.review', [$key=>$value]))->assertUnprocessable();
         }
-        $this->get(route('admin.vehicles.documents.review'))->assertOk()->assertSee('Escolha as viaturas');
+        $this->get(route('admin.vehicles.documents.review'))->assertOk()->assertViewHas('scope', 'stock')->assertSee('Stock segue o critério atual');
         $this->actingAs($this->user())->review(['license'=>$v->license])->assertSee('#vehicle-documents', false);
     }
 }
