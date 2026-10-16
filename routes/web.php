@@ -97,6 +97,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('brands', 'BrandController');
 
     // Vehicle
+    Route::patch('vehicles/{vehicle}/documents/{media}/type', 'VehicleDocumentController@update')->name('vehicles.documents.type');
     Route::delete('vehicles/destroy', 'VehicleController@massDestroy')->name('vehicles.massDestroy');
     Route::post('vehicles/media', 'VehicleController@storeMedia')->name('vehicles.storeMedia');
     Route::post('vehicles/ckmedia', 'VehicleController@storeCKEditorImages')->name('vehicles.storeCKEditorImages');

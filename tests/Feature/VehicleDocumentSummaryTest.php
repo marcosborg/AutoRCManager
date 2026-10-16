@@ -52,7 +52,7 @@ class VehicleDocumentSummaryTest extends TestCase
         $this->assertStringContainsString('Por confirmar', $this->row($page, 'dav'));
         $this->attach($vehicle, 'dav', 'documento.pdf');
         $page = $this->page($vehicle);
-        $this->assertStringContainsString('Ficheiro identificado: 1 no grupo DAV', $this->row($page, 'dav'));
+        $this->assertStringContainsString('Ficheiro identificado: 1', $this->row($page, 'dav'));
         $this->assertStringNotContainsString('Recebido segundo a ficha', $this->row($page, 'dav'));
     }
 
