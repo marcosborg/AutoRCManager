@@ -9,10 +9,11 @@
         'leasing_agreement' => trans('cruds.vehicle.fields.leasing_agreement'),
     ];
     $unidentifiedGroups = [
-        'DUA / Inspeção' => $vehicle->getMedia('documents')->count(),
-        'Outros documentos' => $vehicle->getMedia('additional_documents')->count(),
+        'DAV' => $vehicle->getMedia('dav')->filter(fn ($file) => \App\Support\VehicleDocuments::type($file) === 'unknown')->count(),
+        'DUA / Inspeção' => $vehicle->getMedia('documents')->filter(fn ($file) => \App\Support\VehicleDocuments::type($file) === 'unknown')->count(),
+        'Outros documentos' => $vehicle->getMedia('additional_documents')->filter(fn ($file) => \App\Support\VehicleDocuments::type($file) === 'unknown')->count(),
     ];
-    $davCount = $vehicle->getMedia('dav')->count();
+    $davCount = \App\Support\VehicleDocuments::count($vehicle, 'dav');
 @endphp
 <section class="panel panel-default" aria-labelledby="document-summary-title" id="document-summary">
     <div class="panel-heading"><h5 id="document-summary-title" style="margin: 0;">Resumo da documentação guardada</h5></div>
@@ -26,19 +27,24 @@
                         <tr data-document="{{ $field }}">
                             <th scope="row">{{ $label }}</th>
                             <td>{{ (int) $vehicle->{$field} === 1 ? 'Recebido segundo a ficha' : 'Por confirmar' }}</td>
-                            <td>Sem ficheiro identificado</td>
+                            <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, $field === 'vehicle_ownership_title' ? 'dua' : $field)) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
                         </tr>
                     @endforeach
-                    <tr data-document="inspection"><th scope="row">Inspeção</th><td>Por confirmar — sem confirmação própria na ficha</td><td>Sem ficheiro identificado</td></tr>
+                    <tr data-document="inspection"><th scope="row">Inspeção</th><td>Por confirmar — sem confirmação própria na ficha</td><td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'inspection')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td></tr>
                     <tr data-document="dav">
                         <th scope="row">DAV</th>
                         <td>Sem confirmação própria na ficha</td>
-                        <td>{{ $davCount ? 'Ficheiro identificado: '.$davCount.' no grupo DAV' : 'Por confirmar — sem ficheiro identificado' }}</td>
+                        <td>{{ $davCount ? 'Ficheiro identificado: '.$davCount : 'Por confirmar — sem ficheiro identificado' }}</td>
                     </tr>
+                    @foreach(['purchase_invoice' => 'Fatura de compra', 'other' => 'Outro documento'] as $type => $label)
+                        @if($count = \App\Support\VehicleDocuments::count($vehicle, $type))
+                            <tr data-document="{{ $type }}"><th scope="row">{{ $label }}</th><td>Sem confirmação própria na ficha</td><td>Ficheiro identificado: {{ $count }}</td></tr>
+                        @endif
+                    @endforeach
                 </tbody>
             </table>
         </div>
-        <p class="help-block">“Ficheiro identificado” indica o grupo onde foi guardado; o conteúdo e a validade devem ser conferidos ao abrir o ficheiro.</p>
+        <p class="help-block">“Ficheiro identificado” indica o tipo escolhido ou o grupo DAV, quando ainda não foi classificado; o conteúdo e a validade devem ser conferidos ao abrir o ficheiro.</p>
         @if(array_sum($unidentifiedGroups) > 0)
             <div class="alert alert-info" style="margin-bottom: 0;">
                 <strong>Ficheiros disponíveis por identificar</strong>
@@ -47,7 +53,7 @@
                         @if($count > 0)<li>{{ $group }}: {{ $count }}</li>@endif
                     @endforeach
                 </ul>
-                Por confirmar: estes anexos estão disponíveis nos grupos abaixo. Um ficheiro em “DUA / Inspeção” não confirma que existam os dois documentos. Os nomes dos ficheiros não foram usados para identificar o tipo.
+                Por confirmar: estes anexos estão disponíveis nos grupos abaixo. Um ficheiro em “DUA / Inspeção” não confirma que existam os dois documentos. Pode indicar o tipo em “Identificar os ficheiros guardados”, abaixo. O nome do ficheiro não determina o tipo.
             </div>
         @endif
     </div>

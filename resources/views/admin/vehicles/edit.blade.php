@@ -907,6 +907,7 @@
                             <h4>Documentos da viatura</h4>
                             <hr>
                             @include('admin.vehicles.partials.document-summary')
+                            @include('admin.vehicles.partials.document-classification')
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="checkbox" style="margin-top: 0;">
@@ -2797,11 +2798,41 @@
             }, 3500);
         }
 
+        $(document).on('click', '.js-save-document-type', function () {
+            const button = this;
+            const row = button.closest('[data-document-file]');
+            const select = row.querySelector('.js-document-type');
+            const status = row.querySelector('.js-document-type-status');
+            button.disabled = true;
+            select.disabled = true;
+            status.textContent = 'A guardar…';
+            $.ajax({
+                url: button.dataset.url,
+                method: 'PATCH',
+                data: {
+                    _token: form.querySelector('input[name="_token"]').value,
+                    type: select.value,
+                    revision: row.dataset.revision
+                }
+            }).done(function (response) {
+                row.dataset.revision = response.revision;
+                select.value = response.type;
+                status.textContent = response.message;
+                $('#document-summary').replaceWith(response.summary_html);
+            }).fail(function (xhr) {
+                status.textContent = xhr.responseJSON && xhr.responseJSON.message
+                    ? xhr.responseJSON.message : 'Não foi possível guardar o tipo. Tente novamente.';
+            }).always(function () {
+                button.disabled = false;
+                select.disabled = false;
+            });
+        });
+
         function refreshPaymentsPanels() {
             return $.get(window.location.href).done(function (html) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
-                const panelIds = ['acquisition-expenses-panel', 'supplier-payments-panel', 'generic-payments-panel', 'client-payments-panel', 'document-summary'];
+                const panelIds = ['acquisition-expenses-panel', 'supplier-payments-panel', 'generic-payments-panel', 'client-payments-panel', 'document-summary', 'document-classification'];
 
                 panelIds.forEach(function (panelId) {
                     const currentPanel = document.getElementById(panelId);
