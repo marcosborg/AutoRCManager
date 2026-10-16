@@ -1,6 +1,9 @@
 @extends('layouts.admin')
 @section('content')
 <div class="content">
+    @can('vehicle_documents_area_access')
+        <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.review', request()->only('destination_company')) }}">Conferir documentação</a></p>
+    @endcan
     <form method="GET" action="{{ route('admin.vehicles.index') }}" class="form-inline" style="margin-bottom:15px">
         @if(request('dashboard_filter'))
             <input type="hidden" name="dashboard_filter" value="{{ request('dashboard_filter') }}">

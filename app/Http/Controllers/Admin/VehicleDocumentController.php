@@ -13,6 +13,52 @@ use Illuminate\Validation\Rule;
 
 class VehicleDocumentController extends Controller
 {
+    public function index(Request $request)
+    {
+        abort_unless(Gate::allows('vehicle_access') && Gate::allows('vehicle_documents_area_access'), 403);
+        $filters = $request->validate([
+            'license' => ['nullable', 'string', 'max:100'],
+            'destination_company' => ['nullable', 'string', Rule::in(array_merge(array_keys(Vehicle::DESTINATION_COMPANIES), ['unassigned']))],
+            'scope' => ['nullable', Rule::in(['stock', 'all'])],
+            'reason' => ['nullable', Rule::in(['any', 'checks', 'unidentified'])],
+        ]);
+        $scope = $filters['scope'] ?? null;
+        $reason = $filters['reason'] ?? 'any';
+        $vehicles = null;
+        if ($scope) {
+            $query = Vehicle::query()->with(['brand', 'general_state'])
+                ->withCount(['media as unidentified_count' => fn ($media) => VehicleDocuments::unidentifiedQuery($media)]);
+            if ($scope === 'stock') $query->inStock();
+            if (!empty($filters['destination_company'])) $query->forDestinationCompany($filters['destination_company']);
+            if (trim($filters['license'] ?? '') !== '') $query->searchByLicense(trim($filters['license']));
+            $query->where(function ($pending) use ($reason) {
+                if ($reason !== 'unidentified') {
+                    $pending->where(function ($checks) {
+                        foreach (array_keys(VehicleDocuments::checks()) as $field) {
+                            $checks->orWhereNull($field)->orWhere($field, '!=', 1);
+                        }
+                    });
+                }
+                if ($reason !== 'checks') {
+                    $pending->orWhereHas('media', fn ($media) => VehicleDocuments::unidentifiedQuery($media));
+                }
+            });
+            $vehicles = $query->orderBy('license')->orderBy('id')->paginate(25)->withQueryString();
+        }
+        if ($request->is('api/v1/backoffice/*')) {
+            $vehicles?->through(fn (Vehicle $vehicle) => [
+                'id' => $vehicle->id,
+                'license' => $vehicle->license,
+                'foreign_license' => $vehicle->foreign_license,
+                'destination_company' => $vehicle->destination_company,
+                'pending_checks' => VehicleDocuments::pendingChecks($vehicle),
+                'unidentified_count' => $vehicle->unidentified_count,
+            ]);
+            return response()->json(compact('vehicles', 'scope', 'reason', 'filters'));
+        }
+        return view('admin.vehicles.document-review', compact('vehicles', 'scope', 'reason', 'filters'));
+    }
+
     public function update(Request $request, Vehicle $vehicle, string $media)
     {
         abort_unless(Gate::allows('vehicle_edit') && Gate::allows('vehicle_documents_area_access'), 403);
