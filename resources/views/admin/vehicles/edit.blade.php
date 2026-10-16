@@ -906,6 +906,7 @@
                         @can('vehicle_documents_area_access')
                             <h4>Documentos da viatura</h4>
                             <hr>
+                            @include('admin.vehicles.partials.document-summary')
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="checkbox" style="margin-top: 0;">
@@ -2800,7 +2801,7 @@
             return $.get(window.location.href).done(function (html) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
-                const panelIds = ['acquisition-expenses-panel', 'supplier-payments-panel', 'generic-payments-panel', 'client-payments-panel'];
+                const panelIds = ['acquisition-expenses-panel', 'supplier-payments-panel', 'generic-payments-panel', 'client-payments-panel', 'document-summary'];
 
                 panelIds.forEach(function (panelId) {
                     const currentPanel = document.getElementById(panelId);
