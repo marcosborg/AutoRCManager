@@ -15,7 +15,6 @@
                     <div class="form-group col-md-3">
                         <label for="review-scope">Viaturas</label>
                         <select id="review-scope" name="scope" class="form-control" required>
-                            <option value="">Escolha as viaturas a consultar</option>
                             <option value="stock" {{ $scope === 'stock' ? 'selected' : '' }}>Em stock</option>
                             <option value="all" {{ $scope === 'all' ? 'selected' : '' }}>Todas, incluindo vendidas</option>
                         </select>
