@@ -273,4 +273,35 @@ class VehicleDocumentFollowupTest extends TestCase
         $this->get($url)->assertOk()->assertDontSee('Abrir anexo: '.$file->file_name)->assertSee('Anexo indisponível neste histórico.');
     }
 
+    public function test_attachment_can_be_corrected_and_annulled_from_followup_with_safe_return(): void
+    {
+        $u = $this->user(); $v = $this->vehicle(); $file = $this->file($v);
+        $this->actingAs($u)->post($this->url($v), $this->data($u, ['action' => 'complete', 'media_id' => $file->id, 'confirmed' => 1]))->assertRedirect();
+        $url = route('admin.vehicles.documents.followup', [$v, 'vehicle_ownership_title']);
+        $typeUrl = route('admin.vehicles.documents.type', [$v, $file->id]);
+        $annulUrl = route('admin.vehicles.documents.annul', [$v, $file->id]);
+        $this->get($url)->assertOk()->assertSee('Corrigir tipo do anexo')->assertSee('Anular anexo e guardar motivo');
+        $data = ['type' => 'dua_inspection', 'reason' => 'Contém ambos os documentos', 'revision' => VehicleDocuments::revision($file), 'return_document' => 'vehicle_ownership_title'];
+        $this->from($url)->patch($typeUrl, array_merge($data, ['reason' => '']))->assertSessionHasErrors('reason');
+        $this->patch($typeUrl, array_merge($data, ['return_document' => 'https://example.com']))->assertSessionHasErrors('return_document');
+        $this->patch($typeUrl, $data)->assertRedirect($url.'#followup-history');
+        $this->assertSame('dua_inspection', VehicleDocuments::type($file->fresh()));
+        $this->get($url)->assertOk()->assertSee('DUA e inspeção no mesmo ficheiro');
+        $payload = ['reason' => 'Duplicado', 'revision' => VehicleDocuments::revision($file->fresh()), 'return_document' => 'vehicle_ownership_title'];
+        $this->post($annulUrl, $payload)->assertRedirect($url.'#followup-history');
+        $this->assertSame('review', $v->documentFollowups()->first()->status);
+        $this->get($url)->assertOk()->assertSee('Anulado: Duplicado')->assertSee($file->getUrl(), false)->assertDontSee('Guardar correção')->assertDontSee('Anular anexo e guardar motivo');
+        $this->post($annulUrl, $payload)->assertRedirect($url.'#followup-history');
+        $this->assertSame(1, \App\Models\AuditLog::where('description', 'vehicle_document:annulled')->where('subject_id', $file->id)->count());
+    }
+
+    public function test_followup_reader_cannot_correct_or_annul_an_attachment(): void
+    {
+        $u = $this->user(); $v = $this->vehicle(); $file = $this->file($v);
+        $this->actingAs($u)->post($this->url($v), $this->data($u, ['action' => 'complete', 'media_id' => $file->id, 'confirmed' => 1]))->assertRedirect();
+        $this->actingAs($this->user(['vehicle_access', 'vehicle_documents_area_access']));
+        $this->get(route('admin.vehicles.documents.followup', [$v, 'vehicle_ownership_title']))->assertOk()->assertSee('Abrir anexo')->assertDontSee('Guardar correção')->assertDontSee('Anular anexo e guardar motivo');
+        $this->post(route('admin.vehicles.documents.annul', [$v, $file->id]), ['reason' => 'Teste', 'revision' => VehicleDocuments::revision($file), 'return_document' => 'vehicle_ownership_title'])->assertForbidden();
+    }
+
 }
