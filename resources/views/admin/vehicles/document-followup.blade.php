@@ -33,20 +33,23 @@
                     <button name="action" value="contact" class="btn btn-primary">{{ !$followup ? 'Guardar acompanhamento' : ($followup->status === 'open' ? 'Registar contacto' : 'Reativar acompanhamento') }}</button>
                     @if($followup)<button name="action" value="reschedule" class="btn btn-default">Reagendar</button>@endif
                     <hr>
-                    <h4>Anexar cópia digital aqui</h4>
+                    <h4>Anexar e concluir</h4>
                     <p>Escolha o ficheiro de <strong>{{ \App\Support\VehicleDocuments::applicabilityDocuments()[$document] }}</strong>. Fica associado a esta viatura e identificado com este tipo, sem sair do acompanhamento.</p>
-                    <div class="form-group"><label for="document_file">Ficheiro a anexar</label><input id="document_file" type="file" name="document_file" accept=".pdf,.jpg,.jpeg,.png,.webp" class="form-control"><small>PDF, JPG, PNG ou WebP, até {{ number_format($uploadLimitKb / 1024, 1, ',', '.') }} MB. Anexar não conclui o acompanhamento.</small></div>
-                    <button name="action" value="upload" class="btn btn-primary">Anexar cópia digital</button>
-                    <hr>
-                    <h4>Concluir com cópia digital</h4>
+                    <div class="form-group"><label for="document_file">Ficheiro a anexar</label><input id="document_file" type="file" name="document_file" accept=".pdf,.jpg,.jpeg,.png,.webp" class="form-control"><small>PDF, JPG, PNG ou WebP, até {{ number_format($uploadLimitKb / 1024, 1, ',', '.') }} MB.</small></div>
+                    <p>Ao clicar em “Anexar e concluir”, confirma que conferiu o ficheiro e que corresponde a este documento e viatura. A cópia fica guardada e o acompanhamento fica concluído.</p>
+                    <button name="action" value="upload_complete" class="btn btn-success">Anexar e concluir</button>
+                    @if($files->isNotEmpty())
+                    <details style="margin-top:20px"><summary>Usar uma cópia já guardada</summary>
                     <p>Recebido em papel não basta. Escolha o ficheiro do tipo correto e confirme o conteúdo. As confirmações da ficha mantêm-se.</p>
                     <div class="form-group"><label for="media_id">Cópia digital identificada</label><select name="media_id" id="media_id" class="form-control">
-                        <option value="">{{ $files->isEmpty() ? 'Sem cópia identificada — use “Anexar cópia digital” acima' : 'Escolher ficheiro conferido' }}</option>
+                        <option value="">{{ $files->isEmpty() ? 'Sem cópia identificada' : 'Escolher ficheiro conferido' }}</option>
                         @foreach($files as $file)<option value="{{ $file->id }}" @selected((string)old('media_id',session('uploaded_media_id'))===(string)$file->id)>{{ $file->file_name }}</option>@endforeach
                     </select></div>
                     @foreach($files as $file)<p><a href="{{ $file->getUrl() }}" target="_blank" rel="noopener">Abrir {{ $file->file_name }}</a></p>@endforeach
                     <div class="checkbox"><label><input type="checkbox" name="confirmed" value="1"> Conferi o conteúdo da cópia digital e corresponde a este documento e viatura.</label></div>
                     <button name="action" value="complete" class="btn btn-success" @disabled($files->isEmpty())>Concluir acompanhamento</button>
+                    </details>
+                    @endif
                 </form>
                 @endcan
             @endif

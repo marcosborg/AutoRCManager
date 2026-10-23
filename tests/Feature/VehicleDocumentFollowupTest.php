@@ -219,4 +219,36 @@ class VehicleDocumentFollowupTest extends TestCase
         $this->assertSame(2,$v->media()->count());
         $this->assertCount(2,$f->history);
     }
+    public function test_attach_and_complete_saves_proof_closes_reminder_and_rejects_repetition(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $u = $this->user();
+        $v = $this->vehicle();
+        $this->actingAs($u);
+        $before = $v->fresh()->getAttributes();
+        $original = $this->file($v, 'unknown');
+        $this->post($this->url($v), $this->data($u))->assertRedirect();
+        $data = $this->data($u, ['version' => 1, 'action' => 'upload_complete', 'note' => null]);
+        $this->postJson($this->url($v), $data)->assertUnprocessable();
+        $this->postJson($this->url($v), $data + ['document_file' => \Illuminate\Http\UploadedFile::fake()->createWithContent('bad.php', '<?php echo 1;')])->assertUnprocessable();
+        $this->assertSame('open', $v->documentFollowups()->first()->status);
+        $this->post($this->url($v), $data + ['document_file' => $this->uploadPdf()])->assertRedirect();
+        $f = $v->documentFollowups()->first();
+        $file = $v->media()->findOrFail($f->media_id);
+        $this->assertSame('completed', $f->status);
+        $this->assertSame('dua', VehicleDocuments::type($file));
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($file->getPathRelativeToRoot());
+        $this->assertNotNull(CalendarTask::where('dedupe_key', 'document-followup:'.$f->id)->first()->completed_at);
+        $this->assertCount(2, $f->history);
+        $this->assertSame('complete', $f->history[1]['action']);
+        $this->assertSame($u->id, $f->history[1]['user_id']);
+        $this->assertEquals($before, $v->fresh()->getAttributes());
+        $this->assertNotNull($original->fresh());
+        $this->get(route('admin.vehicles.documents.followup', [$v, 'vehicle_ownership_title']))->assertOk()->assertSee('Concluído')->assertSee($file->file_name);
+        $this->postJson($this->url($v), $data + ['document_file' => $this->uploadPdf()])->assertStatus(409);
+        $this->assertSame(2, $v->media()->count());
+        $reader = $this->user(['vehicle_access', 'vehicle_documents_area_access']);
+        $this->actingAs($reader)->postJson($this->url($v), $data + ['document_file' => $this->uploadPdf()])->assertForbidden();
+    }
+
 }
