@@ -125,7 +125,7 @@ class VehicleDocumentController extends Controller
         abort_unless(Gate::allows('vehicle_edit') && Gate::allows('vehicle_documents_area_access'), 403);
         abort_unless(ctype_digit($media), 404);
         $request->merge(['reason' => is_string($request->reason) ? trim($request->reason) : $request->reason]);
-        $data = $request->validate(['reason' => ['required', 'string', 'max:500'], 'revision' => ['required', 'string', 'size:64']]);
+        $data = $request->validate(['reason' => ['required', 'string', 'max:500'], 'revision' => ['required', 'string', 'size:64'], 'return_document' => ['nullable', Rule::in(array_keys(VehicleDocuments::applicabilityDocuments()))]]);
         DB::transaction(function () use ($request, $vehicle, $media, $data) {
             Vehicle::whereKey($vehicle->id)->lockForUpdate()->firstOrFail();
             $file = $vehicle->media()->whereKey($media)->whereIn('collection_name', VehicleDocuments::COLLECTIONS)->lockForUpdate()->firstOrFail();
@@ -139,6 +139,7 @@ class VehicleDocumentController extends Controller
                 'properties' => $entry + ['vehicle_id' => $vehicle->id, 'media_id' => $file->id, 'before' => VehicleDocuments::type($file), 'after' => 'annulled'], 'host' => $request->ip()]);
         });
         if ($request->expectsJson()) return response()->json(['message' => 'Anexo anulado. O ficheiro e o histórico foram preservados.']);
+        if (!empty($data['return_document'])) return redirect()->to(route('admin.vehicles.documents.followup', [$vehicle, $data['return_document']]).'#followup-history')->with('message', 'Anexo anulado. O ficheiro e o histórico foram preservados.');
         return redirect()->route('admin.vehicles.documents.history', [$vehicle, $media])->with('message', 'Anexo anulado. O ficheiro e o histórico foram preservados.');
     }
 
@@ -149,6 +150,7 @@ class VehicleDocumentController extends Controller
         $request->merge(['reason' => is_string($request->reason) ? trim($request->reason) : $request->reason]);
         $data = $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
+            'return_document' => ['nullable', Rule::in(array_keys(VehicleDocuments::applicabilityDocuments()))],
             'type' => ['required', 'string', Rule::in(array_keys(VehicleDocuments::TYPES))],
             'revision' => ['required', 'string', 'size:64'],
         ]);
@@ -181,6 +183,8 @@ class VehicleDocumentController extends Controller
             ]);
             return $file;
         });
+
+        if (!$request->expectsJson() && !empty($data['return_document'])) return redirect()->to(route('admin.vehicles.documents.followup', [$vehicle, $data['return_document']]).'#followup-history')->with('message', 'Tipo corrigido. O motivo ficou registado no histórico do anexo.');
 
         return response()->json([
             'message' => 'Tipo guardado. As confirmações de receção mantêm-se.',

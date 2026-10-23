@@ -54,7 +54,7 @@
                 @endcan
             @endif
             @if($followup)
-                <hr><h4>Histórico</h4>
+                <hr><h4 id="followup-history">Histórico</h4>
                 <ul>@foreach($historyEntries->reverse() as $entry)<li>
                     <strong>{{ \Carbon\Carbon::parse($entry['at'])->format('d/m/Y H:i') }} · {{ $entry['user_name'] }}</strong>
                     — {{ \App\Models\VehicleDocumentFollowup::LABELS[$entry['status']] }}<br>
@@ -62,6 +62,7 @@
                     @if($entry['attachment'])
                         <br><a href="{{ $entry['attachment']->getUrl() }}" target="_blank" rel="noopener noreferrer">Abrir anexo: {{ $entry['attachment']->file_name }}</a>
                         @if(\App\Support\VehicleDocuments::annulled($entry['attachment']))<strong> — Anulado</strong>@endif
+                        @include('admin.vehicles.partials.followup-attachment-actions', ['file' => $entry['attachment'], 'entryIndex' => $loop->index])
                     @elseif($entry['attachment_expected'])
                         <br><span class="text-muted">Anexo indisponível neste histórico.</span>
                     @endif
