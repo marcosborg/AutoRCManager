@@ -15,7 +15,7 @@
             @else
                 @if(($followup->status ?? '') === 'review')<div class="alert alert-warning">É necessário rever este acompanhamento. Confirme os dados e a próxima data antes de voltar a ativar o lembrete.</div>@endif
                 @can('vehicle_edit')
-                <form method="POST" action="{{ route('admin.vehicles.documents.followup.store',[$vehicle,$document]) }}">
+                <form method="POST" enctype="multipart/form-data" action="{{ route('admin.vehicles.documents.followup.store',[$vehicle,$document]) }}">
                     @csrf
                     <input type="hidden" name="version" value="{{ old('version',$followup->version ?? 0) }}">
                     <div class="row">
@@ -29,15 +29,20 @@
                         <div class="form-group col-md-6"><label for="requested_on">Data do pedido</label><input class="form-control" type="date" id="requested_on" name="requested_on" value="{{ old('requested_on',$followup->requested_on ?? now()->toDateString()) }}" required></div>
                         <div class="form-group col-md-6"><label for="next_contact_on">Voltar a contactar em</label><input class="form-control" type="date" id="next_contact_on" name="next_contact_on" value="{{ old('next_contact_on',$followup?->next_contact_on) }}" required></div>
                     </div>
-                    <div class="form-group"><label for="note">Nota deste contacto ou alteração</label><textarea class="form-control" id="note" name="note" maxlength="1000" required>{{ old('note') }}</textarea></div>
+                    <div class="form-group"><label for="note">Nota deste contacto ou alteração</label><textarea class="form-control" id="note" name="note" maxlength="1000" rows="3" style="height:80px">{{ old('note') }}</textarea></div>
                     <button name="action" value="contact" class="btn btn-primary">{{ !$followup ? 'Guardar acompanhamento' : ($followup->status === 'open' ? 'Registar contacto' : 'Reativar acompanhamento') }}</button>
                     @if($followup)<button name="action" value="reschedule" class="btn btn-default">Reagendar</button>@endif
+                    <hr>
+                    <h4>Anexar cópia digital aqui</h4>
+                    <p>Escolha o ficheiro de <strong>{{ \App\Support\VehicleDocuments::applicabilityDocuments()[$document] }}</strong>. Fica associado a esta viatura e identificado com este tipo, sem sair do acompanhamento.</p>
+                    <div class="form-group"><label for="document_file">Ficheiro a anexar</label><input id="document_file" type="file" name="document_file" accept=".pdf,.jpg,.jpeg,.png,.webp" class="form-control"><small>PDF, JPG, PNG ou WebP, até {{ number_format($uploadLimitKb / 1024, 1, ',', '.') }} MB. Anexar não conclui o acompanhamento.</small></div>
+                    <button name="action" value="upload" class="btn btn-primary">Anexar cópia digital</button>
                     <hr>
                     <h4>Concluir com cópia digital</h4>
                     <p>Recebido em papel não basta. Escolha o ficheiro do tipo correto e confirme o conteúdo. As confirmações da ficha mantêm-se.</p>
                     <div class="form-group"><label for="media_id">Cópia digital identificada</label><select name="media_id" id="media_id" class="form-control">
-                        <option value="">{{ $files->isEmpty() ? 'Sem cópia identificada — anexar e identificar na ficha' : 'Escolher ficheiro conferido' }}</option>
-                        @foreach($files as $file)<option value="{{ $file->id }}" @selected((string)old('media_id')===(string)$file->id)>{{ $file->file_name }}</option>@endforeach
+                        <option value="">{{ $files->isEmpty() ? 'Sem cópia identificada — use “Anexar cópia digital” acima' : 'Escolher ficheiro conferido' }}</option>
+                        @foreach($files as $file)<option value="{{ $file->id }}" @selected((string)old('media_id',session('uploaded_media_id'))===(string)$file->id)>{{ $file->file_name }}</option>@endforeach
                     </select></div>
                     @foreach($files as $file)<p><a href="{{ $file->getUrl() }}" target="_blank" rel="noopener">Abrir {{ $file->file_name }}</a></p>@endforeach
                     <div class="checkbox"><label><input type="checkbox" name="confirmed" value="1"> Conferi o conteúdo da cópia digital e corresponde a este documento e viatura.</label></div>
