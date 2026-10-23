@@ -55,10 +55,15 @@
             @endif
             @if($followup)
                 <hr><h4>Histórico</h4>
-                <ul>@foreach(array_reverse($followup->history ?? []) as $entry)<li>
+                <ul>@foreach($historyEntries->reverse() as $entry)<li>
                     <strong>{{ \Carbon\Carbon::parse($entry['at'])->format('d/m/Y H:i') }} · {{ $entry['user_name'] }}</strong>
                     — {{ \App\Models\VehicleDocumentFollowup::LABELS[$entry['status']] }}<br>
                     {{ $entry['reason'] }} · Responsável: {{ $entry['responsible_name'] ?? $followup->responsible?->name }} · Pedido a: {{ $entry['contact'] }} · Próximo contacto: {{ \Carbon\Carbon::parse($entry['next_contact_on'])->format('d/m/Y') }}
+                    @if($entry['attachment'])
+                        <br><a href="{{ $entry['attachment']->getUrl() }}" target="_blank" rel="noopener noreferrer">Abrir anexo: {{ $entry['attachment']->file_name }}</a>
+                    @elseif($entry['attachment_expected'])
+                        <br><span class="text-muted">Anexo indisponível neste histórico.</span>
+                    @endif
                 </li>@endforeach</ul>
             @endif
         </div>
