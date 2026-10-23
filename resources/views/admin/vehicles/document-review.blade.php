@@ -78,7 +78,7 @@
                                 <td>
                                     @foreach($vehicle->documentFollowups->whereIn('status',['open','review']) as $followup)
                                         <p><a href="{{ route('admin.vehicles.documents.followup',[$vehicle,$followup->document]) }}">{{ \App\Support\VehicleDocuments::applicabilityDocuments()[$followup->document] }}</a><br>
-                                        {{ $followup->responsible?->name }} — {{ \App\Models\VehicleDocumentFollowup::LABELS[$followup->status] }}
+                                        {{ $followup->responsible?->name }} — {{ $followup->statusLabel() }}
                                         @if($followup->status === 'open')<br>{{ \Carbon\Carbon::parse($followup->next_contact_on)->format('d/m/Y') }}
                                             @if($followup->next_contact_on < now()->toDateString())<strong class="text-danger">Em atraso</strong>@elseif($followup->next_contact_on === now()->toDateString())<strong>Hoje</strong>@endif
                                         @endif</p>
