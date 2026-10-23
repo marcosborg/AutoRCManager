@@ -97,6 +97,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('brands', 'BrandController');
 
     // Vehicle
+    Route::get('vehicles/{vehicle}/documents/{document}/followup', 'VehicleDocumentFollowupController@show')->name('vehicles.documents.followup');
+    Route::post('vehicles/{vehicle}/documents/{document}/followup', 'VehicleDocumentFollowupController@store')->name('vehicles.documents.followup.store');
     Route::get('vehicles/document-review', 'VehicleDocumentController@index')->name('vehicles.documents.review');
     Route::patch('vehicles/{vehicle}/documents/{document}/applicability', 'VehicleDocumentController@applicability')->name('vehicles.documents.applicability');
     Route::patch('vehicles/{vehicle}/documents/{media}/type', 'VehicleDocumentController@update')->name('vehicles.documents.type');

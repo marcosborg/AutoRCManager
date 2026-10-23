@@ -32,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Spatie\MediaLibrary\MediaCollections\Models\Media::observe(\App\Observers\VehicleDocumentMediaObserver::class);
         Vehicle::observe(VehicleObserver::class);
         Repair::observe(RepairObserver::class);
         LotPayment::observe(LotPaymentObserver::class);

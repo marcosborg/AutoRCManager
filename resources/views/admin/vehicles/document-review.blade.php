@@ -52,7 +52,7 @@
                 <p role="status"><strong>{{ $vehicles->total() }}</strong> viatura(s) com pendências nesta consulta. As viaturas eliminadas não são incluídas.</p>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped">
-                        <thead><tr><th>Viatura</th><th>Empresa de destino</th><th>Estado</th><th>Confirmações por preencher</th><th>Anexos por identificar</th><th>Ação</th></tr></thead>
+                        <thead><tr><th>Viatura</th><th>Empresa de destino</th><th>Estado</th><th>Confirmações por preencher</th><th>Anexos por identificar</th><th>Acompanhamento</th><th>Ação</th></tr></thead>
                         <tbody>
                         @forelse($vehicles as $vehicle)
                             <tr data-vehicle-id="{{ $vehicle->id }}">
@@ -75,6 +75,15 @@
                                     @endif
                                 </td>
                                 <td>{{ $vehicle->unidentified_count }} {{ $vehicle->unidentified_count == 1 ? 'anexo' : 'anexos' }}</td>
+                                <td>
+                                    @foreach($vehicle->documentFollowups->whereIn('status',['open','review']) as $followup)
+                                        <p><a href="{{ route('admin.vehicles.documents.followup',[$vehicle,$followup->document]) }}">{{ \App\Support\VehicleDocuments::applicabilityDocuments()[$followup->document] }}</a><br>
+                                        {{ $followup->responsible?->name }} — {{ \App\Models\VehicleDocumentFollowup::LABELS[$followup->status] }}
+                                        @if($followup->status === 'open')<br>{{ \Carbon\Carbon::parse($followup->next_contact_on)->format('d/m/Y') }}
+                                            @if($followup->next_contact_on < now()->toDateString())<strong class="text-danger">Em atraso</strong>@elseif($followup->next_contact_on === now()->toDateString())<strong>Hoje</strong>@endif
+                                        @endif</p>
+                                    @endforeach
+                                </td>
                                 <td>@can('vehicle_edit')
                                     <a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.edit', $vehicle) }}#vehicle-documents">Abrir documentos</a>
                                 @else
@@ -82,7 +91,7 @@
                                 @endcan</td>
                             </tr>
                         @empty
-                            <tr><td colspan="6">Nenhuma viatura corresponde aos filtros escolhidos.</td></tr>
+                            <tr><td colspan="7">Nenhuma viatura corresponde aos filtros escolhidos.</td></tr>
                         @endforelse
                         </tbody>
                     </table>
