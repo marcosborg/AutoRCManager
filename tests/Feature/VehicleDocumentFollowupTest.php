@@ -154,4 +154,69 @@ class VehicleDocumentFollowupTest extends TestCase
         $this->withHeader('Authorization', 'Bearer '.$token)->postJson($url, $this->data($editor))->assertOk();
         $this->assertSame(1, $v->documentFollowups()->count());
     }
+
+    private function uploadPdf()
+    {
+        return \Illuminate\Http\UploadedFile::fake()->createWithContent('DUA.pdf', "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF");
+    }
+
+    public function test_direct_upload_identifies_copy_without_completing_and_can_then_be_confirmed(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $u = $this->user();
+        $this->actingAs($u);
+        $v = $this->vehicle();
+        $before = $v->fresh()->getAttributes();
+        $data = $this->data($u, ['action' => 'upload', 'note' => null, 'document_file' => $this->uploadPdf()]);
+        $this->post($this->url($v), $data)->assertRedirect()->assertSessionHas('uploaded_media_id');
+        $file = $v->media()->first();
+        $f = $v->documentFollowups()->first();
+        $this->assertSame('dua', VehicleDocuments::type($file));
+        $this->assertSame('documents', $file->collection_name);
+        $this->assertSame('public', $file->disk);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($file->getPathRelativeToRoot());
+        $this->assertSame('open', $f->status);
+        $this->assertNull($f->media_id);
+        $this->assertSame('upload', $f->history[0]['action']);
+        $this->assertEquals($before, $v->fresh()->getAttributes());
+        $this->get(route('admin.vehicles.documents.followup', [$v, 'vehicle_ownership_title']))->assertOk()->assertSee($file->file_name);
+        $this->postJson($this->url($v), $this->data($u, ['action' => 'upload', 'document_file' => $this->uploadPdf()]))->assertStatus(409);
+        $this->assertSame(1, $v->media()->count());
+        $this->postJson($this->url($v), $this->data($u, ['version' => 1, 'action' => 'complete', 'media_id' => $file->id]))->assertUnprocessable();
+        $this->post($this->url($v), $this->data($u, ['version' => 1, 'action' => 'complete', 'media_id' => $file->id, 'confirmed' => 1]))->assertRedirect();
+        $this->assertSame('completed', $f->fresh()->status);
+    }
+
+    public function test_upload_rejects_missing_unsafe_oversized_files_and_unauthorized_user(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $u = $this->user();
+        $v = $this->vehicle();
+        $this->actingAs($u);
+        $this->postJson($this->url($v), $this->data($u, ['action' => 'upload']))->assertUnprocessable();
+        foreach ([\Illuminate\Http\UploadedFile::fake()->createWithContent('bad.php', '<?php echo "unsafe";'), \Illuminate\Http\UploadedFile::fake()->create('large.pdf', 2049, 'application/pdf')] as $file) {
+            $this->postJson($this->url($v), $this->data($u, ['action' => 'upload', 'document_file' => $file]))->assertUnprocessable();
+        }
+        $this->postJson($this->url($v), $this->data($u, ['action' => 'contact', 'document_file' => $this->uploadPdf()]))->assertUnprocessable();
+        $reader = $this->user(['vehicle_access', 'vehicle_documents_area_access']);
+        $this->actingAs($reader)->postJson($this->url($v), $this->data($u, ['action' => 'upload', 'document_file' => $this->uploadPdf()]))->assertForbidden();
+        $this->assertSame(0, $v->media()->count());
+        $this->assertSame(0, $v->documentFollowups()->count());
+    }
+
+    public function test_upload_preserves_existing_proof_and_completion(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $u = $this->user();
+        $v = $this->vehicle();
+        $this->actingAs($u);
+        $original = $this->file($v);
+        $this->post($this->url($v), $this->data($u, ['action' => 'complete', 'media_id' => $original->id, 'confirmed' => 1]))->assertRedirect();
+        $this->post($this->url($v), $this->data($u, ['version' => 1, 'action' => 'upload', 'document_file' => $this->uploadPdf()]))->assertRedirect();
+        $f = $v->documentFollowups()->first();
+        $this->assertSame('completed', $f->status);
+        $this->assertSame($original->id, (int) $f->media_id);
+        $this->assertSame(2,$v->media()->count());
+        $this->assertCount(2,$f->history);
+    }
 }
