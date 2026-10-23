@@ -75,6 +75,20 @@ class AuthGates
         Gate::define('financial_sensitive_access', $financeGate);
         Gate::define('aquisition_of_the_vehicle', $financeGate);
 
+        // Apply explicit restrictions after inherited permissions and name-based finance grants.
+        foreach (array_unique(array_merge(array_keys($permissionsArray), ['financial_sensitive_access', 'aquisition_of_the_vehicle'])) as $ability) {
+            if (\App\Support\WorkshopPrivacy::commercialAbility($ability)) {
+                $existing = Gate::abilities()[$ability] ?? fn () => false;
+                Gate::define($ability, fn ($user) => !\App\Support\WorkshopPrivacy::restricted($user) && $existing($user));
+            }
+        }
+        if (\App\Support\WorkshopPrivacy::restricted($user)) {
+            $action = (string) $request->route()?->getActionName();
+            abort_if(\App\Support\WorkshopPrivacy::blockedRoute((string) $request->route()?->getName())
+                || (str_contains($action, 'GestaoApiController@') && !str_ends_with($action, '@workshop'))
+                || preg_match('/\\\\(Dashboard|Cash|Approval|VehicleTimeline|VehicleNote|VehicleDocument|Suplier|Client|Sales|VehicleGroup|VehicleTradeIn|Depreciation|Appreciation|AuditLogs)(Api)?Controller@/', $action), 403);
+        }
+
         return $next($request);
     }
 }

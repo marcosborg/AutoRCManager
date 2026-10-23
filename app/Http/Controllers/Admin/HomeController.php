@@ -19,6 +19,7 @@ class HomeController
 {
     public function index()
     {
+        if (\App\Support\WorkshopPrivacy::restricted()) return view('admin.workshop-home');
         $today = Carbon::today();
         $startOfMonth = $today->copy()->startOfMonth()->format('Y-m-d');
         $endOfMonth = $today->copy()->endOfMonth()->format('Y-m-d');

@@ -718,6 +718,7 @@ class WorkshopApiController extends Controller
 
     private function vehicleReceptionPhoto(Vehicle $vehicle): ?Media
     {
+        if (\App\Support\WorkshopPrivacy::restricted()) return null;
         return $vehicle->inicial->first() ?: $vehicle->getFirstMedia('inicial');
     }
 

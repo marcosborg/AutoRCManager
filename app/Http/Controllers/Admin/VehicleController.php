@@ -52,6 +52,8 @@ class VehicleController extends Controller
     {
         abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        if (\App\Support\WorkshopPrivacy::restricted()) return app(\App\Services\WorkshopVehicleView::class)->index($request);
+
         $request->validate(['destination_company' => ['nullable', 'string', \Illuminate\Validation\Rule::in(array_merge(array_keys(Vehicle::DESTINATION_COMPANIES), ['unassigned']))]]);
 
         if ($request->ajax()) {
@@ -284,6 +286,8 @@ class VehicleController extends Controller
     public function edit(Vehicle $vehicle, VehicleLotService $lotService, VehicleProfitabilityService $profitabilityService)
     {
         abort_if(Gate::denies('vehicle_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        if (\App\Support\WorkshopPrivacy::restricted()) return app(\App\Services\WorkshopVehicleView::class)->show($vehicle, true);
 
         $canViewSensitive = $this->canViewFinancialSensitive();
 
@@ -526,6 +530,10 @@ class VehicleController extends Controller
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle, VehicleImportProcessService $importProcessService)
     {
+        if (\App\Support\WorkshopPrivacy::restricted()) {
+            $vehicle->update($request->safe()->only(\App\Support\WorkshopPrivacy::EDIT_FIELDS));
+            return redirect()->route('admin.vehicles.edit', $vehicle)->with('message', 'Dados da viatura guardados.');
+        }
         $isDeletedVehicle = $vehicle->trashed();
 
         abort_if(
@@ -791,6 +799,8 @@ class VehicleController extends Controller
     public function show(Vehicle $vehicle, VehicleLotService $lotService)
     {
         abort_if(Gate::denies('vehicle_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        if (\App\Support\WorkshopPrivacy::restricted()) return app(\App\Services\WorkshopVehicleView::class)->show($vehicle, false);
 
         $vehicle->load('general_state', 'brand', 'seller_client', 'buyer_client', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client');
 
