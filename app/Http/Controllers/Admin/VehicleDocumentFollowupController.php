@@ -52,7 +52,23 @@ class VehicleDocumentFollowupController extends Controller
                 'files' => $files->map(fn ($f) => ['id' => $f->id, 'file_name' => $f->file_name])->values()]);
         }
 
-        return view('admin.vehicles.document-followup', compact('vehicle', 'document', 'followup', 'users', 'defaultResponsible', 'files', 'uploadLimitKb'));
+        $historyFiles = VehicleDocuments::files($vehicle)->keyBy('id');
+        $historyEntries = collect($followup?->history ?? [])->map(function ($entry) use ($historyFiles) {
+            $isUpload = ($entry['action'] ?? '') === 'upload';
+            $id = $entry['attachment_id'] ?? ($isUpload ? null : ($entry['media_id'] ?? null));
+            $file = $id ? $historyFiles->get($id) : null;
+            // Older upload events only recorded the generated filename in their reason.
+            // Resolve only an unambiguous match within this vehicle, without rewriting history.
+            if ($isUpload && !$id) {
+                $matches = $historyFiles->filter(fn ($candidate) => str_starts_with($entry['reason'] ?? '', 'Cópia digital anexada: '.$candidate->file_name.'. '));
+                $file = $matches->count() === 1 ? $matches->first() : null;
+            }
+            $entry['attachment'] = $file;
+            $entry['attachment_expected'] = $isUpload || (bool) $id;
+            return $entry;
+        });
+
+        return view('admin.vehicles.document-followup', compact('vehicle', 'document', 'followup', 'users', 'defaultResponsible', 'files', 'uploadLimitKb', 'historyEntries'));
     }
 
     public function store(Request $request, Vehicle $vehicle, string $document)
@@ -105,7 +121,7 @@ class VehicleDocumentFollowupController extends Controller
                         return;
                     }
                     $f->status = $f->status ?? 'open';
-                    $f->record('upload', 'Cópia digital anexada: '.$uploaded->file_name.'. '.($data['note'] ?? ''));
+                    $f->record('upload', 'Cópia digital anexada: '.$uploaded->file_name.'. '.($data['note'] ?? ''), $uploaded->id);
 
                     return;
                 }

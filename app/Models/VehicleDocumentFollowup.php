@@ -23,14 +23,14 @@ class VehicleDocumentFollowup extends Model
         return $this->belongsTo(User::class, 'assigned_to_id');
     }
 
-    public function record(string $action, string $reason): void
+    public function record(string $action, string $reason, ?int $attachmentId = null): void
     {
         $history = $this->history ?? [];
         $history[] = ['action' => $action, 'reason' => $reason, 'at' => now()->toIso8601String(),
             'user_id' => auth()->id(), 'user_name' => auth()->user()?->name ?? 'Sistema',
             'assigned_to_id' => $this->assigned_to_id, 'responsible_name' => User::find($this->assigned_to_id)?->name, 'contact' => $this->contact,
             'requested_on' => $this->requested_on, 'next_contact_on' => $this->next_contact_on,
-            'media_id' => $this->media_id, 'status' => $this->status];
+            'attachment_id' => $attachmentId, 'media_id' => $this->media_id, 'status' => $this->status];
         $this->history = $history;
         $this->version++;
         $this->save();

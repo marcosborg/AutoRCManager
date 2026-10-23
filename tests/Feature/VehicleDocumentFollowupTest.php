@@ -251,4 +251,26 @@ class VehicleDocumentFollowupTest extends TestCase
         $this->actingAs($reader)->postJson($this->url($v), $data + ['document_file' => $this->uploadPdf()])->assertForbidden();
     }
 
+    public function test_history_links_keep_original_files_and_never_link_another_vehicle(): void
+    {
+        $u = $this->user();
+        $v = $this->vehicle();
+        $this->actingAs($u);
+        $file = $this->file($v);
+        $foreign = $this->file($this->vehicle());
+        $this->post($this->url($v), $this->data($u, ['action' => 'complete', 'media_id' => $file->id, 'confirmed' => 1]))->assertRedirect();
+        $f = $v->documentFollowups()->first();
+        $entry = $f->history[0];
+        $history = [$entry, array_merge($entry, ['action' => 'upload', 'media_id' => null, 'reason' => 'Cópia digital anexada: '.$file->file_name.'. ']), array_merge($entry, ['media_id' => $foreign->id])];
+        $f->history = $history;
+        $f->save();
+        $url = route('admin.vehicles.documents.followup', [$v, 'vehicle_ownership_title']);
+        $this->get($url)->assertOk()->assertSee('Abrir anexo: '.$file->file_name)->assertSee($file->getUrl(), false)->assertDontSee($foreign->getUrl(), false)->assertSee('Anexo indisponível neste histórico.');
+        $this->assertSame($history, $f->fresh()->history);
+        $file->setCustomProperty('document_classification', ['type' => 'other'])->save();
+        $this->get($url)->assertOk()->assertSee('Abrir anexo: '.$file->file_name);
+        $file->delete();
+        $this->get($url)->assertOk()->assertDontSee('Abrir anexo: '.$file->file_name)->assertSee('Anexo indisponível neste histórico.');
+    }
+
 }
