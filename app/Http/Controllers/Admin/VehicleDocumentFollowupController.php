@@ -59,19 +59,19 @@ class VehicleDocumentFollowupController extends Controller
     {
         $this->authorizeDocument($document, true);
         $data = $request->validate([
-            'action' => ['required', Rule::in(['contact', 'reschedule', 'complete', 'upload'])],
+            'action' => ['required', Rule::in(['contact', 'reschedule', 'complete', 'upload', 'upload_complete'])],
             'version' => ['required', 'integer', 'min:0'],
             'assigned_to_id' => ['required', 'integer', Rule::exists('users', 'id')->whereNull('deleted_at')],
             'contact' => ['required', 'string', 'max:191'],
             'requested_on' => ['required', 'date_format:Y-m-d'],
             'next_contact_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:requested_on'],
-            'note' => ['required_unless:action,upload', 'nullable', 'string', 'max:1000'],
-            'document_file' => ['required_if:action,upload', 'prohibited_unless:action,upload', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:'.$this->uploadLimitKb()],
+            'note' => ['required_unless:action,upload,upload_complete', 'nullable', 'string', 'max:1000'],
+            'document_file' => ['required_if:action,upload,upload_complete', 'prohibited_unless:action,upload,upload_complete', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:'.$this->uploadLimitKb()],
             'media_id' => ['required_if:action,complete', 'nullable', 'integer'],
             'confirmed' => ['exclude_unless:action,complete', 'required', 'accepted'],
         ], [
-            'document_file.required_if' => 'Escolha o ficheiro antes de carregar em Anexar cópia digital.',
-            'document_file.prohibited_unless' => 'Carregue primeiro em Anexar cópia digital para guardar o ficheiro escolhido.',
+            'document_file.required_if' => 'Escolha o ficheiro antes de anexar e concluir.',
+            'document_file.prohibited_unless' => 'Para guardar o ficheiro escolhido, use Anexar e concluir.',
             'document_file.mimes' => 'Escolha um ficheiro PDF, JPG, PNG ou WebP.',
             'document_file.max' => 'O ficheiro ultrapassa o tamanho máximo indicado no formulário.',
             'document_file.uploaded' => 'Não foi possível enviar o ficheiro. Confira o tamanho e volte a tentar.',
@@ -87,7 +87,7 @@ class VehicleDocumentFollowupController extends Controller
                 abort_unless((int) ($f->version ?? 0) === (int) $data['version'], 409, 'O acompanhamento mudou. Atualize a página antes de gravar.');
                 $f->fill(collect($data)->only(['assigned_to_id', 'contact', 'requested_on', 'next_contact_on', 'note'])->all());
                 $f->document = $document;
-                if ($data['action'] === 'upload') {
+                if (in_array($data['action'], ['upload', 'upload_complete'], true)) {
                     $type = $document === 'vehicle_ownership_title' ? 'dua' : $document;
                     $collection = $type === 'dav' ? 'dav' : (in_array($type, ['dua', 'inspection']) ? 'documents' : 'additional_documents');
                     $source = $request->file('document_file');
@@ -97,6 +97,13 @@ class VehicleDocumentFollowupController extends Controller
                         ->withCustomProperties(['document_classification' => [
                             'type' => $type, 'user_id' => $request->user()->id, 'classified_at' => now()->toIso8601String(),
                         ]])->toMediaCollection($collection, 'public');
+                    if ($data['action'] === 'upload_complete') {
+                        $f->status = 'completed';
+                        $f->media_id = $uploaded->id;
+                        $f->record('complete', 'Cópia digital anexada e confirmada ao concluir: '.$uploaded->file_name.'. '.($data['note'] ?? ''));
+
+                        return;
+                    }
                     $f->status = $f->status ?? 'open';
                     $f->record('upload', 'Cópia digital anexada: '.$uploaded->file_name.'. '.($data['note'] ?? ''));
 
@@ -120,6 +127,6 @@ class VehicleDocumentFollowupController extends Controller
             throw $error;
         }
 
-        return redirect()->route('admin.vehicles.documents.followup', [$vehicle, $document])->with('message', $uploaded ? 'Cópia digital guardada. Abra o ficheiro e confira o conteúdo antes de concluir.' : 'Acompanhamento guardado.')->with('uploaded_media_id', $uploaded?->id);
+        return redirect()->route('admin.vehicles.documents.followup', [$vehicle, $document])->with('message', $data['action'] === 'upload_complete' ? 'Cópia digital guardada e acompanhamento concluído.' : ($uploaded ? 'Cópia digital guardada. Abra o ficheiro e confira o conteúdo antes de concluir.' : 'Acompanhamento guardado.'))->with('uploaded_media_id', $uploaded?->id);
     }
 }
