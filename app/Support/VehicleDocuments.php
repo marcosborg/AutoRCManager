@@ -102,6 +102,13 @@ class VehicleDocuments
         return hash('sha256', json_encode($media->getCustomProperty('document_classification')));
     }
 
+    public static function matches($file, string $document): bool
+    {
+        $type = $document === 'vehicle_ownership_title' ? 'dua' : $document;
+        return in_array($file->collection_name, self::COLLECTIONS, true)
+            && (self::type($file) === $type || (self::type($file) === 'dua_inspection' && in_array($type, ['dua','inspection'], true)));
+    }
+
     public static function count(Vehicle $vehicle, string $type): int
     {
         return self::files($vehicle)->filter(function ($media) use ($type) {

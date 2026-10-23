@@ -23,4 +23,11 @@
             {{ $dispensed ? 'Voltar a conferir' : 'Não se aplica' }}
         </button>
     @endcan
+    @php($followup = $vehicle->documentFollowups->firstWhere('document',$document))
+    @if($followup)
+        <p style="margin-top:8px"><strong>{{ \App\Models\VehicleDocumentFollowup::LABELS[$followup->status] }}</strong><br>
+        {{ $followup->responsible?->name }}
+        @if($followup->status === 'open') · {{ \Carbon\Carbon::parse($followup->next_contact_on)->format('d/m/Y') }}@endif</p>
+    @endif
+    <a class="btn btn-default btn-xs" style="margin-top:5px" href="{{ route('admin.vehicles.documents.followup',[$vehicle,$document]) }}">{{ $followup ? 'Ver acompanhamento' : 'Acompanhar' }}</a>
 </td>

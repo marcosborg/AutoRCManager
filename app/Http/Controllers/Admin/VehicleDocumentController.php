@@ -26,7 +26,7 @@ class VehicleDocumentController extends Controller
         $reason = $filters['reason'] ?? 'any';
         $vehicles = null;
         if ($scope) {
-            $query = Vehicle::query()->with(['brand', 'general_state'])
+            $query = Vehicle::query()->with(['brand', 'general_state', 'documentFollowups.responsible'])
                 ->withCount(['media as unidentified_count' => fn ($media) => VehicleDocuments::unidentifiedQuery($media)]);
             if ($scope === 'stock') $query->inStock();
             if (!empty($filters['destination_company'])) $query->forDestinationCompany($filters['destination_company']);
@@ -36,6 +36,9 @@ class VehicleDocumentController extends Controller
                     $pending->where(function ($checks) {
                         VehicleDocuments::pendingChecksQuery($checks);
                     });
+                }
+                if ($reason === 'any') {
+                    $pending->orWhereHas('documentFollowups', fn ($q) => $q->whereIn('status',['open','review']));
                 }
                 if ($reason !== 'checks') {
                     $pending->orWhereHas('media', fn ($media) => VehicleDocuments::unidentifiedQuery($media));
@@ -85,6 +88,10 @@ class VehicleDocumentController extends Controller
             $decisions[$document] = $entry + ['history' => $history];
             $locked->document_applicability = $decisions;
             $locked->save();
+            if ($followup = $locked->documentFollowups()->where('document',$document)->lockForUpdate()->first()) {
+                $followup->status = $data['status'] === 'not_applicable' ? 'dispensed' : 'review';
+                $followup->record('applicability', $data['reason']);
+            }
             AuditLog::create([
                 'description' => 'vehicle_document:applicability', 'subject_id' => $locked->id,
                 'subject_type' => Vehicle::class.'#'.$locked->id, 'user_id' => $request->user()->id,

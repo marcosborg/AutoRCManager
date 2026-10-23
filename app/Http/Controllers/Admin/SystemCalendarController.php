@@ -70,6 +70,10 @@ class SystemCalendarController extends Controller
     {
         abort_unless($task->isVisibleTo(auth()->user()), 403);
 
+        if ($task->type === 'vehicle_document_followup') {
+            return redirect($task->target_url)->with('message','Conclua no acompanhamento, depois de conferir a cópia digital.');
+        }
+
         $task->update(['completed_at' => now()]);
 
         return redirect()->route('admin.systemCalendar')->with('message', 'Tarefa concluida.');

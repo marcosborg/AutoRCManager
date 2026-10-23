@@ -84,6 +84,10 @@ class CalendarTask extends Model
             return $query->whereRaw('1 = 0');
         }
 
+        if (!\Illuminate\Support\Facades\Gate::forUser($user)->allows('vehicle_documents_area_access') || !\Illuminate\Support\Facades\Gate::forUser($user)->allows('vehicle_access')) {
+            $query->where(fn ($q) => $q->whereNull('type')->orWhere('type','!=','vehicle_document_followup'));
+        }
+
         $canSeeManagement = RolePreview::hasAnyEffectiveRole($user, ['Admin', 'Adm', 'Gestão', 'Gestao', 'Aux. gestão', 'Aux. gestao']);
         $canSeeWorkshop = RolePreview::hasAnyEffectiveRole($user, ['Admin', 'Adm', 'Chefe oficina', 'Aux. oficina', 'Aux. Oficina']);
 

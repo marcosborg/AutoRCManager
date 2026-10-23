@@ -513,6 +513,11 @@ class Vehicle extends Model implements HasMedia
         return $this->hasMany(VehicleConsignment::class, 'vehicle_id');
     }
 
+    public function documentFollowups()
+    {
+        return $this->hasMany(VehicleDocumentFollowup::class);
+    }
+
     public function repairs()
     {
         return $this->hasMany(Repair::class, 'vehicle_id');
