@@ -156,7 +156,10 @@ class Vehicle extends Model implements HasMedia
         'ownership_rafael_authorized_at',
     ];
 
+    protected $hidden = ['document_applicability'];
+
     protected $casts = [
+        'document_applicability' => 'array',
         'purchase_has_vat' => 'boolean',
         'is_invoiced' => 'boolean',
         'dav_created_at' => 'datetime',

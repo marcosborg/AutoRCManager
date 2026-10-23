@@ -38,7 +38,33 @@ class VehicleDocuments
 
     public static function pendingChecks(Vehicle $vehicle): array
     {
-        return array_filter(self::checks(), fn ($field) => (int) $vehicle->{$field} !== 1, ARRAY_FILTER_USE_KEY);
+        return array_filter(self::checks(), fn ($field) => (int) $vehicle->{$field} !== 1 && !self::notApplicable($vehicle, $field), ARRAY_FILTER_USE_KEY);
+    }
+
+    public static function applicabilityDocuments(): array
+    {
+        return self::checks() + ['inspection' => 'Inspeção (IPO)', 'dav' => 'DAV', 'purchase_invoice' => 'Fatura de compra'];
+    }
+
+    public static function notApplicable(Vehicle $vehicle, string $field): bool
+    {
+        return data_get($vehicle->document_applicability, $field.'.status') === 'not_applicable';
+    }
+
+    public static function applicabilityRevision(Vehicle $vehicle, string $field): string
+    {
+        return hash('sha256', json_encode($vehicle->document_applicability[$field] ?? null));
+    }
+
+    public static function pendingChecksQuery(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        foreach (array_keys(self::checks()) as $field) {
+            $path = 'document_applicability->'.$field.'->status';
+            $query->orWhere(function ($q) use ($field, $path) {
+                $q->where(fn ($receipt) => $receipt->whereNull($field)->orWhere($field, '!=', 1))
+                    ->where(fn ($applicable) => $applicable->whereNull($path)->orWhere($path, '!=', 'not_applicable'));
+            });
+        }
     }
 
     public static function unidentifiedQuery(\Illuminate\Database\Eloquent\Builder $query): void
