@@ -8,17 +8,19 @@
 <form method="POST" action="{{ route('admin.vehicles.documents.purchase.prepare', $vehicle) }}">
 @csrf
 <div class="panel panel-default"><div class="panel-heading"><h3 class="panel-title">1. Particular vendedor</h3></div><div class="panel-body">
-<p>Dados sugeridos a partir do fornecedor da viatura. Confirme que identificam a pessoa que vende.</p>
+<p>Escolha quem vende a viatura no cadastro de fornecedores. Confirme os dados sugeridos.</p>
+<div class="form-group"><label for="seller_id">Fornecedor vendedor *</label><select id="seller_id" name="seller_id" class="form-control" required><option value="">Escolher vendedor</option>@foreach($sellers as $seller)<option value="{{ $seller->id }}" @selected((string) old('seller_id', $data['seller_id'] ?? '') === (string) $seller->id)>{{ $seller->name }}{{ $seller->nif ? ' · '.$seller->nif : '' }}</option>@endforeach</select></div>
+@can('suplier_create')<p><a href="{{ route('admin.supliers.create') }}" target="_blank" rel="noopener" class="btn btn-default">Criar novo vendedor</a> <button type="button" id="refresh-sellers" class="btn btn-default">Atualizar lista de vendedores</button></p><p class="help-block">Crie o vendedor no separador que abre. Depois volte aqui, atualize a lista e escolha o novo registo. Os restantes campos mantêm-se.</p>@endcan
+<p id="seller-feedback" role="status" aria-live="polite"></p>
 @foreach(['seller_name' => 'Nome completo do vendedor', 'seller_nif' => 'NIF do vendedor', 'seller_address' => 'Morada do vendedor'] as $field => $label)
 <div class="form-group"><label for="{{ $field }}">{{ $label }} *</label><input class="form-control" id="{{ $field }}" name="{{ $field }}" value="{{ old($field, $data[$field] ?? '') }}" required maxlength="{{ str_contains($field, 'address') ? 300 : 150 }}"></div>
 @endforeach
 </div></div>
 <div class="panel panel-default"><div class="panel-heading"><h3 class="panel-title">2. Empresa compradora</h3></div><div class="panel-body">
-<p>Escolha a empresa no cadastro de fornecedores. Esta escolha é independente do vendedor e da empresa de destino da viatura.</p>
-<div class="form-group"><label for="buyer_id">Empresa compradora *</label><select id="buyer_id" name="buyer_id" class="form-control" required><option value="">Escolher empresa</option>@foreach($buyers as $buyer)<option value="{{ $buyer->id }}" @selected((string) old('buyer_id', $data['buyer_id'] ?? '') === (string) $buyer->id)>{{ $buyer->name }}{{ $buyer->nif ? ' · '.$buyer->nif : '' }}</option>@endforeach</select></div>
-@can('suplier_create')<p><a href="{{ route('admin.supliers.create') }}" target="_blank" rel="noopener" class="btn btn-default">Criar nova empresa compradora</a> <button type="button" id="refresh-buyers" class="btn btn-default">Atualizar lista de empresas</button></p><p class="help-block">Crie a empresa no separador que abre. Depois volte aqui, atualize a lista e escolha a nova empresa. Os restantes campos mantêm-se.</p>@endcan
-<p id="buyer-feedback" role="status" aria-live="polite"></p>
-@foreach(['buyer_name' => 'Nome da empresa compradora', 'buyer_nif' => 'NIF da empresa compradora', 'buyer_address' => 'Morada da empresa compradora'] as $field => $label)
+<p>Escolha uma das três empresas do grupo que compra a viatura.</p>
+<div class="form-group"><label for="buyer_id">Empresa compradora *</label><select id="buyer_id" name="buyer_id" class="form-control" required><option value="">Escolher empresa do grupo</option>@foreach($buyers as $id => $name)<option value="{{ $id }}" @selected(old('buyer_id', $data['buyer_id'] ?? '') === $id)>{{ $name }}</option>@endforeach</select></div>
+<p class="help-block">Confirme o NIF e a morada da empresa escolhida. Ao mudar de compradora, estes campos ficam em branco para evitar usar os dados da empresa anterior.</p>
+@foreach(['buyer_nif' => 'NIF da empresa compradora', 'buyer_address' => 'Morada da empresa compradora'] as $field => $label)
 <div class="form-group"><label for="{{ $field }}">{{ $label }} *</label><input class="form-control" id="{{ $field }}" name="{{ $field }}" value="{{ old($field, $data[$field] ?? '') }}" required maxlength="{{ str_contains($field, 'address') ? 300 : 150 }}"></div>
 @endforeach
 <p class="help-block">Pode completar ou corrigir os dados apenas para este impresso.</p>
@@ -38,25 +40,29 @@
 @parent
 <script>
 (function () {
-    let buyers = @json($buyers);
-    const select = document.getElementById('buyer_id');
-    const feedback = document.getElementById('buyer-feedback');
-    select.addEventListener('change', function () {
-        const buyer = buyers.find(b => String(b.id) === select.value);
-        ['name', 'nif', 'address'].forEach(key => document.getElementById('buyer_' + key).value = buyer ? (buyer[key] || '') : '');
-        feedback.textContent = buyer ? 'Confira os dados da empresa selecionada.' : '';
+    document.getElementById('buyer_id').addEventListener('change', function () {
+        document.getElementById('buyer_nif').value = '';
+        document.getElementById('buyer_address').value = '';
     });
-    document.getElementById('refresh-buyers')?.addEventListener('click', async function () {
+    let sellers = @json($sellers);
+    const select = document.getElementById('seller_id');
+    const feedback = document.getElementById('seller-feedback');
+    select.addEventListener('change', function () {
+        const seller = sellers.find(b => String(b.id) === select.value);
+        ['name', 'nif', 'address'].forEach(key => document.getElementById('seller_' + key).value = seller ? (seller[key] || '') : '');
+        feedback.textContent = seller ? 'Confira os dados do vendedor selecionado.' : '';
+    });
+    document.getElementById('refresh-sellers')?.addEventListener('click', async function () {
         this.disabled = true;
         try {
-            const response = await fetch(@json(route('admin.purchase-form.buyers')), {headers: {'Accept':'application/json'}});
+            const response = await fetch(@json(route('admin.purchase-form.sellers')), {headers: {'Accept':'application/json'}});
             if (!response.ok) throw new Error();
-            buyers = await response.json();
+            sellers = await response.json();
             const selected = select.value;
-            select.replaceChildren(new Option('Escolher empresa', ''));
-            buyers.forEach(b => select.add(new Option(b.name + (b.nif ? ' · ' + b.nif : ''), b.id)));
+            select.replaceChildren(new Option('Escolher vendedor', ''));
+            sellers.forEach(b => select.add(new Option(b.name + (b.nif ? ' · ' + b.nif : ''), b.id)));
             select.value = selected;
-            feedback.textContent = 'Lista atualizada. Pode escolher a nova empresa.';
+            feedback.textContent = 'Lista atualizada. Pode escolher o novo vendedor.';
         } catch (_) { feedback.textContent = 'Não foi possível atualizar a lista. Tente novamente; os dados preenchidos mantêm-se.'; }
         finally { this.disabled = false; }
     });

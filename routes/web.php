@@ -99,6 +99,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     // Vehicle
     Route::get('vehicles/{vehicle}/documents/{document}/followup', 'VehicleDocumentFollowupController@show')->name('vehicles.documents.followup');
     Route::post('vehicles/{vehicle}/documents/{document}/followup', 'VehicleDocumentFollowupController@store')->name('vehicles.documents.followup.store');
+    Route::get('purchase-form-sellers', 'VehiclePurchaseFormController@sellers')->name('purchase-form.sellers');
     Route::get('purchase-form-buyers', 'VehiclePurchaseFormController@buyers')->name('purchase-form.buyers');
     Route::get('vehicles/{vehicle}/documents/purchase-form/prepare', 'VehiclePurchaseFormController@edit')->name('vehicles.documents.purchase.edit');
     Route::post('vehicles/{vehicle}/documents/purchase-form/preview', 'VehiclePurchaseFormController@preview')->name('vehicles.documents.purchase.prepare');
