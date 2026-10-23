@@ -71,7 +71,7 @@ class VehicleDocuments
     {
         $classification = 'custom_properties->document_classification';
         $type = $classification.'->type';
-        $query->whereIn('collection_name', self::COLLECTIONS)->where(function ($q) use ($classification, $type) {
+        $query->whereNull('custom_properties->document_annulment')->whereIn('collection_name', self::COLLECTIONS)->where(function ($q) use ($classification, $type) {
             $q->where(function ($legacy) use ($classification) {
                 $legacy->whereNull($classification)->where('collection_name', '!=', 'dav');
             })->orWhere(function ($classified) use ($classification, $type) {
@@ -97,15 +97,20 @@ class VehicleDocuments
         return is_string($type) && array_key_exists($type, self::TYPES) ? $type : 'unknown';
     }
 
+    public static function annulled(Media $media): bool
+    {
+        return $media->getCustomProperty('document_annulment') !== null;
+    }
+
     public static function revision(Media $media): string
     {
-        return hash('sha256', json_encode($media->getCustomProperty('document_classification')));
+        return hash('sha256', json_encode(self::annulled($media) ? [$media->getCustomProperty('document_classification'), $media->getCustomProperty('document_annulment')] : $media->getCustomProperty('document_classification')));
     }
 
     public static function matches($file, string $document): bool
     {
         $type = $document === 'vehicle_ownership_title' ? 'dua' : $document;
-        return in_array($file->collection_name, self::COLLECTIONS, true)
+        return !self::annulled($file) && in_array($file->collection_name, self::COLLECTIONS, true)
             && (self::type($file) === $type || (self::type($file) === 'dua_inspection' && in_array($type, ['dua','inspection'], true)));
     }
 
@@ -113,7 +118,7 @@ class VehicleDocuments
     {
         return self::files($vehicle)->filter(function ($media) use ($type) {
             $actual = self::type($media);
-            return $actual === $type || ($actual === 'dua_inspection' && in_array($type, ['dua', 'inspection'], true));
+            return !self::annulled($media) && ($actual === $type || ($actual === 'dua_inspection' && in_array($type, ['dua', 'inspection'], true)));
         })->count();
     }
 }

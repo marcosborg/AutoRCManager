@@ -2879,12 +2879,14 @@
                 data: {
                     _token: form.querySelector('input[name="_token"]').value,
                     type: select.value,
+                    reason: row.querySelector('.js-document-reason').value,
                     revision: row.dataset.revision
                 }
             }).done(function (response) {
                 row.dataset.revision = response.revision;
                 row.dataset.savedType = response.type;
                 select.value = response.type;
+                row.querySelector('.js-document-reason').value = '';
                 status.textContent = response.message;
                 $('#document-summary').replaceWith(response.summary_html);
             }).fail(function (xhr) {

@@ -61,6 +61,7 @@
                     {{ $entry['reason'] }} · Responsável: {{ $entry['responsible_name'] ?? $followup->responsible?->name }} · Pedido a: {{ $entry['contact'] }} · Próximo contacto: {{ \Carbon\Carbon::parse($entry['next_contact_on'])->format('d/m/Y') }}
                     @if($entry['attachment'])
                         <br><a href="{{ $entry['attachment']->getUrl() }}" target="_blank" rel="noopener noreferrer">Abrir anexo: {{ $entry['attachment']->file_name }}</a>
+                        @if(\App\Support\VehicleDocuments::annulled($entry['attachment']))<strong> — Anulado</strong>@endif
                     @elseif($entry['attachment_expected'])
                         <br><span class="text-muted">Anexo indisponível neste histórico.</span>
                     @endif
