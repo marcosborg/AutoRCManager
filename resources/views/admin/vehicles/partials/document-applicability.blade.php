@@ -25,7 +25,7 @@
     @endcan
     @php($followup = $vehicle->documentFollowups->firstWhere('document',$document))
     @if($followup)
-        <p style="margin-top:8px"><strong>{{ \App\Models\VehicleDocumentFollowup::LABELS[$followup->status] }}</strong><br>
+        <p style="margin-top:8px"><strong>{{ $followup->statusLabel() }}</strong><br>
         {{ $followup->responsible?->name }}
         @if($followup->status === 'open') · {{ \Carbon\Carbon::parse($followup->next_contact_on)->format('d/m/Y') }}@endif</p>
     @endif

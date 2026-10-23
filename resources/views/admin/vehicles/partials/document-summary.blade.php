@@ -36,6 +36,12 @@
                         <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'purchase_invoice')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
                         @include('admin.vehicles.partials.document-applicability', ['document' => 'purchase_invoice'])
                     </tr>
+                    @if($vehicle->documentFollowups->contains('document', 'signed_purchase_form') || \App\Support\VehicleDocuments::count($vehicle, 'signed_purchase_form'))
+                    <tr data-document="signed_purchase_form"><th scope="row">Impresso de compra assinado</th><td>Conferir assinatura na cópia digital</td>
+                        <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'signed_purchase_form')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
+                        @include('admin.vehicles.partials.document-applicability', ['document' => 'signed_purchase_form'])
+                    </tr>
+                    @endif
                     @if($count = \App\Support\VehicleDocuments::count($vehicle, 'other'))
                         <tr><th scope="row">Outro documento</th><td>Sem confirmação própria na ficha</td><td>Ficheiro identificado: {{ $count }}</td><td>Conferir o conteúdo</td></tr>
                     @endif

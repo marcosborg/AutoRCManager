@@ -15,6 +15,7 @@ class VehicleDocuments
         'dua_inspection' => 'DUA e inspeção no mesmo ficheiro',
         'dav' => 'DAV',
         'purchase_invoice' => 'Fatura de compra',
+        'signed_purchase_form' => 'Impresso de compra assinado',
         'purchase_and_sale_agreement' => 'Contrato de Compra e Venda',
         'copy_of_the_citizen_card' => 'Cópia do Cartão de Cidadão',
         'tax_identification_card' => 'Cartão de Identificação Fiscal',
@@ -43,7 +44,7 @@ class VehicleDocuments
 
     public static function applicabilityDocuments(): array
     {
-        return self::checks() + ['inspection' => 'Inspeção (IPO)', 'dav' => 'DAV', 'purchase_invoice' => 'Fatura de compra'];
+        return self::checks() + ['inspection' => 'Inspeção (IPO)', 'dav' => 'DAV', 'purchase_invoice' => 'Fatura de compra', 'signed_purchase_form' => 'Impresso de compra assinado'];
     }
 
     public static function notApplicable(Vehicle $vehicle, string $field): bool

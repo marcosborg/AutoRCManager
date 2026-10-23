@@ -14,11 +14,11 @@ table { width:100%; border-collapse:collapse; table-layout:fixed; } td { vertica
 @media print { .toolbar { display:none; } }
 </style></head><body>
 @if(empty($pdf))
-<div class="toolbar"><a href="{{ route('admin.vehicles.documents.purchase.edit', $vehicle) }}">← Rever dados</a><a href="{{ route('admin.vehicles.documents.purchase.pdf', $vehicle) }}">Descarregar PDF</a><button onclick="window.print()">Imprimir</button><p>Confira antes de imprimir. Esta preparação não altera a ficha nem confirma o pagamento.</p></div>
+<div class="toolbar"><a href="{{ route('admin.vehicles.documents.purchase.edit', $vehicle) }}">← Rever dados</a><a href="{{ route('admin.vehicles.documents.purchase.pdf', ['vehicle' => $vehicle, 'saved' => request()->boolean('saved') ? 1 : null]) }}">Descarregar PDF</a><button onclick="window.print()">Imprimir</button><p>Confira antes de imprimir. Esta preparação não altera a ficha nem confirma o pagamento.</p></div>
 @endif
 <div class="top">Auto RC · Documentação de compra</div>
 <h1>Compra de viatura a particular</h1>
-<p class="notice">Modelo para revisão e validação · {{ $vehicle->license ?: $vehicle->foreign_license }}</p>
+<p class="notice">Modelo para revisão e validação · {{ $data['vehicle_license'] ?? ($vehicle->license ?: $vehicle->foreign_license) }}</p>
 <div class="section"><h2>01 · Particular vendedor</h2>
 <div class="label">Nome completo</div><div class="value">{{ $data['seller_name'] }}</div>
 <div class="label">NIF</div><div class="value">{{ $data['seller_nif'] }}</div>
@@ -28,7 +28,7 @@ table { width:100%; border-collapse:collapse; table-layout:fixed; } td { vertica
 <div class="label">NIF</div><div class="value">{{ $data['buyer_nif'] }}</div>
 <div class="label">Morada</div><div>{{ $data['buyer_address'] }}</div></div>
 <div class="section"><h2>03 · Viatura e valor acordado</h2>
-<table><tr><td><div class="label">Matrícula</div><div class="value">{{ $vehicle->license ?: $vehicle->foreign_license }}</div></td><td><div class="label">Marca e modelo</div><div class="value">{{ $vehicle->brand?->name }} {{ $vehicle->model }}</div></td></tr>
+<table><tr><td><div class="label">Matrícula</div><div class="value">{{ $data['vehicle_license'] ?? ($vehicle->license ?: $vehicle->foreign_license) }}</div></td><td><div class="label">Marca e modelo</div><div class="value">{{ $data['vehicle_description'] ?? trim(($vehicle->brand?->name ?? '').' '.$vehicle->model) }}</div></td></tr>
 <tr><td><div class="label">Número de quadro</div><div class="value">{{ $data['vin'] ?: 'Não indicado' }}</div></td><td><div class="label">Valor acordado</div><div class="value"><strong>{{ number_format((float) $data['amount'], 2, ',', '.') }} €</strong></div></td></tr>
 <tr><td><div class="label">Local</div><div>{{ $data['place'] }}</div></td><td><div class="label">Data da compra</div><div>{{ \Carbon\Carbon::createFromFormat('Y-m-d', $data['purchase_date'])->format('d/m/Y') }}</div></td></tr></table></div>
 <p>Identificação das partes, da viatura e do valor acordado para conferência e assinatura.</p>

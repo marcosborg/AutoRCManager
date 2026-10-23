@@ -7,6 +7,8 @@
 @if($errors->any())<div class="alert alert-danger" role="alert"><strong>Falta conferir:</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 <form method="POST" action="{{ route('admin.vehicles.documents.purchase.prepare', $vehicle) }}">
 @csrf
+<input type="hidden" name="followup_version" value="{{ $followup->version ?? 0 }}">
+@if($followup)<p><a href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'signed_purchase_form']) }}">Ver acompanhamento — {{ $followup->statusLabel() }}</a></p>@endif
 <div class="panel panel-default"><div class="panel-heading"><h3 class="panel-title">1. Particular vendedor</h3></div><div class="panel-body">
 <p>Escolha quem vende a viatura no cadastro de fornecedores. Confirme os dados sugeridos.</p>
 <div class="form-group"><label for="seller_id">Vendedor *</label><select id="seller_id" name="seller_id" class="form-control" required><option value="">Escolher vendedor</option>@foreach($sellers as $seller)<option value="{{ $seller->id }}" @selected((string) old('seller_id', $data['seller_id'] ?? '') === (string) $seller->id)>{{ $seller->name }}{{ $seller->nif ? ' · '.$seller->nif : '' }}</option>@endforeach</select></div>
@@ -32,7 +34,12 @@
 <div class="col-md-4 form-group"><label for="place">Local *</label><input class="form-control" id="place" name="place" required maxlength="150" value="{{ old('place', $data['place'] ?? '') }}"></div></div>
 <label><input type="checkbox" name="confirmed" value="1" required> Conferi as partes, a viatura e o valor e confirmo que o vendedor é um particular.</label>
 <p class="help-block">Modelo para revisão. A impressão não confirma pagamento nem receção de um documento assinado.</p>
-<button class="btn btn-primary">Pré-visualizar impresso</button>
+<button name="intent" value="preview" class="btn btn-default">Pré-visualizar impresso</button>
+<hr><h4>Guardar e acompanhar a assinatura</h4>
+<p>Guarda este impresso na viatura e abre uma única pendência. A pré-visualização, por si só, não abre acompanhamento.</p>
+<div class="row"><div class="col-md-6 form-group"><label for="assigned_to_id">Responsável</label><select name="assigned_to_id" id="assigned_to_id" class="form-control"><option value="">Escolher responsável</option>@foreach($users as $person)<option value="{{ $person->id }}" @selected((string)old('assigned_to_id', $followup->assigned_to_id ?? $defaultResponsible) === (string)$person->id)>{{ $person->name }}</option>@endforeach</select></div>
+<div class="col-md-6 form-group"><label for="next_contact_on">Voltar a contactar em</label><input class="form-control" type="date" id="next_contact_on" name="next_contact_on" value="{{ old('next_contact_on', $followup?->next_contact_on) }}"></div></div>
+<button name="intent" value="save" class="btn btn-primary">Guardar e acompanhar assinatura</button>
 </div></div>
 </form>
 @endsection

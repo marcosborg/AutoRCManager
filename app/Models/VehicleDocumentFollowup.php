@@ -9,9 +9,23 @@ class VehicleDocumentFollowup extends Model
 {
     protected $guarded = ['id'];
 
-    protected $casts = ['history' => 'array', 'version' => 'integer'];
+    protected $casts = ['history' => 'array', 'version' => 'integer', 'purchase_form_data' => 'array'];
 
     public const LABELS = ['open' => 'Em acompanhamento', 'completed' => 'Concluído com cópia digital', 'dispensed' => 'Dispensado', 'review' => 'Rever acompanhamento'];
+
+    public function statusLabel(): string
+    {
+        return $this->document === 'signed_purchase_form' && $this->status === 'open'
+            ? 'À espera de assinatura' : self::LABELS[$this->status];
+    }
+
+    public static function responsibleOptions()
+    {
+        return User::with('roles.permissions')->orderBy('name')->get()->filter(fn ($user) =>
+            \Illuminate\Support\Facades\Gate::forUser($user)->allows('vehicle_access')
+            && \Illuminate\Support\Facades\Gate::forUser($user)->allows('vehicle_edit')
+            && \Illuminate\Support\Facades\Gate::forUser($user)->allows('vehicle_documents_area_access'));
+    }
 
     public function vehicle()
     {
@@ -31,6 +45,9 @@ class VehicleDocumentFollowup extends Model
             'assigned_to_id' => $this->assigned_to_id, 'responsible_name' => User::find($this->assigned_to_id)?->name, 'contact' => $this->contact,
             'requested_on' => $this->requested_on, 'next_contact_on' => $this->next_contact_on,
             'attachment_id' => $attachmentId, 'media_id' => $this->media_id, 'status' => $this->status];
+        if ($action === 'prepare_purchase') {
+            $history[array_key_last($history)]['purchase_form_data'] = $this->purchase_form_data;
+        }
         $this->history = $history;
         $this->version++;
         $this->save();

@@ -40,7 +40,7 @@ class VehicleDocumentFollowupController extends Controller
         $this->authorizeDocument($document);
         $uploadLimitKb = $this->uploadLimitKb();
         $followup = $vehicle->documentFollowups()->where('document', $document)->first();
-        $users = User::with('roles.permissions')->orderBy('name')->get()->filter(fn ($u) => Gate::forUser($u)->allows('vehicle_access') && Gate::forUser($u)->allows('vehicle_documents_area_access') && Gate::forUser($u)->allows('vehicle_edit'));
+        $users = \App\Models\VehicleDocumentFollowup::responsibleOptions();
         // Select Rita only when unambiguous and already authorized; never grant access.
         $ritas = $users->filter(fn ($u) => preg_match('/^rita(?:\s|$)/iu', trim($u->name)));
         $defaultResponsible = $ritas->count() === 1 ? $ritas->first()->id : null;
@@ -83,9 +83,11 @@ class VehicleDocumentFollowupController extends Controller
             'next_contact_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:requested_on'],
             'note' => ['required_unless:action,upload,upload_complete', 'nullable', 'string', 'max:1000'],
             'document_file' => ['required_if:action,upload,upload_complete', 'prohibited_unless:action,upload,upload_complete', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:'.$this->uploadLimitKb()],
+            'signed_confirmed' => [$document === 'signed_purchase_form' && in_array($request->input('action'), ['complete', 'upload_complete'], true) ? 'accepted' : 'nullable'],
             'media_id' => ['required_if:action,complete', 'nullable', 'integer'],
             'confirmed' => ['exclude_unless:action,complete', 'required', 'accepted'],
         ], [
+            'signed_confirmed.accepted' => 'Confirme que a cópia está assinada e corresponde a esta compra.',
             'document_file.required_if' => 'Escolha o ficheiro antes de anexar e concluir.',
             'document_file.prohibited_unless' => 'Para guardar o ficheiro escolhido, use Anexar e concluir.',
             'document_file.mimes' => 'Escolha um ficheiro PDF, JPG, PNG ou WebP.',

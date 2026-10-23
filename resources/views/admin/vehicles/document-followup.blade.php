@@ -6,7 +6,10 @@
         <div class="panel-heading"><h1 class="panel-title">Acompanhar documento — {{ \App\Support\VehicleDocuments::applicabilityDocuments()[$document] }}</h1></div>
         <div class="panel-body">
             <h4>{{ $vehicle->license ?: $vehicle->foreign_license }} · {{ $vehicle->model }}</h4>
-            <p><strong>{{ $followup ? \App\Models\VehicleDocumentFollowup::LABELS[$followup->status] : 'Novo acompanhamento' }}</strong></p>
+            <p><strong>{{ $followup ? $followup->statusLabel() : 'Novo acompanhamento' }}</strong></p>
+            @if($document === 'signed_purchase_form' && $followup?->purchase_form_data)
+                @can('aquisition_of_the_vehicle')<p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.purchase.preview', ['vehicle' => $vehicle, 'saved' => 1]) }}">Ver e imprimir impresso guardado</a></p>@endcan
+            @endif
             <p>Registe a quem pediu o documento e quando voltar a contactar. O lembrete fica no calendário do responsável. Não são enviadas mensagens automáticas.</p>
             @if(session('message'))<div class="alert alert-success" role="status">{{ session('message') }}</div>@endif
             @if($errors->any())<div class="alert alert-danger" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
@@ -37,6 +40,7 @@
                     <p>Escolha o ficheiro de <strong>{{ \App\Support\VehicleDocuments::applicabilityDocuments()[$document] }}</strong>. Fica associado a esta viatura e identificado com este tipo, sem sair do acompanhamento.</p>
                     <div class="form-group"><label for="document_file">Ficheiro a anexar</label><input id="document_file" type="file" name="document_file" accept=".pdf,.jpg,.jpeg,.png,.webp" class="form-control"><small>PDF, JPG, PNG ou WebP, até {{ number_format($uploadLimitKb / 1024, 1, ',', '.') }} MB.</small></div>
                     <p>Ao clicar em “Anexar e concluir”, confirma que conferiu o ficheiro e que corresponde a este documento e viatura. A cópia fica guardada e o acompanhamento fica concluído.</p>
+                    @if($document === 'signed_purchase_form')<p><label><input type="checkbox" name="signed_confirmed" value="1"> Conferi que a cópia está assinada e corresponde a esta compra.</label></p>@endif
                     <button name="action" value="upload_complete" class="btn btn-success">Anexar e concluir</button>
                     @if($files->isNotEmpty())
                     <details style="margin-top:20px"><summary>Usar uma cópia já guardada</summary>
@@ -57,7 +61,7 @@
                 <hr><h4 id="followup-history">Histórico</h4>
                 <ul>@foreach($historyEntries->reverse() as $entry)<li>
                     <strong>{{ \Carbon\Carbon::parse($entry['at'])->format('d/m/Y H:i') }} · {{ $entry['user_name'] }}</strong>
-                    — {{ \App\Models\VehicleDocumentFollowup::LABELS[$entry['status']] }}<br>
+                    — {{ $document === 'signed_purchase_form' && $entry['status'] === 'open' ? 'À espera de assinatura' : \App\Models\VehicleDocumentFollowup::LABELS[$entry['status']] }}<br>
                     {{ $entry['reason'] }} · Responsável: {{ $entry['responsible_name'] ?? $followup->responsible?->name }} · Pedido a: {{ $entry['contact'] }} · Próximo contacto: {{ \Carbon\Carbon::parse($entry['next_contact_on'])->format('d/m/Y') }}
                     @if($entry['attachment'])
                         <br><a href="{{ $entry['attachment']->getUrl() }}" target="_blank" rel="noopener noreferrer">Abrir anexo: {{ $entry['attachment']->file_name }}</a>
