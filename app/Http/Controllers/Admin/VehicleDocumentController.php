@@ -34,9 +34,7 @@ class VehicleDocumentController extends Controller
             $query->where(function ($pending) use ($reason) {
                 if ($reason !== 'unidentified') {
                     $pending->where(function ($checks) {
-                        foreach (array_keys(VehicleDocuments::checks()) as $field) {
-                            $checks->orWhereNull($field)->orWhere($field, '!=', 1);
-                        }
+                        VehicleDocuments::pendingChecksQuery($checks);
                     });
                 }
                 if ($reason !== 'checks') {
@@ -57,6 +55,47 @@ class VehicleDocumentController extends Controller
             return response()->json(compact('vehicles', 'scope', 'reason', 'filters'));
         }
         return view('admin.vehicles.document-review', compact('vehicles', 'scope', 'reason', 'filters'));
+    }
+
+    public function applicability(Request $request, Vehicle $vehicle, string $document)
+    {
+        abort_unless(Gate::allows('vehicle_edit') && Gate::allows('vehicle_documents_area_access'), 403);
+        abort_unless(array_key_exists($document, VehicleDocuments::applicabilityDocuments()), 404);
+        if (is_string($request->input('reason'))) {
+            $request->merge(['reason' => trim($request->input('reason'))]);
+        }
+        $data = $request->validate([
+            'status' => ['required', Rule::in(['not_applicable', 'review'])],
+            'reason' => ['required', 'string', 'max:500'],
+            'revision' => ['required', 'string', 'size:64'],
+        ]);
+        DB::transaction(function () use ($request, $vehicle, $document, $data) {
+            $locked = Vehicle::whereKey($vehicle->id)->lockForUpdate()->firstOrFail();
+            $decisions = $locked->document_applicability ?? [];
+            $before = $decisions[$document] ?? null;
+            // Retries are harmless; a stale different decision must be reviewed.
+            if (($before['status'] ?? null) === $data['status'] && ($before['reason'] ?? null) === $data['reason']) return;
+            abort_unless(hash_equals(VehicleDocuments::applicabilityRevision($locked, $document), $data['revision']), 409,
+                'Esta decisão já foi alterada. Atualize a página e confira antes de gravar.');
+            $entry = ['status' => $data['status'], 'reason' => $data['reason'],
+                'user_id' => $request->user()->id, 'user_name' => $request->user()->name,
+                'at' => now()->toIso8601String()];
+            $history = $before['history'] ?? [];
+            $history[] = $entry;
+            $decisions[$document] = $entry + ['history' => $history];
+            $locked->document_applicability = $decisions;
+            $locked->save();
+            AuditLog::create([
+                'description' => 'vehicle_document:applicability', 'subject_id' => $locked->id,
+                'subject_type' => Vehicle::class.'#'.$locked->id, 'user_id' => $request->user()->id,
+                'properties' => ['document' => $document, 'before' => $before ? array_diff_key($before, ['history' => true]) : null, 'after' => $entry],
+                'host' => $request->ip(),
+            ]);
+        });
+        return response()->json([
+            'message' => 'Decisão guardada. As confirmações de receção e os ficheiros mantêm-se.',
+            'summary_html' => view('admin.vehicles.partials.document-summary', ['vehicle' => $vehicle->fresh('media')])->render(),
+        ]);
     }
 
     public function update(Request $request, Vehicle $vehicle, string $media)

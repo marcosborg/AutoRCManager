@@ -918,6 +918,7 @@
                                     </div>
                                 </div>
                             </div>
+                            <p class="help-block">A ação coletiva mantém as confirmações dos documentos marcados como “Não se aplica”. Estes não são marcados como recebidos.</p>
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group {{ $errors->has('purchase_and_sale_agreement') ? 'has-error' : '' }}">
@@ -1874,6 +1875,24 @@
     </div>
 @endcan
 @include('admin.clients.partials.provenienceModal')
+@can('vehicle_documents_area_access')
+<div class="modal fade" id="document-applicability-modal" tabindex="-1" role="dialog" aria-labelledby="document-applicability-title" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+        <div class="modal-header"><h4 class="modal-title" id="document-applicability-title">Aplicabilidade do documento</h4></div>
+        <div class="modal-body">
+            <p id="document-applicability-choice"></p>
+            <label for="document-applicability-reason">Motivo (obrigatório)</label>
+            <textarea id="document-applicability-reason" class="form-control" maxlength="500" rows="3"></textarea>
+            <p class="help-block">A decisão fica guardada com o seu nome e a data. Não altera a receção nem os ficheiros.</p>
+            <p id="document-applicability-error" class="text-danger" role="alert"></p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="save-document-applicability">Guardar decisão</button>
+        </div>
+    </div></div>
+</div>
+@endcan
 @endsection
 
 @section('scripts')
@@ -2208,8 +2227,10 @@
 
         masterCheckbox.addEventListener('change', function () {
             documentCheckboxes.forEach(function (checkbox) {
-                checkbox.checked = masterCheckbox.checked;
+                const decision = document.querySelector('[data-applicability="' + checkbox.id + '"]');
+                if (!decision || decision.dataset.dispensed !== '1') checkbox.checked = masterCheckbox.checked;
             });
+            syncMasterFromDocuments();
         });
 
         documentCheckboxes.forEach(function (checkbox) {
@@ -2802,6 +2823,41 @@
             }, 3500);
         }
 
+        let applicabilitySaving = false;
+        let applicabilityChoice = null;
+        $(document).on('click', '.js-document-applicability', function () {
+            if (isSubmitting || applicabilitySaving || documentSaves.size) return;
+            applicabilityChoice = {url: this.dataset.url, status: this.dataset.status, revision: this.dataset.revision};
+            $('#document-applicability-choice').text(this.dataset.label + ' — ' + this.textContent.trim());
+            $('#document-applicability-reason').val('');
+            $('#document-applicability-error').text('');
+            $('#document-applicability-modal').modal('show');
+        });
+        $('#save-document-applicability').on('click', function () {
+            if (!applicabilityChoice || isSubmitting || applicabilitySaving) return;
+            const reason = $('#document-applicability-reason').val().trim();
+            if (!reason || reason.length > 500) {
+                $('#document-applicability-error').text('Indique um motivo entre 1 e 500 caracteres.');
+                return;
+            }
+            applicabilitySaving = true;
+            $('#document-applicability-modal button, #document-applicability-reason').prop('disabled', true);
+            $.ajax({url: applicabilityChoice.url, method: 'PATCH', data: {
+                _token: form.querySelector('input[name="_token"]').value,
+                status: applicabilityChoice.status, reason: reason, revision: applicabilityChoice.revision
+            }}).done(function (response) {
+                $('#document-summary').replaceWith(response.summary_html);
+                $('.js-applicability-status').text(response.message);
+                $('#document-applicability-modal').modal('hide');
+            }).fail(function (xhr) {
+                $('#document-applicability-error').text(xhr.responseJSON && xhr.responseJSON.message
+                    ? xhr.responseJSON.message : 'Não foi possível guardar. Tente novamente.');
+            }).always(function () {
+                applicabilitySaving = false;
+                $('#document-applicability-modal button, #document-applicability-reason').prop('disabled', false);
+            });
+        });
+
         const documentSaves = new Map();
         function documentRows() {
             return Array.from(form.querySelectorAll('[data-document-file]'));
@@ -2843,7 +2899,7 @@
             return request;
         }
         $(document).on('click', '.js-save-document-type', function () {
-            if (!isSubmitting) saveDocumentType(this.closest('[data-document-file]'));
+            if (!isSubmitting && !applicabilitySaving) saveDocumentType(this.closest('[data-document-file]'));
         });
         $(document).on('change', '.js-document-type', function () {
             const row = this.closest('[data-document-file]');
@@ -2860,6 +2916,7 @@
                 panelIds.forEach(function (panelId) {
                     const currentPanel = document.getElementById(panelId);
                     const freshPanel = doc.getElementById(panelId);
+                    if (panelId === 'document-summary' && applicabilitySaving) return;
                     if (panelId === 'document-classification' && (documentSaves.size || documentRows().some(documentTypeDirty))) return;
                     if (currentPanel && freshPanel) {
                         currentPanel.innerHTML = freshPanel.innerHTML;
@@ -2922,6 +2979,10 @@
         form.addEventListener('submit', async function (event) {
             event.preventDefault();
             if (isSubmitting) return;
+            if (applicabilitySaving) {
+                showAjaxAlert('warning', 'Aguarde a gravação da decisão documental.');
+                return;
+            }
             const photoProblem = VehiclePhotoUploads.blockReason();
             if (photoProblem) {
                 showAjaxAlert('warning', photoProblem);

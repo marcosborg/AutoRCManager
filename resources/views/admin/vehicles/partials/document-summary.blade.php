@@ -11,28 +11,34 @@
     <div class="panel-heading"><h5 id="document-summary-title" style="margin: 0;">Resumo da documentação guardada</h5></div>
     <div class="panel-body">
         <p>Uma confirmação na ficha pode corresponder a um documento em papel. Não significa que exista uma cópia digital. Este resumo é atualizado depois de gravar.</p>
+        <p>Use “Não se aplica” apenas quando confirmou que o documento não é necessário nesta viatura. Se chegar mais tarde, mantenha-o por conferir. Uma pró-forma não comprova a fatura definitiva.</p>
+        <p class="js-applicability-status" role="status" aria-live="polite"></p>
         <div class="table-responsive">
             <table class="table table-condensed" style="margin-bottom: 0;">
-                <thead><tr><th scope="col">Documento</th><th scope="col">Confirmação na ficha</th><th scope="col">Cópia digital</th></tr></thead>
+                <thead><tr><th scope="col">Documento</th><th scope="col">Confirmação na ficha</th><th scope="col">Cópia digital</th><th scope="col">Aplicabilidade</th></tr></thead>
                 <tbody>
                     @foreach($documentChecks as $field => $label)
                         <tr data-document="{{ $field }}">
                             <th scope="row">{{ $label }}</th>
                             <td>{{ (int) $vehicle->{$field} === 1 ? 'Recebido segundo a ficha' : 'Por confirmar' }}</td>
                             <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, $field === 'vehicle_ownership_title' ? 'dua' : $field)) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
+                            @include('admin.vehicles.partials.document-applicability', ['document' => $field])
                         </tr>
                     @endforeach
-                    <tr data-document="inspection"><th scope="row">Inspeção</th><td>Por confirmar — sem confirmação própria na ficha</td><td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'inspection')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td></tr>
+                    <tr data-document="inspection"><th scope="row">Inspeção</th><td>Por confirmar — sem confirmação própria na ficha</td><td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'inspection')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>@include('admin.vehicles.partials.document-applicability', ['document' => 'inspection'])</tr>
                     <tr data-document="dav">
                         <th scope="row">DAV</th>
                         <td>Sem confirmação própria na ficha</td>
                         <td>{{ $davCount ? 'Ficheiro identificado: '.$davCount : 'Por confirmar — sem ficheiro identificado' }}</td>
+                        @include('admin.vehicles.partials.document-applicability', ['document' => 'dav'])
                     </tr>
-                    @foreach(['purchase_invoice' => 'Fatura de compra', 'other' => 'Outro documento'] as $type => $label)
-                        @if($count = \App\Support\VehicleDocuments::count($vehicle, $type))
-                            <tr data-document="{{ $type }}"><th scope="row">{{ $label }}</th><td>Sem confirmação própria na ficha</td><td>Ficheiro identificado: {{ $count }}</td></tr>
-                        @endif
-                    @endforeach
+                    <tr data-document="purchase_invoice"><th scope="row">Fatura de compra</th><td>Sem confirmação própria na ficha</td>
+                        <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'purchase_invoice')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
+                        @include('admin.vehicles.partials.document-applicability', ['document' => 'purchase_invoice'])
+                    </tr>
+                    @if($count = \App\Support\VehicleDocuments::count($vehicle, 'other'))
+                        <tr><th scope="row">Outro documento</th><td>Sem confirmação própria na ficha</td><td>Ficheiro identificado: {{ $count }}</td><td>Conferir o conteúdo</td></tr>
+                    @endif
                 </tbody>
             </table>
         </div>

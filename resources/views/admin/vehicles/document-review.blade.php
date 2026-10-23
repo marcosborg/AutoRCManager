@@ -67,7 +67,11 @@
                                     @if($pendingChecks)
                                         <ul style="padding-left:18px; margin-bottom:0;">@foreach($pendingChecks as $label)<li>{{ $label }}</li>@endforeach</ul>
                                     @else
-                                        Nenhuma — confirmações preenchidas na ficha
+                                        @if(collect(array_keys(\App\Support\VehicleDocuments::checks()))->contains(fn ($field) => \App\Support\VehicleDocuments::notApplicable($vehicle, $field)))
+                                            Nenhuma — confirmações recebidas ou dispensadas com motivo
+                                        @else
+                                            Nenhuma — confirmações preenchidas na ficha
+                                        @endif
                                     @endif
                                 </td>
                                 <td>{{ $vehicle->unidentified_count }} {{ $vehicle->unidentified_count == 1 ? 'anexo' : 'anexos' }}</td>
