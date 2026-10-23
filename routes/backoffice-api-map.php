@@ -6,6 +6,8 @@ return [
     [['POST'], 'vehicles/{vehicle}/documents/{document}/followup', '\\App\\Http\\Controllers\\Admin\\VehicleDocumentFollowupController@store'],
     [['GET'], 'vehicles/document-review', '\\App\\Http\\Controllers\\Admin\\VehicleDocumentController@index'],
     [['PATCH'], 'vehicles/{vehicle}/documents/{document}/applicability', '\\App\\Http\\Controllers\\Admin\\VehicleDocumentController@applicability'],
+    [['GET'], 'vehicles/{vehicle}/documents/{media}/history', '\\App\\Http\\Controllers\\Admin\\VehicleDocumentController@history'],
+    [['POST'], 'vehicles/{vehicle}/documents/{media}/annul', '\\App\\Http\\Controllers\\Admin\\VehicleDocumentController@annul'],
     [['PATCH'], 'vehicles/{vehicle}/documents/{media}/type', '\\App\\Http\\Controllers\\Admin\\VehicleDocumentController@update'],
     [['GET'], '', '\\App\\Http\\Controllers\\Admin\\HomeController@index'],
     [['GET'], 'ai-assistants', '\\App\\Http\\Controllers\\Admin\\AiAssistantController@index'],

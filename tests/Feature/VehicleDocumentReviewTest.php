@@ -95,7 +95,7 @@ class VehicleDocumentReviewTest extends TestCase
         $this->review(['license' => $v->license])->assertSee($v->license);
         $this->patchJson($url, ['type' => 'dua', 'revision' => VehicleDocuments::revision($f)])->assertOk();
         $this->assertSame(0, $this->review(['license' => $v->license])->viewData('vehicles')->total());
-        $this->patchJson($url, ['type' => 'unknown', 'revision' => VehicleDocuments::revision($f->fresh())])->assertOk();
+        $this->patchJson($url, ['reason' => 'Tipo incorreto', 'type' => 'unknown', 'revision' => VehicleDocuments::revision($f->fresh())])->assertOk();
         $this->assertSame(1, $this->review(['license' => $v->license])->viewData('vehicles')->total());
         $this->assertSame([], VehicleDocuments::pendingChecks($v->fresh()));
     }

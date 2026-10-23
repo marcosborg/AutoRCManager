@@ -11,6 +11,9 @@
                     <thead><tr><th scope="col">Ficheiro / grupo atual</th><th scope="col">Tipo de documento</th><th scope="col">Ação</th></tr></thead>
                     <tbody>
                         @foreach(\App\Support\VehicleDocuments::files($vehicle) as $file)
+                            @if(\App\Support\VehicleDocuments::annulled($file))
+                                <tr><td><a href="{{ $file->getUrl() }}" target="_blank" rel="noopener noreferrer">Abrir ficheiro: {{ $file->file_name }}</a></td><td><strong>Anulado</strong> — {{ \App\Support\VehicleDocuments::TYPES[\App\Support\VehicleDocuments::type($file)] }}</td><td><a href="{{ route('admin.vehicles.documents.history', [$vehicle, $file->id]) }}">Ver histórico</a></td></tr>
+                            @else
                             <tr data-document-file="{{ $file->id }}" data-saved-type="{{ \App\Support\VehicleDocuments::type($file) }}" data-revision="{{ \App\Support\VehicleDocuments::revision($file) }}">
                                 <td style="overflow-wrap: anywhere;">
                                     <a href="{{ $file->getUrl() }}" target="_blank" rel="noopener noreferrer">Abrir ficheiro: {{ $file->file_name }}</a>
@@ -23,12 +26,17 @@
                                             <option value="{{ $value }}" {{ \App\Support\VehicleDocuments::type($file) === $value ? 'selected' : '' }}>{{ $label }}</option>
                                         @endforeach
                                     </select>
+                                    <label for="document-reason-{{ $file->id }}">Motivo da correção</label>
+                                    <input id="document-reason-{{ $file->id }}" class="form-control js-document-reason" maxlength="500" placeholder="Obrigatório ao corrigir um tipo já identificado">
+
                                 </td>
                                 <td>
                                     <button type="button" class="btn btn-default js-save-document-type" data-url="{{ route('admin.vehicles.documents.type', [$vehicle, $file->id]) }}">Guardar tipo</button>
+                                    <p><a href="{{ route('admin.vehicles.documents.history', [$vehicle, $file->id]) }}">Histórico / anular anexo</a></p>
                                     <span class="js-document-type-status help-block" role="status" aria-live="polite"></span>
                                 </td>
                             </tr>
+                            @endif
                         @endforeach
                     </tbody>
                 </table>

@@ -1,9 +1,9 @@
 @php
     $documentChecks = \App\Support\VehicleDocuments::checks();
     $unidentifiedGroups = [
-        'DAV' => $vehicle->getMedia('dav')->filter(fn ($file) => \App\Support\VehicleDocuments::type($file) === 'unknown')->count(),
-        'DUA / Inspeção' => $vehicle->getMedia('documents')->filter(fn ($file) => \App\Support\VehicleDocuments::type($file) === 'unknown')->count(),
-        'Outros documentos' => $vehicle->getMedia('additional_documents')->filter(fn ($file) => \App\Support\VehicleDocuments::type($file) === 'unknown')->count(),
+        'DAV' => $vehicle->getMedia('dav')->filter(fn ($file) => !\App\Support\VehicleDocuments::annulled($file) && \App\Support\VehicleDocuments::type($file) === 'unknown')->count(),
+        'DUA / Inspeção' => $vehicle->getMedia('documents')->filter(fn ($file) => !\App\Support\VehicleDocuments::annulled($file) && \App\Support\VehicleDocuments::type($file) === 'unknown')->count(),
+        'Outros documentos' => $vehicle->getMedia('additional_documents')->filter(fn ($file) => !\App\Support\VehicleDocuments::annulled($file) && \App\Support\VehicleDocuments::type($file) === 'unknown')->count(),
     ];
     $davCount = \App\Support\VehicleDocuments::count($vehicle, 'dav');
 @endphp

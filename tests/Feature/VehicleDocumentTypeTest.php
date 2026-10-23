@@ -122,6 +122,76 @@ class VehicleDocumentTypeTest extends TestCase
         $this->assertSame('purchase_invoice', VehicleDocuments::type($file->fresh()));
     }
 
+    public function test_corrections_require_reason_and_show_old_and_new_values_with_author(): void
+    {
+        $v = $this->vehicle(); $file = $this->file($v); $u = $this->user();
+        $this->actingAs($u)->patchJson($this->url($v, $file), $this->payload($file, 'dua'))->assertOk();
+        $data = $this->payload($file, 'inspection'); unset($data['reason']);
+        $this->patchJson($this->url($v, $file), $data)->assertUnprocessable()->assertJsonValidationErrors('reason');
+        $this->patchJson($this->url($v, $file), $data + ['reason' => '   '])->assertUnprocessable();
+        $this->patchJson($this->url($v, $file), $data + ['reason' => 'Conferi: é inspeção'])->assertOk();
+        $this->get(route('admin.vehicles.documents.history', [$v, $file->id]))->assertOk()->assertSee($u->name)->assertSee('Conferi: é inspeção')->assertSee('DUA')->assertSee('Inspeção (IPO)');
+    }
+
+    public function test_annul_preserves_bytes_and_history_but_invalidates_completed_proof(): void
+    {
+        $v = $this->vehicle(); $file = $this->file($v); $u = $this->user();
+        $this->actingAs($u)->patchJson($this->url($v, $file), $this->payload($file, 'dua'))->assertOk();
+        $f = $v->documentFollowups()->create(['document' => 'vehicle_ownership_title', 'assigned_to_id' => $u->id, 'contact' => 'Fornecedor', 'requested_on' => '2026-10-23', 'next_contact_on' => '2026-10-27', 'status' => 'completed', 'media_id' => $file->id, 'version' => 0, 'history' => []]);
+        $f->record('complete', 'Cópia conferida');
+        $priorHistory = $f->fresh()->history[0]; $bytes = file_get_contents($file->getPath());
+        $vehicleBefore = $v->fresh()->getAttributes();
+        $url = route('admin.vehicles.documents.annul', [$v, $file->id]);
+        $data = ['reason' => 'Anexo de outra viatura', 'revision' => VehicleDocuments::revision($file->fresh())];
+        $this->postJson($url, ['revision' => $data['revision']])->assertUnprocessable();
+        $this->postJson($url, array_replace($data, ['revision' => str_repeat('0', 64)]))->assertStatus(409);
+        $this->postJson($url, $data)->assertOk();
+        $this->postJson($url, $data)->assertOk();
+        $this->assertTrue(VehicleDocuments::annulled($file->fresh()));
+        $this->assertSame($bytes, file_get_contents($file->getPath()));
+        $this->assertSame($vehicleBefore, $v->fresh()->getAttributes());
+        $this->assertSame(0, VehicleDocuments::count($v->fresh('media'), 'dua'));
+        $this->assertFalse(VehicleDocuments::matches($file->fresh(), 'vehicle_ownership_title'));
+        $this->assertSame('review', $f->fresh()->status);
+        $this->assertCount(2, $f->fresh()->history);
+        $this->assertSame($priorHistory, $f->fresh()->history[0]);
+        $this->assertSame(1, AuditLog::where('description', 'vehicle_document:annulled')->where('subject_id', $file->id)->count());
+        $this->patchJson($this->url($v, $file), $this->payload($file, 'inspection'))->assertUnprocessable();
+        $this->get(route('admin.vehicles.documents.history', [$v, $file->id]))->assertOk()->assertSee('Anulado')->assertSee('Anexo de outra viatura')->assertSee($file->getUrl(), false);
+        $this->get(route('admin.vehicles.edit', $v))->assertOk()->assertSee('Anulado')->assertSee('Ver histórico');
+    }
+
+    public function test_annulled_unclassified_files_are_not_pending_and_permissions_are_enforced(): void
+    {
+        $v = $this->vehicle(); $file = $this->file($v); $other = $this->file($this->vehicle());
+        $u = $this->user(); $this->actingAs($u);
+        $url = route('admin.vehicles.documents.annul', [$v, $file->id]);
+        $data = ['reason' => 'Duplicado', 'revision' => VehicleDocuments::revision($file)];
+        $this->postJson(route('admin.vehicles.documents.annul', [$v, $other->id]), $data)->assertNotFound();
+        $this->postJson($url, $data)->assertOk();
+        $q = $v->media()->getQuery(); VehicleDocuments::unidentifiedQuery($q);
+        $this->assertSame(0, $q->count());
+        $this->actingAs($this->user([]))->get(route('admin.vehicles.documents.history', [$v, $file->id]))->assertForbidden();
+        $this->postJson($url, $data)->assertForbidden();
+        $reader = $this->user(['vehicle_access', 'vehicle_documents_area_access']);
+        $this->actingAs($reader)->get(route('admin.vehicles.documents.history', [$v, $file->id]))->assertOk()->assertDontSee('Anular anexo e guardar motivo');
+        $this->postJson($url, $data)->assertForbidden();
+    }
+
+    public function test_api_annulment_and_history_use_existing_permissions_and_do_not_expose_host(): void
+    {
+        $v = $this->vehicle(); $file = $this->file($v);
+        $base = '/api/v1/backoffice/vehicles/'.$v->id.'/documents/'.$file->id;
+        $data = ['reason' => 'Duplicado', 'revision' => VehicleDocuments::revision($file)];
+        $this->postJson($base.'/annul', $data)->assertUnauthorized();
+        $this->getJson($base.'/history')->assertUnauthorized();
+        $u = $this->user(); $u->roles()->attach(Role::firstOrCreate(['title' => 'Admin']));
+        $token = $u->createToken('integration:document-annul-test')->plainTextToken;
+        $headers = ['Authorization' => 'Bearer '.$token];
+        $this->postJson($base.'/annul', $data, $headers)->assertOk();
+        $this->getJson($base.'/history', $headers)->assertOk()->assertJsonPath('annulled', true)->assertJsonPath('history.0.properties.reason', 'Duplicado')->assertJsonMissingPath('history.0.host');
+    }
+
     private function vehicle(): Vehicle
     {
         return Vehicle::create(['license' => uniqid('TYP-'), 'general_state_id' => GeneralState::firstOrCreate(['name' => 'DOCUMENT TYPE TEST'])->id]);
@@ -134,7 +204,7 @@ class VehicleDocumentTypeTest extends TestCase
 
     private function payload($file, string $type): array
     {
-        return ['type' => $type, 'revision' => VehicleDocuments::revision($file->fresh())];
+        return ['reason' => 'Correção após conferência', 'type' => $type, 'revision' => VehicleDocuments::revision($file->fresh())];
     }
 
     private function url($vehicle, $file): string

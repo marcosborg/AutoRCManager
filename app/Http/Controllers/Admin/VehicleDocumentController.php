@@ -105,22 +105,66 @@ class VehicleDocumentController extends Controller
         ]);
     }
 
+    public function history(Request $request, Vehicle $vehicle, string $media)
+    {
+        abort_unless(Gate::allows('vehicle_documents_area_access') && (Gate::allows('vehicle_access') || Gate::allows('vehicle_edit')), 403);
+        abort_unless(ctype_digit($media), 404);
+        $file = $vehicle->media()->whereKey($media)->whereIn('collection_name', VehicleDocuments::COLLECTIONS)->firstOrFail();
+        $history = AuditLog::where('subject_id', $file->id)->where('subject_type', get_class($file).'#'.$file->id)
+            ->whereIn('description', ['vehicle_document:classified', 'vehicle_document:annulled'])->orderByDesc('id')->get();
+        $authors = \App\Models\User::withTrashed()->whereIn('id', $history->pluck('user_id'))->pluck('name', 'id');
+        if ($request->is('api/v1/backoffice/*')) {
+            return response()->json(['media_id' => $file->id, 'annulled' => VehicleDocuments::annulled($file),
+                'history' => $history->map(fn ($entry) => ['at' => $entry->created_at, 'user_name' => $entry->properties['user_name'] ?? $authors[$entry->user_id] ?? 'Utilizador indisponível', 'properties' => $entry->properties])]);
+        }
+        return view('admin.vehicles.document-history', compact('vehicle', 'file', 'history', 'authors'));
+    }
+
+    public function annul(Request $request, Vehicle $vehicle, string $media)
+    {
+        abort_unless(Gate::allows('vehicle_edit') && Gate::allows('vehicle_documents_area_access'), 403);
+        abort_unless(ctype_digit($media), 404);
+        $request->merge(['reason' => is_string($request->reason) ? trim($request->reason) : $request->reason]);
+        $data = $request->validate(['reason' => ['required', 'string', 'max:500'], 'revision' => ['required', 'string', 'size:64']]);
+        DB::transaction(function () use ($request, $vehicle, $media, $data) {
+            Vehicle::whereKey($vehicle->id)->lockForUpdate()->firstOrFail();
+            $file = $vehicle->media()->whereKey($media)->whereIn('collection_name', VehicleDocuments::COLLECTIONS)->lockForUpdate()->firstOrFail();
+            if (VehicleDocuments::annulled($file)) return;
+            abort_unless(hash_equals(VehicleDocuments::revision($file), $data['revision']), 409, 'O anexo mudou. Atualize a página antes de anular.');
+            $entry = ['reason' => $data['reason'], 'user_id' => $request->user()->id, 'user_name' => $request->user()->name, 'at' => now()->toIso8601String()];
+            $file->setCustomProperty('document_annulment', $entry);
+            $file->save();
+            AuditLog::create(['description' => 'vehicle_document:annulled', 'subject_id' => $file->id,
+                'subject_type' => get_class($file).'#'.$file->id, 'user_id' => $request->user()->id,
+                'properties' => $entry + ['vehicle_id' => $vehicle->id, 'media_id' => $file->id, 'before' => VehicleDocuments::type($file), 'after' => 'annulled'], 'host' => $request->ip()]);
+        });
+        if ($request->expectsJson()) return response()->json(['message' => 'Anexo anulado. O ficheiro e o histórico foram preservados.']);
+        return redirect()->route('admin.vehicles.documents.history', [$vehicle, $media])->with('message', 'Anexo anulado. O ficheiro e o histórico foram preservados.');
+    }
+
     public function update(Request $request, Vehicle $vehicle, string $media)
     {
         abort_unless(Gate::allows('vehicle_edit') && Gate::allows('vehicle_documents_area_access'), 403);
         abort_unless(ctype_digit($media), 404);
+        $request->merge(['reason' => is_string($request->reason) ? trim($request->reason) : $request->reason]);
         $data = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
             'type' => ['required', 'string', Rule::in(array_keys(VehicleDocuments::TYPES))],
             'revision' => ['required', 'string', 'size:64'],
         ]);
 
         $file = DB::transaction(function () use ($request, $vehicle, $media, $data) {
+            Vehicle::whereKey($vehicle->id)->lockForUpdate()->firstOrFail();
             $file = $vehicle->media()->whereKey($media)->whereIn('collection_name', VehicleDocuments::COLLECTIONS)->lockForUpdate()->firstOrFail();
+            abort_if(VehicleDocuments::annulled($file), 422, 'Este anexo está anulado. O histórico e o ficheiro mantêm-se disponíveis.');
             $before = VehicleDocuments::type($file);
             if ($before === $data['type']) {
                 return $file;
             }
             abort_unless(hash_equals(VehicleDocuments::revision($file), $data['revision']), 409, 'Este tipo já foi alterado. Atualize a página e confira antes de gravar.');
+            if (($before !== 'unknown' || $file->getCustomProperty('document_classification') !== null) && empty($data['reason'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['reason' => 'Indique o motivo da correção do tipo de documento.']);
+            }
             $file->setCustomProperty('document_classification', [
                 'type' => $data['type'],
                 'user_id' => $request->user()->id,
@@ -132,7 +176,7 @@ class VehicleDocumentController extends Controller
                 'subject_id' => $file->id,
                 'subject_type' => get_class($file).'#'.$file->id,
                 'user_id' => $request->user()->id,
-                'properties' => ['vehicle_id' => $vehicle->id, 'media_id' => $file->id, 'before' => $before, 'after' => $data['type']],
+                'properties' => ['vehicle_id' => $vehicle->id, 'media_id' => $file->id, 'before' => $before, 'after' => $data['type'], 'reason' => $data['reason'] ?? 'Identificação inicial', 'user_name' => $request->user()->name],
                 'host' => $request->ip(),
             ]);
             return $file;
