@@ -65,6 +65,10 @@ class VehicleApiController extends Controller
 
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle)
     {
+        if (\App\Support\WorkshopPrivacy::restricted()) {
+            $vehicle->update($request->safe()->only(\App\Support\WorkshopPrivacy::EDIT_FIELDS));
+            return new VehicleResource($vehicle->fresh());
+        }
         $vehicle->update($request->all());
 
         if (count($vehicle->documents) > 0) {

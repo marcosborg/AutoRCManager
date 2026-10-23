@@ -198,6 +198,7 @@
                 </div>
             </div>
 
+            @unless(\App\Support\WorkshopPrivacy::restricted())
             <div class="panel panel-default">
                 <div class="panel-heading">
                     Inicial photos in aquisition (apenas visualizacao)
@@ -222,6 +223,7 @@
                 </div>
             </div>
 
+            @endunless
             <div class="panel panel-default">
                 <div class="panel-heading">
                     Historico de intervencoes da viatura

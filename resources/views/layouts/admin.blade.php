@@ -199,7 +199,7 @@
                                 ->get();
                         }
 
-                        if (\Illuminate\Support\Facades\Schema::hasTable('vehicle_state_transfers')
+                        if (!\App\Support\WorkshopPrivacy::restricted() && \Illuminate\Support\Facades\Schema::hasTable('vehicle_state_transfers')
                             && \Illuminate\Support\Facades\Schema::hasColumn('vehicle_state_transfers', 'checked_at')) {
                             $uncheckedStateTransfers = \App\Models\VehicleStateTransfer::with(['vehicle', 'from_general_state', 'to_general_state'])
                                 ->whereNull('checked_at')
@@ -378,6 +378,7 @@
                                 </ul>
                             </li>
                         @endif
+                        @unless(\App\Support\WorkshopPrivacy::restricted())
                         <li class="dropdown notifications-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="Mudancas de estado por verificar">
                                 <i class="fa fa-circle-o"></i>
@@ -411,6 +412,7 @@
                                 <li class="footer"><a href="{{ route('admin.vehicle-state-transfers.index') }}">Ver historico de estados</a></li>
                             </ul>
                         </li>
+                        @endunless
                         <li class="dropdown notifications-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="Tarefas do calendario">
                                 <i class="fa fa-bell-o"></i>

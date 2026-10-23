@@ -219,7 +219,7 @@
                                 </a>
                             </li>
                         @endcan
-                        @can('setting_access')
+                        @if(!\App\Support\WorkshopPrivacy::restricted() && auth()->user()->can('setting_access'))
                             <li class="{{ request()->is("admin/vehicle-state-transfers") ? "active" : "" }}">
                                 <a href="{{ route("admin.vehicle-state-transfers.index") }}">
                                     <i class="fa-fw fas fa-history">
@@ -229,7 +229,7 @@
 
                                 </a>
                             </li>
-                        @endcan
+                        @endif
                     </ul>
                 </li>
             @endcan
@@ -277,12 +277,14 @@
 
                     </a>
                 </li>
+                @unless(\App\Support\WorkshopPrivacy::restricted())
                 <li class="{{ request()->is("admin/vehicles-deleted") ? "active" : "" }}">
                     <a href="{{ route("admin.vehicles.deleted") }}">
                         <i class="fa-fw fas fa-recycle"></i>
                         <span>Recuperar Viaturas</span>
                     </a>
                 </li>
+                @endunless
             @endcan
             @can('vehicle_consignment_access')
                 <li class="{{ request()->is("admin/vehicle-consignments") || request()->is("admin/vehicle-consignments/*") ? "active" : "" }}">

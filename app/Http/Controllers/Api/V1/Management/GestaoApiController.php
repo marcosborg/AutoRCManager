@@ -473,7 +473,7 @@ class GestaoApiController extends Controller
 
     private function vehicleCoverPhotoPayload(Vehicle $vehicle): ?array
     {
-        $media = $vehicle->getFirstMedia('photos') ?: $vehicle->getFirstMedia('inicial');
+        $media = $vehicle->getFirstMedia('photos') ?: (\App\Support\WorkshopPrivacy::restricted() ? null : $vehicle->getFirstMedia('inicial'));
 
         if (! $media) {
             return null;

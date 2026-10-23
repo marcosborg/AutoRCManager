@@ -20,6 +20,21 @@ class UpdateVehicleRequest extends FormRequest
 
     public function rules()
     {
+        if (\App\Support\WorkshopPrivacy::restricted()) {
+            return [
+                'license' => ['nullable', 'string', 'max:255'], 'foreign_license' => ['nullable', 'string', 'max:255'],
+                'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
+                'model' => ['nullable', 'string', 'max:255'], 'version' => ['nullable', 'string', 'max:255'],
+                'year' => ['nullable', 'integer', 'between:1900,2200'], 'month' => ['nullable', 'string', 'max:20'],
+                'license_date' => ['nullable', 'date_format:'.config('panel.date_format')],
+                'color' => ['nullable', 'string', 'max:255'], 'fuel' => ['nullable', 'string', 'max:255'],
+                'transmission' => ['nullable', \Illuminate\Validation\Rule::in(array_keys(Vehicle::TRANSMISSION_SELECT))], 'engine_displacement' => ['nullable', 'string', 'max:255'],
+                'kilometers' => ['nullable', 'integer', 'min:0'], 'inspec_b' => ['nullable', 'string', 'max:255'],
+                'storage_location' => ['nullable', 'string', 'max:255'],
+                'vehicle_manuals' => ['sometimes', 'boolean'], 'cables' => ['sometimes', 'boolean'], 'cables_2' => ['sometimes', 'boolean'],
+                'key' => ['nullable', 'string', 'max:255'],
+            ];
+        }
         return [
             'general_state_id' => [
                 'required',
@@ -392,6 +407,17 @@ class UpdateVehicleRequest extends FormRequest
 
     public function withValidator(Validator $validator)
     {
+        if (\App\Support\WorkshopPrivacy::restricted()) {
+            $validator->after(function (Validator $validator) {
+                $vehicle = $this->route('vehicle');
+                if ($vehicle instanceof Vehicle) {
+                    foreach (['license', 'foreign_license'] as $field) {
+                        if ($this->exists($field)) $this->validateUniqueNormalizedLicense($validator, $field, $vehicle->id, $vehicle);
+                    }
+                }
+            });
+            return;
+        }
         $validator->after(function (Validator $validator) {
             if ($this->boolean('import_process_present')) {
                 $this->validateImportProcess($validator);

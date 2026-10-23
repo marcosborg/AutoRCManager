@@ -20,6 +20,15 @@ class Vehicle extends Model implements HasMedia
 
     public $table = 'vehicles';
 
+    public function toArray()
+    {
+        if (\App\Support\WorkshopPrivacy::restricted()) {
+            return array_intersect_key($this->attributesToArray(), array_flip(\App\Support\WorkshopPrivacy::VEHICLE_FIELDS));
+        }
+        return parent::toArray();
+    }
+
+
     public const TRANSMISSION_SELECT = [
         'manual' => 'Manual',
         'automatic' => 'Automáticas',
@@ -358,6 +367,7 @@ class Vehicle extends Model implements HasMedia
 
     public function getInicialAttribute()
     {
+        if (\App\Support\WorkshopPrivacy::restricted()) return collect();
         $files = $this->getMedia('inicial');
         $files->each(function ($item) {
             $item->url = $item->getUrl();
