@@ -9,7 +9,7 @@
 @csrf
 <div class="panel panel-default"><div class="panel-heading"><h3 class="panel-title">1. Particular vendedor</h3></div><div class="panel-body">
 <p>Escolha quem vende a viatura no cadastro de fornecedores. Confirme os dados sugeridos.</p>
-<div class="form-group"><label for="seller_id">Fornecedor vendedor *</label><select id="seller_id" name="seller_id" class="form-control" required><option value="">Escolher vendedor</option>@foreach($sellers as $seller)<option value="{{ $seller->id }}" @selected((string) old('seller_id', $data['seller_id'] ?? '') === (string) $seller->id)>{{ $seller->name }}{{ $seller->nif ? ' · '.$seller->nif : '' }}</option>@endforeach</select></div>
+<div class="form-group"><label for="seller_id">Vendedor *</label><select id="seller_id" name="seller_id" class="form-control" required><option value="">Escolher vendedor</option>@foreach($sellers as $seller)<option value="{{ $seller->id }}" @selected((string) old('seller_id', $data['seller_id'] ?? '') === (string) $seller->id)>{{ $seller->name }}{{ $seller->nif ? ' · '.$seller->nif : '' }}</option>@endforeach</select></div>
 @can('suplier_create')<p><a href="{{ route('admin.supliers.create') }}" target="_blank" rel="noopener" class="btn btn-default">Criar novo vendedor</a> <button type="button" id="refresh-sellers" class="btn btn-default">Atualizar lista de vendedores</button></p><p class="help-block">Crie o vendedor no separador que abre. Depois volte aqui, atualize a lista e escolha o novo registo. Os restantes campos mantêm-se.</p>@endcan
 <p id="seller-feedback" role="status" aria-live="polite"></p>
 @foreach(['seller_name' => 'Nome completo do vendedor', 'seller_nif' => 'NIF do vendedor', 'seller_address' => 'Morada do vendedor'] as $field => $label)
