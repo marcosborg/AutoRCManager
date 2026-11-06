@@ -64,10 +64,12 @@ class VehicleSaleDeclarationController extends Controller
         $rules['email'][] = 'email';
         $rules['year'] = ['nullable', 'integer', 'between:1900,2100'];
         foreach (self::AMOUNTS as $key => $label) {
-            if (is_string($request->input($key))) $request->merge([$key => str_replace(',', '.', trim($request->input($key)))]);
-            $rules[$key] = ['required', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'];
+            if (is_string($request->input($key))) {
+                $amount = trim($request->input($key));
+                $request->merge([$key => $amount === '' ? null : str_replace(',', '.', $amount)]);
+            }
+            $rules[$key] = ['nullable', 'numeric', 'min:0', 'max:99999999.99', 'decimal:0,2'];
         }
-        $rules['total'][] = 'gt:0';
         $rules += [
             'guarantee' => ['required', Rule::in(['yes', 'no'])],
             'months' => ['nullable', 'required_if:guarantee,yes', 'prohibited_if:guarantee,no', 'integer', 'between:1,120'],
@@ -75,11 +77,11 @@ class VehicleSaleDeclarationController extends Controller
             'confirmed' => ['accepted'], 'company_confirmed' => ['accepted'],
         ];
         $data = $request->validate($rules, [
-            'required' => 'Preencha :attribute (use 0 se não se aplicar).',
+            'required' => 'Preencha :attribute.',
             'accepted' => 'Confirme :attribute antes de preparar o documento.',
         ], self::FIELDS + self::AMOUNTS + ['confirmed' => 'a revisão dos dados', 'company_confirmed' => 'a empresa Geração Determinada', 'guarantee' => 'a garantia', 'months' => 'os meses de garantia']);
         unset($data['confirmed'], $data['company_confirmed']);
-        $data += array_fill_keys(array_keys(self::FIELDS), null);
+        $data += array_fill_keys(array_keys(self::FIELDS + self::AMOUNTS), null);
         $request->session()->put($this->key($vehicle), $data);
         return redirect()->route('admin.vehicles.documents.sale.preview', $vehicle);
     }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\Admin\VehicleSaleDeclarationController;
 use App\Models\{Client, Permission, Role, User, Vehicle};
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -54,9 +55,71 @@ class VehicleSaleDeclarationTest extends TestCase
     {
         $this->actingAs($this->actor());
         $v = Vehicle::create(['license' => 'DOC-02']);
-        foreach ([['deposit' => -1], ['company_confirmed' => 0], ['confirmed' => 0], ['guarantee' => 'no', 'months' => 12], ['guarantee' => 'yes', 'months' => null], ['total' => '1.234,56'], ['finance' => null]] as $invalid) {
+        foreach ([['deposit' => -1], ['company_confirmed' => 0], ['confirmed' => 0], ['guarantee' => 'no', 'months' => 12], ['guarantee' => 'yes', 'months' => null], ['total' => '1.234,56']] as $invalid) {
             $this->postJson(route('admin.vehicles.documents.sale.prepare', $v), array_merge($this->data(), $invalid))->assertUnprocessable();
             $this->get(route('admin.vehicles.documents.sale.preview', $v))->assertRedirect();
+        }
+    }
+
+    public function test_amounts_can_be_omitted_or_left_blank_without_printing_zero(): void
+    {
+        $user = $this->actor();
+        $this->actingAs($user);
+        $v = Vehicle::create(['license' => 'DOC-OPTIONAL']);
+        $before = $v->fresh()->getAttributes();
+        $amountKeys = array_keys(VehicleSaleDeclarationController::AMOUNTS);
+        $base = array_diff_key($this->data(), array_flip($amountKeys));
+        $form = $this->get(route('admin.vehicles.documents.sale.edit', $v))->assertOk()->getContent();
+        $dom = new \DOMDocument();
+        @$dom->loadHTML($form);
+        foreach ($amountKeys as $key) {
+            $input = $dom->getElementById('sale-'.$key);
+            $this->assertNotNull($input);
+            $this->assertFalse($input->hasAttribute('required'), $key.' must be optional in the form');
+        }
+
+        foreach ([[], array_fill_keys($amountKeys, ''), array_fill_keys($amountKeys, null)] as $amounts) {
+            $this->post(route('admin.vehicles.documents.sale.prepare', $v), $base + $amounts)
+                ->assertRedirect(route('admin.vehicles.documents.sale.preview', $v))->assertSessionHasNoErrors();
+            $data = session('sale_declaration_v1.'.$user->id.'.'.$v->id);
+            foreach ($amountKeys as $key) {
+                $this->assertArrayHasKey($key, $data);
+                $this->assertNull($data[$key]);
+            }
+            $this->get(route('admin.vehicles.documents.sale.preview', $v))->assertOk()->assertDontSee('0,00');
+            $printHtml = view('admin.vehicles.sale-declaration-print', ['vehicle' => $v, 'data' => $data, 'pdf' => true])->render();
+            $this->assertStringNotContainsString('0,00', $printHtml);
+            foreach (VehicleSaleDeclarationController::AMOUNTS as $key => $label) {
+                $this->assertStringContainsString($key === 'trade_value' ? 'Retoma:' : $label, $printHtml);
+            }
+            $pdf = $this->get(route('admin.vehicles.documents.sale.pdf', $v))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+            $this->assertStringStartsWith('%PDF-', $pdf->getContent());
+        }
+        $this->assertSame($before, $v->fresh()->getAttributes());
+        $this->assertSame(0, $v->media()->count());
+        $this->assertSame(0, $v->documentFollowups()->count());
+    }
+
+    public function test_explicit_zero_remains_distinct_from_an_empty_amount(): void
+    {
+        $this->actingAs($this->actor());
+        $v = Vehicle::create(['license' => 'DOC-ZERO']);
+        $amounts = array_fill_keys(array_keys(VehicleSaleDeclarationController::AMOUNTS), '0');
+        $this->post(route('admin.vehicles.documents.sale.prepare', $v), array_merge($this->data(), $amounts))
+            ->assertRedirect(route('admin.vehicles.documents.sale.preview', $v))->assertSessionHasNoErrors();
+        $html = $this->get(route('admin.vehicles.documents.sale.preview', $v))->assertOk()->getContent();
+        $this->assertSame(count($amounts), substr_count($html, '0,00'));
+    }
+
+    public function test_optional_amounts_still_reject_invalid_supplied_values(): void
+    {
+        $this->actingAs($this->actor());
+        $v = Vehicle::create(['license' => 'DOC-INVALID']);
+        foreach (array_keys(VehicleSaleDeclarationController::AMOUNTS) as $key) {
+            foreach (['-1', 'abc', '1,234', '100000000'] as $invalid) {
+                $this->postJson(route('admin.vehicles.documents.sale.prepare', $v), array_merge($this->data(), [$key => $invalid]))
+                    ->assertUnprocessable()->assertJsonValidationErrors($key);
+            }
         }
     }
 

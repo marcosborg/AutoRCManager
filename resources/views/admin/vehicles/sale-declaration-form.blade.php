@@ -9,9 +9,9 @@
 @foreach($fields as $key => $label)
 <div class="col-md-6 form-group"><label for="sale-{{ $key }}">{{ $label }}</label><input class="form-control" id="sale-{{ $key }}" name="{{ $key }}" value="{{ old($key, $data[$key] ?? '') }}" maxlength="{{ $key === 'address' ? 250 : 100 }}"></div>
 @endforeach
-</div><h4>Valores acordados</h4><p>Preencha os montantes confirmados. Use 0 quando não se aplicar. Entrada e sinal são campos distintos; não são somados nem deduzidos automaticamente.</p><div class="row">
+</div><h4>Valores acordados</h4><p>Os valores são opcionais. Preencha apenas os montantes confirmados; os restantes ficam em branco no documento.</p><div class="row">
 @foreach($amounts as $key => $label)
-<div class="col-md-4 form-group"><label for="sale-{{ $key }}">{{ $label }} (€)</label><input required class="form-control" id="sale-{{ $key }}" name="{{ $key }}" inputmode="decimal" value="{{ old($key, $data[$key] ?? '') }}"></div>
+<div class="col-md-4 form-group"><label for="sale-{{ $key }}">{{ $label }} (€)</label><input class="form-control" id="sale-{{ $key }}" name="{{ $key }}" inputmode="decimal" value="{{ old($key, $data[$key] ?? '') }}"></div>
 @endforeach
 </div><div class="row"><div class="col-md-4 form-group"><label for="sale-guarantee">Garantia</label><select required class="form-control" id="sale-guarantee" name="guarantee"><option value="">Escolher</option><option value="yes" @selected(old('guarantee', $data['guarantee'] ?? '') === 'yes')>Sim</option><option value="no" @selected(old('guarantee', $data['guarantee'] ?? '') === 'no')>Não</option></select></div>
 <div class="col-md-4 form-group"><label for="sale-months">Meses de garantia (deixe vazio se Não)</label><input type="number" min="1" max="120" class="form-control" id="sale-months" name="months" value="{{ old('months', $data['months'] ?? '') }}"></div>
