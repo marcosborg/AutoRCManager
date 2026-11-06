@@ -187,6 +187,7 @@ class TradeInDeliveryDeclarationTest extends TestCase
         $first = $this->tradeIn();
         $second = $this->tradeIn(['sold_vehicle_id' => $first->sold_vehicle_id, 'license' => 'CC-34-DD']);
         $rejected = $this->tradeIn(['sold_vehicle_id' => $first->sold_vehicle_id, 'status' => VehicleTradeIn::STATUS_REJECTED]);
+        $this->get($this->url('edit', $first))->assertOk();
         $html = view('admin.vehicleTradeIns.delivery-sale-links', ['vehicle' => $first->sold_vehicle])->render();
         $this->assertStringContainsString($this->url('edit', $first), $html);
         $this->assertStringContainsString($this->url('edit', $second), $html);
