@@ -15,7 +15,14 @@
                 <option value="{{ $code }}" {{ request('destination_company') === $code ? 'selected' : '' }}>{{ $label }}</option>
             @endforeach
         </select>
-        @include('partials.amountRange')
+        @can('financial_sensitive_access')
+            <label for="amount-field">Valor a filtrar</label>
+            <select class="form-control" name="amount_field" id="amount-field">
+                <option value="pvp" @selected(request('amount_field', 'pvp') === 'pvp')>PVP</option>
+                <option value="purchase_price" @selected(request('amount_field') === 'purchase_price')>Valor de compra</option>
+            </select>
+        @endcan
+        @include('partials.amountRange', ['amountLabel' => request('amount_field') === 'purchase_price' ? 'Compra' : 'PVP'])
         <button type="submit" class="btn btn-default">Filtrar</button>
     </form>
     @if($dashboardFilter)
@@ -176,7 +183,7 @@ $(function () {
   dtButtons.push(deleteButton)
   @endcan
 
-  @php($listingAjaxUrl = route('admin.vehicles.index', request()->only('dashboard_filter', 'destination_company', 'amount_min', 'amount_max')))
+  @php($listingAjaxUrl = route('admin.vehicles.index', request()->only('dashboard_filter', 'destination_company', 'amount_min', 'amount_max', 'amount_field')))
   let dtOverrideGlobals = {
     buttons: dtButtons,
     processing: true,

@@ -45,6 +45,47 @@ class ListingAmountRangeTest extends TestCase
         }
     }
 
+    public function test_purchase_range_requires_financial_access_and_uses_purchase_not_pvp(): void
+    {
+        $this->login();
+        $this->getJson(route('admin.vehicles.index', ['amount_field' => 'purchase_price']))->assertForbidden();
+        $this->get(route('admin.vehicles.index'))->assertOk()->assertDontSee('id="amount-field"', false);
+        $role = auth()->user()->roles()->first();
+        $role->permissions()->attach(Permission::firstOrCreate(['title' => 'financial_sensitive_access'])->id);
+        auth()->user()->unsetRelation('roles');
+        $prefix = uniqid('PURCHASE');
+        Vehicle::create(['license' => $prefix, 'purchase_price' => 100, 'pvp' => 999]);
+        Vehicle::create(['license' => $prefix, 'purchase_price' => 200, 'pvp' => 999]);
+        Vehicle::create(['license' => $prefix, 'purchase_price' => 999, 'pvp' => 150]);
+        $params = ['amount_field' => 'purchase_price', 'amount_min' => 100, 'amount_max' => 200,
+            'search' => ['value' => $prefix], 'length' => 1, 'start' => 0];
+        $this->app->forgetInstance('datatables.request');
+        $first = $this->getJson(route('admin.vehicles.index', $params), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()->assertJsonPath('recordsFiltered', 2)->assertJsonCount(1, 'data');
+        $this->app->forgetInstance('datatables.request');
+        $next = $this->getJson(route('admin.vehicles.index', array_replace($params, ['start' => 1])), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk();
+        $this->assertNotSame($first->json('data.0.id'), $next->json('data.0.id'));
+        $this->get(route('admin.vehicles.index', ['amount_field' => 'purchase_price']))->assertOk()
+            ->assertSee('Valor de compra')->assertSee('Compra mínimo')->assertSee('amount_field=purchase_price');
+        $this->getJson(route('admin.vehicles.index', ['amount_field' => 'id OR 1=1']))->assertUnprocessable();
+    }
+
+    public function test_cash_csv_preserves_quotes_backslashes_and_column_boundaries(): void
+    {
+        $user = User::factory()->create();
+        $user->roles()->attach(Role::firstOrCreate(['title' => 'Admin']));
+        $this->actingAs($user);
+        $prefix = uniqid('QUOTED');
+        $notes = 'abc\\";=1+1;"';
+        \App\Models\AccountOperation::create(['description' => $prefix, 'notes' => $notes,
+            'total' => 10, 'movement_type' => 'income', 'qty' => 1, 'date' => '2026-11-06']);
+        $csv = $this->get(route('admin.cash.export', ['q' => $prefix]))->assertOk()->streamedContent();
+        $lines = explode("\n", trim($csv));
+        $cells = str_getcsv($lines[1], ';', '"', '');
+        $this->assertCount(12, $cells);
+        $this->assertSame($notes, $cells[4]);
+    }
+
     public function test_legacy_text_prices_are_compared_as_amounts_not_alphabetically(): void
     {
         $this->login();

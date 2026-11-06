@@ -52,7 +52,7 @@ class CashController extends Controller
         return response()->streamDownload(function () use ($query) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['ID', 'Data', 'Tipo', 'Descrição', 'Notas', 'Departamento', 'Categoria', 'Caixa', 'Valor', 'Contabilizado', 'Viatura', 'Transferência'], ';');
+            fputcsv($out, ['ID', 'Data', 'Tipo', 'Descrição', 'Notas', 'Departamento', 'Categoria', 'Caixa', 'Valor', 'Contabilizado', 'Viatura', 'Transferência'], ';', '"', '');
             foreach ($query->lazy(500) as $row) {
                 $values = [$row->id, $row->date, $row->effective_type === 'income' ? 'Entrada' : 'Saída',
                     $row->display_description, $row->notes, $row->department?->name, $row->cash_category?->name,
@@ -61,7 +61,7 @@ class CashController extends Controller
                 fputcsv($out, array_map(function ($value) {
                     $value = (string) $value;
                     return preg_match('/^\s*[=+@-]/u', $value) ? "'".$value : $value;
-                }, $values), ';');
+                }, $values), ';', '"', '');
             }
             fclose($out);
         }, 'movimentos-caixa.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
