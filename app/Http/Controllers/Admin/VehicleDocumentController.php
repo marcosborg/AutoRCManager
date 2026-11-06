@@ -20,7 +20,7 @@ class VehicleDocumentController extends Controller
             'license' => ['nullable', 'string', 'max:100'],
             'destination_company' => ['nullable', 'string', Rule::in(array_merge(array_keys(Vehicle::DESTINATION_COMPANIES), ['unassigned']))],
             'scope' => ['nullable', Rule::in(['stock', 'all'])],
-            'reason' => ['nullable', Rule::in(['any', 'checks', 'unidentified', 'followups', 'due', 'review'])],
+            'reason' => ['nullable', Rule::in(['any', 'checks', 'unidentified', 'followups', 'due', 'review', 'purchase_invoice'])],
         ]);
         $scope = $filters['scope'] ?? 'stock';
         $reason = $filters['reason'] ?? 'any';
@@ -32,7 +32,14 @@ class VehicleDocumentController extends Controller
             if ($scope === 'stock') $query->inStock();
             if (!empty($filters['destination_company'])) $query->forDestinationCompany($filters['destination_company']);
             if (trim($filters['license'] ?? '') !== '') $query->searchByLicense(trim($filters['license']));
-            if (in_array($reason, ['followups', 'due', 'review'], true)) {
+            if ($reason === 'purchase_invoice') {
+                $path = 'document_applicability->purchase_invoice->status';
+                $query->where(fn ($applicable) => $applicable->whereNull($path)->orWhere($path, '!=', 'not_applicable'))
+                    ->whereDoesntHave('media', fn ($media) => $media
+                        ->whereIn('collection_name', VehicleDocuments::COLLECTIONS)
+                        ->whereNull('custom_properties->document_annulment')
+                        ->where('custom_properties->document_classification->type', 'purchase_invoice'));
+            } elseif (in_array($reason, ['followups', 'due', 'review'], true)) {
                 $followupFilter = function ($followups) use ($reason, $today) {
                     $followups->where('status', $reason === 'review' ? 'review' : 'open');
                     if ($reason === 'due') $followups->whereDate('next_contact_on', '<=', $today);

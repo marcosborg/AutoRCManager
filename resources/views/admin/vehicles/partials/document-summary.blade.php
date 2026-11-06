@@ -14,6 +14,9 @@
         <p>Use “Não se aplica” apenas quando confirmou que o documento não é necessário nesta viatura. Se chegar mais tarde, mantenha-o por conferir. Uma pró-forma não comprova a fatura definitiva.</p>
         <p class="js-applicability-status" role="status" aria-live="polite"></p>
         @can('vehicle_edit')
+            @unless($vehicle->documentFollowups->contains('document', 'permanent_certificate') || \App\Support\VehicleDocuments::count($vehicle, 'permanent_certificate'))
+                <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'permanent_certificate']) }}">Acompanhar certidão permanente</a></p>
+            @endunless
             @unless($vehicle->documentFollowups->contains('document', 'registration_application') || \App\Support\VehicleDocuments::count($vehicle, 'registration_application'))
                 <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'registration_application']) }}">Acompanhar requerimento de registo automóvel</a></p>
             @endunless
@@ -69,6 +72,12 @@
                     <tr data-document="registration_application"><th scope="row">Requerimento de Registo Automóvel</th><td>Conferir o requerimento; não substitui o DUA nem confirma o registo concluído</td>
                         <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'registration_application')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
                         @include('admin.vehicles.partials.document-applicability', ['document' => 'registration_application'])
+                    </tr>
+                    @endif
+                    @if($vehicle->documentFollowups->contains('document', 'permanent_certificate') || \App\Support\VehicleDocuments::count($vehicle, 'permanent_certificate'))
+                    <tr data-document="permanent_certificate"><th scope="row">Certidão Permanente</th><td>Conferir a entidade e a validade do documento</td>
+                        <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'permanent_certificate')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
+                        @include('admin.vehicles.partials.document-applicability', ['document' => 'permanent_certificate'])
                     </tr>
                     @endif
                     @if($count = \App\Support\VehicleDocuments::count($vehicle, 'other'))
