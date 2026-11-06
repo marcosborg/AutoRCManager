@@ -905,6 +905,9 @@
 
                         @can('vehicle_documents_area_access')
                             <h4>Documentos da viatura</h4>
+                            @if(!\App\Support\WorkshopPrivacy::restricted() && Gate::allows('vehicle_edit') && Gate::allows('vehicle_others_area_access'))
+                                <a class="btn btn-default" href="{{ route('admin.vehicles.documents.sale.edit', $vehicle) }}">Preparar declaração de venda</a>
+                            @endif
                             @if(Gate::allows('vehicle_edit') && Gate::allows('aquisition_of_the_vehicle'))
                                 <a class="btn btn-default" href="{{ route('admin.vehicles.documents.purchase.edit', $vehicle) }}">Preparar impresso de compra a particular</a>
                             @endif

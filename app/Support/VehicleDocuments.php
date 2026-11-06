@@ -16,6 +16,7 @@ class VehicleDocuments
         'dav' => 'DAV',
         'purchase_invoice' => 'Fatura de compra',
         'signed_purchase_form' => 'Impresso de compra assinado',
+        'signed_sale_declaration' => 'Declaração de venda assinada',
         'purchase_and_sale_agreement' => 'Contrato de Compra e Venda',
         'copy_of_the_citizen_card' => 'Cópia do Cartão de Cidadão',
         'tax_identification_card' => 'Cartão de Identificação Fiscal',
