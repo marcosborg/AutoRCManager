@@ -176,13 +176,14 @@ $(function () {
   dtButtons.push(deleteButton)
   @endcan
 
+  @php($listingAjaxUrl = route('admin.vehicles.index', request()->only('dashboard_filter', 'destination_company', 'amount_min', 'amount_max')))
   let dtOverrideGlobals = {
     buttons: dtButtons,
     processing: true,
     serverSide: true,
     retrieve: true,
     aaSorting: [],
-    ajax: @json(route('admin.vehicles.index', request()->only('dashboard_filter', 'destination_company', 'amount_min', 'amount_max'))),
+    ajax: @json($listingAjaxUrl),
     columns: [
         { data: 'placeholder', name: 'placeholder' },
         { data: 'vehicle_thumb', name: 'vehicle_thumb', orderable: false, searchable: false },

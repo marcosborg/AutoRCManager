@@ -129,13 +129,14 @@
         dtButtons.push(deleteButton)
         @endcan
 
+        @php($listingAjaxUrl = route('admin.sales.index', array_merge(['general_state_id' => request()->general_state_id], request()->only('amount_min', 'amount_max'))))
         let dtOverrideGlobals = {
             buttons: dtButtons,
             processing: true,
             serverSide: true,
             retrieve: true,
             aaSorting: [],
-            ajax: @json(route('admin.sales.index', array_merge(['general_state_id' => request()->general_state_id], request()->only('amount_min', 'amount_max')))),
+            ajax: @json($listingAjaxUrl),
             columns: [
                 { data: 'placeholder', name: 'placeholder' },
                 { data: 'vehicle_thumb', name: 'vehicle_thumb', orderable: false, searchable: false },

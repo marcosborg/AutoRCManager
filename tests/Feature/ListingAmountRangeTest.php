@@ -45,6 +45,14 @@ class ListingAmountRangeTest extends TestCase
         }
     }
 
+    public function test_listing_pages_render_filters_and_export_script(): void
+    {
+        $this->login();
+        foreach (['admin.vehicles.index', 'admin.sales.index'] as $route) {
+            $this->get(route($route))->assertOk()->assertSee('PVP mínimo')->assertSee('complete-list-export.js');
+        }
+    }
+
     public function test_zero_is_a_real_bound_and_access_is_required(): void
     {
         $this->login();
