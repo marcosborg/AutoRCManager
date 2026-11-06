@@ -39,6 +39,7 @@
                             <option value="checks" {{ $reason === 'checks' ? 'selected' : '' }}>Confirmações por preencher</option>
                             <option value="unidentified" {{ $reason === 'unidentified' ? 'selected' : '' }}>Anexos por identificar</option>
                             <option value="purchase_invoice" {{ $reason === 'purchase_invoice' ? 'selected' : '' }}>Sem fatura de compra identificada</option>
+                            <option value="inspection" {{ $reason === 'inspection' ? 'selected' : '' }}>Sem inspeção (IPO) identificada</option>
                             <option value="followups" {{ $reason === 'followups' ? 'selected' : '' }}>Acompanhamentos em aberto</option>
                             <option value="due" {{ $reason === 'due' ? 'selected' : '' }}>Contactos para hoje ou em atraso</option>
                             <option value="review" {{ $reason === 'review' ? 'selected' : '' }}>Acompanhamentos a rever</option>
@@ -54,12 +55,15 @@
             @if($reason === 'purchase_invoice')
                 <p class="help-block">Mostra viaturas sem uma cópia digital identificada como fatura de compra. Pode existir um ficheiro por identificar ou um documento em papel. As viaturas com “Não se aplica” ficam de fora. Esta consulta não confirma se existe ou não uma fatura emitida.</p>
             @endif
+            @if($reason === 'inspection')
+                <p class="help-block">Mostra viaturas sem uma cópia digital identificada como inspeção (IPO), separada ou no mesmo ficheiro do DUA. Pode existir um ficheiro por identificar ou um documento em papel. As viaturas com “Não se aplica” ficam de fora. Esta consulta não confirma a obrigatoriedade nem a validade da inspeção.</p>
+            @endif
             @if($scope === 'stock')
                 <p class="help-block">Stock segue o critério atual do sistema: viaturas sem data de venda nem estado de vendida. Inclui oficina, aluguer e adjudicação.</p>
             @endif
             @if($vehicles !== null)
                 <hr>
-                <p role="status"><strong>{{ $vehicles->total() }}</strong> {{ $reason === 'purchase_invoice' ? 'viatura(s) sem fatura de compra identificada nesta consulta.' : 'viatura(s) com pendências nesta consulta.' }} As viaturas eliminadas não são incluídas.</p>
+                <p role="status"><strong>{{ $vehicles->total() }}</strong> {{ match ($reason) { 'purchase_invoice' => 'viatura(s) sem fatura de compra identificada nesta consulta.', 'inspection' => 'viatura(s) sem inspeção (IPO) identificada nesta consulta.', default => 'viatura(s) com pendências nesta consulta.' } }} As viaturas eliminadas não são incluídas.</p>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped">
                         <thead><tr><th>Viatura</th><th>Empresa de destino</th><th>Estado</th><th>Confirmações por preencher</th><th>Anexos por identificar</th><th>Acompanhamento</th><th>Ação</th></tr></thead>
@@ -98,6 +102,9 @@
                                 <td>
                                 @if($reason === 'purchase_invoice')
                                     <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'purchase_invoice']) }}">Acompanhar fatura de compra</a></p>
+                                @endif
+                                @if($reason === 'inspection')
+                                    <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'inspection']) }}">Acompanhar inspeção (IPO)</a></p>
                                 @endif
                                 @can('vehicle_edit')
                                     <a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.edit', $vehicle) }}#vehicle-documents">Abrir documentos</a>

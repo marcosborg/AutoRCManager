@@ -55,7 +55,32 @@ class VehicleWarrantyDeclarationTest extends TestCase
         ]))->assertSessionHasNoErrors();
         $this->get(route('admin.vehicles.documents.warranty.preview', $v))->assertOk()
             ->assertSee('06 / 11 / 2026')->assertSee('06 / 05 / 2028')->assertSee('20.000')
-            ->assertSee('&lt;script&gt;', false)->assertDontSee('<script>alert', false)->assertSee('WAUZZZ12345678901');
+            ->assertSee('&lt;script&gt;', false)->assertDontSee('<script>alert', false)->assertSee('WAUZZZ12345678901')
+            ->assertViewHas('missingFields', [])->assertDontSee('data-missing-warranty-fields', false);
+    }
+
+    public function test_missing_optional_fields_are_named_only_in_screen_preview(): void
+    {
+        $this->actingAs($this->actor());
+        $v = Vehicle::create(['license' => 'WARRANTY']);
+        $this->post(route('admin.vehicles.documents.warranty.prepare', $v), $this->data() + ['kilometers' => 0])
+            ->assertSessionHasNoErrors();
+        $preview = $this->get(route('admin.vehicles.documents.warranty.preview', $v))->assertOk()
+            ->assertSee('Campos por preencher:')->assertSee('data-missing-warranty-fields', false)
+            ->assertViewHas('missingFields', [
+                'identity' => 'BI/CC', 'vin' => 'N.º de chassis',
+                'starts_on' => 'Data de início', 'ends_on' => 'Data de conclusão',
+                'covered_kilometers' => 'Quilómetros indicados para o fim da garantia',
+            ]);
+        // The screen toolbar is hidden for browser printing; the PDF omits it entirely.
+        $preview->assertSee('@media print { .toolbar { display:none; } }', false);
+        $html = view('admin.vehicles.warranty-declaration-print', [
+            'vehicle' => $v, 'data' => $preview->viewData('data'),
+            'missingFields' => $preview->viewData('missingFields'), 'pdf' => true,
+        ])->render();
+        $this->assertStringNotContainsString('data-missing-warranty-fields', $html);
+        $this->assertStringNotContainsString('Campos por preencher:', $html);
+        $this->assertStringContainsString('DECLARAÇÃO DE GARANTIA AUTOMÓVEL', $html);
     }
 
     public function test_validation_and_session_isolation(): void

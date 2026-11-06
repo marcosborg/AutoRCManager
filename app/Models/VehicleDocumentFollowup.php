@@ -15,7 +15,7 @@ class VehicleDocumentFollowup extends Model
 
     public function statusLabel(): string
     {
-        return in_array($this->document, ['signed_purchase_form', 'signed_sale_declaration'], true) && $this->status === 'open'
+        return in_array($this->document, ['signed_purchase_form', 'signed_sale_declaration', 'signed_warranty_declaration'], true) && $this->status === 'open'
             ? 'À espera de assinatura' : self::LABELS[$this->status];
     }
 

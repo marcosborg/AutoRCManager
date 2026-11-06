@@ -72,7 +72,13 @@ class VehicleWarrantyDeclarationController extends Controller
         $this->authorizeDocument();
         $data = $request->session()->get($this->key($vehicle));
         if (!$data) return redirect()->route('admin.vehicles.documents.warranty.edit', $vehicle);
-        return response()->view('admin.vehicles.warranty-declaration-print', compact('vehicle', 'data'))->header('Cache-Control', 'private, no-store');
+        $missingFields = array_filter([
+            'identity' => 'BI/CC', 'vin' => 'N.º de chassis',
+            'starts_on' => 'Data de início', 'ends_on' => 'Data de conclusão',
+            'kilometers' => 'Quilómetros da viatura',
+            'covered_kilometers' => 'Quilómetros indicados para o fim da garantia',
+        ], fn ($key) => trim((string) ($data[$key] ?? '')) === '', ARRAY_FILTER_USE_KEY);
+        return response()->view('admin.vehicles.warranty-declaration-print', compact('vehicle', 'data', 'missingFields'))->header('Cache-Control', 'private, no-store');
     }
 
     public function pdf(Request $request, Vehicle $vehicle)

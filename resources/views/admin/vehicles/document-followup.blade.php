@@ -42,6 +42,7 @@
                     <p>Ao clicar em “Anexar e concluir”, confirma que conferiu o ficheiro e que corresponde a este documento e viatura. A cópia fica guardada e o acompanhamento fica concluído.</p>
                     @if($document === 'signed_purchase_form')<p><label><input type="checkbox" name="signed_confirmed" value="1"> Conferi que a cópia está assinada e corresponde a esta compra.</label></p>@endif
                     @if($document === 'signed_sale_declaration')<p><label><input type="checkbox" name="signed_confirmed" value="1"> Conferi que a cópia está assinada e corresponde a esta venda.</label></p>@endif
+                    @if($document === 'signed_warranty_declaration')<p><label><input type="checkbox" name="signed_confirmed" value="1"> Conferi que a cópia está assinada e corresponde à garantia desta viatura.</label></p>@endif
                     <button name="action" value="upload_complete" class="btn btn-success">Anexar e concluir</button>
                     @if($files->isNotEmpty())
                     <details style="margin-top:20px"><summary>Usar uma cópia já guardada</summary>
@@ -62,7 +63,7 @@
                 <hr><h4 id="followup-history">Histórico</h4>
                 <ul>@foreach($historyEntries->reverse() as $entry)<li>
                     <strong>{{ \Carbon\Carbon::parse($entry['at'])->format('d/m/Y H:i') }} · {{ $entry['user_name'] }}</strong>
-                    — {{ $document === 'signed_purchase_form' && $entry['status'] === 'open' ? 'À espera de assinatura' : \App\Models\VehicleDocumentFollowup::LABELS[$entry['status']] }}<br>
+                    — {{ in_array($document, ['signed_purchase_form', 'signed_sale_declaration', 'signed_warranty_declaration'], true) && $entry['status'] === 'open' ? 'À espera de assinatura' : \App\Models\VehicleDocumentFollowup::LABELS[$entry['status']] }}<br>
                     {{ $entry['reason'] }} · Responsável: {{ $entry['responsible_name'] ?? $followup->responsible?->name }} · Pedido a: {{ $entry['contact'] }} · Próximo contacto: {{ \Carbon\Carbon::parse($entry['next_contact_on'])->format('d/m/Y') }}
                     @if($entry['attachment'])
                         <br><a href="{{ $entry['attachment']->getUrl() }}" target="_blank" rel="noopener noreferrer">Abrir anexo: {{ $entry['attachment']->file_name }}</a>

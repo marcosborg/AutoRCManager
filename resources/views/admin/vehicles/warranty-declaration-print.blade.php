@@ -11,7 +11,12 @@ p { margin:1mm 0; word-wrap:break-word; } .exclusions-title { margin-top:3mm; }
 .toolbar { font-family:Arial,sans-serif; background:#eee; padding:12px; margin-bottom:15px; } .toolbar a,.toolbar button { margin-right:12px; }
 @media screen { body { max-width:760px; margin:24px auto; padding:15px; } } @media print { .toolbar { display:none; } }
 </style></head><body>
-@if(empty($pdf))<div class="toolbar"><a href="{{ route('admin.vehicles.documents.warranty.edit', $vehicle) }}">Rever dados</a><a href="{{ route('admin.vehicles.documents.warranty.pdf', $vehicle) }}">Descarregar PDF</a><button onclick="window.print()">Imprimir</button><p>Confira os dados e as condições antes de assinar. Os campos não preenchidos ficam em branco.</p></div>@endif
+@if(empty($pdf))<div class="toolbar"><a href="{{ route('admin.vehicles.documents.warranty.edit', $vehicle) }}">Rever dados</a><a href="{{ route('admin.vehicles.documents.warranty.pdf', $vehicle) }}">Descarregar PDF</a><button onclick="window.print()">Imprimir</button><p>Confira os dados e as condições antes de assinar. Os campos não preenchidos ficam em branco.</p>
+@if(!empty($missingFields))
+<div role="status" data-missing-warranty-fields><strong>Campos por preencher:</strong> {{ implode(', ', $missingFields) }}.
+<p>Pode voltar a «Rever dados» para os completar. Os campos continuam opcionais; preencha apenas as datas e os quilómetros acordados.</p></div>
+@endif
+</div>@endif
 <div class="logo"><img alt="Car7 Automóveis" src="data:image/png;base64,{{ base64_encode(file_get_contents(resource_path('documents/car7/image1.png'))) }}"></div>
 <h1>DECLARAÇÃO DE GARANTIA AUTOMÓVEL</h1>
 @include('admin.vehicles.partials.warranty-terms')

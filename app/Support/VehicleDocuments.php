@@ -17,6 +17,7 @@ class VehicleDocuments
         'purchase_invoice' => 'Fatura de compra',
         'signed_purchase_form' => 'Impresso de compra assinado',
         'signed_sale_declaration' => 'Declaração de venda assinada',
+        'signed_warranty_declaration' => 'Declaração de garantia assinada',
         'auction_pickup_authorization' => 'Autorização de levantamento (leiloeira)',
         'registration_application' => 'Requerimento de Registo Automóvel',
         'purchase_and_sale_agreement' => 'Contrato de Compra e Venda',
@@ -52,6 +53,7 @@ class VehicleDocuments
             'auction_pickup_authorization' => self::TYPES['auction_pickup_authorization'],
             'registration_application' => self::TYPES['registration_application'],
             'permanent_certificate' => self::TYPES['permanent_certificate'],
+            'signed_warranty_declaration' => self::TYPES['signed_warranty_declaration'],
             'signed_sale_declaration' => self::TYPES['signed_sale_declaration']];
     }
 

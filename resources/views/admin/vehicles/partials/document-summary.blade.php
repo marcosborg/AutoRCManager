@@ -14,6 +14,9 @@
         <p>Use “Não se aplica” apenas quando confirmou que o documento não é necessário nesta viatura. Se chegar mais tarde, mantenha-o por conferir. Uma pró-forma não comprova a fatura definitiva.</p>
         <p class="js-applicability-status" role="status" aria-live="polite"></p>
         @can('vehicle_edit')
+            @unless($vehicle->documentFollowups->contains('document', 'signed_warranty_declaration') || \App\Support\VehicleDocuments::count($vehicle, 'signed_warranty_declaration'))
+                <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'signed_warranty_declaration']) }}">Acompanhar declaração de garantia assinada</a></p>
+            @endunless
             @unless($vehicle->documentFollowups->contains('document', 'permanent_certificate') || \App\Support\VehicleDocuments::count($vehicle, 'permanent_certificate'))
                 <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'permanent_certificate']) }}">Acompanhar certidão permanente</a></p>
             @endunless
@@ -78,6 +81,12 @@
                     <tr data-document="permanent_certificate"><th scope="row">Certidão Permanente</th><td>Conferir a entidade e a validade do documento</td>
                         <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'permanent_certificate')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
                         @include('admin.vehicles.partials.document-applicability', ['document' => 'permanent_certificate'])
+                    </tr>
+                    @endif
+                    @if($vehicle->documentFollowups->contains('document', 'signed_warranty_declaration') || \App\Support\VehicleDocuments::count($vehicle, 'signed_warranty_declaration'))
+                    <tr data-document="signed_warranty_declaration"><th scope="row">Declaração de garantia assinada</th><td>Conferir assinatura e viatura na cópia digital</td>
+                        <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'signed_warranty_declaration')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
+                        @include('admin.vehicles.partials.document-applicability', ['document' => 'signed_warranty_declaration'])
                     </tr>
                     @endif
                     @if($count = \App\Support\VehicleDocuments::count($vehicle, 'other'))
