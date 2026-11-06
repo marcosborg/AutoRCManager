@@ -33,7 +33,7 @@ class VehiclePurchaseFormTest extends TestCase
         $url = route('admin.vehicles.documents.purchase.prepare', $vehicle);
         $this->get(route('admin.vehicles.documents.purchase.edit', $vehicle))->assertOk()->assertSee('Vendedor original')->assertSee('Criar novo vendedor')->assertDontSee('Criar nova empresa compradora');
         $this->post($url, $this->data($buyer))->assertRedirect(route('admin.vehicles.documents.purchase.preview', $vehicle));
-        $this->get(route('admin.vehicles.documents.purchase.preview', $vehicle))->assertOk()->assertSee('Particular Exemplo')->assertSee('Auto Rafael')->assertDontSee('Ignored tampered buyer')->assertSee('12.500,50')->assertSee('Não indicado');
+        $this->get(route('admin.vehicles.documents.purchase.preview', $vehicle))->assertOk()->assertSee('Particular Exemplo')->assertSee('Auto Rafael')->assertDontSee('Ignored tampered buyer')->assertSee('12.500,50')->assertSee('________________________')->assertSee('23 de outubro de 2026');
         $pdf = $this->get(route('admin.vehicles.documents.purchase.pdf', $vehicle))->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->assertStringStartsWith('%PDF-', $pdf->getContent());
         $this->post($url, $this->data($buyer))->assertRedirect();

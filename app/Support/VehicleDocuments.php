@@ -18,6 +18,7 @@ class VehicleDocuments
         'signed_purchase_form' => 'Impresso de compra assinado',
         'signed_sale_declaration' => 'Declaração de venda assinada',
         'auction_pickup_authorization' => 'Autorização de levantamento (leiloeira)',
+        'registration_application' => 'Requerimento de Registo Automóvel',
         'purchase_and_sale_agreement' => 'Contrato de Compra e Venda',
         'copy_of_the_citizen_card' => 'Cópia do Cartão de Cidadão',
         'tax_identification_card' => 'Cartão de Identificação Fiscal',
@@ -48,6 +49,7 @@ class VehicleDocuments
     {
         return self::checks() + ['inspection' => 'Inspeção (IPO)', 'dav' => 'DAV', 'purchase_invoice' => 'Fatura de compra', 'signed_purchase_form' => 'Impresso de compra assinado',
             'auction_pickup_authorization' => self::TYPES['auction_pickup_authorization'],
+            'registration_application' => self::TYPES['registration_application'],
             'signed_sale_declaration' => self::TYPES['signed_sale_declaration']];
     }
 

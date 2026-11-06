@@ -19,6 +19,24 @@ class VehicleDocumentFollowup extends Model
             ? 'À espera de assinatura' : self::LABELS[$this->status];
     }
 
+    public function purchaseSignatureAgeAlertDays(?\Carbon\CarbonInterface $reference = null): ?int
+    {
+        if ($this->document !== 'signed_purchase_form' || $this->status !== 'open') return null;
+        $requested = (string) $this->requested_on;
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $requested)) return null;
+        try {
+            $start = \Carbon\CarbonImmutable::createFromFormat('!Y-m-d', $requested, 'Europe/Lisbon');
+        } catch (\Throwable) {
+            return null;
+        }
+        if (!$start || $start->format('Y-m-d') !== $requested) return null;
+        $today = ($reference ? \Carbon\CarbonImmutable::instance($reference) : \Carbon\CarbonImmutable::now('Europe/Lisbon'))
+            ->setTimezone('Europe/Lisbon')->startOfDay();
+        $days = (int) $start->diffInDays($today, false);
+
+        return $days >= 3 ? $days : null;
+    }
+
     public static function responsibleOptions()
     {
         return User::with('roles.permissions')->orderBy('name')->get()->filter(fn ($user) =>
