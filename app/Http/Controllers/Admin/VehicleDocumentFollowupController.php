@@ -81,7 +81,7 @@ class VehicleDocumentFollowupController extends Controller
             'contact' => ['required', 'string', 'max:191'],
             'requested_on' => ['required', 'date_format:Y-m-d'],
             'next_contact_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:requested_on'],
-            'note' => ['required_unless:action,upload,upload_complete', 'nullable', 'string', 'max:1000'],
+            'note' => ['nullable', 'string', 'max:1000'],
             'document_file' => ['required_if:action,upload,upload_complete', 'prohibited_unless:action,upload,upload_complete', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:'.$this->uploadLimitKb()],
             'signed_confirmed' => [in_array($document, ['signed_purchase_form', 'signed_sale_declaration'], true) && in_array($request->input('action'), ['complete', 'upload_complete'], true) ? 'accepted' : 'nullable'],
             'media_id' => ['required_if:action,complete', 'nullable', 'integer'],
@@ -137,7 +137,7 @@ class VehicleDocumentFollowupController extends Controller
                     $f->media_id = $file->id;
                     $f->status = 'completed';
                 }
-                $f->record($data['action'], $data['note']);
+                $f->record($data['action'], $data['note'] ?? '');
             });
         } catch (\Throwable $error) {
             // Database rollback does not remove the file already written to storage.

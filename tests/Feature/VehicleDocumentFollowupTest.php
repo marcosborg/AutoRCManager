@@ -67,6 +67,25 @@ class VehicleDocumentFollowupTest extends TestCase
         $this->assertSame(1, (int) $v->fresh()->vehicle_ownership_title);
     }
 
+    public function test_note_is_optional_for_contact_reschedule_and_completion(): void
+    {
+        $u = $this->user();
+        $this->actingAs($u);
+        $v = $this->vehicle();
+        $data = $this->data($u);
+        unset($data['note']);
+        $this->post($this->url($v), $data)->assertSessionHasNoErrors()->assertRedirect();
+        $this->post($this->url($v), array_merge($data, ['version' => 1, 'action' => 'reschedule', 'note' => '']))->assertSessionHasNoErrors()->assertRedirect();
+        $this->post($this->url($v), array_merge($data, ['version' => 2, 'action' => 'complete', 'note' => null, 'media_id' => $this->file($v)->id, 'confirmed' => 1]))->assertSessionHasNoErrors()->assertRedirect();
+        $f = $v->documentFollowups()->first();
+        $this->assertSame('completed', $f->status);
+        $this->assertCount(3, $f->history);
+        foreach ($f->history as $event) {
+            $this->assertSame('', $event['reason']);
+            $this->assertSame($u->id, $event['user_id']);
+        }
+    }
+
     public function test_digital_copy_same_vehicle_type_and_human_confirmation_required(): void
     {
         $u = $this->user();

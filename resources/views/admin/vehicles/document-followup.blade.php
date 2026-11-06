@@ -32,7 +32,7 @@
                         <div class="form-group col-md-6"><label for="requested_on">Data do pedido</label><input class="form-control" type="date" id="requested_on" name="requested_on" value="{{ old('requested_on',$followup->requested_on ?? now()->toDateString()) }}" required></div>
                         <div class="form-group col-md-6"><label for="next_contact_on">Voltar a contactar em</label><input class="form-control" type="date" id="next_contact_on" name="next_contact_on" value="{{ old('next_contact_on',$followup?->next_contact_on) }}" required></div>
                     </div>
-                    <div class="form-group"><label for="note">Nota deste contacto ou alteração</label><textarea class="form-control" id="note" name="note" maxlength="1000" rows="3" style="height:80px">{{ old('note') }}</textarea></div>
+                    <div class="form-group"><label for="note">Nota deste contacto ou alteração (opcional)</label><textarea class="form-control" id="note" name="note" maxlength="1000" rows="3" style="height:80px">{{ old('note') }}</textarea></div>
                     <button name="action" value="contact" class="btn btn-primary">{{ !$followup ? 'Guardar acompanhamento' : ($followup->status === 'open' ? 'Registar contacto' : 'Reativar acompanhamento') }}</button>
                     @if($followup)<button name="action" value="reschedule" class="btn btn-default">Reagendar</button>@endif
                     <hr>
