@@ -82,6 +82,7 @@ class ListingAmountRangeTest extends TestCase
         $user = User::factory()->create();
         $user->roles()->attach(Role::firstOrCreate(['title' => 'Admin']));
         $this->actingAs($user);
+        $this->get(route('admin.cash.index', ['amount_min' => 10, 'amount_max' => 20]))->assertOk()->assertSee('Exportar todos os resultados');
         $prefix = uniqid('CSV');
         for ($i = 0; $i < 55; $i++) {
             \App\Models\AccountOperation::create(['description' => $prefix.'-'.$i, 'total' => 10,

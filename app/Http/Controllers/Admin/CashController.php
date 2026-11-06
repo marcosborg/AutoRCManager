@@ -260,8 +260,8 @@ class CashController extends Controller
             ->when($request->filled('accounted'), fn ($query) => $query->where('is_accounted', (bool) $request->integer('accounted')))
             ->when($includeDateRange && $request->filled('date_from'), fn ($query) => $query->whereDate('date', '>=', $request->input('date_from')))
             ->when($includeDateRange && $request->filled('date_to'), fn ($query) => $query->whereDate('date', '<=', $request->input('date_to')))
-            ->when($request->filled('amount_min'), fn ($query) => $query->where('total', '>=', (float) $request->input('amount_min')))
-            ->when($request->filled('amount_max'), fn ($query) => $query->where('total', '<=', (float) $request->input('amount_max')))
+            ->when($request->filled('amount_min'), fn ($query) => $query->where('account_operations.total', '>=', (float) $request->input('amount_min')))
+            ->when($request->filled('amount_max'), fn ($query) => $query->where('account_operations.total', '<=', (float) $request->input('amount_max')))
             ->when($request->filled('transfer_group_id'), fn ($query) => $query->where('transfer_group_id', $request->input('transfer_group_id')))
             ->when($request->filled('q'), function ($query) use ($request) {
                 $term = '%'.trim((string) $request->input('q')).'%';
