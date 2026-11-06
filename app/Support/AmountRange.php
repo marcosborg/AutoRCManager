@@ -21,8 +21,15 @@ class AmountRange
 
     public static function apply($query, Request $request, string $column): void
     {
+        // Legacy PVP is text in production, including Portuguese thousands separators.
+        // Column is supplied only by trusted application code, never from request data.
+        $clean = "REPLACE(REPLACE(TRIM($column), '€', ''), ' ', '')";
+        $number = "CASE WHEN $clean REGEXP '^[0-9]{1,3}([.][0-9]{3})+(,[0-9]{1,2})?$' "
+            ."THEN CAST(REPLACE(REPLACE($clean, '.', ''), ',', '.') AS DECIMAL(18,2)) "
+            ."WHEN $clean REGEXP '^[0-9]+([.,][0-9]{1,2})?$' "
+            ."THEN CAST(REPLACE($clean, ',', '.') AS DECIMAL(18,2)) ELSE NULL END";
         foreach (['amount_min' => '>=', 'amount_max' => '<='] as $key => $operator) {
-            if ($request->filled($key)) $query->where($column, $operator, $request->input($key));
+            if ($request->filled($key)) $query->whereRaw("($number) $operator ?", [(float) $request->input($key)]);
         }
     }
 }

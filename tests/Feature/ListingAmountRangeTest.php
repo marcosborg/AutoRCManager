@@ -45,6 +45,19 @@ class ListingAmountRangeTest extends TestCase
         }
     }
 
+    public function test_legacy_text_prices_are_compared_as_amounts_not_alphabetically(): void
+    {
+        $this->login();
+        $prefix = uniqid('LEGACY');
+        foreach (['2000', '1305', '1800', '17.990', '10000', '20000', '20001', '18000,50', 'Sob consulta'] as $pvp) {
+            Vehicle::create(['license' => $prefix, 'pvp' => $pvp]);
+        }
+        $response = $this->getJson(route('admin.vehicles.index', ['amount_min' => 10000, 'amount_max' => 20000,
+            'search' => ['value' => $prefix]]), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk();
+        $response->assertJsonPath('recordsFiltered', 4);
+        $this->assertEqualsCanonicalizing(['17.990', '10000', '20000', '18000,50'], array_column($response->json('data'), 'pvp'));
+    }
+
     public function test_listing_pages_render_filters_and_export_script(): void
     {
         $this->login();
