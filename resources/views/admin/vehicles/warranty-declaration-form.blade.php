@@ -2,6 +2,7 @@
 @section('content')
 <div class="panel panel-default"><div class="panel-heading">Declaração de garantia automóvel — {{ $vehicle->license ?: $vehicle->foreign_license }}</div><div class="panel-body">
 <p>Confira os dados do cliente e da viatura antes de imprimir. Preencha apenas as datas e os quilómetros acordados; os campos opcionais vazios ficam em branco no impresso.</p>
+@include('admin.vehicles.partials.document-buyer-link')
 @if($errors->any())<div class="alert alert-danger"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 <form method="POST" action="{{ route('admin.vehicles.documents.warranty.prepare', $vehicle) }}">@csrf
 <div class="row">@foreach($fields as $key => $label)

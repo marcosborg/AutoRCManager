@@ -59,4 +59,34 @@ class VehicleLicenseReviewTest extends TestCase
             $this->get(route('admin.vehicles.licenses.review'))->assertForbidden();
         }
     }
+
+    public function test_foreign_confirmation_preserves_original_and_is_idempotent(): void
+    {
+        $this->actingAs($this->actor());
+        $vehicle = Vehicle::create(['license' => 'GM-559-KX']);
+        $url = route('admin.vehicles.licenses.foreign', $vehicle);
+        $data = ['expected_license' => $vehicle->license, 'confirmed' => '1'];
+        $this->post($url, ['expected_license' => $vehicle->license])->assertSessionHasErrors('confirmed');
+        $this->assertNull($vehicle->fresh()->foreign_license);
+        $this->post($url, $data)->assertRedirect(route('admin.vehicles.licenses.review'));
+        $this->assertSame('GM-559-KX', $vehicle->fresh()->license);
+        $this->assertSame('GM-559-KX', $vehicle->fresh()->foreign_license);
+        $this->post($url, $data)->assertRedirect();
+        $this->assertSame(1, \App\Models\AuditLog::where('description', 'vehicle_license:confirmed_foreign')->where('subject_id', $vehicle->id)->count());
+        $review = $this->get(route('admin.vehicles.licenses.review', ['license' => 'GM559KX']))->assertOk();
+        $this->assertNotContains($vehicle->id, $review->viewData('vehicles')->pluck('id')->all());
+        $this->get(route('admin.vehicles.licenses.review', ['reason' => 'foreign', 'license' => 'GM559KX']))->assertSee('GM-559-KX');
+    }
+
+    public function test_foreign_confirmation_rejects_stale_data_conflicts_and_missing_permission(): void
+    {
+        $this->actingAs($this->actor());
+        $vehicle = Vehicle::create(['license' => 'GM-559-KX', 'foreign_license' => 'OTHER']);
+        $url = route('admin.vehicles.licenses.foreign', $vehicle);
+        $this->post($url, ['expected_license' => 'STALE', 'confirmed' => 1])->assertStatus(409);
+        $this->post($url, ['expected_license' => $vehicle->license, 'confirmed' => 1])->assertStatus(409);
+        $this->assertSame('OTHER', $vehicle->fresh()->foreign_license);
+        $this->actingAs($this->actor(['vehicle_access']));
+        $this->post($url, ['expected_license' => $vehicle->license, 'confirmed' => 1])->assertForbidden();
+    }
 }

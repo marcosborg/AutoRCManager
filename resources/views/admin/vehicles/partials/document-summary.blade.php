@@ -14,6 +14,9 @@
         <p>Use “Não se aplica” apenas quando confirmou que o documento não é necessário nesta viatura. Se chegar mais tarde, mantenha-o por conferir. Uma pró-forma não comprova a fatura definitiva.</p>
         <p class="js-applicability-status" role="status" aria-live="polite"></p>
         @can('vehicle_edit')
+            @unless($vehicle->documentFollowups->contains('document', 'transport_guide') || \App\Support\VehicleDocuments::count($vehicle, 'transport_guide'))
+                <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'transport_guide']) }}">Acompanhar guia de transporte</a></p>
+            @endunless
             @unless($vehicle->documentFollowups->contains('document', 'signed_warranty_declaration') || \App\Support\VehicleDocuments::count($vehicle, 'signed_warranty_declaration'))
                 <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'signed_warranty_declaration']) }}">Acompanhar declaração de garantia assinada</a></p>
             @endunless
@@ -87,6 +90,12 @@
                     <tr data-document="signed_warranty_declaration"><th scope="row">Declaração de garantia assinada</th><td>Conferir assinatura e viatura na cópia digital</td>
                         <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'signed_warranty_declaration')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
                         @include('admin.vehicles.partials.document-applicability', ['document' => 'signed_warranty_declaration'])
+                    </tr>
+                    @endif
+                    @if($vehicle->documentFollowups->contains('document', 'transport_guide') || \App\Support\VehicleDocuments::count($vehicle, 'transport_guide'))
+                    <tr data-document="transport_guide"><th scope="row">Guia de transporte</th><td>Conferir a viatura e o transporte na cópia digital</td>
+                        <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'transport_guide')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
+                        @include('admin.vehicles.partials.document-applicability', ['document' => 'transport_guide'])
                     </tr>
                     @endif
                     @if($count = \App\Support\VehicleDocuments::count($vehicle, 'other'))

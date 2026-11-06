@@ -4,6 +4,8 @@
     <div class="panel-heading">Conferir matrículas</div>
     <div class="panel-body">
         <p>Confira estes registos com os documentos da viatura. Um formato diferente não significa necessariamente que a matrícula está errada. Nenhum dado é alterado automaticamente.</p>
+        @if(session('message'))<p class="alert alert-success">{{ session('message') }}</p>@endif
+        <p>Se uma matrícula estrangeira foi escrita no campo normal, use «Assinalar como estrangeira» depois de a confirmar no documento. O valor é também guardado no campo de matrícula estrangeira, mantendo o original.</p>
         <form method="GET" action="{{ route('admin.vehicles.licenses.review') }}" class="row">
             <div class="form-group col-md-3"><label for="reason">Mostrar</label><select id="reason" name="reason" class="form-control">
                 @foreach(['review' => 'Por conferir', 'missing' => 'Sem matrícula', 'format' => 'Formato a conferir', 'foreign' => 'Com matrícula estrangeira'] as $value => $label)
@@ -26,7 +28,16 @@
                 <td>{{ $vehicle->license ?: 'Por preencher' }}</td><td>{{ $vehicle->foreign_license ?: '—' }}</td>
                 <td>{{ \App\Models\Vehicle::DESTINATION_COMPANIES[$vehicle->destination_company] ?? 'Por confirmar' }}</td>
                 <td>{{ $reason === 'foreign' ? 'Matrícula estrangeira registada' : (trim((string) $vehicle->license) === '' ? 'Sem matrícula registada' : 'Conferir o formato no documento') }}</td>
-                <td><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.edit', $vehicle) }}">Abrir ficha</a></td>
+                <td><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.edit', $vehicle) }}">Abrir ficha</a>
+                    @if($reason !== 'foreign' && trim((string) $vehicle->license) !== '')
+                    <form method="POST" action="{{ route('admin.vehicles.licenses.foreign', $vehicle) }}" style="margin-top:8px">
+                        @csrf
+                        <input type="hidden" name="expected_license" value="{{ $vehicle->license }}">
+                        <label style="font-weight:normal"><input type="checkbox" name="confirmed" value="1" required> Confirmei no documento que é estrangeira</label><br>
+                        <button class="btn btn-default btn-sm">Assinalar como estrangeira</button>
+                    </form>
+                    @endif
+                </td>
             </tr>@empty<tr><td colspan="6">Não existem registos para estes filtros.</td></tr>@endforelse</tbody>
         </table></div>
         {{ $vehicles->links() }}

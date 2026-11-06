@@ -2,6 +2,7 @@
 @section('content')
 <div class="panel panel-default"><div class="panel-heading">Declaração de compra e venda — {{ $vehicle->license ?: $vehicle->foreign_license }}</div><div class="panel-body">
 <p>Preencha e confira os dados antes de imprimir.</p>
+@include('admin.vehicles.partials.document-buyer-link')
 <p>Empresa vendedora: <strong>Geração Determinada – Automóveis, Lda.</strong></p>
 @if($errors->any())<div class="alert alert-danger"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 <form method="POST" action="{{ route('admin.vehicles.documents.sale.prepare', $vehicle) }}">@csrf

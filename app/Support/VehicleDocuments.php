@@ -15,6 +15,7 @@ class VehicleDocuments
         'dua_inspection' => 'DUA e inspeção no mesmo ficheiro',
         'dav' => 'DAV',
         'purchase_invoice' => 'Fatura de compra',
+        'transport_guide' => 'Guia de transporte',
         'sale_invoice' => 'Fatura de venda',
         'signed_purchase_form' => 'Impresso de compra assinado',
         'signed_sale_declaration' => 'Declaração de venda assinada',
@@ -54,6 +55,7 @@ class VehicleDocuments
             'auction_pickup_authorization' => self::TYPES['auction_pickup_authorization'],
             'registration_application' => self::TYPES['registration_application'],
             'permanent_certificate' => self::TYPES['permanent_certificate'],
+            'transport_guide' => self::TYPES['transport_guide'],
             'signed_warranty_declaration' => self::TYPES['signed_warranty_declaration'],
             'signed_sale_declaration' => self::TYPES['signed_sale_declaration']];
     }
