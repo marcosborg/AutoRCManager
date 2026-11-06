@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 @section('content')
 <a href="{{ route('admin.vehicles.edit', $vehicle) }}#vehicle-documents">← Voltar aos documentos da viatura</a>
-<h1>Preparar impresso de compra a particular</h1>
+<h1>Preparar impresso de compra de viatura</h1>
 <p><strong>{{ $vehicle->license ?: $vehicle->foreign_license }} · {{ $vehicle->brand?->name }} {{ $vehicle->model }}</strong></p>
 <div class="alert alert-info">Confira o particular vendedor e a empresa compradora separadamente. Os dados deste impresso não alteram a ficha, o cadastro de fornecedores nem os pagamentos.</div>
 @if($errors->any())<div class="alert alert-danger" role="alert"><strong>Falta conferir:</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif

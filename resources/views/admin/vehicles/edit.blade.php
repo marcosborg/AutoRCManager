@@ -373,7 +373,7 @@
                             <hr>
                         @endif
                         @if(Gate::allows('vehicle_documents_area_access') && Gate::allows('vehicle_edit') && Gate::allows('aquisition_of_the_vehicle'))
-                            <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.purchase.edit', $vehicle) }}">Preparar impresso de compra a particular</a></p>
+                            <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.purchase.edit', $vehicle) }}">Preparar impresso de compra de viatura</a></p>
                         @endif
                         <div class="row">
                             @can('financial_sensitive_access')

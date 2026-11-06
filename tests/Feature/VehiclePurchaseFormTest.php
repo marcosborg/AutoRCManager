@@ -30,12 +30,17 @@ class VehiclePurchaseFormTest extends TestCase
         $buyer = Suplier::create(['name' => 'Compradora Exemplo', 'nif' => '999999990']);
         $vehicle = Vehicle::create(['license' => 'TEST-07', 'model' => 'Teste', 'suplier_id' => $seller->id, 'purchase_price' => 100, 'amount_paid' => 0]);
         $before = $vehicle->fresh()->getAttributes();
+        $this->get(route('admin.vehicles.documents.purchase.edit', $vehicle))
+            ->assertOk()->assertSee('Preparar impresso de compra de viatura')->assertDontSee('compra a particular');
         $url = route('admin.vehicles.documents.purchase.prepare', $vehicle);
         $this->get(route('admin.vehicles.documents.purchase.edit', $vehicle))->assertOk()->assertSee('Vendedor original')->assertSee('Criar novo vendedor')->assertDontSee('Criar nova empresa compradora');
         $this->post($url, $this->data($buyer))->assertRedirect(route('admin.vehicles.documents.purchase.preview', $vehicle));
         $this->get(route('admin.vehicles.documents.purchase.preview', $vehicle))->assertOk()->assertSee('Particular Exemplo')->assertSee('Auto Rafael')->assertDontSee('Ignored tampered buyer')->assertSee('12.500,50')->assertSee('________________________')->assertSee('23 de outubro de 2026');
         $pdf = $this->get(route('admin.vehicles.documents.purchase.pdf', $vehicle))->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->assertStringStartsWith('%PDF-', $pdf->getContent());
+        $pdf->assertHeader('Content-Disposition', 'attachment; filename="compra-viatura-'.$vehicle->id.'.pdf"');
+        $this->get(route('admin.vehicles.documents.purchase.preview', $vehicle))
+            ->assertSee('<h1>Compra de viatura</h1>', false)->assertDontSee('Compra de viatura a particular');
         $this->post($url, $this->data($buyer))->assertRedirect();
         $this->assertSame($before, $vehicle->fresh()->getAttributes());
         $this->assertSame('Vendedor original', $seller->fresh()->name);

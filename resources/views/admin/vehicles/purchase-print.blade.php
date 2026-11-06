@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt"><head><meta charset="utf-8"><title>Impresso de compra a particular</title>
+<html lang="pt"><head><meta charset="utf-8"><title>Impresso de compra de viatura</title>
 <style>
 @page { size:A4; margin:16mm 20mm; }
 body { font-family:DejaVu Sans,Arial,sans-serif; font-size:11px; color:#263238; line-height:1.35; }
@@ -17,7 +17,7 @@ table { width:100%; border-collapse:collapse; table-layout:fixed; } td { vertica
 <div class="toolbar"><a href="{{ route('admin.vehicles.documents.purchase.edit', $vehicle) }}">← Rever dados</a><a href="{{ route('admin.vehicles.documents.purchase.pdf', ['vehicle' => $vehicle, 'saved' => request()->boolean('saved') ? 1 : null]) }}">Descarregar PDF</a><button onclick="window.print()">Imprimir</button><p>Confira antes de imprimir. Esta preparação não altera a ficha nem confirma o pagamento.</p></div>
 @endif
 <div class="top">Auto RC · Documentação de compra</div>
-<h1>Compra de viatura a particular</h1>
+<h1>Compra de viatura</h1>
 <p class="notice">Matrícula: {{ $data['vehicle_license'] ?? ($vehicle->license ?: $vehicle->foreign_license) }}</p>
 <div class="section"><h2>01 · Particular vendedor</h2>
 <div class="label">Nome completo</div><div class="value">{{ $data['seller_name'] }}</div>

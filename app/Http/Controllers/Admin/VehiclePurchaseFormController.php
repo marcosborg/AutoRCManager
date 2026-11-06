@@ -154,6 +154,6 @@ class VehiclePurchaseFormController extends Controller
         $pdf->loadHtml(view('admin.vehicles.purchase-print', ['vehicle' => $vehicle, 'data' => $data, 'pdf' => true])->render(), 'UTF-8');
         $pdf->setPaper('A4');
         $pdf->render();
-        return response($pdf->output(), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="compra-particular-'.$vehicle->id.'.pdf"', 'Cache-Control' => 'private, no-store']);
+        return response($pdf->output(), 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="compra-viatura-'.$vehicle->id.'.pdf"', 'Cache-Control' => 'private, no-store']);
     }
 }
