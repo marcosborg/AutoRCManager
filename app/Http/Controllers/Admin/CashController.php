@@ -24,6 +24,7 @@ class CashController extends Controller
     public function index(Request $request)
     {
         $this->authorizeCashAccess();
+        \App\Support\AmountRange::validate($request);
 
         $query = $this->filteredMovements($request);
 
@@ -41,6 +42,29 @@ class CashController extends Controller
             'summary',
             'pendingAccounting'
         ));
+    }
+
+    public function export(Request $request)
+    {
+        $this->authorizeCashAccess();
+        \App\Support\AmountRange::validate($request);
+        $query = $this->filteredMovements($request)->orderByDesc('date')->orderByDesc('id');
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, ['ID', 'Data', 'Tipo', 'Descrição', 'Notas', 'Departamento', 'Categoria', 'Caixa', 'Valor', 'Contabilizado', 'Viatura', 'Transferência'], ';');
+            foreach ($query->lazy(500) as $row) {
+                $values = [$row->id, $row->date, $row->effective_type === 'income' ? 'Entrada' : 'Saída',
+                    $row->display_description, $row->notes, $row->department?->name, $row->cash_category?->name,
+                    $row->cash_box?->name, $row->total, $row->is_accounted ? 'Sim' : 'Não',
+                    $row->vehicle?->license, $row->transfer_group_id];
+                fputcsv($out, array_map(function ($value) {
+                    $value = (string) $value;
+                    return preg_match('/^\s*[=+@-]/u', $value) ? "'".$value : $value;
+                }, $values), ';');
+            }
+            fclose($out);
+        }, 'movimentos-caixa.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function store(Request $request, CashBalanceService $balances)

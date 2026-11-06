@@ -15,6 +15,7 @@
                 <option value="{{ $code }}" {{ request('destination_company') === $code ? 'selected' : '' }}>{{ $label }}</option>
             @endforeach
         </select>
+        @include('partials.amountRange')
         <button type="submit" class="btn btn-default">Filtrar</button>
     </form>
     @if($dashboardFilter)
@@ -181,7 +182,7 @@ $(function () {
     serverSide: true,
     retrieve: true,
     aaSorting: [],
-    ajax: @json(route('admin.vehicles.index', request()->only('dashboard_filter', 'destination_company'))),
+    ajax: @json(route('admin.vehicles.index', request()->only('dashboard_filter', 'destination_company', 'amount_min', 'amount_max'))),
     columns: [
         { data: 'placeholder', name: 'placeholder' },
         { data: 'vehicle_thumb', name: 'vehicle_thumb', orderable: false, searchable: false },

@@ -20,6 +20,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('iuc-due/export', 'HomeController@exportIucDue')->name('iuc-due.export');
     Route::get('dashboard', 'DashboardController@index')->name('dashboard');
     Route::get('cash', 'CashController@index')->name('cash.index');
+    Route::get('cash/export', 'CashController@export')->name('cash.export');
     Route::post('cash/movements', 'CashController@store')->name('cash.movements.store');
     Route::post('cash/movements/{operation}/accounted', 'CashController@toggleAccounted')->name('cash.movements.accounted');
     Route::post('cash/transfers', 'CashController@transfer')->name('cash.transfers.store');

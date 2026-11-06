@@ -378,7 +378,9 @@
     <div class="row">
         <div class="col-md-7">
             <div class="panel panel-default">
-                <div class="panel-heading">Movimentos</div>
+                <div class="panel-heading">Movimentos
+                    <a class="btn btn-default btn-sm" href="{{ route('admin.cash.export', request()->except('page')) }}">Exportar todos os resultados (CSV)</a>
+                </div>
                 <div class="panel-body table-responsive">
                     <table class="table table-bordered table-striped">
                         <thead>

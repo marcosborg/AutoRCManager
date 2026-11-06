@@ -54,11 +54,14 @@ class VehicleController extends Controller
 
         if (\App\Support\WorkshopPrivacy::restricted()) return app(\App\Services\WorkshopVehicleView::class)->index($request);
 
+        \App\Support\AmountRange::validate($request);
+
         $request->validate(['destination_company' => ['nullable', 'string', \Illuminate\Validation\Rule::in(array_merge(array_keys(Vehicle::DESTINATION_COMPANIES), ['unassigned']))]]);
 
         if ($request->ajax()) {
             $query = Vehicle::with(['general_state', 'brand', 'suplier', 'payment_status', 'carrier', 'pickup_state', 'client', 'source_trade_in', 'media'])->select(sprintf('%s.*', (new Vehicle)->table));
             $this->applyDashboardFilter($query, $request->query('dashboard_filter'));
+            \App\Support\AmountRange::apply($query, $request, 'vehicles.pvp');
             if ($request->filled('destination_company')) {
                 $query->forDestinationCompany($request->query('destination_company'));
             }

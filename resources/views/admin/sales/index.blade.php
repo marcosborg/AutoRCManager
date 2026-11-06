@@ -1,6 +1,11 @@
 @extends('layouts.admin')
 @section('content')
 <div class="content">
+    <form method="GET" class="form-inline" style="margin-bottom:15px">
+        @if(request('general_state_id'))<input type="hidden" name="general_state_id" value="{{ request('general_state_id') }}">@endif
+        @include('partials.amountRange')
+        <button class="btn btn-default" type="submit">Filtrar</button>
+    </form>
     @can('vehicle_create')
         <div style="margin-bottom: 10px;" class="row">
             <div class="col-lg-12">
@@ -130,7 +135,7 @@
             serverSide: true,
             retrieve: true,
             aaSorting: [],
-            ajax: "{{ route('admin.sales.index', request()->general_state_id) }}",
+            ajax: @json(route('admin.sales.index', array_merge(['general_state_id' => request()->general_state_id], request()->only('amount_min', 'amount_max')))),
             columns: [
                 { data: 'placeholder', name: 'placeholder' },
                 { data: 'vehicle_thumb', name: 'vehicle_thumb', orderable: false, searchable: false },

@@ -33,6 +33,7 @@ class SalesController extends Controller
     public function index(Request $request, $general_state_id = null)
     {
         abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        \App\Support\AmountRange::validate($request);
 
         if ($request->ajax()) {
             $query = Vehicle::with([
@@ -54,6 +55,7 @@ class SalesController extends Controller
                 $query->where('general_state_id', $gsId);
             }
 
+            \App\Support\AmountRange::apply($query, $request, 'vehicles.pvp');
             $table = Datatables::of($query);
 
             $table->addColumn('placeholder', '&nbsp;');
