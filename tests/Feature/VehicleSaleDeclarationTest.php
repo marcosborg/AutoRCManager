@@ -37,7 +37,9 @@ class VehicleSaleDeclarationTest extends TestCase
         $v = Vehicle::create(['license' => 'DOC-01', 'client_id' => $client->id, 'pvp' => 25000]);
         $before = $v->fresh()->getAttributes();
         $clientBefore = $client->fresh()->getAttributes();
-        $this->get(route('admin.vehicles.documents.sale.edit', $v))->assertOk()->assertSee('Comprador da venda');
+        $this->get(route('admin.vehicles.documents.sale.edit', $v))->assertOk()->assertSee('Comprador da venda')
+            ->assertSee('Empresa vendedora:')->assertSee('O rascunho não fica guardado.')
+            ->assertDontSee('Modelo enviado pela Dina')->assertDontSee('tal como recebido');
         $this->post(route('admin.vehicles.documents.sale.prepare', $v), $this->data())->assertRedirect(route('admin.vehicles.documents.sale.preview', $v));
         $this->get(route('admin.vehicles.documents.sale.preview', $v))->assertOk()->assertSee('20.000,50')->assertSee('Geração Determinada')->assertSee('Cliente de demonstração');
         $pdf = $this->get(route('admin.vehicles.documents.sale.pdf', $v))->assertOk()->assertHeader('Content-Type', 'application/pdf');

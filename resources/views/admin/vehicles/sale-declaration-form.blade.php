@@ -1,8 +1,8 @@
 @extends('layouts.admin')
 @section('content')
 <div class="panel panel-default"><div class="panel-heading">Declaração de compra e venda — {{ $vehicle->license ?: $vehicle->foreign_license }}</div><div class="panel-body">
-<p>Modelo enviado pela Dina em 06/11/2026. Preparar e imprimir não altera a viatura, o cliente, os pagamentos ou o estado da venda. O rascunho fica apenas nesta sessão.</p>
-<p>Este modelo identifica a <strong>Geração Determinada – Automóveis, Lda.</strong> Não o use para outra empresa. O texto RGPD foi mantido tal como recebido e deve ser validado pela empresa antes da utilização.</p>
+<p>Preencha e confira os dados antes de imprimir.</p>
+<p>Empresa vendedora: <strong>Geração Determinada – Automóveis, Lda.</strong></p>
 @if($errors->any())<div class="alert alert-danger"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 <form method="POST" action="{{ route('admin.vehicles.documents.sale.prepare', $vehicle) }}">@csrf
 <h4>Cliente, viatura e retoma</h4><div class="row">
@@ -17,7 +17,8 @@
 <div class="col-md-4 form-group"><label for="sale-months">Meses de garantia (deixe vazio se Não)</label><input type="number" min="1" max="120" class="form-control" id="sale-months" name="months" value="{{ old('months', $data['months'] ?? '') }}"></div>
 <div class="col-md-4 form-group"><label for="sale-date">Data</label><input required type="date" class="form-control" id="sale-date" name="document_date" value="{{ old('document_date', $data['document_date'] ?? '') }}"></div></div>
 <p><label><input required type="checkbox" name="company_confirmed" value="1"> Confirmo que esta venda é da Geração Determinada – Automóveis, Lda.</label></p>
-<p><label><input required type="checkbox" name="confirmed" value="1"> Conferi os dados e os valores com o cliente. Esta confirmação não regista assinatura nem consentimento do cliente.</label></p>
+<p><label><input required type="checkbox" name="confirmed" value="1"> Conferi os dados e os valores com o cliente.</label></p>
+<p class="help-block"><small>O rascunho não fica guardado. Descarregue o PDF antes de sair.</small></p>
 <button class="btn btn-primary">Rever declaração</button> <a class="btn btn-default" href="{{ route('admin.vehicles.edit', $vehicle) }}#vehicle-documents">Voltar à viatura</a>
 </form></div></div>
 @endsection
