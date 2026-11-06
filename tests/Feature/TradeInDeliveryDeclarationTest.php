@@ -180,4 +180,19 @@ class TradeInDeliveryDeclarationTest extends TestCase
         $this->assertStringNotContainsString('Preparar declaração de entrega',
             view('admin.vehicleTradeIns.delivery-button', ['tradeIn' => $valid])->render());
     }
+
+    public function test_sale_preparation_links_identify_each_eligible_trade_in(): void
+    {
+        $this->actingAs($this->actor());
+        $first = $this->tradeIn();
+        $second = $this->tradeIn(['sold_vehicle_id' => $first->sold_vehicle_id, 'license' => 'CC-34-DD']);
+        $rejected = $this->tradeIn(['sold_vehicle_id' => $first->sold_vehicle_id, 'status' => VehicleTradeIn::STATUS_REJECTED]);
+        $html = view('admin.vehicleTradeIns.delivery-sale-links', ['vehicle' => $first->sold_vehicle])->render();
+        $this->assertStringContainsString($this->url('edit', $first), $html);
+        $this->assertStringContainsString($this->url('edit', $second), $html);
+        $this->assertStringContainsString('CC-34-DD', $html);
+        $this->assertStringNotContainsString($this->url('edit', $rejected), $html);
+        $this->actingAs($this->actor([]));
+        $this->assertStringNotContainsString('Preparar declaração', view('admin.vehicleTradeIns.delivery-sale-links', ['vehicle' => $first->sold_vehicle])->render());
+    }
 }

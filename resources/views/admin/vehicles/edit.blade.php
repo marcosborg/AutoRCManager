@@ -1184,6 +1184,7 @@
                             <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.warranty.edit', $vehicle) }}">Preparar declaração de garantia</a></p>
                             <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.circulation.edit', $vehicle) }}">Preparar declaração de circulação</a></p>
                             <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.responsibility.edit', $vehicle) }}">Preparar termo de responsabilidade</a></p>
+                            @include('admin.vehicleTradeIns.delivery-sale-links')
                         @endif
                         <hr>
                         <div class="row">
