@@ -13,6 +13,11 @@
         <p>Uma confirmação na ficha pode corresponder a um documento em papel. Não significa que exista uma cópia digital. Este resumo é atualizado depois de gravar.</p>
         <p>Use “Não se aplica” apenas quando confirmou que o documento não é necessário nesta viatura. Se chegar mais tarde, mantenha-o por conferir. Uma pró-forma não comprova a fatura definitiva.</p>
         <p class="js-applicability-status" role="status" aria-live="polite"></p>
+        @can('vehicle_edit')
+            @unless($vehicle->documentFollowups->contains('document', 'auction_pickup_authorization') || \App\Support\VehicleDocuments::count($vehicle, 'auction_pickup_authorization'))
+                <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'auction_pickup_authorization']) }}">Acompanhar autorização de levantamento</a></p>
+            @endunless
+        @endcan
         <div class="table-responsive">
             <table class="table table-condensed" style="margin-bottom: 0;">
                 <thead><tr><th scope="col">Documento</th><th scope="col">Confirmação na ficha</th><th scope="col">Cópia digital</th><th scope="col">Aplicabilidade</th></tr></thead>
@@ -40,6 +45,12 @@
                     <tr data-document="signed_purchase_form"><th scope="row">Impresso de compra assinado</th><td>Conferir assinatura na cópia digital</td>
                         <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'signed_purchase_form')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
                         @include('admin.vehicles.partials.document-applicability', ['document' => 'signed_purchase_form'])
+                    </tr>
+                    @endif
+                    @if($vehicle->documentFollowups->contains('document', 'auction_pickup_authorization') || \App\Support\VehicleDocuments::count($vehicle, 'auction_pickup_authorization'))
+                    <tr data-document="auction_pickup_authorization"><th scope="row">Autorização de levantamento (leiloeira)</th><td>Conferir autorização e viatura na cópia digital</td>
+                        <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'auction_pickup_authorization')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
+                        @include('admin.vehicles.partials.document-applicability', ['document' => 'auction_pickup_authorization'])
                     </tr>
                     @endif
                     @if($count = \App\Support\VehicleDocuments::count($vehicle, 'other'))

@@ -61,6 +61,30 @@ class VehicleSaleDeclarationTest extends TestCase
         }
     }
 
+    public function test_missing_optional_buyer_fields_are_warned_only_on_screen(): void
+    {
+        $user = $this->actor();
+        $this->actingAs($user);
+        $v = Vehicle::create(['license' => 'DOC-CHECK']);
+        $this->post(route('admin.vehicles.documents.sale.prepare', $v), $this->data())
+            ->assertRedirect(route('admin.vehicles.documents.sale.preview', $v))->assertSessionHasNoErrors();
+        $preview = $this->get(route('admin.vehicles.documents.sale.preview', $v))->assertOk()
+            ->assertSee('Dados do cliente por preencher:')->assertSee('BI/CC, Código postal, Localidade')
+            ->assertSee('Pode continuar, mas estes campos ficarão em branco no documento.')
+            ->assertSee('Descarregar PDF');
+        $data = session('sale_declaration_v1.'.$user->id.'.'.$v->id);
+        $pdfHtml = view('admin.vehicles.sale-declaration-print', [
+            'vehicle' => $v, 'data' => $data, 'pdf' => true,
+            'missingBuyerFields' => ['identity' => 'BI/CC', 'zip' => 'Código postal', 'location' => 'Localidade'],
+        ])->render();
+        $this->assertStringNotContainsString('Dados do cliente por preencher:', $pdfHtml);
+        $this->get(route('admin.vehicles.documents.sale.pdf', $v))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+
+        $complete = array_merge($this->data(), ['identity' => 'TESTE123', 'zip' => '1000-001', 'location' => 'Lisboa']);
+        $this->post(route('admin.vehicles.documents.sale.prepare', $v), $complete)->assertSessionHasNoErrors();
+        $this->get(route('admin.vehicles.documents.sale.preview', $v))->assertOk()->assertDontSee('Dados do cliente por preencher:');
+    }
+
     public function test_amounts_can_be_omitted_or_left_blank_without_printing_zero(): void
     {
         $user = $this->actor();

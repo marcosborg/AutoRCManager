@@ -268,7 +268,7 @@
                 </li>
             @endcan
             @can('vehicle_access')
-                <li class="{{ request()->is("admin/vehicles") || request()->is("admin/vehicles/*") ? "active" : "" }}">
+                <li class="{{ (request()->is("admin/vehicles") || request()->is("admin/vehicles/*")) && !request()->routeIs('admin.vehicles.documents.*') ? "active" : "" }}">
                     <a href="{{ route("admin.vehicles.index") }}">
                         <i class="fa-fw fas fa-car">
 
@@ -278,6 +278,14 @@
                     </a>
                 </li>
                 @unless(\App\Support\WorkshopPrivacy::restricted())
+                @can('vehicle_documents_area_access')
+                <li class="{{ request()->routeIs('admin.vehicles.documents.*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.vehicles.documents.review') }}">
+                        <i class="fa-fw fas fa-folder-open"></i>
+                        <span>Documentação</span>
+                    </a>
+                </li>
+                @endcan
                 <li class="{{ request()->is("admin/vehicles-deleted") ? "active" : "" }}">
                     <a href="{{ route("admin.vehicles.deleted") }}">
                         <i class="fa-fw fas fa-recycle"></i>

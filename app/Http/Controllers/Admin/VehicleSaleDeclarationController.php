@@ -91,7 +91,12 @@ class VehicleSaleDeclarationController extends Controller
         $this->authorizeDocument();
         $data = $request->session()->get($this->key($vehicle));
         if (!$data) return redirect()->route('admin.vehicles.documents.sale.edit', $vehicle);
-        return response()->view('admin.vehicles.sale-declaration-print', compact('vehicle', 'data'))->header('Cache-Control', 'private, no-store');
+        $missingBuyerFields = array_filter(
+            array_intersect_key(self::FIELDS, array_flip(['identity', 'zip', 'location'])),
+            fn ($key) => trim((string) ($data[$key] ?? '')) === '',
+            ARRAY_FILTER_USE_KEY
+        );
+        return response()->view('admin.vehicles.sale-declaration-print', compact('vehicle', 'data', 'missingBuyerFields'))->header('Cache-Control', 'private, no-store');
     }
 
     public function pdf(Request $request, Vehicle $vehicle)

@@ -13,7 +13,14 @@ table { width:100%; table-layout:fixed; border-collapse:collapse; } td { padding
 @media screen { body { max-width:760px; margin:24px auto; padding:15px; } }
 @media print { .toolbar { display:none; } }
 </style></head><body>
-@if(empty($pdf))<div class="toolbar"><a href="{{ route('admin.vehicles.documents.sale.edit', $vehicle) }}">Rever dados</a><a href="{{ route('admin.vehicles.documents.sale.pdf', $vehicle) }}">Descarregar PDF</a><button onclick="window.print()">Imprimir</button><p>Confira antes de usar. Não foi registado qualquer pagamento ou assinatura. Depois da assinatura, anexe a cópia em Documentos da viatura, com o tipo Declaração de venda assinada.</p></div>@endif
+@if(empty($pdf))<div class="toolbar"><a href="{{ route('admin.vehicles.documents.sale.edit', $vehicle) }}">Rever dados</a><a href="{{ route('admin.vehicles.documents.sale.pdf', $vehicle) }}">Descarregar PDF</a><button onclick="window.print()">Imprimir</button>
+@if(!empty($missingBuyerFields))
+<div role="status" style="margin-top:12px;padding:10px;border-left:4px solid #a66b00;background:#fff4d6">
+<strong>Dados do cliente por preencher:</strong> {{ implode(', ', $missingBuyerFields) }}.
+Confira em “Rever dados” antes de imprimir. Pode continuar, mas estes campos ficarão em branco no documento.
+</div>
+@endif
+<p>Confira antes de usar. Não foi registado qualquer pagamento ou assinatura. Depois da assinatura, anexe a cópia em Documentos da viatura, com o tipo Declaração de venda assinada.</p></div>@endif
 <div class="logo"><img alt="Car7 Automóveis" src="data:image/png;base64,{{ base64_encode(file_get_contents(resource_path('documents/car7/image1.png'))) }}"></div>
 <h1>DECLARAÇÃO DE COMPRA E VENDA</h1><p class="subtitle">Serve a presente como prova de sinalização</p>
 <div class="section"><h2>Dados do cliente:</h2>

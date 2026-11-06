@@ -193,8 +193,12 @@ class VehicleDocumentFollowupTest extends TestCase
         $u = $this->user();
         $v = $this->vehicle();
         $this->actingAs($u);
+        $uploadLimitKb = $this->get(route('admin.vehicles.documents.followup', [$v, 'vehicle_ownership_title']))
+            ->assertOk()->viewData('uploadLimitKb');
+        $this->assertGreaterThan(0, $uploadLimitKb);
+        $this->assertLessThanOrEqual(10240, $uploadLimitKb);
         $this->postJson($this->url($v), $this->data($u, ['action' => 'upload']))->assertUnprocessable();
-        foreach ([\Illuminate\Http\UploadedFile::fake()->createWithContent('bad.php', '<?php echo "unsafe";'), \Illuminate\Http\UploadedFile::fake()->create('large.pdf', 2049, 'application/pdf')] as $file) {
+        foreach ([\Illuminate\Http\UploadedFile::fake()->createWithContent('bad.php', '<?php echo "unsafe";'), \Illuminate\Http\UploadedFile::fake()->create('large.pdf', $uploadLimitKb + 1, 'application/pdf')] as $file) {
             $this->postJson($this->url($v), $this->data($u, ['action' => 'upload', 'document_file' => $file]))->assertUnprocessable();
         }
         $this->postJson($this->url($v), $this->data($u, ['action' => 'contact', 'document_file' => $this->uploadPdf()]))->assertUnprocessable();

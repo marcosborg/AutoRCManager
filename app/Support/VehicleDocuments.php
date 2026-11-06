@@ -17,6 +17,7 @@ class VehicleDocuments
         'purchase_invoice' => 'Fatura de compra',
         'signed_purchase_form' => 'Impresso de compra assinado',
         'signed_sale_declaration' => 'Declaração de venda assinada',
+        'auction_pickup_authorization' => 'Autorização de levantamento (leiloeira)',
         'purchase_and_sale_agreement' => 'Contrato de Compra e Venda',
         'copy_of_the_citizen_card' => 'Cópia do Cartão de Cidadão',
         'tax_identification_card' => 'Cartão de Identificação Fiscal',
@@ -45,7 +46,8 @@ class VehicleDocuments
 
     public static function applicabilityDocuments(): array
     {
-        return self::checks() + ['inspection' => 'Inspeção (IPO)', 'dav' => 'DAV', 'purchase_invoice' => 'Fatura de compra', 'signed_purchase_form' => 'Impresso de compra assinado'];
+        return self::checks() + ['inspection' => 'Inspeção (IPO)', 'dav' => 'DAV', 'purchase_invoice' => 'Fatura de compra', 'signed_purchase_form' => 'Impresso de compra assinado',
+            'auction_pickup_authorization' => self::TYPES['auction_pickup_authorization']];
     }
 
     public static function notApplicable(Vehicle $vehicle, string $field): bool
