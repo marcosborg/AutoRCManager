@@ -69,10 +69,12 @@ class VehicleLicenseReviewTest extends TestCase
         $this->post($url, ['expected_license' => $vehicle->license])->assertSessionHasErrors('confirmed');
         $this->assertNull($vehicle->fresh()->foreign_license);
         $this->post($url, $data)->assertRedirect(route('admin.vehicles.licenses.review'));
-        $this->assertSame('GM-559-KX', $vehicle->fresh()->license);
+        $this->assertNull($vehicle->fresh()->license);
         $this->assertSame('GM-559-KX', $vehicle->fresh()->foreign_license);
         $this->post($url, $data)->assertRedirect();
         $this->assertSame(1, \App\Models\AuditLog::where('description', 'vehicle_license:confirmed_foreign')->where('subject_id', $vehicle->id)->count());
+        $audit = \App\Models\AuditLog::where('description', 'vehicle_license:confirmed_foreign')->where('subject_id', $vehicle->id)->firstOrFail();
+        $this->assertSame('GM-559-KX', $audit->properties['before']['license']);
         $review = $this->get(route('admin.vehicles.licenses.review', ['license' => 'GM559KX']))->assertOk();
         $this->assertNotContains($vehicle->id, $review->viewData('vehicles')->pluck('id')->all());
         $this->get(route('admin.vehicles.licenses.review', ['reason' => 'foreign', 'license' => 'GM559KX']))->assertSee('GM-559-KX');
@@ -88,5 +90,17 @@ class VehicleLicenseReviewTest extends TestCase
         $this->assertSame('OTHER', $vehicle->fresh()->foreign_license);
         $this->actingAs($this->actor(['vehicle_access']));
         $this->post($url, ['expected_license' => $vehicle->license, 'confirmed' => 1])->assertForbidden();
+    }
+
+    public function test_previously_copied_foreign_plate_can_be_moved_without_overwriting_a_national_plate(): void
+    {
+        $this->actingAs($this->actor());
+        $vehicle = Vehicle::create(['license' => 'GM-559-KX', 'foreign_license' => 'GM-559-KX']);
+        $this->post(route('admin.vehicles.licenses.foreign', $vehicle), ['expected_license' => 'GM-559-KX', 'confirmed' => 1])->assertRedirect();
+        $this->assertNull($vehicle->fresh()->license);
+        $this->assertSame('GM-559-KX', $vehicle->fresh()->foreign_license);
+        $vehicle->update(['license' => 'AA-12-BB']);
+        $this->post(route('admin.vehicles.licenses.foreign', $vehicle), ['expected_license' => 'GM-559-KX', 'confirmed' => 1])->assertStatus(409);
+        $this->assertSame('AA-12-BB', $vehicle->fresh()->license);
     }
 }

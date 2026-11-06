@@ -19,17 +19,19 @@ class VehicleLicenseReviewController extends Controller
         $data = $request->validate(['expected_license' => ['required', 'string', 'max:255'], 'confirmed' => ['accepted']]);
         DB::transaction(function () use ($request, $vehicle, $data) {
             $locked = Vehicle::whereKey($vehicle->id)->lockForUpdate()->firstOrFail();
-            abort_unless((string) $locked->license === $data['expected_license'], 409, 'A matrícula foi alterada. Atualize a página e confira novamente.');
             $current = trim((string) $locked->foreign_license);
-            if ($current === trim($data['expected_license'])) return;
-            abort_unless($current === '', 409, 'Já existe uma matrícula estrangeira. Confira os dados na ficha da viatura.');
+            if (trim((string) $locked->license) === '' && $current === trim($data['expected_license'])) return;
+            abort_unless((string) $locked->license === $data['expected_license'], 409, 'A matrícula foi alterada. Atualize a página e confira novamente.');
+            abort_unless($current === '' || $current === trim($data['expected_license']), 409, 'Já existe uma matrícula estrangeira. Confira os dados na ficha da viatura.');
+            $before = ['license' => $locked->license, 'foreign_license' => $locked->foreign_license];
             $locked->foreign_license = $locked->license;
+            $locked->license = null;
             $locked->save();
             AuditLog::create(['description' => 'vehicle_license:confirmed_foreign', 'subject_id' => $locked->id,
                 'subject_type' => Vehicle::class, 'user_id' => auth()->id(), 'host' => $request->ip(),
-                'properties' => ['license' => $locked->license, 'foreign_license' => $locked->foreign_license]]);
+                'properties' => ['before' => $before, 'after' => ['license' => $locked->license, 'foreign_license' => $locked->foreign_license]]]);
         });
-        return redirect()->route('admin.vehicles.licenses.review')->with('message', 'Matrícula assinalada como estrangeira. O valor original foi mantido.');
+        return redirect()->route('admin.vehicles.licenses.review')->with('message', 'Matrícula transferida para o campo estrangeiro. O valor anterior ficou no histórico.');
     }
 
     public function index(Request $request)
