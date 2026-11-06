@@ -169,6 +169,7 @@
                                         <a href="{{ $media->getUrl() }}" target="_blank" class="btn btn-xs btn-default" style="margin-bottom: 2px;">{{ $label }}</a>
                                     @endforeach
                                 @endforeach
+                                @include('admin.vehicleTradeIns.delivery-button')
                             </td>
                             <td>
                                 @if($tradeIn->created_vehicle_id)

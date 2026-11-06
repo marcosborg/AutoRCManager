@@ -136,6 +136,7 @@
                                 @endforeach
                             </td>
                             <td style="min-width: 220px;">
+                                @include('admin.vehicleTradeIns.delivery-button')
                                 @if($canManageTradeIns && $tradeIn->status === \App\Models\VehicleTradeIn::STATUS_PENDING)
                                     <form method="POST" action="{{ route('admin.vehicle-trade-ins.convert', $tradeIn) }}" style="display:inline-block">
                                         @csrf

@@ -138,6 +138,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::patch('vehicles/{vehicle}/workshop-state', 'VehicleController@updateWorkshopState')->name('vehicles.workshop-state.update');
     Route::post('vehicles/{vehicle}/suspended-sale', 'VehicleController@suspendSale')->name('vehicles.suspended-sale.store');
     Route::delete('vehicles/{vehicle}/suspended-sale', 'VehicleController@cancelSuspendedSale')->name('vehicles.suspended-sale.destroy');
+    Route::get('vehicle-trade-ins/{tradeIn}/delivery/prepare', 'TradeInDeliveryDeclarationController@edit')->name('vehicle-trade-ins.delivery.edit');
+    Route::post('vehicle-trade-ins/{tradeIn}/delivery/preview', 'TradeInDeliveryDeclarationController@prepare')->name('vehicle-trade-ins.delivery.prepare');
+    Route::get('vehicle-trade-ins/{tradeIn}/delivery/preview', 'TradeInDeliveryDeclarationController@show')->name('vehicle-trade-ins.delivery.preview');
+    Route::get('vehicle-trade-ins/{tradeIn}/delivery/pdf', 'TradeInDeliveryDeclarationController@pdf')->name('vehicle-trade-ins.delivery.pdf');
     Route::get('vehicle-trade-ins', 'VehicleTradeInController@index')->name('vehicle-trade-ins.index');
     Route::get('vehicle-trade-ins/create', 'VehicleTradeInController@create')->name('vehicle-trade-ins.create');
     Route::post('vehicle-trade-ins', 'VehicleTradeInController@storeStandalone')->name('vehicle-trade-ins.store');
