@@ -117,7 +117,7 @@ class VehiclePurchaseFormTest extends TestCase
         $this->post($url, $data)->assertRedirect();
         $this->assertSame(1, $vehicle->documentFollowups()->count());
         $this->assertSame(1, \App\Models\CalendarTask::where('dedupe_key', 'document-followup:'.$f->id)->count());
-        $this->post($url, array_merge($data, ['amount' => '99']))->assertStatus(409);
+        $this->post($url, array_merge($data, ['amount' => '99']))->assertSessionHasErrors('followup_version');
         $this->flushSession();
         $this->get(route('admin.vehicles.documents.purchase.preview', $vehicle))->assertOk()->assertSee('12.500,50');
         $file = $vehicle->media()->create(['collection_name' => 'additional_documents', 'name' => 'Assinado', 'file_name' => 'assinado.pdf', 'disk' => 'public', 'size' => 1, 'manipulations' => [], 'custom_properties' => ['document_classification' => ['type' => 'signed_purchase_form']], 'generated_conversions' => [], 'responsive_images' => []]);
@@ -129,7 +129,7 @@ class VehiclePurchaseFormTest extends TestCase
         $this->post($url, $data)->assertRedirect();
         $this->assertSame('completed', $f->fresh()->status);
         $this->assertSame($history, $f->fresh()->history);
-        $this->post($url, array_merge($data, ['followup_version' => $f->fresh()->version, 'amount' => '99']))->assertStatus(409);
+        $this->post($url, array_merge($data, ['followup_version' => $f->fresh()->version, 'amount' => '99']))->assertSessionHasErrors('followup_version');
         $this->assertSame($before, $vehicle->fresh()->getAttributes());
         $this->get(route('admin.vehicles.documents.followup', [$vehicle, 'signed_purchase_form']))->assertOk()->assertSee('Ver e imprimir impresso guardado')->assertSee('Abrir anexo:');
         $file->setCustomProperty('document_annulment', ['reason' => 'Engano'])->save();
@@ -149,7 +149,7 @@ class VehiclePurchaseFormTest extends TestCase
         $this->assertSame(0, $v->documentFollowups()->count());
         $this->postJson($url, $this->data($seller) + ['intent' => 'save'])->assertUnprocessable();
         $unauthorized = User::factory()->create();
-        $this->postJson($url, $this->data($seller) + ['intent' => 'save', 'followup_version' => 0, 'assigned_to_id' => $unauthorized->id, 'next_contact_on' => now()->addDay()->toDateString()])->assertUnprocessable();
+        $this->postJson($url, $this->data($seller) + ['intent' => 'save', 'followup_version' => 0, 'assigned_to_id' => $unauthorized->id, 'next_contact_on' => now()->addDay()->toDateString()])->assertUnprocessable()->assertJsonValidationErrors('assigned_to_id');
         $this->assertSame(0, $v->documentFollowups()->count());
     }
 
@@ -176,6 +176,84 @@ class VehiclePurchaseFormTest extends TestCase
         $base['document_file'] = \Illuminate\Http\UploadedFile::fake()->image('compra-assinada-reenvio.jpg');
         $this->post($url, $base + ['signed_confirmed' => 1])->assertStatus(409);
         $this->assertSame(1, $v->media()->count());
+    }
+
+    public function test_expected_save_conflicts_return_to_form_preserving_input_even_with_debug_enabled(): void
+    {
+        config(['app.debug' => true]);
+        $user = $this->user('Purchase conflicts', ['vehicle_access', 'vehicle_edit', 'vehicle_documents_area_access', 'aquisition_of_the_vehicle']);
+        $this->actingAs($user);
+        $seller = Suplier::create(['name' => 'Particular teste']);
+        $vehicle = Vehicle::create(['license' => 'CONFLICT-08']);
+        $edit = route('admin.vehicles.documents.purchase.edit', $vehicle);
+        $save = route('admin.vehicles.documents.purchase.prepare', $vehicle);
+        $data = $this->data($seller) + ['intent' => 'save', 'followup_version' => 0,
+            'assigned_to_id' => $user->id, 'next_contact_on' => now()->addDays(3)->toDateString()];
+        $this->post($save, $data)->assertRedirect();
+        $followup = $vehicle->documentFollowups()->sole();
+        $before = $followup->fresh()->getAttributes();
+        $changed = array_replace($data, ['amount' => '999,99', 'seller_address' => 'Morada que não se pode perder']);
+        $this->post($save, $changed)->assertRedirect($edit)->assertSessionHasErrors('followup_version')
+            ->assertSessionHasInput('seller_address', 'Morada que não se pode perder');
+        $this->assertSame($before, $followup->fresh()->getAttributes());
+        $this->get($edit)->assertOk()->assertSee('O acompanhamento foi alterado entretanto')
+            ->assertSee('Morada que não se pode perder')->assertSee('999.99')->assertSee('Ver acompanhamento')
+            ->assertDontSee('VehiclePurchaseFormController')->assertDontSee('Modelo para revisão');
+
+        foreach (['completed', 'review', 'dispensed'] as $status) {
+            $followup->status = $status;
+            $followup->save();
+            $before = $followup->fresh()->getAttributes();
+            $changed['followup_version'] = $followup->version;
+            $this->post($save, $changed)->assertRedirect($edit)->assertSessionHasErrors('followup_version')
+                ->assertSessionHasInput('seller_address', 'Morada que não se pode perder');
+            $this->assertSame($before, $followup->fresh()->getAttributes());
+            $this->get($edit)->assertOk()->assertSee('Reativar acompanhamento')->assertSee('Pré-visualizar impresso')
+                ->assertDontSee('VehiclePurchaseFormController');
+            $this->post($save, array_replace($changed, ['intent' => 'preview']))
+                ->assertRedirect(route('admin.vehicles.documents.purchase.preview', $vehicle));
+            $this->assertSame($before, $followup->fresh()->getAttributes());
+        }
+        $vehicle->forceFill(['document_applicability' => ['signed_purchase_form' => ['status' => 'not_applicable']]])->save();
+        $before = $followup->fresh()->getAttributes();
+        $this->post($save, $changed)->assertRedirect($edit)->assertSessionHasErrors('followup_version');
+        $this->get($edit)->assertOk()->assertSee('Voltar a conferir')->assertSee('Este documento está dispensado.')
+            ->assertSee('Morada que não se pode perder')->assertDontSee('VehiclePurchaseFormController');
+        $this->assertSame($before, $followup->fresh()->getAttributes());
+    }
+
+    public function test_completed_uploaded_first_is_not_overwritten_and_review_reopens_only_explicitly(): void
+    {
+        $user = $this->user('Purchase reopening', ['vehicle_access', 'vehicle_edit', 'vehicle_documents_area_access', 'aquisition_of_the_vehicle']);
+        $this->actingAs($user);
+        $seller = Suplier::create(['name' => 'Particular teste']);
+        $vehicle = Vehicle::create(['license' => 'REOPEN-08']);
+        $file = $vehicle->media()->create(['collection_name' => 'additional_documents', 'name' => 'Assinado', 'file_name' => 'assinado.pdf', 'disk' => 'public', 'size' => 1, 'manipulations' => [], 'custom_properties' => ['document_classification' => ['type' => 'signed_purchase_form']], 'generated_conversions' => [], 'responsive_images' => []]);
+        $followup = $vehicle->documentFollowups()->create(['document' => 'signed_purchase_form', 'assigned_to_id' => $user->id,
+            'contact' => 'Vendedor', 'requested_on' => now()->toDateString(), 'next_contact_on' => now()->addDay()->toDateString(),
+            'status' => 'completed', 'media_id' => $file->id, 'version' => 1, 'history' => []]);
+        $before = $followup->fresh()->getAttributes();
+        $data = $this->data($seller) + ['intent' => 'save', 'followup_version' => 1,
+            'assigned_to_id' => $user->id, 'next_contact_on' => now()->addDay()->toDateString()];
+        $save = route('admin.vehicles.documents.purchase.prepare', $vehicle);
+        $this->post($save, $data)->assertSessionHasErrors('followup_version');
+        $this->assertSame($before, $followup->fresh()->getAttributes());
+        $this->assertSame($file->id, $followup->fresh()->media_id);
+        $this->assertNull($followup->fresh()->purchase_form_data);
+
+        $followup->status = 'review';
+        $followup->save();
+        $this->post(route('admin.vehicles.documents.followup.store', [$vehicle, 'signed_purchase_form']), [
+            'action' => 'contact', 'version' => 1, 'assigned_to_id' => $user->id, 'contact' => 'Vendedor',
+            'requested_on' => now()->toDateString(), 'next_contact_on' => now()->addDay()->toDateString(),
+            'note' => 'Preparar nova versão após conferir o documento anterior',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('open', $followup->fresh()->status);
+        $this->post($save, array_replace($data, ['followup_version' => $followup->fresh()->version]))->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertNotNull($followup->fresh()->purchase_form_data);
+        $this->assertSame(1, $vehicle->media()->count());
+        $this->assertSame(1, $vehicle->documentFollowups()->count());
+        $this->assertSame(1, \App\Models\CalendarTask::where('dedupe_key', 'document-followup:'.$followup->id)->count());
     }
 
 }

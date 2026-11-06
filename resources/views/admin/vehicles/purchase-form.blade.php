@@ -9,6 +9,15 @@
 @csrf
 <input type="hidden" name="followup_version" value="{{ $followup->version ?? 0 }}">
 @if($followup)<p><a href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'signed_purchase_form']) }}">Ver acompanhamento — {{ $followup->statusLabel() }}</a></p>@endif
+@php($purchaseDispensed = \App\Support\VehicleDocuments::notApplicable($vehicle, 'signed_purchase_form'))
+@if($purchaseDispensed)
+<div class="alert alert-info">Este documento está dispensado. Pode pré-visualizar o impresso sem alterar o acompanhamento. Para voltar a guardar, abra os <a href="{{ route('admin.vehicles.edit', $vehicle) }}#vehicle-documents">documentos da viatura</a> e escolha “Voltar a conferir”.</div>
+@elseif($followup && $followup->status !== 'open')
+<div class="alert alert-info">
+@if($followup->status === 'completed')Já existe uma cópia assinada guardada.@else Este acompanhamento precisa de ser revisto.@endif
+Pode pré-visualizar os dados sem substituir o que está guardado. Para guardar uma nova versão, <a href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'signed_purchase_form']) }}">abra o acompanhamento</a> e escolha “Reativar acompanhamento”. A cópia e o histórico existentes mantêm-se guardados.
+</div>
+@endif
 <div class="panel panel-default"><div class="panel-heading"><h3 class="panel-title">1. Particular vendedor</h3></div><div class="panel-body">
 <p>Escolha quem vende a viatura no cadastro de fornecedores. Confirme os dados sugeridos.</p>
 <div class="form-group"><label for="seller_id">Vendedor *</label><select id="seller_id" name="seller_id" class="form-control" required><option value="">Escolher vendedor</option>@foreach($sellers as $seller)<option value="{{ $seller->id }}" @selected((string) old('seller_id', $data['seller_id'] ?? '') === (string) $seller->id)>{{ $seller->name }}{{ $seller->nif ? ' · '.$seller->nif : '' }}</option>@endforeach</select></div>
@@ -33,13 +42,13 @@
 <div class="col-md-4 form-group"><label for="purchase_date">Data da compra *</label><input class="form-control" type="date" id="purchase_date" name="purchase_date" required value="{{ old('purchase_date', $data['purchase_date'] ?? '') }}"></div>
 <div class="col-md-4 form-group"><label for="place">Local *</label><input class="form-control" id="place" name="place" required maxlength="150" value="{{ old('place', $data['place'] ?? '') }}"></div></div>
 <label><input type="checkbox" name="confirmed" value="1" required> Conferi as partes, a viatura e o valor e confirmo que o vendedor é um particular.</label>
-<p class="help-block">Modelo para revisão. A impressão não confirma pagamento nem receção de um documento assinado.</p>
+<p class="help-block">A impressão não confirma pagamento nem receção de um documento assinado.</p>
 <button name="intent" value="preview" class="btn btn-default">Pré-visualizar impresso</button>
 <hr><h4>Guardar e acompanhar a assinatura</h4>
 <p>Guarda este impresso na viatura e abre uma única pendência. A pré-visualização, por si só, não abre acompanhamento.</p>
 <div class="row"><div class="col-md-6 form-group"><label for="assigned_to_id">Responsável</label><select name="assigned_to_id" id="assigned_to_id" class="form-control"><option value="">Escolher responsável</option>@foreach($users as $person)<option value="{{ $person->id }}" @selected((string)old('assigned_to_id', $followup->assigned_to_id ?? $defaultResponsible) === (string)$person->id)>{{ $person->name }}</option>@endforeach</select></div>
 <div class="col-md-6 form-group"><label for="next_contact_on">Voltar a contactar em</label><input class="form-control" type="date" id="next_contact_on" name="next_contact_on" value="{{ old('next_contact_on', $followup?->next_contact_on) }}"></div></div>
-<button name="intent" value="save" class="btn btn-primary">Guardar e acompanhar assinatura</button>
+<button name="intent" value="save" class="btn btn-primary" @disabled($purchaseDispensed || ($followup && $followup->status !== 'open'))>Guardar e acompanhar assinatura</button>
 </div></div>
 </form>
 @endsection

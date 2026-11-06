@@ -14,6 +14,7 @@ use Dompdf\Options;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class VehiclePurchaseFormController extends Controller
 {
@@ -92,15 +93,30 @@ class VehiclePurchaseFormController extends Controller
                 'assigned_to_id' => ['required', 'integer'],
                 'next_contact_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             ]);
-            abort_unless(VehicleDocumentFollowup::responsibleOptions()->contains('id', (int) $tracking['assigned_to_id']), 422, 'Escolha um responsável com acesso à documentação.');
+            if (!VehicleDocumentFollowup::responsibleOptions()->contains('id', (int) $tracking['assigned_to_id'])) {
+                throw ValidationException::withMessages(['assigned_to_id' => 'Escolha um responsável com acesso à documentação.'])
+                    ->redirectTo(route('admin.vehicles.documents.purchase.edit', $vehicle));
+            }
             DB::transaction(function () use ($vehicle, $data, $tracking) {
                 $locked = Vehicle::whereKey($vehicle->id)->lockForUpdate()->firstOrFail();
-                abort_if(VehicleDocuments::notApplicable($locked, 'signed_purchase_form'), 422, 'Reveja primeiro a opção Não se aplica.');
+                if (VehicleDocuments::notApplicable($locked, 'signed_purchase_form')) {
+                    throw ValidationException::withMessages(['followup_version' => 'Este documento está dispensado. Abra os documentos da viatura e escolha “Voltar a conferir” antes de guardar uma nova versão.'])
+                        ->redirectTo(route('admin.vehicles.documents.purchase.edit', $vehicle));
+                }
                 $followup = $locked->documentFollowups()->where('document', 'signed_purchase_form')->lockForUpdate()->firstOrNew();
                 // A retry or reprint must not reset a completed followup or create another reminder.
                 if ($followup->purchase_form_data == $data) return;
-                abort_unless((int) ($followup->version ?? 0) === (int) $tracking['followup_version'], 409, 'O acompanhamento mudou. Atualize a página antes de gravar.');
-                abort_if($followup->exists && $followup->status !== 'open', 409, 'Reveja o acompanhamento antes de alterar o impresso guardado.');
+                if ((int) ($followup->version ?? 0) !== (int) $tracking['followup_version']) {
+                    throw ValidationException::withMessages(['followup_version' => 'O acompanhamento foi alterado entretanto. Os dados que preencheu mantêm-se aqui; confira o acompanhamento atual antes de voltar a guardar.'])
+                        ->redirectTo(route('admin.vehicles.documents.purchase.edit', $vehicle));
+                }
+                if ($followup->exists && $followup->status !== 'open') {
+                    $message = $followup->status === 'completed'
+                        ? 'Já existe uma cópia assinada neste acompanhamento. Para preparar uma nova versão, abra o acompanhamento e escolha “Reativar acompanhamento”. A cópia e o histórico existentes mantêm-se guardados.'
+                        : 'É necessário rever este acompanhamento antes de guardar uma nova versão. Abra o acompanhamento, confira os dados e escolha “Reativar acompanhamento”.';
+                    throw ValidationException::withMessages(['followup_version' => $message])
+                        ->redirectTo(route('admin.vehicles.documents.purchase.edit', $vehicle));
+                }
                 $followup->fill(['document' => 'signed_purchase_form', 'purchase_form_data' => $data,
                     'assigned_to_id' => $followup->assigned_to_id ?? $tracking['assigned_to_id'],
                     'contact' => $followup->contact ?? $data['seller_name'],

@@ -7,6 +7,18 @@ use Throwable;
 
 class Handler extends ExceptionHandler
 {
+    public function render($request, Throwable $e)
+    {
+        // Never expose exception details on the public site, even if debug was
+        // accidentally enabled or a cached environment was copied from local.
+        if (!app()->environment(['local', 'testing'])
+            || in_array(strtolower($request->getHost()), ['autorcmanager.pt', 'www.autorcmanager.pt'], true)) {
+            config(['app.debug' => false]);
+        }
+
+        return parent::render($request, $e);
+    }
+
     /**
      * A list of exception types with their corresponding custom log levels.
      *
