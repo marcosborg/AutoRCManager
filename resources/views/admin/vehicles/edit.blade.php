@@ -1545,6 +1545,7 @@
                                 <div class="form-group {{ $errors->has('sele_chekout') ? 'has-error' : '' }}">
                                     <label for="sele_chekout">{{ trans('cruds.vehicle.fields.sele_chekout') }}</label>
                                     <input class="form-control date" type="text" name="sele_chekout" id="sele_chekout" value="{{ old('sele_chekout', $vehicle->sele_chekout) }}">
+                                    <p class="help-block">Antes de registar a saída, anexe a fatura de venda nos documentos da viatura e escolha o tipo «Fatura de venda».</p>
                                     @if($errors->has('sele_chekout'))
                                         <span class="help-block" role="alert">{{ $errors->first('sele_chekout') }}</span>
                                     @endif

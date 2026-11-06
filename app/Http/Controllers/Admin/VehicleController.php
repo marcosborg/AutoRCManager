@@ -887,11 +887,11 @@ class VehicleController extends Controller
 
     public function massDestroy(MassDestroyVehicleRequest $request)
     {
-        $vehicles = Vehicle::find(request('ids'));
-
-        foreach ($vehicles as $vehicle) {
-            $vehicle->delete();
-        }
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+            $vehicles = Vehicle::whereKey($request->validated()['ids'])->lockForUpdate()->get();
+            foreach ($vehicles as $vehicle) $vehicle->assertCanBeRemoved();
+            foreach ($vehicles as $vehicle) $vehicle->delete();
+        });
 
         return response(null, Response::HTTP_NO_CONTENT);
     }

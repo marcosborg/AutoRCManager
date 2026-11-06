@@ -15,6 +15,7 @@ class VehicleDocuments
         'dua_inspection' => 'DUA e inspeção no mesmo ficheiro',
         'dav' => 'DAV',
         'purchase_invoice' => 'Fatura de compra',
+        'sale_invoice' => 'Fatura de venda',
         'signed_purchase_form' => 'Impresso de compra assinado',
         'signed_sale_declaration' => 'Declaração de venda assinada',
         'signed_warranty_declaration' => 'Declaração de garantia assinada',

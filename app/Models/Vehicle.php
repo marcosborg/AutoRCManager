@@ -20,6 +20,37 @@ class Vehicle extends Model implements HasMedia
 
     public $table = 'vehicles';
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $vehicle) {
+            $vehicle->assertCanBeRemoved();
+        });
+        static::saving(function (self $vehicle) {
+            if ($vehicle->isDirty('sele_chekout') && $vehicle->getAttributes()['sele_chekout']) {
+                $hasInvoice = $vehicle->exists && $vehicle->media()
+                    ->whereIn('collection_name', \App\Support\VehicleDocuments::COLLECTIONS)
+                    ->where('custom_properties->document_classification->type', 'sale_invoice')
+                    ->whereNull('custom_properties->document_annulment')->exists();
+                if (!$hasInvoice) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'sele_chekout' => 'Antes de registar a saída, anexe e classifique a fatura de venda nos documentos da viatura.',
+                    ]);
+                }
+            }
+        });
+    }
+
+    public function assertCanBeRemoved(): void
+    {
+        $sold = !static::query()->whereKey($this->id)->inStock()->exists();
+        if ($sold || $this->client_id || $this->active_suspended_sale()->exists()
+            || $this->client_payments()->exists() || $this->trade_ins()->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'vehicle' => 'Esta viatura tem uma venda ou movimentos de cliente associados e não pode ser retirada. Reveja primeiro o processo de venda.',
+            ]);
+        }
+    }
+
     public function toArray()
     {
         if (\App\Support\WorkshopPrivacy::restricted()) {
