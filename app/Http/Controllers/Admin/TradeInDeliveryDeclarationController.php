@@ -53,6 +53,13 @@ class TradeInDeliveryDeclarationController extends Controller
     public function prepare(Request $request, VehicleTradeIn $tradeIn)
     {
         $this->authorizeDocument($tradeIn);
+        $data = $this->validatedData($request);
+        $request->session()->put($this->key($tradeIn), $data);
+        return redirect()->route('admin.vehicle-trade-ins.delivery.preview', $tradeIn);
+    }
+
+    protected function validatedData(Request $request): array
+    {
         $rules = [];
         foreach (self::FIELDS as $key => $label) {
             $rules[$key] = [in_array($key, ['name', 'license']) ? 'required' : 'nullable', 'string', 'max:150'];
@@ -62,8 +69,7 @@ class TradeInDeliveryDeclarationController extends Controller
         $data = $request->validate($rules, ['required' => 'Preencha :attribute.'], self::FIELDS + [
             'kilometers' => 'Quilómetros à entrada', 'delivery_date' => 'Data de entrega', 'faults' => 'Avarias e danos']);
         $data += array_fill_keys(array_keys($rules), null);
-        $request->session()->put($this->key($tradeIn), $data);
-        return redirect()->route('admin.vehicle-trade-ins.delivery.preview', $tradeIn);
+        return $data;
     }
 
     public function show(Request $request, VehicleTradeIn $tradeIn)

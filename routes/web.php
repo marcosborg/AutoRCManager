@@ -139,6 +139,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('vehicles/{vehicle}/suspended-sale', 'VehicleController@suspendSale')->name('vehicles.suspended-sale.store');
     Route::delete('vehicles/{vehicle}/suspended-sale', 'VehicleController@cancelSuspendedSale')->name('vehicles.suspended-sale.destroy');
     Route::get('vehicle-trade-ins/{tradeIn}/delivery/prepare', 'TradeInDeliveryDeclarationController@edit')->name('vehicle-trade-ins.delivery.edit');
+    Route::get('vehicles/{vehicle}/manual-delivery/prepare', 'ManualTradeInDeliveryController@form')->name('vehicles.manual-delivery.edit');
+    Route::post('vehicles/{vehicle}/manual-delivery/preview', 'ManualTradeInDeliveryController@saveDraft')->name('vehicles.manual-delivery.prepare');
+    Route::get('vehicles/{vehicle}/manual-delivery/preview', 'ManualTradeInDeliveryController@previewDraft')->name('vehicles.manual-delivery.preview');
+    Route::get('vehicles/{vehicle}/manual-delivery/pdf', 'ManualTradeInDeliveryController@download')->name('vehicles.manual-delivery.pdf');
     Route::post('vehicle-trade-ins/{tradeIn}/delivery/preview', 'TradeInDeliveryDeclarationController@prepare')->name('vehicle-trade-ins.delivery.prepare');
     Route::get('vehicle-trade-ins/{tradeIn}/delivery/preview', 'TradeInDeliveryDeclarationController@show')->name('vehicle-trade-ins.delivery.preview');
     Route::get('vehicle-trade-ins/{tradeIn}/delivery/pdf', 'TradeInDeliveryDeclarationController@pdf')->name('vehicle-trade-ins.delivery.pdf');

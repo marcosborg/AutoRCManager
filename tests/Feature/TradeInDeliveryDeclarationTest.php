@@ -43,6 +43,44 @@ class TradeInDeliveryDeclarationTest extends TestCase
             'kilometers' => 145000, 'delivery_date' => '2026-11-06', 'faults' => 'Risco na porta.'];
     }
 
+    public function test_manual_declaration_without_retoma_is_available_and_does_not_change_records(): void
+    {
+        $this->actingAs($this->actor());
+        $client = Client::create(['name' => 'Cliente manual']);
+        $vehicle = Vehicle::create(['license' => 'ZZ-98-YY', 'model' => 'Viatura vendida', 'client_id' => $client->id]);
+        $before = $vehicle->fresh()->getAttributes();
+        $count = VehicleTradeIn::count();
+        $url = fn ($action) => route('admin.vehicles.manual-delivery.'.$action, $vehicle);
+        $form = $this->get($url('edit'))->assertOk()->assertSee('Cliente manual');
+        $this->assertNull($form->viewData('data')['license']);
+        $this->assertNull($form->viewData('data')['model']);
+        $html = view('admin.vehicleTradeIns.delivery-sale-links', compact('vehicle'))->render();
+        $this->assertStringContainsString($url('edit'), $html);
+        $this->post($url('prepare'), [])->assertSessionHasErrors(['name', 'license']);
+        $this->post($url('prepare'), $this->data())->assertSessionHasNoErrors()->assertRedirect($url('preview'));
+        $this->get($url('preview'))->assertOk()->assertSee('AA-12-BB')->assertDontSee('ZZ-98-YY');
+        $pdf = $this->get($url('pdf'))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $pdf->getContent());
+        $this->assertSame($count, VehicleTradeIn::count());
+        $this->assertSame($before, $vehicle->fresh()->getAttributes());
+        $other = Vehicle::create(['license' => 'XX-11-YY']);
+        $this->get(route('admin.vehicles.manual-delivery.preview', $other))->assertRedirect(route('admin.vehicles.manual-delivery.edit', $other));
+        $this->actingAs($this->actor());
+        $this->get($url('preview'))->assertRedirect($url('edit'));
+    }
+
+    public function test_manual_declaration_requires_each_permission(): void
+    {
+        $vehicle = Vehicle::create(['license' => 'XX-11-YY']);
+        foreach (self::PERMISSIONS as $missing) {
+            $this->actingAs($this->actor(array_diff(self::PERMISSIONS, [$missing])));
+            foreach (['edit', 'preview', 'pdf'] as $action) {
+                $this->get(route('admin.vehicles.manual-delivery.'.$action, $vehicle))->assertForbidden();
+            }
+            $this->post(route('admin.vehicles.manual-delivery.prepare', $vehicle), $this->data())->assertForbidden();
+        }
+    }
+
     public function test_prefill_uses_received_vehicle_and_selling_customer_without_changing_records(): void
     {
         $this->actingAs($this->actor());

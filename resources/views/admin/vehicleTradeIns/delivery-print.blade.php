@@ -13,7 +13,7 @@ p { text-align:justify; overflow-wrap:break-word; } .value { border-bottom:1px s
 @media print { .toolbar { display:none; } }
 </style></head><body>
 @unless($pdf ?? false)
-<div class="toolbar"><a href="{{ route('admin.vehicle-trade-ins.delivery.edit', $tradeIn) }}">Alterar dados</a><a href="{{ route('admin.vehicle-trade-ins.delivery.pdf', $tradeIn) }}">Descarregar PDF</a><button onclick="window.print()">Imprimir</button>
+<div class="toolbar"><a href="{{ $editUrl ?? route('admin.vehicle-trade-ins.delivery.edit', $tradeIn) }}">Alterar dados</a><a href="{{ $pdfUrl ?? route('admin.vehicle-trade-ins.delivery.pdf', $tradeIn) }}">Descarregar PDF</a><button onclick="window.print()">Imprimir</button>
 @if(!empty($missingFields))<p>Campos por preencher: {{ implode(', ', $missingFields) }}. Complete-os antes de assinar.</p>@endif</div>
 @endunless
 @php
