@@ -123,6 +123,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('vehicles/{vehicle}/documents/purchase-form/preview', 'VehiclePurchaseFormController@show')->name('vehicles.documents.purchase.preview');
     Route::get('vehicles/{vehicle}/documents/purchase-form/pdf', 'VehiclePurchaseFormController@pdf')->name('vehicles.documents.purchase.pdf');
     Route::get('vehicles/document-review', 'VehicleDocumentController@index')->name('vehicles.documents.review');
+    Route::get('vehicles/license-review', 'VehicleLicenseReviewController@index')->name('vehicles.licenses.review');
     Route::patch('vehicles/{vehicle}/documents/{document}/applicability', 'VehicleDocumentController@applicability')->name('vehicles.documents.applicability');
     Route::get('vehicles/{vehicle}/documents/{media}/history', 'VehicleDocumentController@history')->name('vehicles.documents.history');
     Route::post('vehicles/{vehicle}/documents/{media}/annul', 'VehicleDocumentController@annul')->name('vehicles.documents.annul');

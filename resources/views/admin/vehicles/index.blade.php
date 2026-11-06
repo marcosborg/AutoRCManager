@@ -1,6 +1,9 @@
 @extends('layouts.admin')
 @section('content')
 <div class="content">
+    @can('vehicle_edit')
+        <p><a class="btn btn-default" href="{{ route('admin.vehicles.licenses.review', request()->only('destination_company')) }}">Conferir matrículas</a></p>
+    @endcan
     @can('vehicle_documents_area_access')
         <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.review', request()->only('destination_company')) }}">Conferir documentação</a></p>
     @endcan
