@@ -111,6 +111,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('vehicles/{vehicle}/documents/circulation-declaration/preview', 'VehicleCirculationDeclarationController@prepare')->name('vehicles.documents.circulation.prepare');
     Route::get('vehicles/{vehicle}/documents/circulation-declaration/preview', 'VehicleCirculationDeclarationController@show')->name('vehicles.documents.circulation.preview');
     Route::get('vehicles/{vehicle}/documents/circulation-declaration/pdf', 'VehicleCirculationDeclarationController@pdf')->name('vehicles.documents.circulation.pdf');
+    Route::get('vehicles/{vehicle}/documents/responsibility-declaration/prepare', 'VehicleResponsibilityDeclarationController@edit')->name('vehicles.documents.responsibility.edit');
+    Route::post('vehicles/{vehicle}/documents/responsibility-declaration/preview', 'VehicleResponsibilityDeclarationController@prepare')->name('vehicles.documents.responsibility.prepare');
+    Route::get('vehicles/{vehicle}/documents/responsibility-declaration/preview', 'VehicleResponsibilityDeclarationController@show')->name('vehicles.documents.responsibility.preview');
+    Route::get('vehicles/{vehicle}/documents/responsibility-declaration/pdf', 'VehicleResponsibilityDeclarationController@pdf')->name('vehicles.documents.responsibility.pdf');
     Route::get('purchase-form-sellers', 'VehiclePurchaseFormController@sellers')->name('purchase-form.sellers');
     Route::get('purchase-form-buyers', 'VehiclePurchaseFormController@buyers')->name('purchase-form.buyers');
     Route::get('vehicles/{vehicle}/documents/purchase-form/prepare', 'VehiclePurchaseFormController@edit')->name('vehicles.documents.purchase.edit');
