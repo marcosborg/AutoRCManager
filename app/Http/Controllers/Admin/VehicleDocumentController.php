@@ -20,10 +20,11 @@ class VehicleDocumentController extends Controller
             'license' => ['nullable', 'string', 'max:100'],
             'destination_company' => ['nullable', 'string', Rule::in(array_merge(array_keys(Vehicle::DESTINATION_COMPANIES), ['unassigned']))],
             'scope' => ['nullable', Rule::in(['stock', 'all'])],
-            'reason' => ['nullable', Rule::in(['any', 'checks', 'unidentified'])],
+            'reason' => ['nullable', Rule::in(['any', 'checks', 'unidentified', 'followups', 'due', 'review'])],
         ]);
         $scope = $filters['scope'] ?? 'stock';
         $reason = $filters['reason'] ?? 'any';
+        $today = now('Europe/Lisbon')->toDateString();
         $vehicles = null;
         if ($scope) {
             $query = Vehicle::query()->with(['brand', 'general_state', 'documentFollowups.responsible'])
@@ -31,19 +32,28 @@ class VehicleDocumentController extends Controller
             if ($scope === 'stock') $query->inStock();
             if (!empty($filters['destination_company'])) $query->forDestinationCompany($filters['destination_company']);
             if (trim($filters['license'] ?? '') !== '') $query->searchByLicense(trim($filters['license']));
-            $query->where(function ($pending) use ($reason) {
-                if ($reason !== 'unidentified') {
-                    $pending->where(function ($checks) {
-                        VehicleDocuments::pendingChecksQuery($checks);
-                    });
-                }
-                if ($reason === 'any') {
-                    $pending->orWhereHas('documentFollowups', fn ($q) => $q->whereIn('status',['open','review']));
-                }
-                if ($reason !== 'checks') {
-                    $pending->orWhereHas('media', fn ($media) => VehicleDocuments::unidentifiedQuery($media));
-                }
-            });
+            if (in_array($reason, ['followups', 'due', 'review'], true)) {
+                $followupFilter = function ($followups) use ($reason, $today) {
+                    $followups->where('status', $reason === 'review' ? 'review' : 'open');
+                    if ($reason === 'due') $followups->whereDate('next_contact_on', '<=', $today);
+                };
+                $query->whereHas('documentFollowups', $followupFilter)
+                    ->with(['documentFollowups' => $followupFilter]);
+            } else {
+                $query->where(function ($pending) use ($reason) {
+                    if ($reason !== 'unidentified') {
+                        $pending->where(function ($checks) {
+                            VehicleDocuments::pendingChecksQuery($checks);
+                        });
+                    }
+                    if ($reason === 'any') {
+                        $pending->orWhereHas('documentFollowups', fn ($q) => $q->whereIn('status',['open','review']));
+                    }
+                    if ($reason !== 'checks') {
+                        $pending->orWhereHas('media', fn ($media) => VehicleDocuments::unidentifiedQuery($media));
+                    }
+                });
+            }
             $vehicles = $query->orderBy('license')->orderBy('id')->paginate(25)->withQueryString();
         }
         if ($request->is('api/v1/backoffice/*')) {
@@ -57,7 +67,7 @@ class VehicleDocumentController extends Controller
             ]);
             return response()->json(compact('vehicles', 'scope', 'reason', 'filters'));
         }
-        return view('admin.vehicles.document-review', compact('vehicles', 'scope', 'reason', 'filters'));
+        return view('admin.vehicles.document-review', compact('vehicles', 'scope', 'reason', 'filters', 'today'));
     }
 
     public function applicability(Request $request, Vehicle $vehicle, string $document)

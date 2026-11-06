@@ -83,11 +83,13 @@ class VehicleDocumentFollowupController extends Controller
             'next_contact_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:requested_on'],
             'note' => ['required_unless:action,upload,upload_complete', 'nullable', 'string', 'max:1000'],
             'document_file' => ['required_if:action,upload,upload_complete', 'prohibited_unless:action,upload,upload_complete', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:'.$this->uploadLimitKb()],
-            'signed_confirmed' => [$document === 'signed_purchase_form' && in_array($request->input('action'), ['complete', 'upload_complete'], true) ? 'accepted' : 'nullable'],
+            'signed_confirmed' => [in_array($document, ['signed_purchase_form', 'signed_sale_declaration'], true) && in_array($request->input('action'), ['complete', 'upload_complete'], true) ? 'accepted' : 'nullable'],
             'media_id' => ['required_if:action,complete', 'nullable', 'integer'],
             'confirmed' => ['exclude_unless:action,complete', 'required', 'accepted'],
         ], [
-            'signed_confirmed.accepted' => 'Confirme que a cópia está assinada e corresponde a esta compra.',
+            'signed_confirmed.accepted' => $document === 'signed_sale_declaration'
+                ? 'Confirme que a cópia está assinada e corresponde a esta venda.'
+                : 'Confirme que a cópia está assinada e corresponde a esta compra.',
             'document_file.required_if' => 'Escolha o ficheiro antes de anexar e concluir.',
             'document_file.prohibited_unless' => 'Para guardar o ficheiro escolhido, use Anexar e concluir.',
             'document_file.mimes' => 'Escolha um ficheiro PDF, JPG, PNG ou WebP.',

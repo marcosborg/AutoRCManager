@@ -372,6 +372,9 @@
                             <h4>Aquisição da viatura</h4>
                             <hr>
                         @endif
+                        @if(Gate::allows('vehicle_documents_area_access') && Gate::allows('vehicle_edit') && Gate::allows('aquisition_of_the_vehicle'))
+                            <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.purchase.edit', $vehicle) }}">Preparar impresso de compra a particular</a></p>
+                        @endif
                         <div class="row">
                             @can('financial_sensitive_access')
                             <div class="col-md-4">
@@ -905,12 +908,6 @@
 
                         @can('vehicle_documents_area_access')
                             <h4>Documentos da viatura</h4>
-                            @if(!\App\Support\WorkshopPrivacy::restricted() && Gate::allows('vehicle_edit') && Gate::allows('vehicle_others_area_access'))
-                                <a class="btn btn-default" href="{{ route('admin.vehicles.documents.sale.edit', $vehicle) }}">Preparar declaração de venda</a>
-                            @endif
-                            @if(Gate::allows('vehicle_edit') && Gate::allows('aquisition_of_the_vehicle'))
-                                <a class="btn btn-default" href="{{ route('admin.vehicles.documents.purchase.edit', $vehicle) }}">Preparar impresso de compra a particular</a>
-                            @endif
                             <hr>
                             @include('admin.vehicles.partials.document-summary')
                             @include('admin.vehicles.partials.document-classification')
@@ -1182,6 +1179,9 @@
                             $final_total = $pvp + $sales_iuc + $sales_tow + $sales_transfer + $sales_others;
                         @endphp
                         <h4>Preparação e venda da viatura</h4>
+                        @if(!\App\Support\WorkshopPrivacy::restricted() && Gate::allows('vehicle_documents_area_access') && Gate::allows('vehicle_edit') && Gate::allows('vehicle_others_area_access'))
+                            <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.sale.edit', $vehicle) }}">Preparar declaração de venda</a></p>
+                        @endif
                         <hr>
                         <div class="row">
                             <div class="col-md-6">

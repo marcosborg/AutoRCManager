@@ -31,6 +31,26 @@ class VehicleSaleDeclarationTest extends TestCase
             'confirmed' => 1, 'company_confirmed' => 1];
     }
 
+    public function test_document_preparation_links_are_in_the_correct_vehicle_tabs(): void
+    {
+        $user = $this->actor();
+        $role = $user->roles->first();
+        foreach (['vehicle_access', 'aquisition_of_the_vehicle'] as $permission) {
+            $role->permissions()->syncWithoutDetaching(Permission::firstOrCreate(['title' => $permission])->id);
+        }
+        $this->actingAs($user);
+        $vehicle = Vehicle::create(['license' => 'DOC-TABS']);
+        $html = $this->get(route('admin.vehicles.edit', $vehicle))->assertOk()->getContent();
+        $dom = new \DOMDocument();
+        @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($dom);
+        foreach (['purchase' => 'vehicle-acquisition', 'sale' => 'vehicle-preparation-sale'] as $document => $tab) {
+            $href = route('admin.vehicles.documents.'.$document.'.edit', $vehicle);
+            $this->assertSame(1, $xpath->query('//div[@id="'.$tab.'"]//a[@href="'.$href.'"]')->length);
+            $this->assertSame(0, $xpath->query('//div[@id="vehicle-documents"]//a[@href="'.$href.'"]')->length);
+        }
+    }
+
     public function test_prefill_preview_pdf_does_not_change_sale_or_customer(): void
     {
         $this->actingAs($this->actor());

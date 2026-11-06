@@ -41,6 +41,7 @@
                     <div class="form-group"><label for="document_file">Ficheiro a anexar</label><input id="document_file" type="file" name="document_file" accept=".pdf,.jpg,.jpeg,.png,.webp" class="form-control"><small>PDF, JPG, PNG ou WebP, até {{ number_format($uploadLimitKb / 1024, 1, ',', '.') }} MB.</small></div>
                     <p>Ao clicar em “Anexar e concluir”, confirma que conferiu o ficheiro e que corresponde a este documento e viatura. A cópia fica guardada e o acompanhamento fica concluído.</p>
                     @if($document === 'signed_purchase_form')<p><label><input type="checkbox" name="signed_confirmed" value="1"> Conferi que a cópia está assinada e corresponde a esta compra.</label></p>@endif
+                    @if($document === 'signed_sale_declaration')<p><label><input type="checkbox" name="signed_confirmed" value="1"> Conferi que a cópia está assinada e corresponde a esta venda.</label></p>@endif
                     <button name="action" value="upload_complete" class="btn btn-success">Anexar e concluir</button>
                     @if($files->isNotEmpty())
                     <details style="margin-top:20px"><summary>Usar uma cópia já guardada</summary>

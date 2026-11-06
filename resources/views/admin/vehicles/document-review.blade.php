@@ -5,7 +5,7 @@
     <div class="panel panel-default">
         <div class="panel-heading"><h1 class="panel-title">Conferir documentação</h1></div>
         <div class="panel-body">
-            <p>Encontre confirmações por preencher na ficha e anexos que ainda precisam de identificação.</p>
+            <p>Encontre documentos por conferir e acompanhe os contactos que precisa de fazer.</p>
             <p class="help-block">“Por confirmar” não significa que o documento seja obrigatório ou esteja em falta. Pode existir em papel. Identificar um ficheiro não confirma a sua receção.</p>
             @if(isset($errors) && $errors->any())
                 <div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>
@@ -38,12 +38,18 @@
                             <option value="any" {{ $reason === 'any' ? 'selected' : '' }}>Qualquer pendência</option>
                             <option value="checks" {{ $reason === 'checks' ? 'selected' : '' }}>Confirmações por preencher</option>
                             <option value="unidentified" {{ $reason === 'unidentified' ? 'selected' : '' }}>Anexos por identificar</option>
+                            <option value="followups" {{ $reason === 'followups' ? 'selected' : '' }}>Acompanhamentos em aberto</option>
+                            <option value="due" {{ $reason === 'due' ? 'selected' : '' }}>Contactos para hoje ou em atraso</option>
+                            <option value="review" {{ $reason === 'review' ? 'selected' : '' }}>Acompanhamentos a rever</option>
                         </select>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Consultar</button>
                 <a class="btn btn-default" href="{{ route('admin.vehicles.documents.review') }}">Limpar filtros</a>
             </form>
+            @if($reason === 'due')
+                <p class="help-block">Mostra acompanhamentos em aberto com a próxima data de contacto marcada para hoje ou antes.</p>
+            @endif
             @if($scope === 'stock')
                 <p class="help-block">Stock segue o critério atual do sistema: viaturas sem data de venda nem estado de vendida. Inclui oficina, aluguer e adjudicação.</p>
             @endif
@@ -80,7 +86,7 @@
                                         <p><a href="{{ route('admin.vehicles.documents.followup',[$vehicle,$followup->document]) }}">{{ \App\Support\VehicleDocuments::applicabilityDocuments()[$followup->document] }}</a><br>
                                         {{ $followup->responsible?->name }} — {{ $followup->statusLabel() }}
                                         @if($followup->status === 'open')<br>{{ \Carbon\Carbon::parse($followup->next_contact_on)->format('d/m/Y') }}
-                                            @if($followup->next_contact_on < now()->toDateString())<strong class="text-danger">Em atraso</strong>@elseif($followup->next_contact_on === now()->toDateString())<strong>Hoje</strong>@endif
+                                            @if($followup->next_contact_on < $today)<strong class="text-danger">Em atraso</strong>@elseif($followup->next_contact_on === $today)<strong>Hoje</strong>@endif
                                         @endif</p>
                                     @endforeach
                                 </td>

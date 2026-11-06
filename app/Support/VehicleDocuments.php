@@ -47,7 +47,8 @@ class VehicleDocuments
     public static function applicabilityDocuments(): array
     {
         return self::checks() + ['inspection' => 'Inspeção (IPO)', 'dav' => 'DAV', 'purchase_invoice' => 'Fatura de compra', 'signed_purchase_form' => 'Impresso de compra assinado',
-            'auction_pickup_authorization' => self::TYPES['auction_pickup_authorization']];
+            'auction_pickup_authorization' => self::TYPES['auction_pickup_authorization'],
+            'signed_sale_declaration' => self::TYPES['signed_sale_declaration']];
     }
 
     public static function notApplicable(Vehicle $vehicle, string $field): bool

@@ -14,6 +14,9 @@
         <p>Use “Não se aplica” apenas quando confirmou que o documento não é necessário nesta viatura. Se chegar mais tarde, mantenha-o por conferir. Uma pró-forma não comprova a fatura definitiva.</p>
         <p class="js-applicability-status" role="status" aria-live="polite"></p>
         @can('vehicle_edit')
+            @unless($vehicle->documentFollowups->contains('document', 'signed_sale_declaration') || \App\Support\VehicleDocuments::count($vehicle, 'signed_sale_declaration'))
+                <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'signed_sale_declaration']) }}">Acompanhar declaração de venda assinada</a></p>
+            @endunless
             @unless($vehicle->documentFollowups->contains('document', 'auction_pickup_authorization') || \App\Support\VehicleDocuments::count($vehicle, 'auction_pickup_authorization'))
                 <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'auction_pickup_authorization']) }}">Acompanhar autorização de levantamento</a></p>
             @endunless
@@ -45,6 +48,12 @@
                     <tr data-document="signed_purchase_form"><th scope="row">Impresso de compra assinado</th><td>Conferir assinatura na cópia digital</td>
                         <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'signed_purchase_form')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
                         @include('admin.vehicles.partials.document-applicability', ['document' => 'signed_purchase_form'])
+                    </tr>
+                    @endif
+                    @if($vehicle->documentFollowups->contains('document', 'signed_sale_declaration') || \App\Support\VehicleDocuments::count($vehicle, 'signed_sale_declaration'))
+                    <tr data-document="signed_sale_declaration"><th scope="row">Declaração de venda assinada</th><td>Conferir assinatura na cópia digital</td>
+                        <td>{{ ($count = \App\Support\VehicleDocuments::count($vehicle, 'signed_sale_declaration')) ? 'Ficheiro identificado: '.$count : 'Sem ficheiro identificado' }}</td>
+                        @include('admin.vehicles.partials.document-applicability', ['document' => 'signed_sale_declaration'])
                     </tr>
                     @endif
                     @if($vehicle->documentFollowups->contains('document', 'auction_pickup_authorization') || \App\Support\VehicleDocuments::count($vehicle, 'auction_pickup_authorization'))
