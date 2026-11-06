@@ -1182,6 +1182,7 @@
                         @if(!\App\Support\WorkshopPrivacy::restricted() && Gate::allows('vehicle_documents_area_access') && Gate::allows('vehicle_edit') && Gate::allows('vehicle_others_area_access'))
                             <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.sale.edit', $vehicle) }}">Preparar declaração de venda</a></p>
                             <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.warranty.edit', $vehicle) }}">Preparar declaração de garantia</a></p>
+                            <p><a class="btn btn-default" href="{{ route('admin.vehicles.documents.circulation.edit', $vehicle) }}">Preparar declaração de circulação</a></p>
                         @endif
                         <hr>
                         <div class="row">
