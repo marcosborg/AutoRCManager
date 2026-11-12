@@ -32,6 +32,8 @@
                     <label for="date_to">Ate</label>
                     <input class="form-control" type="date" name="date_to" id="date_to" value="{{ request('date_to') }}">
                 </div>
+                <label for="amount_min">Total venda mínimo (€)</label><input class="form-control" id="amount_min" name="amount_min" inputmode="decimal" value="{{ request('amount_min') }}">
+                <label for="amount_max">Total venda máximo (€)</label><input class="form-control" id="amount_max" name="amount_max" inputmode="decimal" value="{{ request('amount_max') }}">
                 <button class="btn btn-primary" type="submit">Filtrar</button>
                 <a class="btn btn-default" href="{{ route('admin.sale-closure-approvals.index') }}">Limpar</a>
                 <a class="btn btn-success" href="{{ route('admin.sale-closure-approvals.export', request()->query()) }}">Exportar Excel</a>

@@ -114,12 +114,15 @@ class SaleClosureApprovalController extends Controller
 
     private function filteredQuery(Request $request)
     {
+        \App\Support\AmountRange::validate($request);
         return SaleClosureApproval::with([
             'vehicle.brand',
             'vehicle.client',
             'closed_by',
             'approved_by',
         ])
+            ->when($request->filled('amount_min'), fn ($query) => $query->where('sales_total', '>=', $request->input('amount_min')))
+            ->when($request->filled('amount_max'), fn ($query) => $query->where('sales_total', '<=', $request->input('amount_max')))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->input('status')))
             ->when(! $request->filled('status'), fn ($query) => $query->where('status', SaleClosureApproval::STATUS_PENDING))
             ->when($request->filled('closed_by_id'), fn ($query) => $query->where('closed_by_id', $request->input('closed_by_id')))
