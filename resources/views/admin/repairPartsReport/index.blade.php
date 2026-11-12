@@ -43,6 +43,7 @@
                         </div>
                         <div class="col-md-12" style="margin-top:10px;">
                             <button class="btn btn-primary" type="submit">Filtrar</button>
+                            <button class="btn btn-default" type="submit" name="export" value="csv">Exportar todos os resultados</button>
                             <a class="btn btn-default" href="{{ route('admin.repair-parts-report.index') }}">Limpar</a>
                         </div>
                     </form>

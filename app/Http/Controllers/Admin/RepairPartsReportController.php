@@ -14,6 +14,7 @@ class RepairPartsReportController extends Controller
     {
         abort_if(Gate::denies('repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         \App\Support\AmountRange::validate($request);
+        $request->validate(['export' => ['nullable', 'in:csv']]);
 
         $query = RepairPart::with(['repair.vehicle'])
             ->when($request->filled('amount_min'), fn ($q) => $q->where('amount', '>=', $request->input('amount_min')))
@@ -48,6 +49,22 @@ class RepairPartsReportController extends Controller
             });
         }
 
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $out = fopen('php://output', 'w'); fwrite($out, "\xEF\xBB\xBF");
+                fputcsv($out, ['ID', 'Data', 'Matrícula', 'Matrícula estrangeira', 'Peça', 'Fornecedor', 'N. fatura', 'Valor (€)', 'Intervenção'], ';');
+                foreach ($query->lazy(200) as $part) {
+                    $row = [$part->id, $part->part_date?->format('Y-m-d'), $part->repair?->vehicle?->license,
+                        $part->repair?->vehicle?->foreign_license, $part->part_name, $part->supplier,
+                        $part->invoice_number, $part->amount === null ? '' : number_format((float) $part->amount, 2, ',', ''), $part->repair_id];
+                    fputcsv($out, array_map(function ($value) {
+                        $value = (string) $value;
+                        return preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;
+                    }, $row), ';');
+                }
+                fclose($out);
+            }, 'pecas-oficina-' . now('Europe/Lisbon')->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
         $parts = (clone $query)->paginate(50)->appends($request->query());
         $totalAmount = (float) (clone $query)->sum('amount');
         $totalLines = (int) (clone $query)->count();

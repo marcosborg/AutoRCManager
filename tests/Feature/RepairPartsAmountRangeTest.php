@@ -22,6 +22,16 @@ class RepairPartsAmountRangeTest extends TestCase
         $this->get(route('admin.repair-parts-report.index', ['supplier' => $supplier, 'amount_max' => 0]))->assertViewHas('totalLines', 1);
         foreach ([['amount_min' => -1], ['amount_max' => 'abc'], ['amount_min' => 20, 'amount_max' => 10]] as $invalid) $this->getJson(route('admin.repair-parts-report.index', $invalid))->assertUnprocessable();
         $this->assertSame($before, RepairPart::whereIn('id', $ids)->get()->toArray());
+        for ($i = 0; $i < 53; $i++) RepairPart::create(['repair_id' => $repair->id, 'supplier' => $supplier, 'part_name' => '=1+1', 'amount' => 12, 'part_date' => now()]);
+        $response = $this->get(route('admin.repair-parts-report.index', $params + ['export' => 'csv', 'page' => 2]))->assertOk()->assertDownload();
+        $stream = fopen('php://temp', 'r+'); fwrite($stream, substr($response->streamedContent(), 3)); rewind($stream);
+        $this->assertCount(9, fgetcsv($stream, 0, ';'));
+        $rows = []; while (($row = fgetcsv($stream, 0, ';')) !== false) $rows[] = $row;
+        fclose($stream); $this->assertCount(55, $rows);
+        $this->assertCount(55, array_unique(array_column($rows, 0)));
+        $this->assertSame("'=1+1", $rows[0][4]);
+        $this->getJson(route('admin.repair-parts-report.index', ['export' => 'invalid']))->assertUnprocessable();
         $user->roles()->detach(); $this->actingAs($user->fresh())->get(route('admin.repair-parts-report.index'))->assertForbidden();
+        $this->get(route('admin.repair-parts-report.index', ['export' => 'csv']))->assertForbidden();
     }
 }
