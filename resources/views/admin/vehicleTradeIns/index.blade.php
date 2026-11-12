@@ -52,6 +52,8 @@
                     <a class="btn btn-default" href="{{ route('admin.vehicle-trade-ins.index', $canManageTradeIns ? [] : ['status' => \App\Models\VehicleTradeIn::STATUS_CONVERTED]) }}">Limpar</a>
                 </div>
                 <div class="col-md-12">
+                    <button class="btn btn-default" type="submit" name="export" value="csv" style="margin-top: 12px;">Exportar todos os resultados</button>
+                    <span class="text-muted small">Inclui todas as retomas que correspondem aos filtros, não apenas esta página.</span>
                     <div class="text-muted small" style="margin-top: 6px;">
                         O intervalo filtra por
                         @if(($dateField ?? 'created_at') === 'converted_at')

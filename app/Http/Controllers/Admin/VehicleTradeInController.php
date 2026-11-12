@@ -32,10 +32,11 @@ class VehicleTradeInController extends Controller
 
         $dateField = $this->dateFieldForStatus($request->query('status'));
         \App\Support\AmountRange::validate($request);
+        $request->validate(['export' => ['nullable', 'in:csv']]);
         $dateStart = $this->parseDateFilter($request->query('date_start'));
         $dateEnd = $this->parseDateFilter($request->query('date_end'));
 
-        $tradeIns = VehicleTradeIn::with(['sold_vehicle.brand', 'sold_vehicle.client', 'created_by', 'media'])
+        $query = VehicleTradeIn::with(['sold_vehicle.brand', 'sold_vehicle.client', 'created_by', 'media'])
             ->when($request->filled('amount_min'), fn ($query) => $query->where('amount', '>=', $request->input('amount_min')))
             ->when($request->filled('amount_max'), fn ($query) => $query->where('amount', '<=', $request->input('amount_max')))
             ->with(['converted_by', 'created_vehicle.brand'])
@@ -66,9 +67,44 @@ class VehicleTradeInController extends Controller
                         });
                 });
             })
-            ->orderByDesc('created_at')
-            ->paginate(50)
-            ->appends($request->query());
+            ->orderByDesc('created_at')->orderByDesc('id');
+
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $out = fopen('php://output', 'w');
+                fwrite($out, "\xEF\xBB\xBF");
+                fputcsv($out, ['ID', 'Venda', 'Retoma', 'Valor (€)', 'Estado', 'Cliente', 'Criado por', 'Data de criação', 'Data de verificação', 'Verificado por', 'Data de rejeição', 'Motivo da rejeição', 'Viatura em stock', 'Notas', 'Documentos', 'Compra/Venda + RGPD', 'Declaração de entrega', 'IPO', 'Fatura interna', 'Extinção de reserva'], ';');
+                foreach ($query->lazy(200) as $tradeIn) {
+                    $date = fn ($value) => $value ? Carbon::parse($value)->format('Y-m-d H:i') : '';
+                    $row = [
+                        $tradeIn->id,
+                        $tradeIn->sold_vehicle?->license ?: ($tradeIn->sold_vehicle?->foreign_license ?: ''),
+                        $tradeIn->license,
+                        $tradeIn->amount === null ? '' : number_format($tradeIn->amount, 2, ',', ''),
+                        VehicleTradeIn::STATUS_SELECT[$tradeIn->status] ?? $tradeIn->status,
+                        $tradeIn->sold_vehicle?->client?->name ?? '',
+                        $tradeIn->created_by?->name ?? '',
+                        $date($tradeIn->created_at), $date($tradeIn->converted_at),
+                        $tradeIn->converted_by?->name ?? '', $date($tradeIn->rejected_at),
+                        $tradeIn->rejection_reason, $tradeIn->created_vehicle_id, $tradeIn->notes,
+                        $tradeIn->media->pluck('file_name')->implode(' | '),
+                        $tradeIn->has_purchase_sale_rgpd ? 'Sim' : 'Não',
+                        $tradeIn->has_vehicle_delivery_declaration ? 'Sim' : 'Não',
+                        $tradeIn->has_ipo ? 'Sim' : 'Não',
+                        $tradeIn->has_internal_invoice ? 'Sim' : 'Não',
+                        $tradeIn->has_reservation_extinction_authorization ? 'Sim' : 'Não',
+                    ];
+                    $row = array_map(function ($value) {
+                        $value = (string) $value;
+                        return preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;
+                    }, $row);
+                    fputcsv($out, $row, ';');
+                }
+                fclose($out);
+            }, 'retomas-' . now('Europe/Lisbon')->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+
+        $tradeIns = $query->paginate(50)->appends($request->query());
 
         return view('admin.vehicleTradeIns.index', compact('tradeIns', 'dateField', 'canManageTradeIns'));
     }
