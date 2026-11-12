@@ -19,6 +19,7 @@ class WorkshopInterventionController extends Controller
     public function index(Request $request)
     {
         abort_if(Gate::denies('workshop_planning_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        $request->validate(['export' => ['nullable', 'in:csv']]);
 
         $start = $request->input('start_date', now()->startOfWeek()->toDateString());
         $end = $request->input('end_date', now()->endOfWeek()->toDateString());
@@ -33,6 +34,25 @@ class WorkshopInterventionController extends Controller
         $query->when($request->filled('type_id'), fn ($q) => $q->where('type_id', $request->integer('type_id')));
         $query->when($request->filled('status'), fn ($q) => $q->where('status', $request->status));
 
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $out = fopen('php://output', 'w'); fwrite($out, "\xEF\xBB\xBF");
+                fputcsv($out, ['ID', 'Início', 'Fim', 'Matrícula', 'Matrícula estrangeira', 'Trabalho', 'Descrição', 'Tipo', 'Mecânicos', 'Estado', 'Tempo (min)', 'Intervenção'], ';');
+                $at = now();
+                foreach ($query->lazy(200) as $item) {
+                    $minutes = $item->workLogs->sum(fn ($log) => $log->duration_minutes ?? \Carbon\Carbon::parse($log->started_at)->diffInMinutes($log->finished_at ?: $at));
+                    $row = [$item->id, $item->planned_start_date?->format('Y-m-d'), $item->planned_end_date?->format('Y-m-d'),
+                        $item->repair?->vehicle?->license, $item->repair?->vehicle?->foreign_license,
+                        $item->title, $item->description, $item->type?->name, $item->mechanics->pluck('name')->join(', '),
+                        WorkshopIntervention::STATUS_SELECT[$item->status] ?? $item->status, $minutes, $item->repair_id];
+                    fputcsv($out, array_map(function ($value) {
+                        $value = (string) $value;
+                        return preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;
+                    }, $row), ';');
+                }
+                fclose($out);
+            }, 'planificacao-oficina-' . now('Europe/Lisbon')->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
         return view('admin.workshopInterventions.index', [
             'interventions' => $query->paginate(40)->withQueryString(),
             'mechanics' => $this->mechanics(),

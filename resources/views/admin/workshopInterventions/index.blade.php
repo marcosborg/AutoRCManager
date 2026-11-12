@@ -15,6 +15,7 @@
                 <div class="col-md-2 form-group"><label>Tipo</label><select class="form-control" name="type_id"><option value="">Todos</option>@foreach($types as $id => $name)<option value="{{ $id }}" {{ (string) request('type_id') === (string) $id ? 'selected' : '' }}>{{ $name }}</option>@endforeach</select></div>
                 <div class="col-md-2 form-group"><label>Estado</label><select class="form-control" name="status"><option value="">Todos</option>@foreach(App\Models\WorkshopIntervention::STATUS_SELECT as $key => $label)<option value="{{ $key }}" {{ request('status') === $key ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div>
                 <div class="col-md-2 form-group"><label>&nbsp;</label><button class="btn btn-default btn-block" type="submit">Filtrar</button></div>
+                <div class="col-md-12"><button class="btn btn-default" name="export" value="csv">Exportar todos os resultados</button></div>
             </form>
             <div class="table-responsive"><table class="table table-bordered table-striped">
                 <thead><tr><th>Período</th><th>Viatura</th><th>Trabalho</th><th>Tipo</th><th>Mecânicos</th><th>Estado</th><th>Tempo</th><th></th></tr></thead>
