@@ -67,13 +67,15 @@ class PartOrderController extends Controller
             return response()->streamDownload(function () use ($query) {
                 $out = fopen('php://output', 'w');
                 fwrite($out, "\xEF\xBB\xBF");
-                fputcsv($out, ['ID', 'Matrícula', 'Matrícula estrangeira', 'Marca', 'Modelo', 'Fornecedor', 'Estado', 'Prioridade', 'Entrega prevista', 'Peças'], ';', '"', '');
+                fputcsv($out, ['ID', 'Matrícula', 'Matrícula estrangeira', 'Marca', 'Modelo', 'Fornecedor', 'Estado', 'Prioridade', 'Entrega prevista', 'Peças', 'Requerente', 'Técnico', 'Entrega efetiva', 'Notas'], ';', '"', '');
                 foreach ($query->lazy(200) as $order) {
                     $row = [$order->id, $order->vehicle?->license, $order->vehicle?->foreign_license,
                         $order->vehicle?->brand?->name, $order->vehicle?->model, $order->suplier?->name,
                         PartOrder::STATUS_SELECT[$order->status] ?? $order->status,
                         PartOrder::PRIORITY_SELECT[$order->priority] ?? $order->priority,
-                        $order->expected_delivery_date?->format('Y-m-d'), $order->items_count];
+                        $order->expected_delivery_date?->format('Y-m-d'), $order->items_count,
+                        $order->requested_by?->name, $order->technician?->name,
+                        $order->actual_delivery_date?->format('Y-m-d'), $order->notes];
                     fputcsv($out, array_map(function ($value) {
                         $value = (string) $value;
                         return preg_match('/^[\s]*[=+@-]/u', $value) ? "'".$value : $value;

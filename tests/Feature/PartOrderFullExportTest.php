@@ -28,7 +28,7 @@ class PartOrderFullExportTest extends TestCase
         $rows = [];
         while (($row = fgetcsv($stream, 0, ';', '"', '')) !== false) $rows[] = $row;
         fclose($stream);
-        $this->assertCount(10, array_shift($rows));
+        $this->assertCount(14, array_shift($rows));
         return $rows;
     }
 
@@ -38,6 +38,7 @@ class PartOrderFullExportTest extends TestCase
         $supplier = Suplier::create(['name' => '=1+1']);
         $vehicle = Vehicle::create(['foreign_license' => uniqid('EXP'), 'model' => 'Modelo']);
         $base = ['vehicle_id' => $vehicle->id, 'suplier_id' => $supplier->id, 'status' => 'ordered', 'priority' => 'urgent',
+            'notes' => '+Nota teste', 'requested_by_id' => auth()->id(), 'technician_id' => auth()->id(),
             'expected_delivery_date' => now()->subDay()->toDateString()];
         $ids = [];
         for ($i = 0; $i < 53; $i++) $ids[] = PartOrder::create($base)->id;
@@ -53,6 +54,9 @@ class PartOrderFullExportTest extends TestCase
         $this->assertSame(array_reverse($ids), array_map(fn ($row) => (int) $row[0], $rows));
         $this->assertSame("'=1+1", $rows[0][5]);
         $this->assertSame('Urgente', $rows[0][7]);
+        $this->assertSame(auth()->user()->name, $rows[0][10]);
+        $this->assertSame(auth()->user()->name, $rows[0][11]);
+        $this->assertSame("'+Nota teste", $rows[0][13]);
         $this->assertSame($before, PartOrder::whereIn('id', $ids)->get()->toArray());
         $this->get(route('admin.part-orders.index', $params))->assertOk()->assertSee('Exportar todos os resultados (CSV)');
     }
