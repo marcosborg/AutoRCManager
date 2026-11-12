@@ -14,6 +14,14 @@
         <div class="panel-body">
             <form method="GET" class="row" style="margin-bottom: 12px;">
                 <div class="col-md-3">
+                    <label for="amount_min">Valor mínimo (€)</label>
+                    <input class="form-control" id="amount_min" name="amount_min" inputmode="decimal" value="{{ request('amount_min') }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="amount_max">Valor máximo (€)</label>
+                    <input class="form-control" id="amount_max" name="amount_max" inputmode="decimal" value="{{ request('amount_max') }}">
+                </div>
+                <div class="col-md-3">
                     <label>Estado</label>
                     <select class="form-control" name="status">
                         @if($canManageTradeIns)

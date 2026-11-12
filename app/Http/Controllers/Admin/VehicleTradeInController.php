@@ -31,10 +31,13 @@ class VehicleTradeInController extends Controller
         );
 
         $dateField = $this->dateFieldForStatus($request->query('status'));
+        \App\Support\AmountRange::validate($request);
         $dateStart = $this->parseDateFilter($request->query('date_start'));
         $dateEnd = $this->parseDateFilter($request->query('date_end'));
 
         $tradeIns = VehicleTradeIn::with(['sold_vehicle.brand', 'sold_vehicle.client', 'created_by', 'media'])
+            ->when($request->filled('amount_min'), fn ($query) => $query->where('amount', '>=', $request->input('amount_min')))
+            ->when($request->filled('amount_max'), fn ($query) => $query->where('amount', '<=', $request->input('amount_max')))
             ->with(['converted_by', 'created_vehicle.brand'])
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
             ->when(! $request->filled('status') && $request->boolean('pending'), fn ($query) => $query->where('status', VehicleTradeIn::STATUS_PENDING))
