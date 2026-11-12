@@ -40,6 +40,8 @@
                             <option value="unidentified" {{ $reason === 'unidentified' ? 'selected' : '' }}>Anexos por identificar</option>
                             <option value="purchase_invoice" {{ $reason === 'purchase_invoice' ? 'selected' : '' }}>Sem fatura de compra identificada</option>
                             <option value="inspection" {{ $reason === 'inspection' ? 'selected' : '' }}>Sem inspeção (IPO) identificada</option>
+                            <option value="transport_guide" {{ $reason === 'transport_guide' ? 'selected' : '' }}>Sem guia de transporte identificada</option>
+                            <option value="auction_pickup_authorization" {{ $reason === 'auction_pickup_authorization' ? 'selected' : '' }}>Sem autorização de levantamento identificada</option>
                             <option value="followups" {{ $reason === 'followups' ? 'selected' : '' }}>Acompanhamentos em aberto</option>
                             <option value="due" {{ $reason === 'due' ? 'selected' : '' }}>Contactos para hoje ou em atraso</option>
                             <option value="review" {{ $reason === 'review' ? 'selected' : '' }}>Acompanhamentos a rever</option>
@@ -61,6 +63,9 @@
             @endif
             @if($scope === 'stock')
                 <p class="help-block">Stock segue o critério atual do sistema: viaturas sem data de venda nem estado de vendida. Inclui oficina, aluguer e adjudicação.</p>
+            @endif
+            @if(in_array($reason, ['transport_guide', 'auction_pickup_authorization'], true))
+                <p class="help-block">Mostra viaturas sem uma cópia digital identificada como {{ $reason === 'transport_guide' ? 'guia de transporte' : 'autorização de levantamento da leiloeira' }}. Pode existir um ficheiro por identificar ou um documento em papel. As viaturas com “Não se aplica” ficam de fora. Esta consulta não confirma a obrigatoriedade do documento nem que a viatura foi adquirida em leilão.</p>
             @endif
             @if($vehicles !== null)
                 <hr>
@@ -106,6 +111,9 @@
                                 @endif
                                 @if($reason === 'inspection')
                                     <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, 'inspection']) }}">Acompanhar inspeção (IPO)</a></p>
+                                @endif
+                                @if(in_array($reason, ['transport_guide', 'auction_pickup_authorization'], true))
+                                    <p><a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.documents.followup', [$vehicle, $reason]) }}">{{ $reason === 'transport_guide' ? 'Acompanhar guia de transporte' : 'Acompanhar autorização de levantamento' }}</a></p>
                                 @endif
                                 @can('vehicle_edit')
                                     <a class="btn btn-default btn-sm" href="{{ route('admin.vehicles.edit', $vehicle) }}#vehicle-documents">Abrir documentos</a>

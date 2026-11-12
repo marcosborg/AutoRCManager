@@ -20,7 +20,7 @@ class VehicleDocumentController extends Controller
             'license' => ['nullable', 'string', 'max:100'],
             'destination_company' => ['nullable', 'string', Rule::in(array_merge(array_keys(Vehicle::DESTINATION_COMPANIES), ['unassigned']))],
             'scope' => ['nullable', Rule::in(['stock', 'all'])],
-            'reason' => ['nullable', Rule::in(['any', 'checks', 'unidentified', 'followups', 'due', 'review', 'purchase_invoice', 'inspection'])],
+            'reason' => ['nullable', Rule::in(['any', 'checks', 'unidentified', 'followups', 'due', 'review', 'purchase_invoice', 'inspection', 'transport_guide', 'auction_pickup_authorization'])],
             'export' => ['nullable', Rule::in(['csv'])],
         ]);
         $scope = $filters['scope'] ?? 'stock';
@@ -33,9 +33,9 @@ class VehicleDocumentController extends Controller
             if ($scope === 'stock') $query->inStock();
             if (!empty($filters['destination_company'])) $query->forDestinationCompany($filters['destination_company']);
             if (trim($filters['license'] ?? '') !== '') $query->searchByLicense(trim($filters['license']));
-            if (in_array($reason, ['purchase_invoice', 'inspection'], true)) {
+            if (in_array($reason, ['purchase_invoice', 'inspection', 'transport_guide', 'auction_pickup_authorization'], true)) {
                 $path = 'document_applicability->'.$reason.'->status';
-                $types = $reason === 'inspection' ? ['inspection', 'dua_inspection'] : ['purchase_invoice'];
+                $types = $reason === 'inspection' ? ['inspection', 'dua_inspection'] : [$reason];
                 $query->where(fn ($applicable) => $applicable->whereNull($path)->orWhere($path, '!=', 'not_applicable'))
                     ->whereDoesntHave('media', fn ($media) => $media
                         ->whereIn('collection_name', VehicleDocuments::COLLECTIONS)
