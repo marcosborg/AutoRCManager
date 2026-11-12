@@ -65,6 +65,15 @@
 <script>
     $(function () {
   let dtButtons = $.extend(true, [], $.fn.dataTable.defaults.buttons)
+  dtButtons.push({
+    text: 'Exportar todos os resultados (CSV)',
+    className: 'btn-primary',
+    action: function (e, dt) {
+      let params = $.extend(true, {}, dt.ajax.params());
+      params.export = 'csv';
+      window.location.href = "{{ route('admin.supliers.index') }}?" + $.param(params);
+    }
+  });
 @can('suplier_delete')
   let deleteButtonTrans = '{{ trans('global.datatables.delete') }}';
   let deleteButton = {

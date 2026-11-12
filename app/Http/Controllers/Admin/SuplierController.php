@@ -21,9 +21,31 @@ class SuplierController extends Controller
     {
         abort_if(Gate::denies('suplier_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        if ($request->ajax()) {
+        $request->validate(['export' => ['nullable', 'in:csv']]);
+
+        if ($request->ajax() || $request->input('export') === 'csv') {
             $query = Suplier::query()->select(sprintf('%s.*', (new Suplier)->table));
             $table = Datatables::of($query);
+
+            if ($request->input('export') === 'csv') {
+                // Use the same searches and ordering as the visible table, without pagination.
+                $table->skipPaging()->prepareQuery();
+                $exportQuery = $table->getFilteredQuery();
+
+                return response()->streamDownload(function () use ($exportQuery) {
+                    $output = fopen('php://output', 'w');
+                    fwrite($output, "\xEF\xBB\xBF");
+                    fputcsv($output, ['ID', 'Nome'], ';');
+                    foreach ($exportQuery->orderBy('supliers.id')->lazy(200) as $supplier) {
+                        $name = (string) $supplier->name;
+                        if (preg_match('/^[\s]*[=+@-]/u', $name)) {
+                            $name = "'".$name;
+                        }
+                        fputcsv($output, [$supplier->id, $name], ';');
+                    }
+                    fclose($output);
+                }, 'fornecedores-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+            }
 
             $table->addColumn('placeholder', '&nbsp;');
             $table->addColumn('actions', '&nbsp;');
