@@ -25,9 +25,10 @@ class WorkshopCashController extends Controller
     {
         abort_if(Gate::denies('workshop_cash_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         \App\Support\AmountRange::validate($request);
+        $request->validate(['export' => ['nullable', 'in:csv']]);
 
         $workshopBox = $this->workshopBox();
-        $movements = AccountOperation::query()
+        $query = AccountOperation::query()
             ->with(['cash_category', 'created_by', 'cash_transfer.from_cash_box', 'cash_transfer.to_cash_box', 'cash_transfer.created_by', 'media'])
             ->where('cash_box_id', $workshopBox->id)
             ->when($request->filled('amount_min'), fn ($query) => $query->where('total', '>=', $request->input('amount_min')))
@@ -44,9 +45,27 @@ class WorkshopCashController extends Controller
             ->when($request->filled('date_from'), fn ($query) => $query->whereDate('date', '>=', $request->input('date_from')))
             ->when($request->filled('date_to'), fn ($query) => $query->whereDate('date', '<=', $request->input('date_to')))
             ->orderByDesc('date')
-            ->orderByDesc('id')
-            ->paginate(50)
-            ->appends($request->query());
+            ->orderByDesc('id');
+
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $out = fopen('php://output', 'w'); fwrite($out, "\xEF\xBB\xBF");
+                fputcsv($out, ['ID', 'Data', 'Tipo', 'Categoria', 'Utilizador', 'Descrição', 'Observações', 'Valor (€)', 'Transferência', 'Origem', 'Destino', 'Comprovativos'], ';');
+                foreach ($query->lazy(200) as $movement) {
+                    $row = [$movement->id, $movement->date, $movement->movement_type === 'income' ? 'Entrada' : 'Saída',
+                        $movement->cash_category?->name, $movement->created_by?->name ?: $movement->cash_transfer?->created_by?->name,
+                        $movement->description, $movement->notes, number_format((float) $movement->total, 2, ',', ''),
+                        $movement->transfer_group_id, $movement->cash_transfer?->from_cash_box?->name,
+                        $movement->cash_transfer?->to_cash_box?->name, $movement->media->pluck('file_name')->implode(' | ')];
+                    fputcsv($out, array_map(function ($value) {
+                        $value = (string) $value;
+                        return preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;
+                    }, $row), ';');
+                }
+                fclose($out);
+            }, 'caixa-oficina-' . now('Europe/Lisbon')->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+        $movements = $query->paginate(50)->appends($request->query());
 
         $categories = CashCategory::query()->where('cash_box_id', $workshopBox->id)->orderBy('name')->get();
         $cashBoxes = CashBox::query()->where('is_active', true)->where('id', '!=', $workshopBox->id)->orderBy('name')->get();

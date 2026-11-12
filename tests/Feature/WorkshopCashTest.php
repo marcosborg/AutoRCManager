@@ -30,6 +30,13 @@ class WorkshopCashTest extends TestCase
             ->assertViewHas('balance',$balance);
         foreach ([['amount_min'=>-1],['amount_max'=>'abc'],['amount_min'=>20,'amount_max'=>10]] as $bad) $this->getJson(route('admin.workshop-cash.index',$bad))->assertUnprocessable();
         $this->assertSame($balance,app(CashBalanceService::class)->balance($workshop));
+        $expected = [$ids[3], $ids[2]];
+        for ($i=0;$i<53;$i++) array_unshift($expected, AccountOperation::create(['description'=>'=1+1','qty'=>1,'cash_box_id'=>$workshop->id,'movement_type'=>'outcome','total'=>12,'date'=>'2026-11-12'])->id);
+        $res=$this->get(route('admin.workshop-cash.index',['amount_min'=>'10,50','amount_max'=>'20,75','export'=>'csv','page'=>2]))->assertOk()->assertDownload();
+        $stream=fopen('php://temp','r+');fwrite($stream,substr($res->streamedContent(),3));rewind($stream);$this->assertCount(12,fgetcsv($stream,0,';'));$found=[];
+        while(($row=fgetcsv($stream,0,';'))!==false){$found[]=(int)$row[0];}fclose($stream);
+        $this->assertSame($expected,$found);
+        $this->getJson(route('admin.workshop-cash.index',['export'=>'bad']))->assertUnprocessable();
     }
 
     public function test_management_can_transfer_money_to_workshop_without_a_proof(): void

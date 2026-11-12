@@ -77,6 +77,7 @@
                 <select class="form-control" name="created_by_id"><option value="">Todos os utilizadores</option>@foreach($users as $user)<option value="{{ $user->id }}" {{ (string) request('created_by_id') === (string) $user->id ? 'selected' : '' }}>{{ $user->name }}</option>@endforeach</select>
                 <input class="form-control" type="date" name="date_from" value="{{ request('date_from') }}"><input class="form-control" type="date" name="date_to" value="{{ request('date_to') }}">
                 <button class="btn btn-default">Filtrar</button>
+                <button class="btn btn-default" name="export" value="csv">Exportar todos os resultados</button>
             </form>
             <div class="table-responsive"><table class="table table-bordered table-striped"><thead><tr><th>Data</th><th>Tipo</th><th>Origem / Categoria</th><th>Utilizador</th><th>Observações</th><th>Comprovativos</th><th class="text-right">Valor</th></tr></thead><tbody>
                 @forelse($movements as $movement)
