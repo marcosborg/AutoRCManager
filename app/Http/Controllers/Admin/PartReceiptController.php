@@ -31,10 +31,12 @@ class PartReceiptController extends Controller
             return response()->streamDownload(function () use ($query) {
                 $out = fopen('php://output', 'w');
                 fwrite($out, "\xEF\xBB\xBF");
-                fputcsv($out, ['ID', 'Encomenda', 'Recebido em', 'Local', 'Recebido por'], ';', '"', '');
+                fputcsv($out, ['ID', 'Encomenda', 'Recebido em', 'Local', 'Recebido por', 'Matrícula', 'Matrícula estrangeira', 'Assinatura', 'Observações'], ';', '"', '');
                 foreach ($query->lazy(200) as $receipt) {
                     $row = [$receipt->id, $receipt->part_order_id, $receipt->received_at?->format('Y-m-d H:i'),
-                        $receipt->received_location, $receipt->received_by?->name];
+                        $receipt->received_location, $receipt->received_by?->name,
+                        $receipt->part_order?->vehicle?->license, $receipt->part_order?->vehicle?->foreign_license,
+                        $receipt->signature_name, $receipt->observations];
                     $row = array_map(function ($value) {
                         $value = (string) ($value ?? '');
                         return preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;

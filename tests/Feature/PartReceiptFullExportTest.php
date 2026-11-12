@@ -27,6 +27,7 @@ class PartReceiptFullExportTest extends TestCase
         $ids = [];
         for ($i = 0; $i < 53; $i++) {
             $ids[] = PartReceipt::create(['part_order_id' => $order->id, 'received_at' => '2026-11-01 12:00:00',
+                'signature_name' => 'Assinatura teste', 'observations' => '+Texto de teste',
                 'received_location' => '=1+1', 'received_by_id' => $user->id])->id;
         }
         $deleted = PartReceipt::create(['part_order_id' => $order->id]);
@@ -38,7 +39,7 @@ class PartReceiptFullExportTest extends TestCase
         $stream = fopen('php://temp', 'r+');
         fwrite($stream, substr($content, 3));
         rewind($stream);
-        $this->assertCount(5, fgetcsv($stream, 0, ';', '"', ''));
+        $this->assertCount(9, fgetcsv($stream, 0, ';', '"', ''));
         $found = [];
         while (($row = fgetcsv($stream, 0, ';', '"', '')) !== false) {
             $this->assertNotSame((string) $deleted->id, $row[0]);
@@ -46,6 +47,8 @@ class PartReceiptFullExportTest extends TestCase
                 $found[] = (int) $row[0];
                 $this->assertSame("'=1+1", $row[3]);
                 $this->assertSame($user->name, $row[4]);
+                $this->assertSame('Assinatura teste', $row[7]);
+                $this->assertSame("'+Texto de teste", $row[8]);
             }
         }
         fclose($stream);
