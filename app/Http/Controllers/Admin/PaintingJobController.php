@@ -17,6 +17,7 @@ class PaintingJobController extends Controller
     public function index(Request $request)
     {
         abort_if(Gate::denies('painting_job_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        $request->validate(['export' => ['nullable', 'in:csv']]);
         $query = PaintingJob::with(['vehicle.brand', 'painter'])->latest('entry_date')->latest('id');
         $query->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('painter_id'), fn ($q) => $q->where('painter_id', $request->integer('painter_id')))
@@ -27,6 +28,21 @@ class PaintingJobController extends Controller
                 $q->where(fn ($inner) => $inner->where('license', 'like', "%{$search}%")->orWhere('brand_model', 'like', "%{$search}%"));
             });
 
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $out = fopen('php://output', 'w'); fwrite($out, "\xEF\xBB\xBF");
+                fputcsv($out, ['ID', 'Matrícula', 'Viatura', 'Entrada', 'Saída', 'Pintor', 'Estado'], ';');
+                foreach ($query->lazy(200) as $job) {
+                    $row = [$job->id, $job->license, $job->brand_model, $job->entry_date?->format('Y-m-d'),
+                        $job->exit_date?->format('Y-m-d'), $job->painter?->name ?: 'Por atribuir', PaintingJob::STATUS_SELECT[$job->status] ?? $job->status];
+                    fputcsv($out, array_map(function ($value) {
+                        $value = (string) $value;
+                        return preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;
+                    }, $row), ';');
+                }
+                fclose($out);
+            }, 'pintura-' . now('Europe/Lisbon')->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
         return view('admin.paintingJobs.index', [
             'jobs' => $query->paginate(30)->withQueryString(), 'painters' => $this->painters(), 'statuses' => PaintingJob::STATUS_SELECT,
         ]);

@@ -12,6 +12,7 @@
             <div class="col-md-2"><input class="form-control" type="date" name="from" value="{{ request('from') }}"></div>
             <div class="col-md-2"><input class="form-control" type="date" name="to" value="{{ request('to') }}"></div>
             <div class="col-md-1"><button class="btn btn-primary">Filtrar</button></div>
+            <div class="col-md-12" style="margin-top:10px"><button class="btn btn-default" name="export" value="csv">Exportar todos os resultados</button></div>
         </form>
         <div class="table-responsive" style="margin-top:20px"><table class="table table-bordered table-striped">
             <thead><tr><th>#</th><th>Viatura</th><th>Entrada</th><th>Saída</th><th>Pintor</th><th>Estado</th><th></th></tr></thead>
