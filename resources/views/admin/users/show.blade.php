@@ -69,6 +69,21 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <h3>Resumo dos principais acessos</h3>
+                        <p>Consulta das autorizações atuais, sem alterar os acessos. Algumas operações dependem também do estado da viatura, da atribuição da lead e das regras de cada área.</p>
+                        <table class="table table-bordered table-striped">
+                            <thead><tr><th>Operação</th><th>Autorização</th><th>Grupos com esta permissão</th></tr></thead>
+                            <tbody>
+                                @foreach($accessReview as $access)
+                                    <tr>
+                                        <td>{{ $access['title'] }}</td>
+                                        <td>{{ $access['allowed'] ? 'Permitido' : 'Não permitido' }}</td>
+                                        <td>{{ implode(', ', $access['roles']) ?: 'Sem permissão de grupo' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                        <p class="text-muted">As restrições adicionais prevalecem sobre as permissões dos grupos. Podem existir autorizações específicas fora dos grupos.</p>
                         <div class="form-group">
                             <a class="btn btn-default" href="{{ route('admin.users.index') }}">
                                 {{ trans('global.back_to_list') }}

@@ -116,9 +116,30 @@ class UsersController extends Controller
     {
         abort_if(Gate::denies('user_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $user->load('roles');
+        $user->load('roles.permissions');
+        $accessReview = collect([
+            'vehicle_access' => 'Consultar a lista de viaturas',
+            'vehicle_show' => 'Abrir fichas de viaturas',
+            'vehicle_create' => 'Criar viaturas',
+            'vehicle_edit' => 'Editar viaturas',
+            'vehicle_delete' => 'Arquivar viaturas',
+            'financial_sensitive_access' => 'Consultar informação financeira reservada',
+            'lead_access' => 'Consultar leads',
+            'lead_edit' => 'Editar leads',
+            'lead_delete' => 'Eliminar leads',
+            'user_access' => 'Consultar utilizadores',
+            'user_create' => 'Criar utilizadores',
+            'user_edit' => 'Editar utilizadores',
+            'user_delete' => 'Arquivar utilizadores',
+        ])->map(function ($label, $ability) use ($user) {
+                return [
+                    'title' => $label,
+                    'allowed' => Gate::forUser($user)->allows($ability),
+                    'roles' => $user->roles->filter(fn ($role) => $role->permissions->contains('title', $ability))->pluck('title')->all(),
+                ];
+            });
 
-        return view('admin.users.show', compact('user'));
+        return view('admin.users.show', compact('user', 'accessReview'));
     }
 
     public function destroy(User $user)
