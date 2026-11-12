@@ -22,11 +22,14 @@ class OficinaExpertiseProcessController extends Controller
     {
         abort_if(Gate::denies('oficina_expertise_process_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         $request->validate(['export' => ['nullable', 'in:csv']]);
+        \App\Support\AmountRange::validate($request);
 
         $query = OficinaExpertiseProcess::with(['vehicle.brand', 'vehicle.client', 'created_by', 'latest_status_history'])
             ->latest()->orderByDesc('id');
 
         $query->when($request->filled('status'), fn ($q) => $q->where('status', $request->status));
+        $query->when($request->filled('amount_min'), fn ($q) => $q->where('approved_amount', '>=', $request->input('amount_min')));
+        $query->when($request->filled('amount_max'), fn ($q) => $q->where('approved_amount', '<=', $request->input('amount_max')));
         $query->when($request->filled('created_by_id'), fn ($q) => $q->where('created_by_id', $request->integer('created_by_id')));
         $query->when($request->filled('insurance_company'), fn ($q) => $q->where('insurance_company', 'like', '%' . trim((string) $request->insurance_company) . '%'));
         $query->when($request->filled('client_search'), function ($q) use ($request) {
