@@ -11,6 +11,40 @@ class VehicleDocumentReviewTest extends TestCase
 {
     use DatabaseTransactions;
 
+    public function test_export_includes_all_filtered_rows_beyond_the_current_page_and_escapes_formulas(): void
+    {
+        $this->actingAs($this->user());
+        $ids = [];
+        for ($i = 0; $i < 30; $i++) {
+            $ids[] = $this->vehicle(['license' => 'CSVREVIEW'.sprintf('%03d', $i),
+                'vehicle_ownership_title' => 0, 'model' => '=1+1'])->id;
+        }
+        $excluded = $this->vehicle(['license' => 'NOTEXPORTED', 'vehicle_ownership_title' => 0]);
+        $deleted = $this->vehicle(['license' => 'CSVREVIEWDELETED', 'vehicle_ownership_title' => 0]);
+        $deleted->delete();
+        $response = $this->get(route('admin.vehicles.documents.review', [
+            'scope' => 'all', 'license' => 'CSVREVIEW', 'reason' => 'checks', 'export' => 'csv', 'page' => 2,
+        ]))->assertOk()->assertDownload();
+        $csv = $response->streamedContent();
+        $lines = preg_split('/\r?\n/', trim(substr($csv, 3)));
+        $this->assertCount(31, $lines);
+        $rows = array_map(fn ($line) => str_getcsv($line, ';', '"', ''), array_slice($lines, 1));
+        $this->assertEqualsCanonicalizing($ids, array_column($rows, 0));
+        $this->assertSame("'=1+1", $rows[0][4]);
+        $this->assertStringNotContainsString($excluded->license, $csv);
+        $this->assertStringNotContainsString($deleted->license, $csv);
+        $this->assertSame(0, Vehicle::findOrFail($ids[0])->vehicle_ownership_title);
+    }
+
+    public function test_export_enforces_permissions_and_validates_filters(): void
+    {
+        $this->actingAs($this->user(['vehicle_access']));
+        $this->get(route('admin.vehicles.documents.review', ['export' => 'csv']))->assertForbidden();
+        $this->actingAs($this->user());
+        $this->getJson(route('admin.vehicles.documents.review', ['export' => 'csv', 'reason' => 'invalid']))->assertUnprocessable();
+        $this->review()->assertSee('Exportar todos os resultados (CSV)');
+    }
+
     private function user(array $permissions = ['vehicle_access', 'vehicle_documents_area_access', 'vehicle_edit']): User
     {
         $user = User::factory()->create();

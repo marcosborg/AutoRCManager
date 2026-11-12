@@ -21,6 +21,7 @@ class VehicleDocumentController extends Controller
             'destination_company' => ['nullable', 'string', Rule::in(array_merge(array_keys(Vehicle::DESTINATION_COMPANIES), ['unassigned']))],
             'scope' => ['nullable', Rule::in(['stock', 'all'])],
             'reason' => ['nullable', Rule::in(['any', 'checks', 'unidentified', 'followups', 'due', 'review', 'purchase_invoice', 'inspection'])],
+            'export' => ['nullable', Rule::in(['csv'])],
         ]);
         $scope = $filters['scope'] ?? 'stock';
         $reason = $filters['reason'] ?? 'any';
@@ -62,7 +63,31 @@ class VehicleDocumentController extends Controller
                     }
                 });
             }
-            $vehicles = $query->orderBy('license')->orderBy('id')->paginate(25)->withQueryString();
+            $query->orderBy('license')->orderBy('id');
+            if (($filters['export'] ?? null) === 'csv' && !$request->is('api/v1/backoffice/*')) {
+                return response()->streamDownload(function () use ($query) {
+                    $out = fopen('php://output', 'w');
+                    fwrite($out, "\xEF\xBB\xBF");
+                    fputcsv($out, ['ID', 'Matrícula', 'Matrícula estrangeira', 'Marca', 'Modelo', 'Empresa de destino', 'Estado', 'Confirmações por preencher', 'Anexos por identificar', 'Acompanhamento', 'Ficha'], ';', '"', '');
+                    foreach ($query->lazy(200) as $vehicle) {
+                        $followups = $vehicle->documentFollowups->whereIn('status', ['open', 'review'])->map(fn ($followup) =>
+                            (VehicleDocuments::applicabilityDocuments()[$followup->document] ?? $followup->document)
+                            .' — '.$followup->statusLabel().' — '.($followup->responsible?->name ?? 'Sem responsável')
+                            .($followup->next_contact_on ? ' — '.$followup->next_contact_on : '')
+                        )->implode(' | ');
+                        $row = [$vehicle->id, $vehicle->license, $vehicle->foreign_license, $vehicle->brand?->name,
+                            $vehicle->model, Vehicle::DESTINATION_COMPANIES[$vehicle->destination_company] ?? 'Por confirmar',
+                            $vehicle->general_state?->name, implode(' | ', VehicleDocuments::pendingChecks($vehicle)),
+                            $vehicle->unidentified_count, $followups, route('admin.vehicles.show', $vehicle)];
+                        fputcsv($out, array_map(function ($value) {
+                            $value = (string) $value;
+                            return preg_match('/^[\s]*[=+@-]/u', $value) ? "'".$value : $value;
+                        }, $row), ';', '"', '');
+                    }
+                    fclose($out);
+                }, 'documentacao-'.now('Europe/Lisbon')->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+            }
+            $vehicles = $query->paginate(25)->withQueryString();
         }
         if ($request->is('api/v1/backoffice/*')) {
             $vehicles?->through(fn (Vehicle $vehicle) => [

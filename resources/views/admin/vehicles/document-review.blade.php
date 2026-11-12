@@ -47,6 +47,7 @@
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Consultar</button>
+                <button type="submit" name="export" value="csv" class="btn btn-default">Exportar todos os resultados (CSV)</button>
                 <a class="btn btn-default" href="{{ route('admin.vehicles.documents.review') }}">Limpar filtros</a>
             </form>
             @if($reason === 'due')
