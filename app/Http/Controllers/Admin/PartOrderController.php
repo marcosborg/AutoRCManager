@@ -24,6 +24,8 @@ class PartOrderController extends Controller
     {
         abort_if(Gate::denies('part_order_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        $request->validate(['export' => ['nullable', 'in:csv']]);
+
         $query = PartOrder::with(['repair', 'vehicle.brand', 'suplier', 'requested_by', 'technician'])
             ->withCount('items')
             ->orderByDesc('id');
@@ -59,6 +61,26 @@ class PartOrderController extends Controller
                             ->whereNotIn('status', ['received', 'cancelled']);
                     });
             });
+        }
+
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $out = fopen('php://output', 'w');
+                fwrite($out, "\xEF\xBB\xBF");
+                fputcsv($out, ['ID', 'Matrícula', 'Matrícula estrangeira', 'Marca', 'Modelo', 'Fornecedor', 'Estado', 'Prioridade', 'Entrega prevista', 'Peças'], ';', '"', '');
+                foreach ($query->lazy(200) as $order) {
+                    $row = [$order->id, $order->vehicle?->license, $order->vehicle?->foreign_license,
+                        $order->vehicle?->brand?->name, $order->vehicle?->model, $order->suplier?->name,
+                        PartOrder::STATUS_SELECT[$order->status] ?? $order->status,
+                        PartOrder::PRIORITY_SELECT[$order->priority] ?? $order->priority,
+                        $order->expected_delivery_date?->format('Y-m-d'), $order->items_count];
+                    fputcsv($out, array_map(function ($value) {
+                        $value = (string) $value;
+                        return preg_match('/^[\s]*[=+@-]/u', $value) ? "'".$value : $value;
+                    }, $row), ';', '"', '');
+                }
+                fclose($out);
+            }, 'encomendas-pecas-'.now('Europe/Lisbon')->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
         }
 
         $partOrders = $query->paginate(50)->appends($request->query());

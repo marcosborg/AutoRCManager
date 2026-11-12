@@ -14,6 +14,7 @@
                 <div class="col-md-3"><input class="form-control" name="vehicle_search" value="{{ request('vehicle_search') }}" placeholder="Matricula/modelo"></div>
                 <div class="col-md-1"><label><input type="checkbox" name="delayed" value="1" {{ request('delayed') ? 'checked' : '' }}> Atrasadas</label></div>
                 <div class="col-md-1"><button class="btn btn-default" type="submit">Filtrar</button></div>
+                <div class="col-md-12" style="margin-top:10px;"><button class="btn btn-default" type="submit" name="export" value="csv">Exportar todos os resultados (CSV)</button></div>
             </form>
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
