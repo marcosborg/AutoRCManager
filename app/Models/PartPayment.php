@@ -50,6 +50,8 @@ class PartPayment extends Model
         'notes',
     ];
 
+    protected $casts = ['payment_date' => 'datetime', 'due_date' => 'datetime'];
+
     protected $dates = [
         'payment_date',
         'due_date',

@@ -19,6 +19,8 @@ class PartPaymentController extends Controller
     {
         abort_if(Gate::denies('part_payment_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        $request->validate(['export' => ['nullable', 'in:csv']]);
+
         $query = PartPayment::with(['part_order.vehicle.brand', 'suplier', 'paid_by'])->orderByDesc('id');
 
         if ($request->filled('payment_status')) {
@@ -31,6 +33,24 @@ class PartPaymentController extends Controller
 
         if ($request->boolean('overdue')) {
             $query->whereDate('due_date', '<', now()->toDateString())->whereNotIn('payment_status', ['paid', 'cancelled']);
+        }
+
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $out = fopen('php://output', 'w');
+                fwrite($out, "\xEF\xBB\xBF");
+                fputcsv($out, ['ID', 'Encomenda', 'Fornecedor', 'Valor', 'Vencimento', 'Estado'], ';', '"', '');
+                foreach ($query->lazy(200) as $payment) {
+                    $supplier = (string) ($payment->suplier?->name ?? '');
+                    if (preg_match('/^\s*[=+@-]/u', $supplier)) $supplier = "'" . $supplier;
+                    $status = PartPayment::STATUS_SELECT[$payment->payment_status] ?? $payment->payment_status;
+                    if (preg_match('/^\s*[=+@-]/u', (string) $status)) $status = "'" . $status;
+                    fputcsv($out, [$payment->id, $payment->part_order_id, $supplier,
+                        number_format((float) $payment->amount, 2, ',', ''), $payment->due_date?->format('Y-m-d'),
+                        $status], ';', '"', '');
+                }
+                fclose($out);
+            }, 'pagamentos-pecas-' . now('Europe/Lisbon')->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
         }
 
         $partPayments = $query->paginate(50)->appends($request->query());
