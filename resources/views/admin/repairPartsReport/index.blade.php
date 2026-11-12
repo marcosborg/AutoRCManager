@@ -10,6 +10,14 @@
                 <div class="panel-body">
                     <form method="GET" action="{{ route('admin.repair-parts-report.index') }}" class="row" style="margin-bottom:15px;">
                         <div class="col-md-2">
+                            <label for="amount_min">Valor mínimo (€)</label>
+                            <input class="form-control" id="amount_min" name="amount_min" inputmode="decimal" value="{{ request('amount_min') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="amount_max">Valor máximo (€)</label>
+                            <input class="form-control" id="amount_max" name="amount_max" inputmode="decimal" value="{{ request('amount_max') }}">
+                        </div>
+                        <div class="col-md-2">
                             <label for="supplier">Fornecedor</label>
                             <input class="form-control" type="text" id="supplier" name="supplier" value="{{ request('supplier') }}">
                         </div>

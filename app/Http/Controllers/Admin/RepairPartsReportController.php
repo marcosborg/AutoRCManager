@@ -13,8 +13,11 @@ class RepairPartsReportController extends Controller
     public function index(Request $request)
     {
         abort_if(Gate::denies('repair_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        \App\Support\AmountRange::validate($request);
 
         $query = RepairPart::with(['repair.vehicle'])
+            ->when($request->filled('amount_min'), fn ($q) => $q->where('amount', '>=', $request->input('amount_min')))
+            ->when($request->filled('amount_max'), fn ($q) => $q->where('amount', '<=', $request->input('amount_max')))
             ->orderByDesc('part_date')
             ->orderByDesc('id');
 
@@ -50,6 +53,7 @@ class RepairPartsReportController extends Controller
         $totalLines = (int) (clone $query)->count();
 
         $supplierTotals = (clone $query)
+            ->reorder()
             ->selectRaw("COALESCE(NULLIF(TRIM(supplier), ''), 'Sem fornecedor') as supplier_label")
             ->selectRaw('SUM(COALESCE(amount,0)) as total_amount')
             ->groupBy('supplier_label')
