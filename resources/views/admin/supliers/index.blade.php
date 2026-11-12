@@ -21,7 +21,7 @@
                     {{ trans('cruds.suplier.title_singular') }} {{ trans('global.list') }}
                 </div>
                 <div class="panel-body">
-                    <table class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-Suplier">
+                    <table data-native-full-export class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-Suplier">
                         <thead>
                             <tr>
                                 <th width="10">

@@ -14,6 +14,8 @@
   $(document).on('init.dt', function (event, settings) {
     if (!settings || !settings._buttons || settings._completeExport) return;
     settings._completeExport = true;
+    // Some lists provide a streamed server export instead of loading all rows in the browser.
+    if ($(settings.nTable).is('[data-native-full-export]')) return;
     var dt = new $.fn.dataTable.Api(settings);
     dt.button().add(null, {
       text: 'Exportar todos os resultados (CSV)',
