@@ -21,9 +21,10 @@ class OficinaExpertiseProcessController extends Controller
     public function index(Request $request)
     {
         abort_if(Gate::denies('oficina_expertise_process_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        $request->validate(['export' => ['nullable', 'in:csv']]);
 
         $query = OficinaExpertiseProcess::with(['vehicle.brand', 'vehicle.client', 'created_by', 'latest_status_history'])
-            ->latest();
+            ->latest()->orderByDesc('id');
 
         $query->when($request->filled('status'), fn ($q) => $q->where('status', $request->status));
         $query->when($request->filled('created_by_id'), fn ($q) => $q->where('created_by_id', $request->integer('created_by_id')));
@@ -42,6 +43,24 @@ class OficinaExpertiseProcessController extends Controller
             });
         });
 
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $out = fopen('php://output', 'w'); fwrite($out, "\xEF\xBB\xBF");
+                fputcsv($out, ['ID', 'Matrícula', 'Cliente', 'Seguradora', 'Processo', 'Sinistro', 'Entrada', 'Peritagem', 'Valor aprovado (€)', 'Estado', 'Dias', 'Próxima ação', 'Funcionário'], ';');
+                foreach ($query->lazy(200) as $process) {
+                    $row = [$process->id, $process->license_display, $process->vehicle?->client?->name,
+                        $process->insurance_company, $process->process_number, $process->claim_number,
+                        $process->entry_date?->format('Y-m-d'), $process->scheduled_expertise_date?->format('Y-m-d H:i'),
+                        $process->approved_amount === null ? '' : number_format((float) $process->approved_amount, 2, ',', ''),
+                        $process->status_label, $process->days_in_current_status, $process->next_action, $process->created_by?->name];
+                    fputcsv($out, array_map(function ($value) {
+                        $value = (string) $value;
+                        return preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;
+                    }, $row), ';');
+                }
+                fclose($out);
+            }, 'peritagens-oficina-' . now('Europe/Lisbon')->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
         $processes = $query->paginate(40)->withQueryString();
 
         $kanbanProcesses = collect();

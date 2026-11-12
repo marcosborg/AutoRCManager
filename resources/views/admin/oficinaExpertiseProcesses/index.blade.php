@@ -36,6 +36,7 @@
                 <div class="col-md-2"><input class="form-control" name="client_search" value="{{ request('client_search') }}" placeholder="Cliente"></div>
                 <div class="col-md-2"><input class="form-control" name="insurance_company" value="{{ request('insurance_company') }}" placeholder="Seguradora"></div>
                 <div class="col-md-1"><button class="btn btn-default" type="submit">Filtrar</button></div>
+                <div class="col-md-12" style="margin-top:10px"><button class="btn btn-default" name="export" value="csv">Exportar todos os resultados</button></div>
             </form>
 
             @if(request('view') === 'kanban')
