@@ -16,6 +16,7 @@
                     </select>
                 </div>
                 <button class="btn btn-primary" type="submit">Filtrar</button>
+                <button class="btn btn-default" name="export" value="csv">Exportar todos os resultados</button>
                 <a class="btn btn-default" href="{{ route('admin.stand-cash-payment-approvals.index') }}">Limpar</a>
             </form>
         </div>

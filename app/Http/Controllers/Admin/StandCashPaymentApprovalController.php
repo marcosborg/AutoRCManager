@@ -19,8 +19,9 @@ class StandCashPaymentApprovalController extends Controller
     public function index(Request $request)
     {
         $this->authorizeApprovalAccess();
+        $request->validate(['export' => ['nullable', 'in:csv']]);
 
-        $approvals = StandCashPaymentApproval::with([
+        $query = StandCashPaymentApproval::with([
             'payment.payment_method',
             'vehicle.brand',
             'vehicle.client',
@@ -30,9 +31,21 @@ class StandCashPaymentApprovalController extends Controller
         ])
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->input('status')))
             ->when(! $request->filled('status'), fn ($query) => $query->where('status', StandCashPaymentApproval::STATUS_PENDING))
-            ->orderByDesc('created_at')
-            ->paginate(50)
-            ->appends($request->query());
+            ->orderByDesc('created_at')->orderByDesc('id');
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $out=fopen('php://output','w');fwrite($out,"\xEF\xBB\xBF");
+                fputcsv($out,['ID','Data','Viatura','Cliente','Valor (€)','Criado por','Estado','Movimento','Validado por','Data validação','Data rejeição','Motivo rejeição'],';');
+                foreach($query->lazy(200) as $approval){
+                    $row=[$approval->id,$approval->payment?->paid_at,$approval->vehicle?->license ?: $approval->vehicle?->foreign_license,
+                        $approval->vehicle?->client?->name,$approval->payment?->amount === null ? '' : number_format((float)$approval->payment->amount,2,',',''),
+                        $approval->created_by?->name,StandCashPaymentApproval::STATUS_SELECT[$approval->status]??$approval->status,
+                        $approval->cash_operation_id,$approval->approved_by?->name,$approval->approved_at?->format('Y-m-d H:i'),$approval->rejected_at?->format('Y-m-d H:i'),$approval->rejection_reason];
+                    fputcsv($out,array_map(function($value){$value=(string)$value;return preg_match('/^\s*[=+@-]/u',$value)?"'".$value:$value;},$row),';');
+                }fclose($out);
+            },'validacao-pagamentos-stand-'.now('Europe/Lisbon')->format('Y-m-d').'.csv',['Content-Type'=>'text/csv; charset=UTF-8']);
+        }
+        $approvals=$query->paginate(50)->appends($request->query());
 
         return view('admin.standCashPaymentApprovals.index', compact('approvals'));
     }
