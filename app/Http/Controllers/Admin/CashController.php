@@ -236,6 +236,40 @@ class CashController extends Controller
         return response()->json($cashBox, Response::HTTP_CREATED);
     }
 
+    public function renameCashBox(Request $request, CashBox $cashBox)
+    {
+        $this->authorizeCashAccess();
+        $request->merge(['name' => is_string($request->input('name')) ? trim($request->input('name')) : $request->input('name')]);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', Rule::unique('cash_boxes', 'name')->ignore($cashBox->id)],
+            'expected_name' => ['required', 'string'],
+        ]);
+
+        DB::transaction(function () use ($cashBox, $data, $request) {
+            $box = CashBox::query()->lockForUpdate()->findOrFail($cashBox->id);
+            if ($box->name !== $data['expected_name']) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'name' => 'O nome desta caixa foi alterado entretanto. Atualize a página antes de tentar novamente.',
+                ]);
+            }
+            if ($box->name === $data['name']) {
+                return;
+            }
+            $before = $box->name;
+            $box->update(['name' => $data['name']]);
+            \App\Models\AuditLog::create([
+                'description' => 'cash_box:renamed',
+                'subject_id' => $box->id,
+                'subject_type' => CashBox::class,
+                'user_id' => $request->user()->id,
+                'properties' => ['before' => ['name' => $before], 'after' => ['name' => $box->name]],
+                'host' => $request->ip(),
+            ]);
+        });
+
+        return back()->with('message', 'Nome da caixa guardado. Os movimentos e o saldo mantêm-se.');
+    }
+
     private function filteredMovements(Request $request, bool $includeDateRange = true)
     {
         return AccountOperation::with([

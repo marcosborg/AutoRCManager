@@ -27,6 +27,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('cash/departments', 'CashController@storeDepartment')->name('cash.departments.store');
     Route::post('cash/categories', 'CashController@storeCategory')->name('cash.categories.store');
     Route::post('cash/boxes', 'CashController@storeCashBox')->name('cash.boxes.store');
+    Route::patch('cash/boxes/{cashBox}/name', 'CashController@renameCashBox')->name('cash.boxes.rename');
     Route::get('workshop-cash', 'WorkshopCashController@index')->name('workshop-cash.index');
     Route::post('workshop-cash/expenses', 'WorkshopCashController@storeExpense')->name('workshop-cash.expenses.store');
     Route::post('workshop-cash/transfers', 'WorkshopCashController@storeTransfer')->name('workshop-cash.transfers.store');

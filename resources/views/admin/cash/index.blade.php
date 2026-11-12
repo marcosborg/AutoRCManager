@@ -48,6 +48,23 @@
         </div>
     </div>
 
+    <details class="panel panel-default">
+        <summary class="panel-heading" style="cursor: pointer;">Alterar nomes das caixas</summary>
+        <div class="panel-body">
+            <p>Altera apenas o nome apresentado. Mantém todos os movimentos, saldos e ligações da caixa.</p>
+            @foreach($cashBoxes as $cashBox)
+                <form method="POST" action="{{ route('admin.cash.boxes.rename', $cashBox) }}" class="form-inline" style="margin-bottom: 12px;">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="expected_name" value="{{ $cashBox->name }}">
+                    <label for="cash-box-name-{{ $cashBox->id }}">{{ $cashBox->name }}</label>
+                    <input id="cash-box-name-{{ $cashBox->id }}" name="name" class="form-control" value="{{ $cashBox->name }}" maxlength="255" required>
+                    <button type="submit" class="btn btn-primary">Guardar nome</button>
+                </form>
+            @endforeach
+        </div>
+    </details>
+
     <div class="panel panel-default">
         <div class="panel-heading">Novo movimento</div>
         <div class="panel-body">
