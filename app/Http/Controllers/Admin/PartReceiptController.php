@@ -22,10 +22,30 @@ class PartReceiptController extends Controller
     {
         abort_if(Gate::denies('part_receipt_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $partReceipts = PartReceipt::with(['part_order.vehicle.brand', 'received_by'])
+        $request->validate(['export' => ['nullable', 'in:csv']]);
+        $query = PartReceipt::with(['part_order.vehicle.brand', 'received_by'])
             ->orderByDesc('received_at')
-            ->orderByDesc('id')
-            ->paginate(50);
+            ->orderByDesc('id');
+
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $out = fopen('php://output', 'w');
+                fwrite($out, "\xEF\xBB\xBF");
+                fputcsv($out, ['ID', 'Encomenda', 'Recebido em', 'Local', 'Recebido por'], ';', '"', '');
+                foreach ($query->lazy(200) as $receipt) {
+                    $row = [$receipt->id, $receipt->part_order_id, $receipt->received_at?->format('Y-m-d H:i'),
+                        $receipt->received_location, $receipt->received_by?->name];
+                    $row = array_map(function ($value) {
+                        $value = (string) ($value ?? '');
+                        return preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;
+                    }, $row);
+                    fputcsv($out, $row, ';', '"', '');
+                }
+                fclose($out);
+            }, 'rececoes-pecas-' . now('Europe/Lisbon')->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+
+        $partReceipts = $query->paginate(50);
 
         return view('admin.partReceipts.index', compact('partReceipts'));
     }
