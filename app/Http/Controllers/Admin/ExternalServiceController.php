@@ -19,8 +19,9 @@ class ExternalServiceController extends Controller
     {
         abort_if(Gate::denies('external_service_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         \App\Support\AmountRange::validate($request);
+        $request->validate(['export' => ['nullable', 'in:csv']]);
 
-        $query = ExternalService::with(['vehicle', 'suplier', 'requested_by', 'media'])->latest();
+        $query = ExternalService::with(['vehicle', 'suplier', 'requested_by', 'media'])->latest()->orderByDesc('id');
         foreach (['amount_min' => '>=', 'amount_max' => '<='] as $field => $operator) {
             if ($request->filled($field)) $query->where('amount', $operator, $request->input($field));
         }
@@ -30,6 +31,27 @@ class ExternalServiceController extends Controller
             $search = trim((string) $request->vehicle_search);
             $q->whereHas('vehicle', fn ($vehicle) => $vehicle->where(fn ($sub) => $sub->searchByLicense($search)->orWhere('model', 'like', '%'.$search.'%')));
         });
+
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $out = fopen('php://output', 'w');
+                fwrite($out, "\xEF\xBB\xBF");
+                fputcsv($out, ['ID', 'Matrícula', 'Matrícula estrangeira', 'Serviço', 'Fornecedor', 'Estado', 'Data prevista', 'Valor'], ';', '"', '');
+                foreach ($query->lazy(200) as $service) {
+                    $row = [$service->id, $service->vehicle?->license, $service->vehicle?->foreign_license,
+                        $service->description, $service->suplier?->name,
+                        ExternalService::STATUS_SELECT[$service->status] ?? $service->status,
+                        $service->expected_date?->format('Y-m-d')];
+                    $row = array_map(function ($value) {
+                        $value = (string) ($value ?? '');
+                        return preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;
+                    }, $row);
+                    $row[] = $service->amount === null ? '' : number_format($service->amount, 2, ',', '');
+                    fputcsv($out, $row, ';', '"', '');
+                }
+                fclose($out);
+            }, 'servicos-externos-' . now('Europe/Lisbon')->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
 
         return view('admin.externalServices.index', [
             'externalServices' => $query->paginate(30)->withQueryString(),

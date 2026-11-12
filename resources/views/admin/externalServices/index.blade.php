@@ -14,6 +14,7 @@
                 <div class="col-md-3"><select class="form-control select2" name="suplier_id"><option value="">Fornecedor</option>@foreach($supliers as $id => $label)<option value="{{ $id }}" {{ (string) request('suplier_id') === (string) $id ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div>
                 <div class="col-md-4"><input class="form-control" name="vehicle_search" value="{{ request('vehicle_search') }}" placeholder="Matrícula/modelo"></div>
                 <div class="col-md-2"><button class="btn btn-default" type="submit">Filtrar</button></div>
+                <div class="col-md-12" style="margin-top:10px;"><button class="btn btn-default" type="submit" name="export" value="csv">Exportar todos os resultados (CSV)</button></div>
             </form>
             <div class="table-responsive"><table class="table table-bordered table-striped">
                 <thead><tr><th>ID</th><th>Viatura</th><th>Serviço</th><th>Fornecedor</th><th>Estado</th><th>Prevista</th><th>Valor</th><th></th></tr></thead>
