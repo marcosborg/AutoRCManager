@@ -15,6 +15,7 @@
                     @if($errors->has('occurrence_date'))<span class="help-block text-danger">{{ $errors->first('occurrence_date') }}</span>@endif
                 </div>
                 <button class="btn btn-primary" type="submit">Pesquisar</button>
+                <button class="btn btn-default" type="submit" name="export" value="csv">Exportar todos os resultados</button>
                 <a class="btn btn-default" href="{{ route('admin.vehicle-consignments.history') }}">Limpar</a>
                 <a class="btn btn-default" href="{{ route('admin.vehicle-consignments.index') }}">Voltar às consignações</a>
             </form>
