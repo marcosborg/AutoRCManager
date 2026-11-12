@@ -27,7 +27,7 @@ class PartPaymentFullExportTest extends TestCase
         $stream = fopen('php://temp', 'r+');
         fwrite($stream, substr($content, 3));
         rewind($stream);
-        $this->assertCount(6, fgetcsv($stream, 0, ';', '"', ''));
+        $this->assertCount(11, fgetcsv($stream, 0, ';', '"', ''));
         $rows = [];
         while (($row = fgetcsv($stream, 0, ';', '"', '')) !== false) $rows[] = $row;
         fclose($stream);
@@ -53,6 +53,13 @@ class PartPaymentFullExportTest extends TestCase
         $params = ['suplier_id' => $supplier->id, 'payment_status' => 'pending', 'overdue' => 1, 'page' => 2];
         $rows = $this->rows($params);
         $this->assertSame(array_reverse($ids), array_map(fn ($row) => (int) $row[0], $rows));
+        $first = PartPayment::findOrFail($ids[count($ids)-1]);
+        $first->update(['reference'=>'=REF','notes'=>'+Nota','payment_date'=>'2026-11-12']);
+        $details = $this->rows($params);
+        $this->assertSame('2026-11-12', $details[0][6]);
+        $this->assertSame("'=REF", $details[0][9]);
+        $this->assertSame("'+Nota", $details[0][10]);
+        $first->update(['reference'=>$before[count($before)-1]['reference'],'notes'=>$before[count($before)-1]['notes'],'payment_date'=>$before[count($before)-1]['payment_date']]);
         $this->assertSame("'=1+1", $rows[0][2]);
         $this->assertSame('1234,56', $rows[0][3]);
         $this->assertSame('Pendente', $rows[0][5]);

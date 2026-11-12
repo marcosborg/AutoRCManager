@@ -43,15 +43,23 @@ class PartPaymentController extends Controller
             return response()->streamDownload(function () use ($query) {
                 $out = fopen('php://output', 'w');
                 fwrite($out, "\xEF\xBB\xBF");
-                fputcsv($out, ['ID', 'Encomenda', 'Fornecedor', 'Valor', 'Vencimento', 'Estado'], ';', '"', '');
+                fputcsv($out, ['ID', 'Encomenda', 'Fornecedor', 'Valor', 'Vencimento', 'Estado', 'Data pagamento', 'Método', 'Condição', 'Referência', 'Notas'], ';', '"', '');
                 foreach ($query->lazy(200) as $payment) {
                     $supplier = (string) ($payment->suplier?->name ?? '');
                     if (preg_match('/^\s*[=+@-]/u', $supplier)) $supplier = "'" . $supplier;
                     $status = PartPayment::STATUS_SELECT[$payment->payment_status] ?? $payment->payment_status;
                     if (preg_match('/^\s*[=+@-]/u', (string) $status)) $status = "'" . $status;
-                    fputcsv($out, [$payment->id, $payment->part_order_id, $supplier,
+                    $row = [$payment->id, $payment->part_order_id, $supplier,
                         number_format((float) $payment->amount, 2, ',', ''), $payment->due_date?->format('Y-m-d'),
-                        $status], ';', '"', '');
+                        $status, $payment->payment_date?->format('Y-m-d'),
+                        PartPayment::METHOD_SELECT[$payment->payment_method] ?? $payment->payment_method,
+                        PartPayment::CONDITION_SELECT[$payment->payment_condition] ?? $payment->payment_condition,
+                        $payment->reference, $payment->notes];
+                    foreach ([6,7,8,9,10] as $index) {
+                        $row[$index] = (string) $row[$index];
+                        if (preg_match('/^\s*[=+@-]/u', $row[$index])) $row[$index] = "'" . $row[$index];
+                    }
+                    fputcsv($out, $row, ';', '"', '');
                 }
                 fclose($out);
             }, 'pagamentos-pecas-' . now('Europe/Lisbon')->format('Y-m-d') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
