@@ -33,7 +33,7 @@ class SaleClosureApprovalController extends Controller
 
         $approvals = $this->filteredQuery($request)
             ->orderByDesc('closed_at')
-            ->get();
+            ->orderByDesc('id');
 
         $filename = 'fechos-venda-' . now()->format('Ymd-His') . '.csv';
 
@@ -56,8 +56,8 @@ class SaleClosureApprovalController extends Controller
                 'Data validacao',
             ], ';');
 
-            foreach ($approvals as $approval) {
-                fputcsv($handle, [
+            foreach ($approvals->lazy(200) as $approval) {
+                $row = [
                     optional($approval->closed_at)->format('Y-m-d H:i'),
                     $this->vehicleLabel($approval),
                     $approval->vehicle->client->name ?? '',
@@ -70,7 +70,11 @@ class SaleClosureApprovalController extends Controller
                     SaleClosureApproval::STATUS_SELECT[$approval->status] ?? $approval->status,
                     $approval->approved_by->name ?? '',
                     optional($approval->approved_at)->format('Y-m-d H:i'),
-                ], ';');
+                ];
+                fputcsv($handle, array_map(function ($value) {
+                    $value = (string) $value;
+                    return preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;
+                }, $row), ';');
             }
 
             fclose($handle);
