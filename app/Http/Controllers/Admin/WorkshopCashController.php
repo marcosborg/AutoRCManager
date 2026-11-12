@@ -24,11 +24,14 @@ class WorkshopCashController extends Controller
     public function index(Request $request, CashBalanceService $balances)
     {
         abort_if(Gate::denies('workshop_cash_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        \App\Support\AmountRange::validate($request);
 
         $workshopBox = $this->workshopBox();
         $movements = AccountOperation::query()
             ->with(['cash_category', 'created_by', 'cash_transfer.from_cash_box', 'cash_transfer.to_cash_box', 'cash_transfer.created_by', 'media'])
             ->where('cash_box_id', $workshopBox->id)
+            ->when($request->filled('amount_min'), fn ($query) => $query->where('total', '>=', $request->input('amount_min')))
+            ->when($request->filled('amount_max'), fn ($query) => $query->where('total', '<=', $request->input('amount_max')))
             ->when($request->filled('movement_type'), fn ($query) => $query->where('movement_type', $request->input('movement_type')))
             ->when($request->filled('cash_category_id'), fn ($query) => $query->where('cash_category_id', $request->integer('cash_category_id')))
             ->when($request->filled('created_by_id'), function ($query) use ($request): void {

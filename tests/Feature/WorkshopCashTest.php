@@ -18,6 +18,20 @@ class WorkshopCashTest extends TestCase
 {
     use DatabaseTransactions;
 
+    public function test_amount_ranges_are_read_only_and_do_not_filter_balance(): void
+    {
+        $user = $this->userWithRole('Gestão');
+        [, $workshop] = $this->fundedBoxes(1000, 1000);
+        $ids = [];
+        foreach ([0, 10.49, 10.50, 20.75, 20.76] as $amount) $ids[] = AccountOperation::create(['description'=>'Teste','qty'=>1,'cash_box_id'=>$workshop->id,'movement_type'=>'outcome','total'=>$amount,'date'=>'2026-11-12'])->id;
+        $balance = app(CashBalanceService::class)->balance($workshop);
+        $this->actingAs($user)->get(route('admin.workshop-cash.index',['amount_min'=>'10,50','amount_max'=>'20,75']))->assertOk()
+            ->assertViewHas('movements',fn($rows)=>$rows->pluck('id')->sort()->values()->all()===[$ids[2],$ids[3]])
+            ->assertViewHas('balance',$balance);
+        foreach ([['amount_min'=>-1],['amount_max'=>'abc'],['amount_min'=>20,'amount_max'=>10]] as $bad) $this->getJson(route('admin.workshop-cash.index',$bad))->assertUnprocessable();
+        $this->assertSame($balance,app(CashBalanceService::class)->balance($workshop));
+    }
+
     public function test_management_can_transfer_money_to_workshop_without_a_proof(): void
     {
         $user = $this->userWithRole('Gestão');

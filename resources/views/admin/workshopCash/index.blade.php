@@ -70,6 +70,8 @@
         <div class="panel-heading">Histórico</div>
         <div class="panel-body">
             <form class="form-inline" method="GET" style="margin-bottom: 15px;">
+                <label for="amount_min">Valor mínimo (€)</label><input class="form-control" id="amount_min" name="amount_min" inputmode="decimal" value="{{ request('amount_min') }}">
+                <label for="amount_max">Valor máximo (€)</label><input class="form-control" id="amount_max" name="amount_max" inputmode="decimal" value="{{ request('amount_max') }}">
                 <select class="form-control" name="movement_type"><option value="">Entradas e saídas</option><option value="income" {{ request('movement_type') === 'income' ? 'selected' : '' }}>Entradas</option><option value="outcome" {{ request('movement_type') === 'outcome' ? 'selected' : '' }}>Saídas</option></select>
                 <select class="form-control" name="cash_category_id"><option value="">Todas as categorias</option>@foreach($categories as $category)<option value="{{ $category->id }}" {{ (string) request('cash_category_id') === (string) $category->id ? 'selected' : '' }}>{{ $category->name }}</option>@endforeach</select>
                 <select class="form-control" name="created_by_id"><option value="">Todos os utilizadores</option>@foreach($users as $user)<option value="{{ $user->id }}" {{ (string) request('created_by_id') === (string) $user->id ? 'selected' : '' }}>{{ $user->name }}</option>@endforeach</select>
