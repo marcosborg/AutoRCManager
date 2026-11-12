@@ -20,6 +20,7 @@ class StandCashPaymentApprovalController extends Controller
     {
         $this->authorizeApprovalAccess();
         $request->validate(['export' => ['nullable', 'in:csv']]);
+        \App\Support\AmountRange::validate($request);
 
         $query = StandCashPaymentApproval::with([
             'payment.payment_method',
@@ -29,6 +30,8 @@ class StandCashPaymentApprovalController extends Controller
             'approved_by',
             'cash_operation',
         ])
+            ->when($request->filled('amount_min'), fn ($query) => $query->whereHas('payment', fn ($payment) => $payment->where('amount', '>=', $request->input('amount_min'))))
+            ->when($request->filled('amount_max'), fn ($query) => $query->whereHas('payment', fn ($payment) => $payment->where('amount', '<=', $request->input('amount_max'))))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->input('status')))
             ->when(! $request->filled('status'), fn ($query) => $query->where('status', StandCashPaymentApproval::STATUS_PENDING))
             ->orderByDesc('created_at')->orderByDesc('id');

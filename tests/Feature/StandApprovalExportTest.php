@@ -21,6 +21,10 @@ class StandApprovalExportTest extends TestCase
   while(($row=fgetcsv($f,0,';'))!==false)$found[]=(int)$row[0];fclose($f);
   $this->assertSame(array_reverse($ids),array_values(array_intersect($found,$ids)));
   $this->assertSame($before,StandCashPaymentApproval::whereIn('id',$ids)->get()->toArray());
+  $this->get(route('admin.stand-cash-payment-approvals.index',['amount_min'=>'12,00','amount_max'=>'12,00']))->assertOk()->assertViewHas('approvals',fn($p)=>count(array_intersect($p->pluck('id')->all(),$ids))===50);
+  $res=$this->get(route('admin.stand-cash-payment-approvals.index',['amount_min'=>13,'export'=>'csv']))->assertOk()->assertDownload();
+  $this->assertStringNotContainsString(';12,00;',$res->streamedContent());
+  foreach([['amount_min'=>-1],['amount_max'=>'abc'],['amount_min'=>20,'amount_max'=>10]] as $bad)$this->getJson(route('admin.stand-cash-payment-approvals.index',$bad))->assertUnprocessable();
   $this->getJson(route('admin.stand-cash-payment-approvals.index',['export'=>'bad']))->assertUnprocessable();
   $user->roles()->detach();$this->actingAs($user->fresh())->get(route('admin.stand-cash-payment-approvals.index',['export'=>'csv']))->assertForbidden();
  }

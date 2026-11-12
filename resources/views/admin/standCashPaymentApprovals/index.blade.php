@@ -6,6 +6,8 @@
         <div class="panel-heading">Validação de pagamentos do Stand</div>
         <div class="panel-body">
             <form method="GET" class="form-inline" style="margin-bottom: 12px;">
+                <label for="amount_min">Valor mínimo (€)</label><input class="form-control" id="amount_min" name="amount_min" inputmode="decimal" value="{{ request('amount_min') }}">
+                <label for="amount_max">Valor máximo (€)</label><input class="form-control" id="amount_max" name="amount_max" inputmode="decimal" value="{{ request('amount_max') }}">
                 <div class="form-group">
                     <label for="status">Estado</label>
                     <select class="form-control" name="status" id="status">
