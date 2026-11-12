@@ -68,4 +68,26 @@ class PartPaymentFullExportTest extends TestCase
         $this->getJson(route('admin.part-payments.index', ['export' => 'invalid']))->assertUnprocessable();
         $this->actingAs($this->actor(false))->get(route('admin.part-payments.index', ['export' => 'csv']))->assertForbidden();
     }
+
+    public function test_amount_range_is_inclusive_accepts_decimal_comma_and_applies_to_export(): void
+    {
+        $this->actingAs($this->actor());
+        $supplier = Suplier::create(['name' => uniqid('Range ')]);
+        $order = PartOrder::create(['status' => 'ordered', 'priority' => 'normal']);
+        $ids = [];
+        foreach ([0, 10.49, 10.50, 20.75, 20.76] as $amount) {
+            $ids[] = PartPayment::create(['part_order_id' => $order->id, 'suplier_id' => $supplier->id,
+                'amount' => $amount, 'payment_status' => 'pending'])->id;
+        }
+        $params = ['suplier_id' => $supplier->id, 'amount_min' => '10,50', 'amount_max' => '20,75'];
+        $rows = $this->rows($params);
+        $this->assertSame([$ids[3], $ids[2]], array_map(fn ($row) => (int) $row[0], $rows));
+        $this->get(route('admin.part-payments.index', $params))->assertOk()->assertViewHas('partPayments',
+            fn ($payments) => $payments->pluck('id')->all() === [$ids[3], $ids[2]]);
+        $this->assertCount(1, $this->rows(['suplier_id' => $supplier->id, 'amount_max' => '0']));
+        $this->assertCount(2, $this->rows(['suplier_id' => $supplier->id, 'amount_min' => '20,75']));
+        foreach ([['amount_min' => '-1'], ['amount_max' => 'abc'], ['amount_min' => '20', 'amount_max' => '10']] as $invalid) {
+            $this->getJson(route('admin.part-payments.index', $invalid))->assertUnprocessable();
+        }
+    }
 }

@@ -20,8 +20,12 @@ class PartPaymentController extends Controller
         abort_if(Gate::denies('part_payment_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $request->validate(['export' => ['nullable', 'in:csv']]);
+        \App\Support\AmountRange::validate($request);
 
         $query = PartPayment::with(['part_order.vehicle.brand', 'suplier', 'paid_by'])->orderByDesc('id');
+        foreach (['amount_min' => '>=', 'amount_max' => '<='] as $field => $operator) {
+            if ($request->filled($field)) $query->where('amount', $operator, $request->input($field));
+        }
 
         if ($request->filled('payment_status')) {
             $query->where('payment_status', $request->payment_status);

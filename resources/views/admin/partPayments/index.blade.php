@@ -4,6 +4,8 @@
     @can('part_payment_create')<p><a class="btn btn-success" href="{{ route('admin.part-payments.create') }}">Novo pagamento</a></p>@endcan
     <div class="panel panel-default"><div class="panel-heading">Pagamentos de Peças</div><div class="panel-body">
         <form method="GET" class="row" style="margin-bottom:15px;">
+            <div class="col-md-3"><label for="amount_min">Valor mínimo (€)</label><input class="form-control" id="amount_min" name="amount_min" inputmode="decimal" value="{{ request('amount_min') }}" placeholder="Sem mínimo"></div>
+            <div class="col-md-3"><label for="amount_max">Valor máximo (€)</label><input class="form-control" id="amount_max" name="amount_max" inputmode="decimal" value="{{ request('amount_max') }}" placeholder="Sem máximo"></div>
             <div class="col-md-3"><select class="form-control" name="payment_status"><option value="">Estado</option>@foreach(App\Models\PartPayment::STATUS_SELECT as $key => $label)<option value="{{ $key }}" {{ request('payment_status') === $key ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div>
             <div class="col-md-4"><select class="form-control select2" name="suplier_id"><option value="">Fornecedor</option>@foreach($supliers as $id => $label)<option value="{{ $id }}" {{ (string) request('suplier_id') === (string) $id ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div>
             <div class="col-md-2"><label><input type="checkbox" name="overdue" value="1" {{ request('overdue') ? 'checked' : '' }}> Vencidos</label></div>
