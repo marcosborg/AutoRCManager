@@ -18,8 +18,12 @@ class ExternalServiceController extends Controller
     public function index(Request $request)
     {
         abort_if(Gate::denies('external_service_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        \App\Support\AmountRange::validate($request);
 
         $query = ExternalService::with(['vehicle', 'suplier', 'requested_by', 'media'])->latest();
+        foreach (['amount_min' => '>=', 'amount_max' => '<='] as $field => $operator) {
+            if ($request->filled($field)) $query->where('amount', $operator, $request->input($field));
+        }
         $query->when($request->filled('status'), fn ($q) => $q->where('status', $request->status));
         $query->when($request->filled('suplier_id'), fn ($q) => $q->where('suplier_id', $request->integer('suplier_id')));
         $query->when($request->filled('vehicle_search'), function ($q) use ($request) {

@@ -35,7 +35,7 @@ class ExternalService extends Model implements HasMedia
 
     protected $dates = ['expected_date', 'completed_date', 'created_at', 'updated_at', 'deleted_at'];
 
-    protected $casts = ['amount' => 'float'];
+    protected $casts = ['amount' => 'float', 'expected_date' => 'datetime', 'completed_date' => 'datetime'];
 
     protected function serializeDate(DateTimeInterface $date)
     {

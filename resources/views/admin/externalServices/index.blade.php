@@ -8,6 +8,8 @@
         <div class="panel-heading">Serviços Externos</div>
         <div class="panel-body">
             <form method="GET" class="row" style="margin-bottom:15px;">
+                <div class="col-md-3"><label for="amount_min">Valor mínimo (€)</label><input class="form-control" id="amount_min" name="amount_min" inputmode="decimal" value="{{ request('amount_min') }}" placeholder="Sem mínimo"></div>
+                <div class="col-md-3"><label for="amount_max">Valor máximo (€)</label><input class="form-control" id="amount_max" name="amount_max" inputmode="decimal" value="{{ request('amount_max') }}" placeholder="Sem máximo"></div>
                 <div class="col-md-3"><select class="form-control" name="status"><option value="">Estado</option>@foreach(App\Models\ExternalService::STATUS_SELECT as $key => $label)<option value="{{ $key }}" {{ request('status') === $key ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div>
                 <div class="col-md-3"><select class="form-control select2" name="suplier_id"><option value="">Fornecedor</option>@foreach($supliers as $id => $label)<option value="{{ $id }}" {{ (string) request('suplier_id') === (string) $id ? 'selected' : '' }}>{{ $label }}</option>@endforeach</select></div>
                 <div class="col-md-4"><input class="form-control" name="vehicle_search" value="{{ request('vehicle_search') }}" placeholder="Matrícula/modelo"></div>
