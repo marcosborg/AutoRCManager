@@ -2,13 +2,26 @@
     var VehiclePhotoUploads = (function () {
         var zones = [];
 
-        function errorMessage(response) {
+        function errorMessage(response, xhr) {
+            if (xhr && xhr.status !== 422) {
+                return 'Não foi possível enviar a fotografia. Tente novamente.';
+            }
             if (response && response.errors && response.errors.file) {
                 return [].concat(response.errors.file).join(' ');
             }
             // Avoid showing HTML error pages or server diagnostics in the photo preview.
             return typeof response === 'string' && response.indexOf('<') === -1
                 ? response : 'Não foi possível enviar a fotografia. Tente novamente.';
+        }
+
+        function validResponse(zone, file, response) {
+            if (response && typeof response === 'object' && typeof response.name === 'string' && response.name.trim()) {
+                return true;
+            }
+            // HTTP success alone does not prove that the photograph was stored.
+            file.status = Dropzone.ERROR;
+            zone.emit('error', file, 'Não foi possível confirmar o envio da fotografia. Tente novamente.');
+            return false;
         }
 
         function attach(zone) {
@@ -34,6 +47,7 @@
                 file.previewElement.appendChild(button);
             });
             zone.on('success', function (file) {
+                if (file.status === Dropzone.ERROR) return;
                 if (file.retryPhotoButton) file.retryPhotoButton.remove();
                 file.retryPhotoButton = null;
                 file.previewElement.classList.remove('dz-error');
@@ -51,6 +65,6 @@
             return null;
         }
 
-        return { attach: attach, blockReason: blockReason, errorMessage: errorMessage };
+        return { attach: attach, blockReason: blockReason, errorMessage: errorMessage, validResponse: validResponse };
     })();
 </script>

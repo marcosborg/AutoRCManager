@@ -14,7 +14,7 @@ function setup() {
     vm.createContext(context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../../resources/views/admin/vehicles/partials/photoUploadRecovery.blade.php'), 'utf8').replace(/<\/?script>/g, ''), context);
     const events = {};
-    const zone = { files: [], queued: [], on(name, fn) { events[name] = fn; }, enqueueFile(file) { file.status = 'queued'; this.queued.push(file); } };
+    const zone = { files: [], queued: [], on(name, fn) { events[name] = fn; }, emit(name, ...args) { events[name]?.(...args); }, enqueueFile(file) { file.status = 'queued'; this.queued.push(file); } };
     context.VehiclePhotoUploads.attach(zone);
     const file = { accepted: true, status: 'error', previewElement: { classList: { remove() {} }, appendChild() {} } };
     return { api: context.VehiclePhotoUploads, events, zone, file };
@@ -66,4 +66,31 @@ test('server error pages and absent validation fields do not break recovery', ()
     assert.match(api.errorMessage({}), /Tente novamente/);
     assert.match(api.errorMessage('<html>Server details</html>'), /Tente novamente/);
     assert.equal(api.errorMessage({ errors: { file: ['Imagem inválida'] } }), 'Imagem inválida');
+});
+
+test('HTTP server diagnostics are never displayed as photo errors', () => {
+    const { api } = setup();
+    assert.match(api.errorMessage('SQLSTATE password=secret /home/manage/project', { status: 500 }), /Tente novamente/);
+    assert.match(api.errorMessage('Session token secret', { status: 419 }), /Tente novamente/);
+    assert.equal(api.errorMessage({ errors: { file: ['Imagem inválida'] } }, { status: 422 }), 'Imagem inválida');
+});
+
+test('HTTP success without a stored filename remains failed and retryable', () => {
+    for (const response of ['<html>Login</html>', {}, { name: '' }, { name: null }]) {
+        const { api, zone, file, events } = setup();
+        zone.files = [file];
+        file.status = 'success';
+        assert.equal(api.validResponse(zone, file, response), false);
+        assert.equal(file.status, 'error');
+        assert.ok(file.retryPhotoButton);
+        events.success(file);
+        assert.ok(file.retryPhotoButton, 'the following success listener must not remove recovery');
+        assert.match(api.blockReason(), /fotografias por enviar/);
+        file.retryPhotoButton.listeners.click({ preventDefault() {}, stopPropagation() {} });
+        assert.equal(api.validResponse(zone, file, { name: 'stored-photo.jpg' }), true);
+        file.status = 'success';
+        events.success(file);
+        assert.equal(api.blockReason(), null);
+        assert.equal(file.retryPhotoButton, null);
+    }
 });

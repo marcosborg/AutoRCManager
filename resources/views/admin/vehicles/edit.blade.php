@@ -2360,6 +2360,7 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10, width: 4096, height: 4096 },
         success: function (file, response) {
+            if (!VehiclePhotoUploads.validResponse(this, file, response)) return
             file.uploadedPhotoName = response.name
             if (file.previewElement) {
                 file.previewElement.dataset.photoName = response.name
@@ -2412,8 +2413,8 @@
                 }
             })
         },
-        error: function (file, response) {
-            var message = VehiclePhotoUploads.errorMessage(response)
+        error: function (file, response, xhr) {
+            var message = VehiclePhotoUploads.errorMessage(response, xhr)
             file.previewElement.classList.add('dz-error')
             var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
             for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
@@ -2518,6 +2519,7 @@
         headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
         params: { size: 10, width: 4096, height: 4096 },
         success: function (file, response) {
+            if (!VehiclePhotoUploads.validResponse(this, file, response)) return
             $('#vehicle-edit-form').append('<input type="hidden" name="inicial[]" value="' + response.name + '">')
             file.uploadedPhotoName = response.name
         },
@@ -2555,8 +2557,8 @@
                 }
             @endif
         },
-        error: function (file, response) {
-            var message = VehiclePhotoUploads.errorMessage(response)
+        error: function (file, response, xhr) {
+            var message = VehiclePhotoUploads.errorMessage(response, xhr)
             file.previewElement.classList.add('dz-error')
             var nodes = file.previewElement.querySelectorAll('[data-dz-errormessage]')
             for (var i = 0; i < nodes.length; i++) { nodes[i].textContent = message }
