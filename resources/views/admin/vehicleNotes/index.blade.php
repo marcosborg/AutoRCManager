@@ -24,9 +24,18 @@
     <h4>Conversa da viatura <small>Mais recentes primeiro · {{ $notes->total() }} {{ $notes->total() === 1 ? 'nota' : 'notas' }}</small></h4>
     @forelse($notes as $note)
         <article class="panel panel-default">
+            @php($cancellation = $note->cancellation())
+            @if($cancellation)<div class="alert alert-warning">Nota anulada por {{ $cancellation->properties['cancelled_by'] ?? '' }} em {{ $cancellation->created_at->format('d/m/Y H:i') }}. Motivo: {{ $cancellation->properties['reason'] ?? '' }}. Texto preservado para histórico.</div>@endif
             <div class="panel-heading"><strong>{{ $note->author_name }}</strong> <span class="text-muted">· {{ $note->created_at->timezone('Europe/Lisbon')->format('d/m/Y H:i') }}</span></div>
             <div class="panel-body" style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ $note->body }}</div>
             <div class="panel-footer"><a href="{{ route('admin.vehicles.notes.history', [$vehicle, $note]) }}">{{ Gate::allows('vehicle_edit') ? 'Ver histórico / corrigir nota' : 'Ver histórico' }}</a></div>
+            @can('vehicle_edit')
+                @if(!$cancellation)<form method="POST" action="{{ route('admin.vehicles.notes.cancel', [$vehicle,$note]) }}" class="panel-footer" onsubmit="return confirm('Anular esta nota, mantendo o histórico?')">@csrf
+                    <input type="hidden" name="revision" value="{{ $note->revisionToken() }}">
+                    <label>Motivo da anulação</label><input class="form-control" name="reason" maxlength="1000" required>
+                    <button class="btn btn-warning" type="submit">Anular nota</button>
+                </form>@endif
+            @endcan
         </article>
     @empty
         <div class="alert alert-info">Ainda não existem notas internas para esta viatura.</div>

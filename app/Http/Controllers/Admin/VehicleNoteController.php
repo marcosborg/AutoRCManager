@@ -77,6 +77,7 @@ class VehicleNoteController extends Controller
         DB::transaction(function () use ($request, $vehicle, $note, $data, $body) {
             Vehicle::whereKey($vehicle->id)->lockForUpdate()->firstOrFail();
             $note = VehicleNote::where('vehicle_id', $vehicle->id)->whereKey($note->id)->lockForUpdate()->firstOrFail();
+            abort_if($note->cancellation(), 422, 'Esta nota foi anulada e mantém-se apenas para consulta.');
             if (! hash_equals($note->revisionToken(), $data['revision'])) {
                 throw ValidationException::withMessages(['body' => 'Esta nota já foi alterada por outra pessoa. Atualize a página e confira a versão atual antes de corrigir.']);
             }
@@ -93,5 +94,23 @@ class VehicleNoteController extends Controller
             ]);
         });
         return redirect()->route('admin.vehicles.notes.history', [$vehicle, $note])->with('message', 'Nota guardada. As alterações ficam no histórico.');
+    }
+
+    public function cancel(Request $request, Vehicle $vehicle, VehicleNote $note)
+    {
+        abort_unless(Gate::allows('vehicle_edit'), 403);
+        abort_unless((int) $note->vehicle_id === (int) $vehicle->id, 404);
+        $data=$request->validate(['reason'=>['required','string','max:1000'],'revision'=>['required','string','size:64']]);
+        $reason=trim($data['reason']);
+        if($reason==='') throw ValidationException::withMessages(['reason'=>'Indique o motivo da anulação.']);
+        DB::transaction(function() use($vehicle,$note,$data,$reason,$request){
+            Vehicle::whereKey($vehicle->id)->lockForUpdate()->firstOrFail();
+            $note=VehicleNote::whereKey($note->id)->lockForUpdate()->firstOrFail();
+            if($note->cancellation()) return;
+            if(!hash_equals($note->revisionToken(),$data['revision'])) throw ValidationException::withMessages(['reason'=>'A nota foi alterada. Atualize a página antes de anular.']);
+            AuditLog::create(['description'=>'vehicle_note:cancelled','subject_id'=>$note->id,'subject_type'=>VehicleNote::class.'#'.$note->id,
+                'user_id'=>$request->user()->id,'host'=>$request->ip(),'properties'=>['vehicle_id'=>$vehicle->id,'reason'=>$reason,'cancelled_by'=>$request->user()->name,'body'=>$note->body]]);
+        });
+        return redirect()->route('admin.vehicles.notes.index',$vehicle)->with('message','Nota anulada. O texto e o histórico foram preservados.');
     }
 }

@@ -10,6 +10,21 @@ use Tests\TestCase;
 class VehicleNoteTest extends TestCase
 {
     use DatabaseTransactions;
+    public function test_cancel_preserves_text_requires_reason_and_blocks_edits(): void
+    {
+        $vehicle=$this->vehicle();$this->actingAs($this->user(['vehicle_edit']));
+        $this->post(route('admin.vehicles.notes.store',$vehicle),$this->payload('Nota original'));
+        $note=VehicleNote::where('vehicle_id',$vehicle->id)->sole();$revision=$note->revisionToken();
+        $url=route('admin.vehicles.notes.cancel',[$vehicle,$note]);
+        $this->postJson($url,['reason'=>' ','revision'=>$revision])->assertUnprocessable();
+        $this->post($url,['reason'=>'Duplicada','revision'=>$revision])->assertRedirect();
+        $this->assertSame('Nota original',$note->fresh()->body);$this->assertSame('Duplicada',$note->cancellation()->properties['reason']);
+        $this->post($url,['reason'=>'Duplicada','revision'=>$revision])->assertRedirect();
+        $this->assertSame(1,\App\Models\AuditLog::where('description','vehicle_note:cancelled')->where('subject_id',$note->id)->count());
+        $this->patchJson(route('admin.vehicles.notes.update',[$vehicle,$note]),['body'=>'Alterada','revision'=>$revision])->assertUnprocessable();
+        $this->get(route('admin.vehicles.notes.index',$vehicle))->assertOk()->assertSee('Nota anulada');
+        $this->actingAs($this->user(['vehicle_show']))->post($url,['reason'=>'Teste','revision'=>$revision])->assertForbidden();
+    }
 
     public function test_note_preserves_vehicle_fields_and_records_authenticated_author_and_time(): void
     {

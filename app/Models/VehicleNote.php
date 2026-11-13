@@ -17,6 +17,12 @@ class VehicleNote extends Model
             ->where('subject_id', $this->id)->where('subject_type', self::class.'#'.$this->id);
     }
 
+    public function cancellation()
+    {
+        return AuditLog::where('description', 'vehicle_note:cancelled')->where('subject_id', $this->id)
+            ->where('subject_type', self::class.'#'.$this->id)->first();
+    }
+
     public function revisionToken(): string
     {
         return hash('sha256', json_encode([$this->body, $this->revisions()->max('id')]));

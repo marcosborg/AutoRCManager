@@ -172,6 +172,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('vehicles/{vehicle}/notes', 'VehicleNoteController@store')->name('vehicles.notes.store');
     Route::get('vehicles/{vehicle}/notes/{note}', 'VehicleNoteController@history')->name('vehicles.notes.history');
     Route::patch('vehicles/{vehicle}/notes/{note}', 'VehicleNoteController@update')->name('vehicles.notes.update');
+    Route::post('vehicles/{vehicle}/notes/{note}/cancel', 'VehicleNoteController@cancel')->name('vehicles.notes.cancel');
     Route::resource('vehicles', 'VehicleController');
     Route::get('vehicles/{vehicle}/timeline', 'VehicleTimelineController@show')->name('vehicles.timeline');
     Route::get('vehicles/{vehicle}/timeline/export/pdf', 'VehicleTimelineExportController@exportPdf')->name('vehicles.timeline.export.pdf');
