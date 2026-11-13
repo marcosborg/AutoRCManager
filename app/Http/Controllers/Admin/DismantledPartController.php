@@ -25,6 +25,7 @@ class DismantledPartController extends Controller {
  }
  public function store(Request $request){
   abort_unless(Gate::allows('repair_edit'),403);
+  $this->normalizeTextInput($request);
   $data=$request->validate(['vehicle_id'=>['required','integer',Rule::exists('vehicles','id')->whereNull('deleted_at')],
    'reference'=>['nullable','string','max:255'],'description'=>['required','string','max:255'],
    'condition'=>['required',Rule::in(array_keys(DismantledPart::CONDITIONS))],'location'=>['required','string','max:255'],
@@ -32,7 +33,14 @@ class DismantledPartController extends Controller {
   DB::transaction(function()use($data,$request){
    Vehicle::whereKey($data['vehicle_id'])->lockForUpdate()->firstOrFail();
    $existing=DismantledPart::where('submission_token',$data['submission_token'])->first();
-   if($existing){abort_unless((int)$existing->created_by_id===(int)$request->user()->id && (int)$existing->vehicle_id===(int)$data['vehicle_id'] && $existing->description===$data['description'],422);return;}
+   if($existing){
+    $same=(int)$existing->created_by_id===(int)$request->user()->id && (int)$existing->vehicle_id===(int)$data['vehicle_id'];
+    foreach(['reference','description','condition','location','notes'] as $field) $same=$same && ($existing->$field??null)===($data[$field]??null);
+    $money=fn($value)=>$value===null?null:number_format((float)$value,2,'.','');
+    $same=$same && $money($existing->value)===$money($data['value']??null);
+    if(!$same) throw \Illuminate\Validation\ValidationException::withMessages(['submission_token'=>'Este envio já foi utilizado com outros dados. Atualize a página antes de registar outra peça.']);
+    return;
+   }
    DismantledPart::create($data+['created_by_id'=>$request->user()->id]);
   });
   return redirect()->route('admin.dismantled-parts.index')->with('message','Peça registada no inventário.');
@@ -48,6 +56,7 @@ class DismantledPartController extends Controller {
  }
  public function update(Request $request,DismantledPart $part){
   abort_unless(Gate::allows('repair_edit'),403);
+  $this->normalizeTextInput($request);
   $data=$request->validate(['reference'=>['nullable','string','max:255'],'description'=>['required','string','max:255'],
    'condition'=>['required',Rule::in(array_keys(DismantledPart::CONDITIONS))],'location'=>['required','string','max:255'],
    'value'=>['nullable','numeric','min:0','max:9999999999.99'],'notes'=>['nullable','string','max:5000'],'revision'=>['required','string','size:64']]);
@@ -57,5 +66,14 @@ class DismantledPartController extends Controller {
    unset($data['revision']);$part->update($data);
   });
   return redirect()->route('admin.dismantled-parts.index')->with('message','Ficha corrigida. A alteração ficou registada no histórico.');
+ }
+ private function normalizeTextInput(Request $request):void {
+  $values=[];
+  foreach(['reference','description','location','notes'] as $field){
+   if(!$request->exists($field) || !is_string($request->input($field))) continue;
+   $value=preg_replace('/^[\s\p{Z}\x{200B}\x{FEFF}]+|[\s\p{Z}\x{200B}\x{FEFF}]+$/u','',$request->input($field));
+   $values[$field]=$value===''?null:$value;
+  }
+  $request->merge($values);
  }
 }
