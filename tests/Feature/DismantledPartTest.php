@@ -10,6 +10,7 @@ class DismantledPartTest extends TestCase {
   $u=User::factory()->create();$u->roles()->sync([$r->id]);$this->actingAs($u);$v=Vehicle::create(['foreign_license'=>'TEST-INVENTORY']);$before=$v->fresh()->getAttributes();
   $data=['vehicle_id'=>$v->id,'description'=>'Farol','reference'=>'REF-X','condition'=>'untested','location'=>'A1','submission_token'=>(string)\Illuminate\Support\Str::uuid()];
   $this->get(route('admin.dismantled-parts.create'))->assertOk();
+  $this->get(route('admin.dismantled-parts.create',['vehicle_search'=>'TEST-INVENTORY']))->assertOk()->assertViewHas('vehicles',fn($rows)=>$rows->pluck('id')->all()===[$v->id]);
   $this->post(route('admin.dismantled-parts.store'),$data)->assertRedirect()->assertSessionHasNoErrors();
   $this->post(route('admin.dismantled-parts.store'),$data)->assertRedirect();$this->assertSame(1,DismantledPart::where('submission_token',$data['submission_token'])->count());
   $this->assertSame($before,$v->fresh()->getAttributes());
