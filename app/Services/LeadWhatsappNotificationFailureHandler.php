@@ -4,23 +4,24 @@ namespace App\Services;
 
 use App\Mail\LeadWhatsappFallbackMail;
 use App\Models\LeadWhatsappNotification;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class LeadWhatsappNotificationFailureHandler
 {
-    public function handle(LeadWhatsappNotification $notification, ?string $reason, array $metadata = []): void
+    public function handle(LeadWhatsappNotification $notification, ?string $reason, array $metadata = [], ?CarbonInterface $occurredAt = null): void
     {
         $metadata = $this->clean(array_merge($notification->metadata ?? [], $metadata, ['error' => $reason]));
         $notification->update([
             'status' => LeadWhatsappNotification::STATUS_FAILED,
             'failed_at' => now(),
-            'provider_status_at' => now(),
+            'provider_status_at' => $occurredAt ?? now(),
             'metadata' => $metadata,
         ]);
 
         $notification->loadMissing('lead');
-        $notification->lead?->where('assigned_user_id', $notification->user_id)->update([
+        $notification->lead?->newQuery()->whereKey($notification->lead_id)->where('assigned_user_id', $notification->user_id)->update([
             'seller_notification_status' => 'failed',
             'seller_notified_user_id' => null,
             'seller_notified_at' => null,

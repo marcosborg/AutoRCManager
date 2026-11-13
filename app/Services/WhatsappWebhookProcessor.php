@@ -112,7 +112,8 @@ class WhatsappWebhookProcessor
                 app(LeadWhatsappNotificationFailureHandler::class)->handle(
                     $notification,
                     (string) data_get($status, 'errors.0.message', 'WhatsApp Cloud API reported a failed delivery.'),
-                    ['delivery_status' => 'failed', 'last_cloud_status' => $status]
+                    ['delivery_status' => 'failed', 'last_cloud_status' => $status],
+                    $occurredAt
                 );
                 return;
             }
@@ -126,7 +127,7 @@ class WhatsappWebhookProcessor
                 ]),
             ]);
 
-            $notification->lead?->where('assigned_user_id', $notification->user_id)->update([
+            $notification->lead?->newQuery()->whereKey($notification->lead_id)->where('assigned_user_id', $notification->user_id)->update([
                 'seller_notification_status' => 'sent',
                 'seller_notified_user_id' => $notification->user_id,
                 'seller_notified_at' => $occurredAt,

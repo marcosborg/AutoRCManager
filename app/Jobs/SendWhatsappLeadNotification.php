@@ -84,7 +84,7 @@ class SendWhatsappLeadNotification implements ShouldQueue
             'metadata' => array_merge($notification->metadata ?? [], ['transport' => 'cloud', 'cloud_response' => $result]),
         ]);
 
-        $notification->lead?->where('assigned_user_id', $notification->user_id)->update([
+        $notification->lead?->newQuery()->whereKey($notification->lead_id)->where('assigned_user_id', $notification->user_id)->update([
             'seller_notification_status' => 'sent',
             'seller_notified_user_id' => $notification->user_id,
             'seller_notified_at' => now(),
