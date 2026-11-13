@@ -36,7 +36,7 @@ class ExternalServiceController extends Controller
             return response()->streamDownload(function () use ($query) {
                 $out = fopen('php://output', 'w');
                 fwrite($out, "\xEF\xBB\xBF");
-                fputcsv($out, ['ID', 'Matrícula', 'Matrícula estrangeira', 'Serviço', 'Fornecedor', 'Estado', 'Data prevista', 'Valor', 'Data conclusão', 'Prioridade', 'Notas'], ';', '"', '');
+                fputcsv($out, ['ID', 'Matrícula', 'Matrícula estrangeira', 'Serviço', 'Fornecedor', 'Estado', 'Data prevista', 'Valor', 'Data conclusão', 'Prioridade', 'Notas', 'Requerente'], ';', '"', '');
                 foreach ($query->lazy(200) as $service) {
                     $row = [$service->id, $service->vehicle?->license, $service->vehicle?->foreign_license,
                         $service->description, $service->suplier?->name,
@@ -47,7 +47,7 @@ class ExternalServiceController extends Controller
                         return preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;
                     }, $row);
                     $row[] = $service->amount === null ? '' : number_format($service->amount, 2, ',', '');
-                    foreach ([$service->completed_date?->format('Y-m-d'), ExternalService::PRIORITY_SELECT[$service->priority] ?? $service->priority, $service->notes] as $value) {
+                    foreach ([$service->completed_date?->format('Y-m-d'), ExternalService::PRIORITY_SELECT[$service->priority] ?? $service->priority, $service->notes, $service->requested_by?->name] as $value) {
                         $value = (string) $value;
                         $row[] = preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value;
                     }
