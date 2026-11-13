@@ -415,6 +415,7 @@
                             </li>
                         @endcan
                         @can('external_service_access')
+                            @can('repair_access')<li><a href="{{ route('admin.dismantled-parts.index') }}"><i class="fa-fw fas fa-boxes"></i><span>Peças de desmantelamento</span></a></li>@endcan
                             <li class="{{ request()->is('admin/external-services') || request()->is('admin/external-services/*') ? 'active' : '' }}">
                                 <a href="{{ route('admin.external-services.index') }}">
                                     <i class="fa-fw fas fa-tools"></i>
