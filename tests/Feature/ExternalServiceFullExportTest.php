@@ -35,7 +35,7 @@ class ExternalServiceFullExportTest extends TestCase
         $this->assertStringStartsWith("\xEF\xBB\xBF", $content);
         $stream = fopen('php://temp', 'r+');
         fwrite($stream, substr($content, 3)); rewind($stream);
-        $this->assertCount(8, fgetcsv($stream, 0, ';', '"', ''));
+        $this->assertCount(11, fgetcsv($stream, 0, ';', '"', ''));
         $found = [];
         while (($row = fgetcsv($stream, 0, ';', '"', '')) !== false) {
             $found[] = (int) $row[0];
