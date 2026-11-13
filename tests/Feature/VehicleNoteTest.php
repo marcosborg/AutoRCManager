@@ -23,6 +23,7 @@ class VehicleNoteTest extends TestCase
         $this->assertSame(1,\App\Models\AuditLog::where('description','vehicle_note:cancelled')->where('subject_id',$note->id)->count());
         $this->patchJson(route('admin.vehicles.notes.update',[$vehicle,$note]),['body'=>'Alterada','revision'=>$revision])->assertUnprocessable();
         $this->get(route('admin.vehicles.notes.index',$vehicle))->assertOk()->assertSee('Nota anulada');
+        $this->get(route('admin.vehicles.notes.history',[$vehicle,$note]))->assertOk()->assertSee('Duplicada')->assertSee('Nota original')->assertDontSee('Guardar correção');
         $this->actingAs($this->user(['vehicle_show']))->post($url,['reason'=>'Teste','revision'=>$revision])->assertForbidden();
     }
 

@@ -6,7 +6,11 @@
         <div class="panel-body">
             <p><a href="{{ route('admin.vehicles.notes.index', $vehicle) }}">Voltar à conversa da viatura</a></p>
             <p>Escrita por <strong>{{ $note->author_name }}</strong> em {{ $note->created_at->timezone('Europe/Lisbon')->format('d/m/Y H:i') }}.</p>
-            @can('vehicle_edit')
+            @php($cancellation = $note->cancellation())
+            @if($cancellation)
+                <div class="alert alert-warning">Nota anulada por {{ $cancellation->properties['cancelled_by'] ?? '' }} em {{ $cancellation->created_at->timezone('Europe/Lisbon')->format('d/m/Y H:i') }}. Motivo: {{ $cancellation->properties['reason'] ?? '' }}.</div>
+            @endif
+            @if(Gate::allows('vehicle_edit') && !$cancellation)
                 <form method="POST" action="{{ route('admin.vehicles.notes.update', [$vehicle, $note]) }}">
                     @csrf @method('PATCH')
                     <input type="hidden" name="revision" value="{{ old('revision', $note->revisionToken()) }}">
@@ -20,7 +24,7 @@
                 </form>
             @else
                 <div style="white-space: pre-wrap; overflow-wrap: anywhere;">{{ $note->body }}</div>
-            @endcan
+            @endif
         </div>
     </div>
     <h4>Histórico de correções</h4>
