@@ -118,6 +118,9 @@ class VehicleDocuments
 
     public static function revision(Media $media): string
     {
+        if ($media->getCustomProperty('document_restoration') !== null) {
+            return hash('sha256', json_encode([$media->getCustomProperty('document_classification'), $media->getCustomProperty('document_annulment'), $media->getCustomProperty('document_restoration')]));
+        }
         return hash('sha256', json_encode(self::annulled($media) ? [$media->getCustomProperty('document_classification'), $media->getCustomProperty('document_annulment')] : $media->getCustomProperty('document_classification')));
     }
 

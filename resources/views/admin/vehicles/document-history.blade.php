@@ -12,6 +12,17 @@
             @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
             @if(\App\Support\VehicleDocuments::annulled($file))
                 <div class="alert alert-warning"><strong>Anulado</strong> — {{ $file->getCustomProperty('document_annulment.reason') }}<br>Este ficheiro foi preservado para consulta, mas já não serve como cópia válida para concluir um acompanhamento.</div>
+                @can('vehicle_edit')
+                <details><summary>Repor este anexo</summary>
+                    <p>Use apenas depois de confirmar que o anexo é válido. O ficheiro e a classificação mantêm-se. Os acompanhamentos não são concluídos automaticamente.</p>
+                    <form method="POST" action="{{ route('admin.vehicles.documents.restore', [$vehicle, $file->id]) }}">
+                        @csrf
+                        <input type="hidden" name="revision" value="{{ \App\Support\VehicleDocuments::revision($file) }}">
+                        <div class="form-group"><label for="restore-reason">Motivo da reposição</label><textarea id="restore-reason" name="reason" class="form-control" required maxlength="500" rows="2">{{ old('reason') }}</textarea></div>
+                        <button class="btn btn-primary">Repor anexo e guardar motivo</button>
+                    </form>
+                </details>
+                @endcan
             @else
                 @can('vehicle_edit')
                 <details><summary>Anular este anexo</summary>
@@ -29,7 +40,7 @@
             @forelse($history as $entry)
                 <div class="well well-sm">
                     <strong>{{ $entry->created_at->format('d/m/Y H:i') }} · {{ $entry->properties['user_name'] ?? $authors[$entry->user_id] ?? 'Utilizador indisponível' }}</strong><br>
-                    {{ \App\Support\VehicleDocuments::TYPES[$entry->properties['before'] ?? 'unknown'] ?? 'Por identificar' }} → {{ ($entry->properties['after'] ?? '') === 'annulled' ? 'Anulado' : (\App\Support\VehicleDocuments::TYPES[$entry->properties['after'] ?? 'unknown'] ?? 'Por identificar') }}<br>
+                    {{ ($entry->properties['before'] ?? '') === 'annulled' ? 'Anulado' : (\App\Support\VehicleDocuments::TYPES[$entry->properties['before'] ?? 'unknown'] ?? 'Por identificar') }} → {{ ($entry->properties['after'] ?? '') === 'annulled' ? 'Anulado' : (\App\Support\VehicleDocuments::TYPES[$entry->properties['after'] ?? 'unknown'] ?? 'Por identificar') }}<br>
                     Motivo: {{ $entry->properties['reason'] ?? 'Não registado na versão anterior' }}
                 </div>
             @empty

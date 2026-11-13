@@ -135,6 +135,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::patch('vehicles/{vehicle}/documents/{document}/applicability', 'VehicleDocumentController@applicability')->name('vehicles.documents.applicability');
     Route::get('vehicles/{vehicle}/documents/{media}/history', 'VehicleDocumentController@history')->name('vehicles.documents.history');
     Route::post('vehicles/{vehicle}/documents/{media}/annul', 'VehicleDocumentController@annul')->name('vehicles.documents.annul');
+    Route::post('vehicles/{vehicle}/documents/{media}/restore', 'VehicleDocumentController@restore')->name('vehicles.documents.restore');
     Route::patch('vehicles/{vehicle}/documents/{media}/type', 'VehicleDocumentController@update')->name('vehicles.documents.type');
     Route::delete('vehicles/destroy', 'VehicleController@massDestroy')->name('vehicles.massDestroy');
     Route::post('vehicles/media', 'VehicleController@storeMedia')->name('vehicles.storeMedia');

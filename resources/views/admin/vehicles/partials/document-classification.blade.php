@@ -32,7 +32,7 @@
                                 </td>
                                 <td>
                                     <button type="button" class="btn btn-default js-save-document-type" data-url="{{ route('admin.vehicles.documents.type', [$vehicle, $file->id]) }}">Guardar tipo</button>
-                                    <p><a href="{{ route('admin.vehicles.documents.history', [$vehicle, $file->id]) }}">Histórico / anular anexo</a></p>
+                                    <p><a href="{{ route('admin.vehicles.documents.history', [$vehicle, $file->id]) }}">Histórico / anular ou repor</a></p>
                                     <span class="js-document-type-status help-block" role="status" aria-live="polite"></span>
                                 </td>
                             </tr>

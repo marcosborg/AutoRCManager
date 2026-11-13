@@ -154,7 +154,7 @@ class VehicleDocumentController extends Controller
         abort_unless(ctype_digit($media), 404);
         $file = $vehicle->media()->whereKey($media)->whereIn('collection_name', VehicleDocuments::COLLECTIONS)->firstOrFail();
         $history = AuditLog::where('subject_id', $file->id)->where('subject_type', get_class($file).'#'.$file->id)
-            ->whereIn('description', ['vehicle_document:classified', 'vehicle_document:annulled'])->orderByDesc('id')->get();
+            ->whereIn('description', ['vehicle_document:classified', 'vehicle_document:annulled', 'vehicle_document:restored'])->orderByDesc('id')->get();
         $authors = \App\Models\User::withTrashed()->whereIn('id', $history->pluck('user_id'))->pluck('name', 'id');
         if ($request->is('api/v1/backoffice/*')) {
             return response()->json(['media_id' => $file->id, 'annulled' => VehicleDocuments::annulled($file),
@@ -184,6 +184,32 @@ class VehicleDocumentController extends Controller
         if ($request->expectsJson()) return response()->json(['message' => 'Anexo anulado. O ficheiro e o histórico foram preservados.']);
         if (!empty($data['return_document'])) return redirect()->to(route('admin.vehicles.documents.followup', [$vehicle, $data['return_document']]).'#followup-history')->with('message', 'Anexo anulado. O ficheiro e o histórico foram preservados.');
         return redirect()->route('admin.vehicles.documents.history', [$vehicle, $media])->with('message', 'Anexo anulado. O ficheiro e o histórico foram preservados.');
+    }
+
+    public function restore(Request $request, Vehicle $vehicle, string $media)
+    {
+        abort_unless(Gate::allows('vehicle_edit') && Gate::allows('vehicle_documents_area_access'), 403);
+        abort_unless(ctype_digit($media), 404);
+        $request->merge(['reason' => is_string($request->reason) ? trim($request->reason) : $request->reason]);
+        $data = $request->validate(['reason' => ['required', 'string', 'max:500'], 'revision' => ['required', 'string', 'size:64']]);
+        DB::transaction(function () use ($request, $vehicle, $media, $data) {
+            Vehicle::whereKey($vehicle->id)->lockForUpdate()->firstOrFail();
+            $file = $vehicle->media()->whereKey($media)->whereIn('collection_name', VehicleDocuments::COLLECTIONS)->lockForUpdate()->firstOrFail();
+            if (!VehicleDocuments::annulled($file)) return;
+            abort_unless(hash_equals(VehicleDocuments::revision($file), $data['revision']), 409, 'O anexo mudou. Atualize a página antes de repor.');
+            $annulment = $file->getCustomProperty('document_annulment');
+            $file->forgetCustomProperty('document_annulment');
+            $file->setCustomProperty('document_restoration', ['revision' => (string) \Illuminate\Support\Str::uuid(), 'at' => now()->toIso8601String()]);
+            $file->save();
+            AuditLog::create(['description' => 'vehicle_document:restored', 'subject_id' => $file->id,
+                'subject_type' => get_class($file).'#'.$file->id, 'user_id' => $request->user()->id,
+                'properties' => ['vehicle_id' => $vehicle->id, 'media_id' => $file->id, 'before' => 'annulled',
+                    'after' => VehicleDocuments::type($file), 'reason' => $data['reason'], 'user_name' => $request->user()->name,
+                    'previous_annulment' => $annulment], 'host' => $request->ip()]);
+        });
+        $message = 'Anexo reposto. O ficheiro, a classificação e o histórico foram preservados. Os acompanhamentos não foram alterados.';
+        if ($request->expectsJson()) return response()->json(['message' => $message]);
+        return redirect()->route('admin.vehicles.documents.history', [$vehicle, $media])->with('message', $message);
     }
 
     public function update(Request $request, Vehicle $vehicle, string $media)
