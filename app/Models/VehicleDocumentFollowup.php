@@ -76,7 +76,9 @@ class VehicleDocumentFollowup extends Model
     {
         $key = 'document-followup:'.$this->id;
         $task = CalendarTask::firstOrNew(['dedupe_key' => $key]);
-        $task->fill(['title' => mb_substr('Documento: '.(VehicleDocuments::applicabilityDocuments()[$this->document] ?? $this->document).' — '.($this->vehicle?->license ?? '#'.$this->vehicle_id), 0, 191),
+        $vehicle = $this->vehicle;
+        $identification = trim((string) $vehicle?->license) ?: (trim((string) $vehicle?->foreign_license) ?: '#'.$this->vehicle_id);
+        $task->fill(['title' => mb_substr('Documento: '.(VehicleDocuments::applicabilityDocuments()[$this->document] ?? $this->document).' — '.$identification, 0, 191),
             'vehicle_id' => $this->vehicle_id, 'assigned_to_id' => $this->assigned_to_id,
             'type' => 'vehicle_document_followup', 'recipient_group' => null,
             'created_by_id' => $task->created_by_id ?? auth()->id(),
