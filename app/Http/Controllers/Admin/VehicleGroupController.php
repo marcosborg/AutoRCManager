@@ -33,6 +33,7 @@ class VehicleGroupController extends Controller
     {
         abort_if(Gate::denies('vehicle_group_access') && Gate::denies('vehicle_lot_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         \App\Support\AmountRange::validate($request);
+        $request->validate(['export' => ['nullable', 'in:csv']]);
 
         $vehicleGroups = VehicleGroup::with(['customer', 'items'])
             ->withCount(['items', 'payments'])
@@ -44,6 +45,16 @@ class VehicleGroupController extends Controller
                 && (! $request->filled('amount_max') || $total <= (float) $request->input('amount_max'));
         });
 
+        if ($request->input('export') === 'csv') {
+            return response()->streamDownload(function () use ($vehicleGroups) {
+                $out=fopen('php://output','w');fwrite($out,"\xEF\xBB\xBF");
+                fputcsv($out,['ID','Nome','Cliente','Tipo','Valor total (€)','Viaturas','Estado','Pagamentos','Notas'],';');
+                foreach($vehicleGroups as $group){
+                    $row=[$group->id,$group->name,$group->customer?->name,$group->type==='unitario'?'Unitário':'Lote',number_format($group->effective_total,2,',',''),$group->items_count,$group->status,$group->payments_count,$group->notes];
+                    fputcsv($out,array_map(function($value){$value=(string)$value;return preg_match('/^\s*[=+@-]/u',$value)?"'".$value:$value;},$row),';');
+                }fclose($out);
+            },'lotes-'.now('Europe/Lisbon')->format('Y-m-d').'.csv',['Content-Type'=>'text/csv; charset=UTF-8']);
+        }
         return view('admin.vehicleGroups.index', compact('vehicleGroups'));
     }
 
