@@ -9,6 +9,26 @@ class ExternalServiceFullExportTest extends TestCase
 {
     use DatabaseTransactions;
 
+    public function test_list_shows_requester_without_changing_service(): void
+    {
+        $role = Role::create(['title' => uniqid('List ')]);
+        $role->permissions()->attach(Permission::firstOrCreate(['title' => 'external_service_access'])->id);
+        $user = User::factory()->create();
+        $user->roles()->sync([$role->id]);
+        $requester = User::factory()->create(['name' => 'Requerente de teste']);
+        $service = ExternalService::create([
+            'description' => uniqid('Serviço '), 'requested_by_id' => $requester->id,
+            'status' => 'scheduled', 'priority' => 'normal',
+        ]);
+        $before = $service->fresh()->getAttributes();
+
+        $this->actingAs($user)->get(route('admin.external-services.index'))
+            ->assertOk()->assertSee('Requerente')->assertSee($requester->name)
+            ->assertSee($service->description);
+
+        $this->assertSame($before, $service->fresh()->getAttributes());
+    }
+
     public function test_export_respects_all_filters_and_ignores_pagination_without_writes(): void
     {
         $role = Role::create(['title' => uniqid('Export ')]);

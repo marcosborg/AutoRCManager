@@ -17,16 +17,17 @@
                 <div class="col-md-12" style="margin-top:10px;"><button class="btn btn-default" type="submit" name="export" value="csv">Exportar todos os resultados (CSV)</button></div>
             </form>
             <div class="table-responsive"><table class="table table-bordered table-striped">
-                <thead><tr><th>ID</th><th>Viatura</th><th>Serviço</th><th>Fornecedor</th><th>Estado</th><th>Prevista</th><th>Valor</th><th></th></tr></thead>
+                <thead><tr><th>ID</th><th>Viatura</th><th>Serviço</th><th>Fornecedor</th><th>Requerente</th><th>Estado</th><th>Prevista</th><th>Valor</th><th></th></tr></thead>
                 <tbody>@forelse($externalServices as $service)<tr>
                     <td>#{{ $service->id }}</td>
                     <td>{{ $service->vehicle->license ?? $service->vehicle->foreign_license ?? '-' }}</td>
                     <td>{{ $service->description }}</td><td>{{ $service->suplier->name ?? '-' }}</td>
+                    <td>{{ $service->requested_by?->name ?? '-' }}</td>
                     <td>{{ App\Models\ExternalService::STATUS_SELECT[$service->status] ?? $service->status }}</td>
                     <td>{{ optional($service->expected_date)->format('Y-m-d') ?: '-' }}</td>
                     <td>{{ $service->amount !== null ? number_format($service->amount, 2, ',', '.').' €' : '-' }}</td>
                     <td>@can('external_service_edit')<a class="btn btn-xs btn-info" href="{{ route('admin.external-services.edit', $service) }}">Editar</a>@endcan @can('external_service_delete')<form method="POST" action="{{ route('admin.external-services.destroy', $service) }}" style="display:inline" onsubmit="return confirm('Eliminar este serviço externo?')">@csrf @method('DELETE')<button class="btn btn-xs btn-danger">Eliminar</button></form>@endcan</td>
-                </tr>@empty<tr><td colspan="8" class="text-center text-muted">Sem serviços externos.</td></tr>@endforelse</tbody>
+                </tr>@empty<tr><td colspan="9" class="text-center text-muted">Sem serviços externos.</td></tr>@endforelse</tbody>
             </table></div>
             {{ $externalServices->links() }}
         </div>
