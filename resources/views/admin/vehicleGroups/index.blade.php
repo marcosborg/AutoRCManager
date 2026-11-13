@@ -16,6 +16,11 @@
             Lotes
         </div>
         <div class="panel-body">
+            <form method="GET" class="form-inline" style="margin-bottom:12px">
+                <label for="amount_min">Valor total mínimo (€)</label><input class="form-control" id="amount_min" name="amount_min" inputmode="decimal" value="{{ request('amount_min') }}">
+                <label for="amount_max">Valor total máximo (€)</label><input class="form-control" id="amount_max" name="amount_max" inputmode="decimal" value="{{ request('amount_max') }}">
+                <button class="btn btn-primary">Filtrar</button><a class="btn btn-default" href="{{ route('admin.vehicle-groups.index') }}">Limpar</a>
+            </form>
             <div class="table-responsive">
                 <table class="table table-bordered table-striped table-hover datatable datatable-VehicleGroup">
                     <thead>

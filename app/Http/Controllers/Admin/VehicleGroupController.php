@@ -29,14 +29,20 @@ class VehicleGroupController extends Controller
 {
     use MediaUploadingTrait;
 
-    public function index()
+    public function index(Request $request)
     {
         abort_if(Gate::denies('vehicle_group_access') && Gate::denies('vehicle_lot_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        \App\Support\AmountRange::validate($request);
 
-        $vehicleGroups = VehicleGroup::with(['customer'])
+        $vehicleGroups = VehicleGroup::with(['customer', 'items'])
             ->withCount(['items', 'payments'])
             ->latest()
             ->get();
+        $vehicleGroups = $vehicleGroups->filter(function ($group) use ($request) {
+            $total = round($group->effective_total, 2);
+            return (! $request->filled('amount_min') || $total >= (float) $request->input('amount_min'))
+                && (! $request->filled('amount_max') || $total <= (float) $request->input('amount_max'));
+        });
 
         return view('admin.vehicleGroups.index', compact('vehicleGroups'));
     }
