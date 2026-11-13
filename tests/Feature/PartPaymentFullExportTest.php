@@ -59,7 +59,8 @@ class PartPaymentFullExportTest extends TestCase
         $this->assertSame('2026-11-12', $details[0][6]);
         $this->assertSame("'=REF", $details[0][9]);
         $this->assertSame("'+Nota", $details[0][10]);
-        $first->update(['reference'=>$before[count($before)-1]['reference'],'notes'=>$before[count($before)-1]['notes'],'payment_date'=>$before[count($before)-1]['payment_date']]);
+        $first->timestamps = false;
+        $first->update(['reference'=>$before[count($before)-1]['reference'],'notes'=>$before[count($before)-1]['notes'],'payment_date'=>$before[count($before)-1]['payment_date'],'updated_at'=>$before[count($before)-1]['updated_at']]);
         $this->assertSame("'=1+1", $rows[0][2]);
         $this->assertSame('1234,56', $rows[0][3]);
         $this->assertSame('Pendente', $rows[0][5]);
