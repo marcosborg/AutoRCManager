@@ -49,6 +49,37 @@ class LeadWhatsappFallbackIsolationTest extends TestCase
         app(LeadWhatsappNotificationFailureHandler::class)->handle($notification, 'Falha antiga');
         $this->assertSame($before, $lead->fresh()->getAttributes());
         $this->assertSame(LeadWhatsappNotification::STATUS_FAILED, $notification->fresh()->status);
+        $this->assertSame('skipped', $notification->fresh()->metadata['email_fallback_status']);
+        $this->assertSame('lead_no_longer_assigned_to_recipient', $notification->fresh()->metadata['email_fallback_error']);
+        Mail::assertNothingSent();
+    }
+
+    public function test_fallback_rechecks_assignment_instead_of_using_preloaded_lead(): void
+    {
+        Mail::fake();
+        $seller = User::factory()->create();
+        $newSeller = User::factory()->create();
+        $lead = Lead::create(['leadgen_id' => uniqid('stale-fallback-'), 'page_id' => 'test-page', 'form_id' => 'test-form',
+            'assigned_user_id' => $seller->id]);
+        $notification = LeadWhatsappNotification::create(['lead_id' => $lead->id, 'user_id' => $seller->id,
+            'phone' => '351912000001', 'message' => 'Teste', 'status' => LeadWhatsappNotification::STATUS_SENT]);
+        $notification->load('lead');
+        $lead->update(['assigned_user_id' => $newSeller->id, 'seller_notification_status' => 'sent',
+            'seller_notified_user_id' => $newSeller->id, 'seller_notified_at' => now()]);
+        $before = $lead->fresh()->getAttributes();
+
+        app(LeadWhatsappNotificationFailureHandler::class)->handle($notification, 'Falha após transferência');
+
+        Mail::assertNothingSent();
+        $this->assertSame($before, $lead->fresh()->getAttributes());
+        $this->assertSame('skipped', $notification->fresh()->metadata['email_fallback_status']);
+
+        $lead->update(['assigned_user_id' => null]);
+        $before = $lead->fresh()->getAttributes();
+        app(LeadWhatsappNotificationFailureHandler::class)->handle($notification->fresh(), 'Sem atribuição atual');
+        Mail::assertNothingSent();
+        $this->assertSame($before, $lead->fresh()->getAttributes());
+        $this->assertSame('lead_no_longer_assigned_to_recipient', $notification->fresh()->metadata['email_fallback_error']);
     }
 
     public function test_send_and_delivery_webhook_only_update_their_own_lead(): void

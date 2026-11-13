@@ -31,7 +31,19 @@ class LeadWhatsappNotificationFailureHandler
             return;
         }
 
-        $notification->loadMissing(['lead', 'user']);
+        // Re-read the assignment: the notification may hold a relation loaded
+        // before this lead was transferred to another seller.
+        $notification->load('lead');
+        if (! $notification->lead || ! $notification->user_id
+            || (int) $notification->lead->assigned_user_id !== (int) $notification->user_id) {
+            $notification->update(['metadata' => $this->clean(array_merge($metadata, [
+                'email_fallback_status' => 'skipped',
+                'email_fallback_error' => 'lead_no_longer_assigned_to_recipient',
+            ]))]);
+            return;
+        }
+
+        $notification->loadMissing('user');
         $email = trim((string) $notification->user?->email);
         if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $notification->update(['metadata' => $this->clean(array_merge($metadata, [

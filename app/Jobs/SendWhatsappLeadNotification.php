@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -17,7 +18,10 @@ class SendWhatsappLeadNotification implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 4;
+    // Waiting for another worker is not a delivery failure. Limit actual
+    // exceptions instead so a retained lock cannot exhaust the queue attempts.
+    public int $tries = 0;
+    public int $maxExceptions = 4;
     public array $backoff = [10, 60, 300];
 
     public function __construct(public int $notificationId)
@@ -26,6 +30,22 @@ class SendWhatsappLeadNotification implements ShouldQueue
     }
 
     public function handle(WhatsappCloudApi $api): void
+    {
+        // The cPanel workers share this host's file store, independently of the
+        // default cache driver. Re-read the notification only after acquiring it.
+        $lock = Cache::store('file')->lock('whatsapp-lead-notification:'.$this->notificationId, 180);
+        if (! $lock->get()) {
+            $this->release(15);
+            return;
+        }
+        try {
+            $this->process($api);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function process(WhatsappCloudApi $api): void
     {
         if (! config('whatsapp.lead_notifications_enabled')) {
             Log::channel('meta_leads')->warning('Envio WhatsApp de lead bloqueado pelo interruptor de emergência.', [
@@ -37,6 +57,10 @@ class SendWhatsappLeadNotification implements ShouldQueue
 
         $notification = LeadWhatsappNotification::with(['lead', 'user'])->find($this->notificationId);
         if (! $notification || $notification->status !== LeadWhatsappNotification::STATUS_PENDING || ! $notification->phone) {
+            return;
+        }
+
+        if ($this->skipObsoleteRecipient($notification)) {
             return;
         }
 
@@ -93,8 +117,12 @@ class SendWhatsappLeadNotification implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        $notification = LeadWhatsappNotification::find($this->notificationId);
+        $notification = LeadWhatsappNotification::with(['lead', 'user'])->find($this->notificationId);
         if (! $notification || $notification->status !== LeadWhatsappNotification::STATUS_PENDING) {
+            return;
+        }
+
+        if ($this->skipObsoleteRecipient($notification)) {
             return;
         }
 
@@ -103,6 +131,30 @@ class SendWhatsappLeadNotification implements ShouldQueue
             $exception->getMessage(),
             ['transport' => 'cloud']
         );
+    }
+
+    private function skipObsoleteRecipient(LeadWhatsappNotification $notification): bool
+    {
+        if ($notification->lead && $notification->user
+            && (int) $notification->lead->assigned_user_id === (int) $notification->user_id) {
+            return false;
+        }
+
+        // Keep the original notification as an audit record, but never send it
+        // (or its e-mail fallback) to a seller who no longer owns the lead.
+        $notification->update([
+            'status' => LeadWhatsappNotification::STATUS_FAILED,
+            'failed_at' => now(),
+            'metadata' => array_merge($notification->metadata ?? [], [
+                'delivery_status' => 'skipped',
+                'failure_kind' => 'recipient_changed',
+                'failure_reason' => 'Envio ignorado: a lead já não está atribuída a este vendedor ou o destinatário deixou de estar disponível.',
+                'skipped_at' => now()->toIso8601String(),
+                'current_assigned_user_id' => $notification->lead?->assigned_user_id,
+            ]),
+        ]);
+
+        return true;
     }
 
     private function isAuthenticationFailure(Throwable $exception): bool
