@@ -8,13 +8,15 @@ use Illuminate\Validation\Rule;
 class DismantledPartController extends Controller {
  public function index(Request $request){
   abort_unless(Gate::allows('repair_access'),403);
-  $request->validate(['condition'=>['nullable',Rule::in(array_keys(DismantledPart::CONDITIONS))],'location'=>['nullable','string','max:255']]);
+  $request->validate(['search'=>['nullable','string','max:255'],'condition'=>['nullable',Rule::in(array_keys(DismantledPart::CONDITIONS))],'location'=>['nullable','string','max:255'],'vehicle_id'=>['nullable','integer',Rule::exists('vehicles','id')]]);
+  $origin=$request->filled('vehicle_id')?Vehicle::withTrashed()->findOrFail($request->vehicle_id):null;
   $parts=DismantledPart::with(['vehicle','createdBy'])
+   ->when($origin,fn($q)=>$q->where('vehicle_id',$origin->id))
    ->when($request->filled('condition'),fn($q)=>$q->where('condition',$request->condition))
    ->when($request->filled('location'),fn($q)=>$q->where('location','like','%'.trim($request->location).'%'))
    ->when($request->filled('search'),function($q)use($request){$s='%'.trim($request->search).'%';$q->where(fn($w)=>$w->where('reference','like',$s)->orWhere('description','like',$s)->orWhere('location','like',$s)->orWhereHas('vehicle',fn($v)=>$v->searchByLicense(trim($request->search))));})
    ->latest('id')->paginate(50)->withQueryString();
-  return view('admin.dismantledParts.index',compact('parts'));
+  return view('admin.dismantledParts.index',compact('parts','origin'));
  }
  public function create(Request $request){
   abort_unless(Gate::allows('repair_edit'),403);

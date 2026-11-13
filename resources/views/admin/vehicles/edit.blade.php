@@ -100,6 +100,9 @@
 </style>
 @endsection
 @section('content')
+@can('repair_access')
+<p><a class="btn btn-default" href="{{ route('admin.dismantled-parts.index',['vehicle_id'=>$vehicle->id]) }}">Peças desta viatura</a></p>
+@endcan
 <div class="content">
 
     <div class="row">
