@@ -21,6 +21,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('dismantled-parts/create', 'DismantledPartController@create')->name('dismantled-parts.create');
     Route::post('dismantled-parts', 'DismantledPartController@store')->name('dismantled-parts.store');
     Route::get('dismantled-parts/{part}/edit', 'DismantledPartController@edit')->name('dismantled-parts.edit');
+    Route::get('dismantled-parts/{part}/history', 'DismantledPartController@history')->name('dismantled-parts.history');
     Route::patch('dismantled-parts/{part}', 'DismantledPartController@update')->name('dismantled-parts.update');
     Route::get('iuc-due/export', 'HomeController@exportIucDue')->name('iuc-due.export');
     Route::get('dashboard', 'DashboardController@index')->name('dashboard');

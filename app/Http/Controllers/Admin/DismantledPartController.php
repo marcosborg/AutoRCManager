@@ -38,6 +38,11 @@ class DismantledPartController extends Controller {
   abort_unless(Gate::allows('repair_edit'),403);
   return view('admin.dismantledParts.edit',compact('part'));
  }
+ public function history(DismantledPart $part){
+  abort_unless(Gate::allows('repair_access'),403);
+  $events=\App\Models\AuditLog::with('user')->where('subject_type',DismantledPart::class.'#'.$part->id)->orderByDesc('id')->paginate(30);
+  return view('admin.dismantledParts.history',compact('part','events'));
+ }
  public function update(Request $request,DismantledPart $part){
   abort_unless(Gate::allows('repair_edit'),403);
   $data=$request->validate(['reference'=>['nullable','string','max:255'],'description'=>['required','string','max:255'],

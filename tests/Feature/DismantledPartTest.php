@@ -21,7 +21,9 @@ class DismantledPartTest extends TestCase {
   $this->assertSame($v->id,$part->fresh()->vehicle_id);$this->assertSame('B2',$part->fresh()->location);
   $this->patchJson(route('admin.dismantled-parts.update',$part),$update)->assertUnprocessable();
   $this->assertDatabaseHas('audit_logs',['subject_type'=>DismantledPart::class.'#'.$part->id,'description'=>'audit:updated','user_id'=>$u->id]);
+  $this->get(route('admin.dismantled-parts.history',$part))->assertOk()->assertSee('B2')->assertSee('Registo inicial')->assertSee('Correção');
   $this->postJson(route('admin.dismantled-parts.store'),array_replace($data,['value'=>-1]))->assertUnprocessable();
   $u->roles()->detach();$this->actingAs($u->fresh())->get(route('admin.dismantled-parts.index'))->assertForbidden();
+  $this->get(route('admin.dismantled-parts.history',$part))->assertForbidden();
  }
 }
