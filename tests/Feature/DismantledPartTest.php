@@ -15,6 +15,12 @@ class DismantledPartTest extends TestCase {
   $this->post(route('admin.dismantled-parts.store'),$data)->assertRedirect();$this->assertSame(1,DismantledPart::where('submission_token',$data['submission_token'])->count());
   $this->assertSame($before,$v->fresh()->getAttributes());
   $this->get(route('admin.dismantled-parts.index',['search'=>'REF-X']))->assertOk()->assertSee('Farol');
+  $part=DismantledPart::where('submission_token',$data['submission_token'])->sole();$token=$part->revisionToken();
+  $update=['reference'=>'REF-X','description'=>'Farol corrigido','condition'=>'good','location'=>'B2','revision'=>$token,'vehicle_id'=>999999];
+  $this->patch(route('admin.dismantled-parts.update',$part),$update)->assertRedirect()->assertSessionHasNoErrors();
+  $this->assertSame($v->id,$part->fresh()->vehicle_id);$this->assertSame('B2',$part->fresh()->location);
+  $this->patchJson(route('admin.dismantled-parts.update',$part),$update)->assertUnprocessable();
+  $this->assertDatabaseHas('audit_logs',['subject_type'=>DismantledPart::class.'#'.$part->id,'description'=>'audit:updated','user_id'=>$u->id]);
   $this->postJson(route('admin.dismantled-parts.store'),array_replace($data,['value'=>-1]))->assertUnprocessable();
   $u->roles()->detach();$this->actingAs($u->fresh())->get(route('admin.dismantled-parts.index'))->assertForbidden();
  }

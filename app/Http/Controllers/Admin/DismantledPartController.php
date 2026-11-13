@@ -34,4 +34,20 @@ class DismantledPartController extends Controller {
   });
   return redirect()->route('admin.dismantled-parts.index')->with('message','Peça registada no inventário.');
  }
+ public function edit(DismantledPart $part){
+  abort_unless(Gate::allows('repair_edit'),403);
+  return view('admin.dismantledParts.edit',compact('part'));
+ }
+ public function update(Request $request,DismantledPart $part){
+  abort_unless(Gate::allows('repair_edit'),403);
+  $data=$request->validate(['reference'=>['nullable','string','max:255'],'description'=>['required','string','max:255'],
+   'condition'=>['required',Rule::in(array_keys(DismantledPart::CONDITIONS))],'location'=>['required','string','max:255'],
+   'value'=>['nullable','numeric','min:0','max:9999999999.99'],'notes'=>['nullable','string','max:5000'],'revision'=>['required','string','size:64']]);
+  DB::transaction(function()use($part,$data){
+   $part=DismantledPart::whereKey($part->id)->lockForUpdate()->firstOrFail();
+   if(!hash_equals($part->revisionToken(),$data['revision'])) throw \Illuminate\Validation\ValidationException::withMessages(['revision'=>'A ficha foi alterada por outra pessoa. Atualize a página antes de corrigir.']);
+   unset($data['revision']);$part->update($data);
+  });
+  return redirect()->route('admin.dismantled-parts.index')->with('message','Ficha corrigida. A alteração ficou registada no histórico.');
+ }
 }
