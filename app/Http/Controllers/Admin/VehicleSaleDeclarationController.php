@@ -40,11 +40,16 @@ class VehicleSaleDeclarationController extends Controller
         $vehicle->load('client', 'brand');
         // Use the same buyer as the existing sale screen, not the acquisition supplier.
         $client = $vehicle->client;
+        // Multiple trade-ins need an explicit choice; never silently select one.
+        $tradeIns = $vehicle->trade_ins()->where('status', '!=', \App\Models\VehicleTradeIn::STATUS_REJECTED)
+            ->with('created_vehicle.brand')->limit(2)->get();
+        $tradeIn = $tradeIns->count() === 1 ? $tradeIns->first() : null;
         $data = $request->session()->get($this->key($vehicle), [
             'name' => $client?->name, 'vat' => $client?->vat, 'address' => $client?->address,
             'zip' => $client?->zip, 'location' => $client?->location, 'phone' => $client?->phone,
             'email' => $client?->email, 'brand' => $vehicle->brand?->name, 'model' => $vehicle->model,
             'year' => $vehicle->year, 'license' => $vehicle->license ?: $vehicle->foreign_license,
+            'trade_license' => $tradeIn?->license, 'trade_brand' => $tradeIn?->created_vehicle?->brand?->name,
             'document_date' => now()->toDateString(),
         ]);
         // Financial fields deliberately remain blank: asking price is not agreed price,

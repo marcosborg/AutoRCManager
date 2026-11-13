@@ -31,6 +31,38 @@ class VehicleSaleDeclarationTest extends TestCase
             'confirmed' => 1, 'company_confirmed' => 1];
     }
 
+    public function test_only_an_unambiguous_active_trade_in_prefills_its_vehicle_fields(): void
+    {
+        $user = $this->actor();
+        $this->actingAs($user);
+        $vehicle = Vehicle::create(['license' => 'DOC-SOLD']);
+        $brand = \App\Models\Brand::create(['name' => 'Marca da retoma']);
+        $received = Vehicle::create(['license' => 'AA-12-BB', 'brand_id' => $brand->id]);
+        $trade = \App\Models\VehicleTradeIn::create(['sold_vehicle_id' => $vehicle->id,
+            'created_vehicle_id' => $received->id, 'license' => $received->license, 'normalized_license' => 'AA12BB',
+            'amount' => 5000, 'status' => \App\Models\VehicleTradeIn::STATUS_CONVERTED]);
+        $before = [$vehicle->fresh()->getAttributes(), $trade->fresh()->getAttributes()];
+        $url = route('admin.vehicles.documents.sale.edit', $vehicle);
+        $data = $this->get($url)->assertOk()->viewData('data');
+        $this->assertSame($trade->license, $data['trade_license']);
+        $this->assertSame($brand->name, $data['trade_brand']);
+        $this->assertArrayNotHasKey('trade_value', $data);
+        $this->assertSame($before, [$vehicle->fresh()->getAttributes(), $trade->fresh()->getAttributes()]);
+
+        $draft = ['trade_license' => 'ESCOLHA MANUAL', 'trade_brand' => 'Marca manual'];
+        $key = 'sale_declaration_v1.'.$user->id.'.'.$vehicle->id;
+        $this->withSession([$key => $draft])->get($url)->assertOk()->assertViewHas('data', $draft);
+        session()->forget($key);
+        $other = \App\Models\VehicleTradeIn::create(['sold_vehicle_id' => $vehicle->id,
+            'license' => 'CC-34-DD', 'normalized_license' => 'CC34DD', 'amount' => 0,
+            'status' => \App\Models\VehicleTradeIn::STATUS_PENDING]);
+        $data = $this->get($url)->assertOk()->viewData('data');
+        $this->assertNull($data['trade_license']);
+        $this->assertNull($data['trade_brand']);
+        $other->update(['status' => \App\Models\VehicleTradeIn::STATUS_REJECTED]);
+        $this->assertSame($trade->license, $this->get($url)->assertOk()->viewData('data')['trade_license']);
+    }
+
     public function test_document_preparation_links_are_in_the_correct_vehicle_tabs(): void
     {
         $user = $this->actor();
