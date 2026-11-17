@@ -28,7 +28,7 @@ class VehicleDocumentBuyerLinkTest extends TestCase
         $client = Client::create(['name' => 'Comprador exemplo']);
         $vehicle = Vehicle::create(['license' => 'BUYER-LINK', 'client_id' => $client->id]);
         $before = [$client->fresh()->getAttributes(), $vehicle->fresh()->getAttributes()];
-        foreach (['sale', 'warranty'] as $document) {
+        foreach (['sale', 'warranty', 'circulation', 'responsibility'] as $document) {
             $key = $document.'_declaration_v1.'.$user->id.'.'.$vehicle->id;
             $draft = ['name' => 'Nome em preparação'];
             $response = $this->withSession([$key => $draft])->get(route('admin.vehicles.documents.'.$document.'.edit', $vehicle))->assertOk();
@@ -50,16 +50,16 @@ class VehicleDocumentBuyerLinkTest extends TestCase
         $client = Client::create(['name' => 'Comprador exemplo']);
         $vehicle = Vehicle::create(['license' => 'BUYER-LINK', 'client_id' => $client->id]);
         $this->actingAs($this->actor(false));
-        foreach (['sale', 'warranty'] as $document) {
+        foreach (['sale', 'warranty', 'circulation', 'responsibility'] as $document) {
             $this->get(route('admin.vehicles.documents.'.$document.'.edit', $vehicle))->assertOk()->assertDontSee('data-document-buyer-link', false);
         }
         $this->actingAs($this->actor(true));
         $client->delete();
-        foreach (['sale', 'warranty'] as $document) {
+        foreach (['sale', 'warranty', 'circulation', 'responsibility'] as $document) {
             $this->get(route('admin.vehicles.documents.'.$document.'.edit', $vehicle))->assertOk()->assertDontSee('data-document-buyer-link', false);
         }
         $vehicle->update(['client_id' => null]);
-        foreach (['sale', 'warranty'] as $document) {
+        foreach (['sale', 'warranty', 'circulation', 'responsibility'] as $document) {
             $this->get(route('admin.vehicles.documents.'.$document.'.edit', $vehicle))->assertOk()->assertDontSee('data-document-buyer-link', false);
         }
     }

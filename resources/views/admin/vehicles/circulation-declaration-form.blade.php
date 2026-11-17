@@ -2,6 +2,7 @@
 @section('content')
 <div class="panel panel-default"><div class="panel-heading">Declaração de circulação — {{ $vehicle->license ?: $vehicle->foreign_license }}</div><div class="panel-body">
 <p>Confira os dados antes de preparar a declaração. Os campos opcionais vazios ficam em branco para preenchimento no impresso.</p>
+@include('admin.vehicles.partials.document-buyer-link')
 @if($errors->any())<div class="alert alert-danger"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 <form method="POST" action="{{ route('admin.vehicles.documents.circulation.prepare', $vehicle) }}">@csrf
 <div class="row">@foreach($fields as $key => $label)
