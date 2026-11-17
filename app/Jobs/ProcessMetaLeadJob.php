@@ -16,7 +16,9 @@ class ProcessMetaLeadJob implements ShouldQueue
 
     public int $tries = 3;
 
-    public int $timeout = 120;
+    // Graph requests are capped at 20s; keep the overall job below the
+    // database queue's 90s reservation window to prevent overlapping attempts.
+    public int $timeout = 75;
 
     public function __construct(public array $value)
     {

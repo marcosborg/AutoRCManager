@@ -51,12 +51,27 @@ Depois de publicar:
 
 ```bash
 php artisan migrate
-php artisan queue:work database --queue=meta-leads --sleep=2 --tries=3 --timeout=120
+php artisan queue:work database --queue=meta-leads --sleep=2 --tries=3 --timeout=75
 ```
 
 Para criar uma pool controlada, corre 1 ou 2 workers iguais no servidor. Mais workers aumentam concorrência, mas também aumentam carga sobre MySQL, Graph API, mail e integrações de IA. Começa com 1 worker; sobe para 2 se a fila acumular.
 
 Se usares Supervisor/systemd/serviço Windows, aponta o processo para o comando acima e garante restart automático.
+
+Os trabalhos Meta têm um limite próprio de 75 segundos, inferior aos 90 segundos
+de `retry_after` da fila `database`. O pedido Graph tem um limite de 20 segundos;
+o restante tempo fica disponível para persistência, atribuição e notificações.
+Não aumentar o limite do trabalho acima do prazo de reserva: isso permite que
+outro trabalhador reserve o mesmo trabalho antes de a primeira tentativa terminar.
+O limite definido no próprio trabalho prevalece sobre `queue:work --timeout`.
+
+Num cron de alojamento partilhado, usar trabalhadores limitados, por exemplo
+`--stop-when-empty --max-time=50`, e impedir a sobreposição de execuções da mesma
+instalação. `--max-time` limita a duração do trabalhador entre trabalhos; não é
+um limite rígido que interrompa um trabalho em curso. Não iniciar trabalhadores
+permanentes novos a cada minuto. Este ajuste não modifica o cron nem os limites
+globais do MySQL. Os trabalhos já enfileirados podem conservar o limite antigo
+no seu payload; confirmar o seu escoamento sem eliminar ou reenfileirar tudo.
 
 ## Entrada direta por Make/Apiway
 

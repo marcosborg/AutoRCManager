@@ -17,7 +17,9 @@ class ProcessMetaInboundLeadJob implements ShouldQueue
 
     public int $tries = 3;
 
-    public int $timeout = 120;
+    // Must remain below database queue retry_after (90s), otherwise another
+    // worker can reserve the same job while this attempt is still running.
+    public int $timeout = 75;
 
     public function __construct(public array $data, public array $payload, public ?int $ingestionId = null)
     {
