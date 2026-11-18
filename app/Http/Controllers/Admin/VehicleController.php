@@ -378,6 +378,9 @@ class VehicleController extends Controller
         $clientPaymentsOutstanding = $salesFinalTotal - $clientPaymentsTotal - $tradeInsConvertedTotal;
         $canConvertTradeIns = $this->canConvertTradeIns();
         $canManageSupplierPayments = $this->canManageSupplierPayments();
+        $costReview = $canManageSupplierPayments
+            ? app(\App\Services\VehicleCostReviewService::class)->build($vehicle, $rafaelVision)
+            : null;
         $activeSuspendedSale = $vehicle->active_suspended_sale;
         $suspendedSales = $vehicle->suspended_sales->sortByDesc('created_at')->values();
         $importProcess = $vehicle->import_process;
@@ -411,6 +414,7 @@ class VehicleController extends Controller
             'showWorkshopSection',
             'vehicleFinancialStatus',
             'rafaelVision',
+            'costReview',
             'supplierPayments',
             'supplierPaymentsTotal',
             'supplierPaymentsOutstanding',

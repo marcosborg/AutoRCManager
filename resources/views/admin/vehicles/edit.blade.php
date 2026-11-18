@@ -725,6 +725,7 @@
                             </div>
 @endcan
                             @if($canManageSupplierPayments)
+                            @include('admin.vehicles.partials.cost-review')
                             @php
                                 $rvMoney = function ($value) {
                                     return number_format((float) $value, 2, ',', '.') . ' EUR';
