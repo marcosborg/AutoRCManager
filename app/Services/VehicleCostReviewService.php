@@ -19,7 +19,7 @@ class VehicleCostReviewService
         $vehicle->loadMissing([
             'purchase_price_histories', 'repairs.parts', 'repairs.workLogs',
             'repairs.part_orders.items', 'repairs.part_orders.payments',
-            'part_orders.items', 'part_orders.payments', 'external_services',
+            'part_orders.items', 'part_orders.payments', 'external_services.media',
             'generic_payments', 'supplier_payments', 'paintingJobs',
         ]);
 
@@ -100,9 +100,12 @@ class VehicleCostReviewService
 
         foreach ($vehicle->external_services as $service) {
             $included = $service->status !== 'cancelled';
+            $invoiceNote = $service->invoice_file->isNotEmpty()
+                ? 'Fatura anexada'
+                : ($included ? 'Fatura por confirmar' : 'Sem fatura anexada — serviço cancelado.');
             $rows[] = $this->row('external_service_'.$service->id, 'Serviços externos', $service->description ?: 'Serviço externo',
                 $service->amount, $included, 'Registado', 'Não identificado', 'external_service', $service->id,
-                'admin.external-services.edit', [$service->id], ['Estado: '.(ExternalService::STATUS_SELECT[$service->status] ?? $service->status).'.',
+                'admin.external-services.edit', [$service->id], [$invoiceNote, 'A indicação da fatura refere-se aos anexos registados; não comprova o pagamento.', 'Estado: '.(ExternalService::STATUS_SELECT[$service->status] ?? $service->status).'.',
                     $included ? 'O valor registado entra no custo; o estado do serviço não prova o pagamento.' : 'Serviço cancelado: excluído do custo atual.']);
         }
         foreach ($vehicle->generic_payments as $payment) {
