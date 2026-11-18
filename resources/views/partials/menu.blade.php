@@ -350,6 +350,9 @@
                                 <span>Todos</span>
                             </a>
                         </li>
+                        @can('vehicle_documents_area_access')
+                            <li><a href="{{ route('admin.sales.index', ['review' => 'invoice']) }}"><i class="fa-fw far fa-file-alt"></i><span>Vendas — faturação por confirmar</span></a></li>
+                        @endcan
                         @foreach (\App\Models\GeneralState::orderByRaw('COALESCE(position, 999999)')->orderBy('id')->get() as $generalState)
                             <li class="{{ $selectedGeneralStateId === (string) $generalState->id ? 'active' : '' }}">
                                 <a href="{{ route('admin.sales.index', $generalState->id) }}">
