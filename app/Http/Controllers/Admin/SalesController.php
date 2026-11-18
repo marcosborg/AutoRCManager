@@ -33,6 +33,22 @@ class SalesController extends Controller
     public function index(Request $request, $general_state_id = null)
     {
         abort_if(Gate::denies('vehicle_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        if ($request->input('review') === 'invoice') {
+            abort_if(\App\Support\WorkshopPrivacy::restricted() || Gate::denies('sale_access')
+                || Gate::denies('vehicle_documents_area_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+            $filters = $request->validate([
+                'scope' => 'nullable|in:sold,suspended',
+                'category' => 'nullable|in:stand,salvados,oficina,comercio',
+                'reason' => 'nullable|in:pending,unmarked,missing_file,file_unmarked,all',
+                'search' => 'nullable|string|max:100',
+                'from' => 'nullable|date_format:Y-m-d',
+                'to' => 'nullable|date_format:Y-m-d'.($request->filled('from') ? '|after_or_equal:from' : ''),
+            ]);
+            $filters = array_filter($filters, fn ($value) => $value !== null && $value !== '');
+            $vehicles = app(\App\Services\SalesInvoiceReviewService::class)->query($filters)->paginate(25)->withQueryString();
+            $categories = \App\Services\SalesInvoiceReviewService::CATEGORIES;
+            return view('admin.sales.invoice-review', compact('vehicles', 'filters', 'categories'));
+        }
         \App\Support\AmountRange::validate($request);
 
         if ($request->ajax()) {
