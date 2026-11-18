@@ -517,6 +517,8 @@
                         </div>
 
 
+                        @include('admin.repairs.partials.time-review')
+
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="panel panel-default">
