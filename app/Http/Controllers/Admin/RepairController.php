@@ -20,6 +20,7 @@ use App\Models\Vehicle;
 use App\Models\WorkshopState;
 use App\Services\RepairWorkLogService;
 use App\Services\RepairTimeReviewService;
+use App\Services\RepairPrecloseReviewService;
 use App\Services\RepairPartService;
 use App\Models\AuditLog;
 use App\Support\LicensePlate;
@@ -585,6 +586,7 @@ class RepairController extends Controller
             ->get();
 
         $timeReview = app(RepairTimeReviewService::class)->build($workLogs);
+        $precloseReview = app(RepairPrecloseReviewService::class)->build($repair);
 
         $currentUserOpenWork = $workLogs->first(function ($log) {
             return (int) $log->user_id === (int) Auth::id() && $log->finished_at === null;
@@ -660,6 +662,7 @@ class RepairController extends Controller
             'repairPartsHistory',
             'workLogs',
             'timeReview',
+            'precloseReview',
             'currentUserOpenWork',
             'mechanicTotals',
             'totalMechanicMinutes',

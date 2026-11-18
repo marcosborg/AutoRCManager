@@ -517,6 +517,8 @@
                         </div>
 
 
+                        @include('admin.repairs.partials.preclose-review')
+
                         @include('admin.repairs.partials.time-review')
 
                         <div class="row">
